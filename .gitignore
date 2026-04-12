@@ -1,0 +1,23 @@
+# Backend secrets
+/.env
+/backend/.env
+/backend/core/test-media/
+
+# Frontend env files
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/.env.production.local
+
+# Python
+/backend/__pycache__/
+/backend/**/*.pyc
+/backend/db.sqlite3
+
+# Frontend build artifacts
+/frontend/build/
+/frontend/node_modules/
+
+# Local git metadata backups
+/.git-archive/
