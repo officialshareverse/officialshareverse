@@ -22,14 +22,18 @@ from .models import (
     GroupMember,
     Notification,
     PasswordResetOTP,
+    PayoutAccount,
     RazorpayWebhookEvent,
+    RazorpayXPayoutWebhookEvent,
     Review,
     Subscription,
     Transaction,
     User,
     Wallet,
+    WalletPayout,
     WalletTopupOrder,
 )
+from .payments import PaymentGatewayError
 
 
 class GroupFlowTests(APITestCase):
@@ -173,6 +177,47 @@ class GroupFlowTests(APITestCase):
             {"message": message},
             format="json",
         )
+
+    def save_bank_payout_account(self, user=None):
+        self.authenticate(user or self.owner)
+        with patch("core.views.create_razorpayx_contact") as contact_mock, patch(
+            "core.views.create_razorpayx_bank_fund_account"
+        ) as fund_account_mock:
+            contact_mock.return_value = {"id": "cont_test_123"}
+            fund_account_mock.return_value = {"id": "fa_test_123"}
+            return self.client.put(
+                "/api/wallet/payout-account/",
+                {
+                    "account_type": "bank_account",
+                    "contact_name": "Owner Account",
+                    "contact_email": "owner@example.com",
+                    "contact_phone": "9000000001",
+                    "bank_account_holder_name": "Owner Account",
+                    "bank_account_number": "123456789012",
+                    "confirm_bank_account_number": "123456789012",
+                    "bank_account_ifsc": "HDFC0001234",
+                },
+                format="json",
+            )
+
+    def save_vpa_payout_account(self, user=None):
+        self.authenticate(user or self.owner)
+        with patch("core.views.create_razorpayx_contact") as contact_mock, patch(
+            "core.views.create_razorpayx_vpa_fund_account"
+        ) as fund_account_mock:
+            contact_mock.return_value = {"id": "cont_test_123"}
+            fund_account_mock.return_value = {"id": "fa_vpa_test_123"}
+            return self.client.put(
+                "/api/wallet/payout-account/",
+                {
+                    "account_type": "vpa",
+                    "contact_name": "Owner Account",
+                    "contact_email": "owner@example.com",
+                    "contact_phone": "9000000001",
+                    "vpa_address": "owner@upi",
+                },
+                format="json",
+            )
 
     def test_signup_accepts_name_fields(self):
         response = self.client.post(
@@ -673,37 +718,161 @@ class GroupFlowTests(APITestCase):
         send_response = self.send_group_chat(group, self.outsider, "Let me in")
         self.assertEqual(send_response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_user_can_withdraw_money_from_wallet(self):
+    @override_settings(
+        RAZORPAYX_KEY_ID="rzp_test_x_123",
+        RAZORPAYX_KEY_SECRET="secret_x_123",
+        RAZORPAYX_SOURCE_ACCOUNT_NUMBER="2323230000001",
+    )
+    def test_user_can_save_bank_payout_account(self):
+        response = self.save_bank_payout_account(self.owner)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        account = PayoutAccount.objects.get(user=self.owner)
+        self.assertEqual(account.provider_contact_id, "cont_test_123")
+        self.assertEqual(account.provider_fund_account_id, "fa_test_123")
+        self.assertEqual(account.bank_account_holder_name, "Owner Account")
+        self.assertEqual(account.bank_account_ifsc, "HDFC0001234")
+        self.assertEqual(account.bank_account_last4, "9012")
+        self.assertTrue(account.bank_account_number.startswith("enc::"))
+
+    @override_settings(
+        RAZORPAYX_KEY_ID="rzp_test_x_123",
+        RAZORPAYX_KEY_SECRET="secret_x_123",
+        RAZORPAYX_SOURCE_ACCOUNT_NUMBER="2323230000001",
+    )
+    def test_user_can_create_wallet_payout_request(self):
+        self.save_bank_payout_account(self.owner)
         wallet = Wallet.objects.get(user=self.owner)
 
         self.authenticate(self.owner)
-        response = self.client.post(
-            "/api/withdraw-money/",
-            {"amount": "250.00"},
-            format="json",
-        )
+        with patch("core.views.create_razorpayx_payout") as payout_mock:
+            payout_mock.return_value = {
+                "id": "pout_test_123",
+                "status": "pending",
+                "fund_account_id": "fa_test_123",
+                "fees": 0,
+                "tax": 0,
+            }
+            response = self.client.post(
+                "/api/withdraw-money/",
+                {"amount": "250.00", "payout_mode": "IMPS"},
+                format="json",
+            )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         wallet.refresh_from_db()
         self.assertEqual(wallet.balance, Decimal("750.00"))
-        self.assertEqual(response.data["balance"], "750.00")
+        payout = WalletPayout.objects.get(user=self.owner)
+        self.assertEqual(payout.status, "pending")
+        self.assertEqual(payout.provider_payout_id, "pout_test_123")
+        self.assertEqual(payout.mode, "IMPS")
+        self.assertEqual(payout.transaction.status, "pending")
+        self.assertEqual(payout.transaction.payment_method, "wallet_payout")
+
+    @override_settings(
+        RAZORPAYX_KEY_ID="rzp_test_x_123",
+        RAZORPAYX_KEY_SECRET="secret_x_123",
+        RAZORPAYX_SOURCE_ACCOUNT_NUMBER="2323230000001",
+    )
+    def test_failed_wallet_payout_returns_money_to_wallet(self):
+        self.save_bank_payout_account(self.owner)
+        wallet = Wallet.objects.get(user=self.owner)
+
+        self.authenticate(self.owner)
+        with patch("core.views.create_razorpayx_payout", side_effect=PaymentGatewayError("Payout gateway unavailable")):
+            response = self.client.post(
+                "/api/withdraw-money/",
+                {"amount": "250.00", "payout_mode": "IMPS"},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        wallet.refresh_from_db()
+        self.assertEqual(wallet.balance, Decimal("1000.00"))
+        payout = WalletPayout.objects.get(user=self.owner)
+        self.assertEqual(payout.status, "failed")
+        self.assertIsNotNone(payout.wallet_restored_at)
+        self.assertEqual(payout.transaction.status, "failed")
+        self.assertIsNotNone(payout.refund_transaction)
+        self.assertEqual(payout.refund_transaction.payment_method, "wallet_payout_reversal")
+
+    @override_settings(
+        RAZORPAYX_KEY_ID="rzp_test_x_123",
+        RAZORPAYX_KEY_SECRET="secret_x_123",
+        RAZORPAYX_SOURCE_ACCOUNT_NUMBER="2323230000001",
+        RAZORPAYX_WEBHOOK_SECRET="payout_webhook_secret",
+    )
+    def test_wallet_payout_webhook_marks_payout_processed(self):
+        self.save_bank_payout_account(self.owner)
+
+        self.authenticate(self.owner)
+        with patch("core.views.create_razorpayx_payout") as payout_mock:
+            payout_mock.return_value = {
+                "id": "pout_test_123",
+                "status": "pending",
+                "fund_account_id": "fa_test_123",
+                "fees": 0,
+                "tax": 0,
+            }
+            withdraw_response = self.client.post(
+                "/api/withdraw-money/",
+                {"amount": "250.00", "payout_mode": "IMPS"},
+                format="json",
+            )
+
+        self.assertEqual(withdraw_response.status_code, status.HTTP_201_CREATED)
+
+        payload = {
+            "event": "payout.processed",
+            "payload": {
+                "payout": {
+                    "entity": {
+                        "id": "pout_test_123",
+                        "reference_id": WalletPayout.objects.get(user=self.owner).provider_reference_id,
+                        "status": "processed",
+                        "fund_account_id": "fa_test_123",
+                        "utr": "UTR123",
+                        "fees": 100,
+                        "tax": 18,
+                    }
+                }
+            },
+        }
+
+        with patch("core.views.verify_razorpayx_webhook_signature", return_value=True):
+            response = self.client.post(
+                "/api/payments/razorpayx/webhook/",
+                data=json.dumps(payload),
+                content_type="application/json",
+                HTTP_X_RAZORPAY_SIGNATURE="sig_test",
+                HTTP_X_RAZORPAY_EVENT_ID="evt_payout_123",
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        payout = WalletPayout.objects.get(user=self.owner)
+        self.assertEqual(payout.status, "processed")
+        self.assertEqual(payout.transaction.status, "success")
+        self.assertEqual(payout.utr, "UTR123")
         self.assertTrue(
-            Transaction.objects.filter(
-                user=self.owner,
-                amount=Decimal("250.00"),
-                type="debit",
-                payment_method="wallet_withdrawal",
-                status="success",
+            RazorpayXPayoutWebhookEvent.objects.filter(
+                event_id="evt_payout_123",
+                status="processed",
             ).exists()
         )
 
+    @override_settings(
+        RAZORPAYX_KEY_ID="rzp_test_x_123",
+        RAZORPAYX_KEY_SECRET="secret_x_123",
+        RAZORPAYX_SOURCE_ACCOUNT_NUMBER="2323230000001",
+    )
     def test_user_cannot_withdraw_more_than_wallet_balance(self):
         wallet = Wallet.objects.get(user=self.owner)
+        self.save_bank_payout_account(self.owner)
 
         self.authenticate(self.owner)
         response = self.client.post(
             "/api/withdraw-money/",
-            {"amount": "1500.00"},
+            {"amount": "1500.00", "payout_mode": "IMPS"},
             format="json",
         )
 
@@ -1875,3 +2044,12 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(self.owner.email, "updated@example.com")
         self.assertEqual(self.owner.phone, "9888877777")
         self.assertEqual(response.data["full_name"], "Updated Owner")
+
+    def test_health_endpoint_reports_service_readiness(self):
+        response = self.client.get("/api/health/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "ok")
+        self.assertEqual(response.data["database"], "ok")
+        self.assertIn("payments", response.data)
+        self.assertIn("payouts", response.data)

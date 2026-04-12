@@ -1,0 +1,85 @@
+databases:
+  - name: shareverse-db
+    databaseName: shareverse
+    user: shareverse
+
+services:
+  - type: keyvalue
+    name: shareverse-redis
+    ipAllowList: []
+
+  - type: web
+    name: shareverse-api
+    runtime: python
+    rootDir: backend
+    buildCommand: bash build.sh
+    startCommand: gunicorn mystartup.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120
+    healthCheckPath: /api/health/
+    autoDeployTrigger: commit
+    domains:
+      - api.shareverse.in
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.3
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: CREDENTIAL_ENCRYPTION_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DJANGO_EXPOSE_DEV_OTP
+        value: "false"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: api.shareverse.in,.onrender.com
+      - key: DJANGO_CORS_ALLOWED_ORIGINS
+        value: https://shareverse.in,https://shareverse-web.onrender.com
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        value: https://shareverse.in,https://shareverse-web.onrender.com,https://api.shareverse.in
+      - key: DJANGO_SERVE_MEDIA
+        value: "true"
+      - key: DJANGO_REDIS_URL
+        fromService:
+          type: keyvalue
+          name: shareverse-redis
+          property: connectionString
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shareverse-db
+          property: connectionString
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: RAZORPAY_COMPANY_NAME
+        value: ShareVerse
+      - key: RAZORPAY_CURRENCY
+        value: INR
+      - key: RAZORPAYX_KEY_ID
+        sync: false
+      - key: RAZORPAYX_KEY_SECRET
+        sync: false
+      - key: RAZORPAYX_WEBHOOK_SECRET
+        sync: false
+      - key: RAZORPAYX_SOURCE_ACCOUNT_NUMBER
+        sync: false
+
+  - type: web
+    name: shareverse-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    autoDeployTrigger: commit
+    domains:
+      - shareverse.in
+    envVars:
+      - key: NODE_VERSION
+        value: 22.15.0
+      - key: REACT_APP_API_BASE_URL
+        value: https://shareverse-api.onrender.com/api/
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

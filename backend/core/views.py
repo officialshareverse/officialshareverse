@@ -2,13 +2,14 @@ import secrets
 import os
 import json
 import hashlib
+import re
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 import math
 
 from django.conf import settings
 from django.contrib.auth import authenticate
-from django.db import transaction
+from django.db import DatabaseError, connections, transaction
 from django.db.models import Avg, Count, ExpressionWrapper, F, IntegerField, Q, Sum, Value
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -28,21 +29,30 @@ from .models import (
     GroupMember,
     Notification,
     PasswordResetOTP,
+    PayoutAccount,
     RazorpayWebhookEvent,
+    RazorpayXPayoutWebhookEvent,
     Review,
     Subscription,
     Transaction,
     User,
     Wallet,
+    WalletPayout,
     WalletTopupOrder,
 )
 from .payments import (
     PaymentGatewayError,
     capture_razorpay_payment,
     create_razorpay_order,
+    create_razorpayx_bank_fund_account,
+    create_razorpayx_contact,
+    create_razorpayx_payout,
+    create_razorpayx_vpa_fund_account,
     fetch_razorpay_payment,
+    fetch_razorpayx_payout,
     verify_razorpay_signature,
     verify_razorpay_webhook_signature,
+    verify_razorpayx_webhook_signature,
 )
 from .pricing import (
     get_group_join_pricing,
@@ -57,6 +67,8 @@ from .serializers import (
     GroupListSerializer,
     GroupChatMessageSerializer,
     GroupUpdateSerializer,
+    PayoutAccountSerializer,
+    PayoutAccountUpsertSerializer,
     ProfileUpdateSerializer,
     ReviewSerializer,
     SendGroupChatMessageSerializer,
@@ -64,6 +76,8 @@ from .serializers import (
     SubmitReviewSerializer,
     SubmitPurchaseProofSerializer,
     TransactionSerializer,
+    WalletPayoutCreateSerializer,
+    WalletPayoutSerializer,
     WalletTopupOrderCreateSerializer,
     WalletTopupVerifySerializer,
     get_mode_copy,
@@ -423,6 +437,32 @@ def build_notification_payload(notification):
     }
 
 
+class HealthCheckView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            with connections["default"].cursor() as cursor:
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+            database_status = "ok"
+            status_code = 200
+        except DatabaseError:
+            database_status = "unavailable"
+            status_code = 503
+
+        return Response(
+            {
+                "status": "ok" if database_status == "ok" else "degraded",
+                "database": database_status,
+                "payments": build_wallet_payment_config()["mode"],
+                "payouts": build_wallet_payout_config()["mode"],
+            },
+            status=status_code,
+        )
+
+
 def build_wallet_payment_config():
     key_id = (getattr(settings, "RAZORPAY_KEY_ID", "") or "").strip()
     key_secret = (getattr(settings, "RAZORPAY_KEY_SECRET", "") or "").strip()
@@ -463,6 +503,59 @@ def build_wallet_payment_config():
     }
 
 
+def build_wallet_payout_config():
+    key_id = (
+        getattr(settings, "RAZORPAYX_KEY_ID", "")
+        or getattr(settings, "RAZORPAY_KEY_ID", "")
+        or ""
+    ).strip()
+    key_secret = (
+        getattr(settings, "RAZORPAYX_KEY_SECRET", "")
+        or getattr(settings, "RAZORPAY_KEY_SECRET", "")
+        or ""
+    ).strip()
+    webhook_secret = (
+        getattr(settings, "RAZORPAYX_WEBHOOK_SECRET", "")
+        or getattr(settings, "RAZORPAY_WEBHOOK_SECRET", "")
+        or ""
+    ).strip()
+    source_account_number = (getattr(settings, "RAZORPAYX_SOURCE_ACCOUNT_NUMBER", "") or "").strip()
+    payout_enabled = bool(key_id and key_secret and source_account_number)
+    webhook_enabled = bool(payout_enabled and webhook_secret)
+    is_live_mode = key_id.startswith("rzp_live_")
+
+    if not payout_enabled:
+        mode = "unconfigured"
+        label = "Payouts not configured"
+        helper_text = "Add RazorpayX keys and a source account number before enabling real withdrawals."
+    elif is_live_mode:
+        mode = "live"
+        label = "Live payouts"
+        helper_text = (
+            "Real withdrawals are enabled through RazorpayX and payout webhooks are active."
+            if webhook_enabled
+            else "Real withdrawals are enabled. Add a RazorpayX webhook secret to keep payout status resilient."
+        )
+    else:
+        mode = "test"
+        label = "Test payouts"
+        helper_text = (
+            "Withdrawals are using RazorpayX test mode with webhook confirmation enabled."
+            if webhook_enabled
+            else "Withdrawals are using RazorpayX test mode."
+        )
+
+    return {
+        "provider": "razorpayx",
+        "payout_enabled": payout_enabled,
+        "webhook_enabled": webhook_enabled,
+        "mode": mode,
+        "mode_label": label,
+        "is_live_mode": is_live_mode,
+        "helper_text": helper_text,
+    }
+
+
 def convert_decimal_amount_to_subunits(amount):
     normalized_amount = amount.quantize(Decimal("0.01"))
     return int((normalized_amount * 100).quantize(Decimal("1")))
@@ -485,6 +578,174 @@ def build_razorpay_webhook_event_id(raw_body, event_type="", payment_id="", prov
 
     fingerprint = hashlib.sha256(raw_body).hexdigest()[:24]
     return f"{event_type}:{payment_id}:{provider_order_id}:{fingerprint}"[:120]
+
+
+def build_razorpayx_webhook_event_id(raw_body, event_type="", payout_id="", provided_id=""):
+    normalized_provided_id = (provided_id or "").strip()
+    if normalized_provided_id:
+        return normalized_provided_id[:120]
+
+    fingerprint = hashlib.sha256(raw_body).hexdigest()[:24]
+    return f"{event_type}:{payout_id}:{fingerprint}"[:120]
+
+
+def build_payout_contact_name(user, serializer_data):
+    return (
+        serializer_data.get("contact_name")
+        or serializer_data.get("bank_account_holder_name")
+        or user.get_full_name().strip()
+        or user.username
+    )
+
+
+def build_payout_destination_label(payout_account):
+    if payout_account.account_type == "vpa":
+        masked = payout_account.get_masked_destination()
+        return f"UPI {masked}" if masked else "UPI payout"
+    masked = payout_account.get_masked_destination()
+    return f"Bank {masked}" if masked else "Bank payout"
+
+
+def sanitize_payout_narration(value):
+    normalized = re.sub(r"[^A-Za-z0-9 ]+", " ", (value or "").strip())
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized[:30] or "ShareVerse Payout"
+
+
+def sync_payout_account_with_provider(user, validated_data, existing_account=None):
+    contact_name = build_payout_contact_name(user, validated_data)
+    contact_email = validated_data.get("contact_email") or user.email or ""
+    contact_phone = validated_data.get("contact_phone") or user.phone or ""
+    account_type = validated_data["account_type"]
+
+    contact_reference = f"user_{user.id}_{secrets.token_hex(4)}"
+    contact_payload = create_razorpayx_contact(
+        name=contact_name,
+        email=contact_email,
+        contact=contact_phone,
+        contact_type="customer",
+        reference_id=contact_reference[:40],
+        notes={
+            "user_id": str(user.id),
+            "username": user.username,
+            "purpose": "wallet_payout",
+        },
+    )
+
+    if account_type == "bank_account":
+        fund_account_payload = create_razorpayx_bank_fund_account(
+            contact_id=contact_payload["id"],
+            account_holder_name=validated_data["bank_account_holder_name"],
+            ifsc=validated_data["bank_account_ifsc"],
+            account_number=validated_data["bank_account_number"],
+        )
+    else:
+        fund_account_payload = create_razorpayx_vpa_fund_account(
+            contact_id=contact_payload["id"],
+            vpa_address=validated_data["vpa_address"],
+        )
+
+    payout_account = existing_account or PayoutAccount(user=user)
+    payout_account.account_type = account_type
+    payout_account.contact_name = contact_name
+    payout_account.contact_email = contact_email
+    payout_account.contact_phone = contact_phone
+    payout_account.contact_type = "customer"
+    payout_account.provider_contact_id = contact_payload["id"]
+    payout_account.provider_fund_account_id = fund_account_payload["id"]
+    payout_account.is_active = True
+    payout_account.last_error = ""
+    payout_account.last_synced_at = timezone.now()
+
+    if account_type == "bank_account":
+        payout_account.bank_account_holder_name = validated_data["bank_account_holder_name"]
+        payout_account.bank_account_ifsc = validated_data["bank_account_ifsc"]
+        payout_account.set_bank_account_number(validated_data["bank_account_number"])
+        payout_account.clear_vpa()
+    else:
+        payout_account.set_vpa_address(validated_data["vpa_address"])
+        payout_account.clear_bank_account()
+
+    payout_account.save()
+    return payout_account
+
+
+def normalize_wallet_payout_status(provider_status):
+    normalized = (provider_status or "").strip().lower()
+    if normalized in {"queued", "pending", "processing", "initiated"}:
+        return normalized if normalized != "initiated" else "processing"
+    if normalized in {"processed", "reversed", "cancelled", "rejected", "failed"}:
+        return normalized
+    return "pending"
+
+
+def restore_wallet_for_failed_payout(locked_payout):
+    if locked_payout.wallet_restored_at:
+        return False
+
+    wallet, _ = Wallet.objects.select_for_update().get_or_create(user=locked_payout.user)
+    wallet.balance += locked_payout.amount
+    wallet.save()
+
+    refund_transaction = Transaction.objects.create(
+        user=locked_payout.user,
+        group=None,
+        amount=locked_payout.amount,
+        type="credit",
+        status="success",
+        payment_method="wallet_payout_reversal",
+    )
+
+    locked_payout.wallet_restored_at = timezone.now()
+    locked_payout.refund_transaction = refund_transaction
+    return True
+
+
+def apply_wallet_payout_state(wallet_payout_id, payout_details, *, status_source="api"):
+    with transaction.atomic():
+        locked_payout = (
+            WalletPayout.objects.select_for_update()
+            .select_related("user", "transaction", "refund_transaction")
+            .get(id=wallet_payout_id)
+        )
+
+        provider_status = normalize_wallet_payout_status(payout_details.get("status"))
+        locked_payout.provider_payout_id = payout_details.get("id") or locked_payout.provider_payout_id
+        locked_payout.provider_contact_id = (
+            payout_details.get("fund_account", {}) or {}
+        ).get("contact_id", locked_payout.provider_contact_id)
+        locked_payout.provider_fund_account_id = payout_details.get("fund_account_id") or locked_payout.provider_fund_account_id
+        locked_payout.status = provider_status
+        locked_payout.status_details = payout_details
+        locked_payout.failure_reason = (
+            (payout_details.get("status_details") or {}).get("description")
+            or payout_details.get("failure_reason")
+            or locked_payout.failure_reason
+        )
+        locked_payout.provider_status_source = status_source
+        locked_payout.utr = payout_details.get("utr") or locked_payout.utr
+        locked_payout.fees = int(payout_details.get("fees") or locked_payout.fees or 0)
+        locked_payout.tax = int(payout_details.get("tax") or locked_payout.tax or 0)
+
+        if provider_status == "processed" and not locked_payout.processed_at:
+            locked_payout.processed_at = timezone.now()
+
+        if locked_payout.transaction_id:
+            payout_transaction = Transaction.objects.select_for_update().get(id=locked_payout.transaction_id)
+            if provider_status == "processed":
+                payout_transaction.status = "success"
+            elif provider_status in {"queued", "pending", "processing"}:
+                payout_transaction.status = "pending"
+            else:
+                payout_transaction.status = "failed"
+            payout_transaction.save(update_fields=["status"])
+
+        if provider_status in {"reversed", "cancelled", "rejected", "failed"}:
+            restore_wallet_for_failed_payout(locked_payout)
+
+        locked_payout.save()
+
+    return WalletPayout.objects.select_related("payout_account").get(id=wallet_payout_id)
 
 
 def mark_wallet_topup_failed(topup_order, message, payment_id="", signature=""):
@@ -1494,43 +1755,294 @@ class RazorpayWebhookView(APIView):
         return Response({"message": "Webhook processed successfully."}, status=200)
 
 
+class PayoutAccountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        payout_account = PayoutAccount.objects.filter(user=request.user).first()
+        return Response({
+            "payout_config": build_wallet_payout_config(),
+            "payout_account": PayoutAccountSerializer(payout_account).data if payout_account else None,
+        })
+
+    def put(self, request):
+        serializer = PayoutAccountUpsertSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        payout_config = build_wallet_payout_config()
+        if not payout_config["payout_enabled"]:
+            return Response(
+                {
+                    "error": "Real payouts are not configured on this server yet.",
+                    "payout_config": payout_config,
+                },
+                status=503,
+            )
+
+        existing_account = PayoutAccount.objects.filter(user=request.user).first()
+
+        try:
+            payout_account = sync_payout_account_with_provider(
+                request.user,
+                serializer.validated_data,
+                existing_account=existing_account,
+            )
+        except PaymentGatewayError as exc:
+            if existing_account:
+                existing_account.last_error = str(exc)
+                existing_account.save(update_fields=["last_error", "updated_at"])
+            return Response({"error": str(exc)}, status=503)
+
+        return Response(
+            {
+                "message": "Payout account saved successfully.",
+                "payout_account": PayoutAccountSerializer(payout_account).data,
+                "payout_config": payout_config,
+            },
+            status=200,
+        )
+
+
 class WithdrawMoneyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        amount = request.data.get("amount")
+        serializer = WalletPayoutCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
 
-        if amount is None:
-            return Response({"error": "Amount is required"}, status=400)
+        payout_config = build_wallet_payout_config()
+        if not payout_config["payout_enabled"]:
+            return Response(
+                {
+                    "error": "Real payouts are not configured on this server yet.",
+                    "payout_config": payout_config,
+                },
+                status=503,
+            )
+
+        payout_account = PayoutAccount.objects.filter(user=request.user, is_active=True).first()
+        if not payout_account or not payout_account.provider_fund_account_id:
+            return Response(
+                {"error": "Add a payout method before requesting a withdrawal."},
+                status=400,
+            )
+
+        amount = serializer.validated_data["amount"].quantize(Decimal("0.01"))
+        payout_mode = serializer.validated_data["payout_mode"]
+
+        if payout_account.account_type == "vpa":
+            payout_mode = "UPI"
+        elif payout_mode == "UPI":
+            return Response({"error": "UPI mode is only available for a saved UPI payout method."}, status=400)
+
+        amount_subunits = convert_decimal_amount_to_subunits(amount)
+        destination_label = build_payout_destination_label(payout_account)
+        source_account_number = (getattr(settings, "RAZORPAYX_SOURCE_ACCOUNT_NUMBER", "") or "").strip()
+        reference_id = f"wd_{secrets.token_hex(12)}"[:40]
+        idempotency_key = secrets.token_hex(24)
+        narration = sanitize_payout_narration(f"ShareVerse {request.user.username}")
+
+        with transaction.atomic():
+            wallet, _ = Wallet.objects.select_for_update().get_or_create(user=request.user)
+            if wallet.balance < amount:
+                return Response({"error": "Insufficient wallet balance"}, status=400)
+
+            wallet.balance -= amount
+            wallet.save()
+
+            payout_transaction = Transaction.objects.create(
+                user=request.user,
+                group=None,
+                amount=amount,
+                type="debit",
+                status="pending",
+                payment_method="wallet_payout",
+            )
+
+            wallet_payout = WalletPayout.objects.create(
+                user=request.user,
+                payout_account=payout_account,
+                transaction=payout_transaction,
+                amount=amount,
+                amount_subunits=amount_subunits,
+                currency=settings.RAZORPAY_CURRENCY,
+                provider="razorpayx",
+                provider_contact_id=payout_account.provider_contact_id,
+                provider_fund_account_id=payout_account.provider_fund_account_id,
+                provider_reference_id=reference_id,
+                idempotency_key=idempotency_key,
+                source_account_number=source_account_number,
+                mode=payout_mode,
+                purpose="payout",
+                narration=narration,
+                destination_label=destination_label,
+                status="created",
+                provider_status_source="api",
+            )
 
         try:
-            amount = Decimal(amount)
-        except (InvalidOperation, TypeError):
-            return Response({"error": "Invalid amount"}, status=400)
+            payout_response = create_razorpayx_payout(
+                source_account_number=source_account_number,
+                fund_account_id=payout_account.provider_fund_account_id,
+                amount_subunits=amount_subunits,
+                currency=settings.RAZORPAY_CURRENCY,
+                mode=payout_mode,
+                purpose="payout",
+                narration=narration,
+                reference_id=reference_id,
+                notes={
+                    "user_id": str(request.user.id),
+                    "username": request.user.username,
+                    "destination": destination_label,
+                },
+                idempotency_key=idempotency_key,
+            )
+        except PaymentGatewayError as exc:
+            failed_payload = {
+                "status": "failed",
+                "failure_reason": str(exc),
+                "status_details": {"description": str(exc)},
+            }
+            wallet_payout = apply_wallet_payout_state(wallet_payout.id, failed_payload, status_source="api_error")
+            wallet, _ = Wallet.objects.get_or_create(user=request.user)
+            return Response(
+                {
+                    "error": str(exc),
+                    "balance": str(wallet.balance),
+                    "payout": WalletPayoutSerializer(wallet_payout).data,
+                },
+                status=503,
+            )
 
-        if amount <= 0:
-            return Response({"error": "Amount must be positive"}, status=400)
-
+        wallet_payout = apply_wallet_payout_state(wallet_payout.id, payout_response, status_source="api")
         wallet, _ = Wallet.objects.get_or_create(user=request.user)
-        if wallet.balance < amount:
-            return Response({"error": "Insufficient wallet balance"}, status=400)
-
-        wallet.balance -= amount
-        wallet.save()
-
-        Transaction.objects.create(
-            user=request.user,
-            group=None,
-            amount=amount,
-            type="debit",
-            status="success",
-            payment_method="wallet_withdrawal",
+        return Response(
+            {
+                "message": "Withdrawal request created successfully.",
+                "balance": str(wallet.balance),
+                "payout": WalletPayoutSerializer(wallet_payout).data,
+            },
+            status=201,
         )
 
-        return Response({
-            "message": "Money withdrawn successfully",
-            "balance": str(wallet.balance),
-        }, status=200)
+
+class WalletPayoutSyncView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, payout_id):
+        try:
+            wallet_payout = WalletPayout.objects.get(id=payout_id, user=request.user)
+        except WalletPayout.DoesNotExist:
+            return Response({"error": "Payout request not found."}, status=404)
+
+        if not wallet_payout.provider_payout_id:
+            return Response(
+                {
+                    "message": "This payout was never accepted by the provider.",
+                    "payout": WalletPayoutSerializer(wallet_payout).data,
+                }
+            )
+
+        try:
+            payout_response = fetch_razorpayx_payout(wallet_payout.provider_payout_id)
+        except PaymentGatewayError as exc:
+            return Response({"error": str(exc)}, status=503)
+
+        wallet_payout = apply_wallet_payout_state(wallet_payout.id, payout_response, status_source="sync")
+        wallet, _ = Wallet.objects.get_or_create(user=request.user)
+        return Response(
+            {
+                "message": "Payout status refreshed.",
+                "balance": str(wallet.balance),
+                "payout": WalletPayoutSerializer(wallet_payout).data,
+            }
+        )
+
+
+class RazorpayXPayoutWebhookView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        raw_body = request.body or b""
+        signature = (request.META.get("HTTP_X_RAZORPAY_SIGNATURE") or "").strip()
+        header_event_id = (request.META.get("HTTP_X_RAZORPAY_EVENT_ID") or "").strip()
+
+        if not signature:
+            return Response({"error": "Missing webhook signature."}, status=400)
+
+        try:
+            signature_valid = verify_razorpayx_webhook_signature(raw_body, signature)
+        except PaymentGatewayError as exc:
+            return Response({"error": str(exc)}, status=503)
+
+        if not signature_valid:
+            return Response({"error": "Invalid webhook signature."}, status=400)
+
+        try:
+            event_payload = json.loads(raw_body.decode("utf-8"))
+        except json.JSONDecodeError:
+            return Response({"error": "Invalid webhook payload."}, status=400)
+
+        event_type = (event_payload.get("event") or "").strip()
+        payout_entity = ((event_payload.get("payload") or {}).get("payout") or {}).get("entity") or {}
+        payout_id = (payout_entity.get("id") or "").strip()
+        reference_id = (payout_entity.get("reference_id") or "").strip()
+        event_id = build_razorpayx_webhook_event_id(
+            raw_body,
+            event_type=event_type,
+            payout_id=payout_id,
+            provided_id=header_event_id,
+        )
+
+        if RazorpayXPayoutWebhookEvent.objects.filter(event_id=event_id).exists():
+            return Response({"message": "Webhook already processed."}, status=200)
+
+        if not event_type.startswith("payout."):
+            RazorpayXPayoutWebhookEvent.objects.create(
+                event_id=event_id,
+                event_type=event_type or "unknown",
+                payout_id=payout_id,
+                status="ignored",
+                notes="Webhook event is not handled by payout processing.",
+            )
+            return Response({"message": "Webhook ignored."}, status=200)
+
+        if not payout_id:
+            RazorpayXPayoutWebhookEvent.objects.create(
+                event_id=event_id,
+                event_type=event_type or "unknown",
+                payout_id="",
+                status="failed",
+                notes="Webhook payload did not include a payout id.",
+            )
+            return Response({"message": "Webhook acknowledged."}, status=200)
+
+        wallet_payout = WalletPayout.objects.filter(provider_payout_id=payout_id).first()
+        if not wallet_payout and reference_id:
+            wallet_payout = WalletPayout.objects.filter(provider_reference_id=reference_id).first()
+
+        if not wallet_payout:
+            RazorpayXPayoutWebhookEvent.objects.create(
+                event_id=event_id,
+                event_type=event_type,
+                payout_id=payout_id,
+                status="ignored",
+                notes="No matching wallet payout was found.",
+            )
+            return Response({"message": "Webhook acknowledged."}, status=200)
+
+        wallet_payout = apply_wallet_payout_state(wallet_payout.id, payout_entity, status_source="webhook")
+        RazorpayXPayoutWebhookEvent.objects.create(
+            event_id=event_id,
+            event_type=event_type,
+            payout_id=payout_id,
+            status="processed",
+            notes=f"Wallet payout updated to {wallet_payout.status}.",
+        )
+        return Response({"message": "Webhook processed successfully."}, status=200)
 
 
 class TransactionHistoryView(ListAPIView):
@@ -1549,6 +2061,8 @@ class DashboardView(APIView):
         user = request.user
         wallet, _ = Wallet.objects.get_or_create(user=user)
         transactions = Transaction.objects.filter(user=user)
+        payout_account = PayoutAccount.objects.filter(user=user).first()
+        recent_payouts = WalletPayout.objects.filter(user=user).select_related("payout_account")[:5]
         owned_groups = Group.objects.filter(owner=user)
 
         total_credit = transactions.filter(type="credit").aggregate(total=Sum("amount"))["total"] or Decimal("0")
@@ -1673,6 +2187,9 @@ class DashboardView(APIView):
             "balance": str(wallet.balance),
             "wallet_balance": str(wallet.balance),
             "wallet_payments": build_wallet_payment_config(),
+            "wallet_payouts_config": build_wallet_payout_config(),
+            "wallet_payout_account": PayoutAccountSerializer(payout_account).data if payout_account else None,
+            "wallet_payouts": WalletPayoutSerializer(recent_payouts, many=True).data,
             "total_credit": str(total_credit),
             "total_debit": str(total_debit),
             "total_spent": str(total_debit),

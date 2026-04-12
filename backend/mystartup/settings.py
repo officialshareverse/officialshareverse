@@ -13,9 +13,15 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import importlib.util
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+_HAS_DJ_DATABASE_URL = importlib.util.find_spec("dj_database_url") is not None
+_HAS_WHITENOISE = importlib.util.find_spec("whitenoise") is not None
+
+if _HAS_DJ_DATABASE_URL:
+    import dj_database_url
 
 
 def _parse_env_value(value):
@@ -58,12 +64,17 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() == 'true'
 EXPOSE_DEV_OTP = os.environ.get('DJANGO_EXPOSE_DEV_OTP', 'true').lower() == 'true'
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
+SERVE_MEDIA_FILES = DEBUG or os.environ.get('DJANGO_SERVE_MEDIA', 'false').lower() == 'true'
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
-    if host.strip()
-]
+ALLOWED_HOSTS = []
+for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(','):
+    normalized_host = host.strip()
+    if normalized_host and normalized_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(normalized_host)
+
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 
 # Application definition
@@ -84,6 +95,12 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+]
+
+if _HAS_WHITENOISE:
+    MIDDLEWARE.append('whitenoise.middleware.WhiteNoiseMiddleware')
+
+MIDDLEWARE += [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -98,6 +115,14 @@ CORS_ALLOWED_ORIGINS = [
     for origin in os.environ.get(
         'DJANGO_CORS_ALLOWED_ORIGINS',
         'http://localhost:3000,http://127.0.0.1:3000'
+    ).split(',')
+    if origin.strip()
+]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        'DJANGO_CSRF_TRUSTED_ORIGINS',
+        ','.join(CORS_ALLOWED_ORIGINS),
     ).split(',')
     if origin.strip()
 ]
@@ -125,7 +150,15 @@ WSGI_APPLICATION = 'mystartup.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-if os.environ.get('POSTGRES_DB'):
+if os.environ.get('DATABASE_URL') and _HAS_DJ_DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(
+            os.environ.get('DATABASE_URL', ''),
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
+    }
+elif os.environ.get('POSTGRES_DB'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -180,8 +213,19 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+if _HAS_WHITENOISE:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -202,7 +246,10 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
 }
 
-DJANGO_REDIS_URL = os.environ.get('DJANGO_REDIS_URL', '').strip()
+DJANGO_REDIS_URL = (
+    os.environ.get('DJANGO_REDIS_URL', '').strip()
+    or os.environ.get('REDIS_URL', '').strip()
+)
 _HAS_REDIS_CLIENT = importlib.util.find_spec("redis") is not None
 
 if DJANGO_REDIS_URL and _HAS_REDIS_CLIENT:
@@ -229,3 +276,17 @@ RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', '').strip()
 RAZORPAY_API_BASE_URL = os.environ.get('RAZORPAY_API_BASE_URL', 'https://api.razorpay.com/v1').strip()
 RAZORPAY_COMPANY_NAME = os.environ.get('RAZORPAY_COMPANY_NAME', 'ShareVerse').strip() or 'ShareVerse'
 RAZORPAY_CURRENCY = os.environ.get('RAZORPAY_CURRENCY', 'INR').strip().upper() or 'INR'
+RAZORPAYX_KEY_ID = os.environ.get('RAZORPAYX_KEY_ID', '').strip()
+RAZORPAYX_KEY_SECRET = os.environ.get('RAZORPAYX_KEY_SECRET', '').strip()
+RAZORPAYX_WEBHOOK_SECRET = os.environ.get('RAZORPAYX_WEBHOOK_SECRET', '').strip()
+RAZORPAYX_SOURCE_ACCOUNT_NUMBER = os.environ.get('RAZORPAYX_SOURCE_ACCOUNT_NUMBER', '').strip()
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = True
+    SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SECURE_SSL_REDIRECT', 'true').lower() == 'true'
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_SECURE_HSTS_SECONDS', '31536000') or '31536000')
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True

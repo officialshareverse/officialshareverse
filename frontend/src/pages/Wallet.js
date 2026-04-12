@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import API from "../api/axios";
 
 const RAZORPAY_CHECKOUT_URL = "https://checkout.razorpay.com/v1/checkout.js";
@@ -35,21 +36,52 @@ function loadRazorpayCheckout() {
 }
 
 function formatCurrency(value) {
-  const numericValue = Number(value || 0);
-  return `Rs ${numericValue.toFixed(2)}`;
+  return `Rs ${Number(value || 0).toFixed(2)}`;
 }
 
-function parseError(err, fallbackMessage) {
-  return err?.response?.data?.error || fallbackMessage;
+function parseError(err, fallback) {
+  return err?.response?.data?.error || fallback;
+}
+
+function initialPayoutForm(account) {
+  return {
+    account_type: account?.account_type || "bank_account",
+    contact_name: account?.contact_name || "",
+    contact_email: account?.contact_email || "",
+    contact_phone: account?.contact_phone || "",
+    bank_account_holder_name: account?.bank_account_holder_name || "",
+    bank_account_number: "",
+    confirm_bank_account_number: "",
+    bank_account_ifsc: account?.bank_account_ifsc || "",
+    vpa_address: "",
+  };
+}
+
+function statusTone(status) {
+  if (["processed", "success"].includes(status)) {
+    return "bg-emerald-100 text-emerald-800";
+  }
+  if (["pending", "queued", "processing"].includes(status)) {
+    return "bg-amber-100 text-amber-800";
+  }
+  if (["failed", "rejected", "reversed", "cancelled"].includes(status)) {
+    return "bg-rose-100 text-rose-800";
+  }
+  return "bg-slate-100 text-slate-700";
 }
 
 export default function Wallet() {
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalance] = useState("0.00");
   const [transactions, setTransactions] = useState([]);
-  const [walletPayments, setWalletPayments] = useState(null);
-  const [workingAction, setWorkingAction] = useState("");
+  const [topupConfig, setTopupConfig] = useState(null);
+  const [payoutConfig, setPayoutConfig] = useState(null);
+  const [payoutAccount, setPayoutAccount] = useState(null);
+  const [payouts, setPayouts] = useState([]);
   const [topupAmount, setTopupAmount] = useState("500");
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawMode, setWithdrawMode] = useState("IMPS");
+  const [payoutForm, setPayoutForm] = useState(initialPayoutForm());
+  const [workingAction, setWorkingAction] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -57,40 +89,50 @@ export default function Wallet() {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+  const payoutModes = useMemo(
+    () => (payoutForm.account_type === "vpa" ? ["UPI"] : ["IMPS", "NEFT", "RTGS"]),
+    [payoutForm.account_type]
+  );
+
+  async function fetchData() {
     try {
       const [dashboardResponse, transactionsResponse] = await Promise.all([
         API.get("dashboard/"),
         API.get("transactions/"),
       ]);
-      setBalance(dashboardResponse.data.balance);
-      setWalletPayments(dashboardResponse.data.wallet_payments || null);
-      setTransactions(transactionsResponse.data);
+
+      const dashboard = dashboardResponse.data || {};
+      setBalance(dashboard.balance || "0.00");
+      setTransactions(Array.isArray(transactionsResponse.data) ? transactionsResponse.data : []);
+      setTopupConfig(dashboard.wallet_payments || null);
+      setPayoutConfig(dashboard.wallet_payouts_config || null);
+      setPayoutAccount(dashboard.wallet_payout_account || null);
+      setPayouts(Array.isArray(dashboard.wallet_payouts) ? dashboard.wallet_payouts : []);
+      setPayoutForm(initialPayoutForm(dashboard.wallet_payout_account || null));
+      if ((dashboard.wallet_payout_account || {}).account_type === "vpa") {
+        setWithdrawMode("UPI");
+      }
     } catch (err) {
       console.error(err);
       setErrorMessage("Unable to load your wallet right now.");
     }
-  };
+  }
 
-  const startWalletTopup = async (event) => {
+  async function startWalletTopup(event) {
     event.preventDefault();
     setFeedbackMessage("");
     setErrorMessage("");
 
     try {
-      setWorkingAction("add");
+      setWorkingAction("topup");
       const orderResponse = await API.post("payments/razorpay/create-order/", {
         amount: topupAmount,
       });
-      setWalletPayments(orderResponse.data.payment || walletPayments);
+      setTopupConfig(orderResponse.data.payment || topupConfig);
       const Razorpay = await loadRazorpayCheckout();
 
-      if (!Razorpay) {
-        throw new Error("Checkout is unavailable right now.");
-      }
-
       await new Promise((resolve, reject) => {
-        const options = {
+        const paymentObject = new Razorpay({
           ...orderResponse.data.checkout,
           theme: { color: "#0f766e" },
           modal: {
@@ -98,33 +140,19 @@ export default function Wallet() {
           },
           handler: async (paymentResponse) => {
             try {
-              const verifyResponse = await API.post(
-                "payments/razorpay/verify/",
-                paymentResponse
-              );
-              setFeedbackMessage(
-                verifyResponse.data.message || "Wallet top-up credited successfully."
-              );
+              const verifyResponse = await API.post("payments/razorpay/verify/", paymentResponse);
+              setFeedbackMessage(verifyResponse.data.message || "Wallet top-up credited successfully.");
               setTopupAmount("");
               await fetchData();
               resolve();
             } catch (verifyError) {
-              reject(
-                new Error(
-                  verifyError?.response?.data?.error || "Payment verification failed."
-                )
-              );
+              reject(new Error(parseError(verifyError, "Payment verification failed.")));
             }
           },
-        };
+        });
 
-        const paymentObject = new Razorpay(options);
         paymentObject.on("payment.failed", (response) => {
-          reject(
-            new Error(
-              response?.error?.description || "Payment failed before the wallet could be credited."
-            )
-          );
+          reject(new Error(response?.error?.description || "Payment failed before the wallet could be credited."));
         });
         paymentObject.open();
       });
@@ -133,506 +161,298 @@ export default function Wallet() {
     } finally {
       setWorkingAction("");
     }
-  };
+  }
 
-  const withdrawMoney = async (event) => {
+  async function savePayoutAccount(event) {
+    event.preventDefault();
+    setFeedbackMessage("");
+    setErrorMessage("");
+
+    try {
+      setWorkingAction("save-payout");
+      const response = await API.put("wallet/payout-account/", payoutForm);
+      setFeedbackMessage(response.data.message || "Payout method saved successfully.");
+      await fetchData();
+    } catch (err) {
+      setErrorMessage(parseError(err, "Unable to save your payout method."));
+    } finally {
+      setWorkingAction("");
+    }
+  }
+
+  async function withdrawMoney(event) {
     event.preventDefault();
     setFeedbackMessage("");
     setErrorMessage("");
 
     try {
       setWorkingAction("withdraw");
-      const response = await API.post("withdraw-money/", { amount: withdrawAmount });
-      setFeedbackMessage(response.data.message || "Money withdrawn from wallet.");
+      const response = await API.post("withdraw-money/", {
+        amount: withdrawAmount,
+        payout_mode: withdrawMode,
+      });
+      setFeedbackMessage(response.data.message || "Withdrawal request created.");
       setWithdrawAmount("");
       await fetchData();
     } catch (err) {
-      setErrorMessage(parseError(err, "Failed to withdraw money."));
+      setErrorMessage(parseError(err, "Failed to create withdrawal request."));
     } finally {
       setWorkingAction("");
     }
-  };
+  }
+
+  async function syncPayout(payoutId) {
+    setFeedbackMessage("");
+    setErrorMessage("");
+
+    try {
+      setWorkingAction(`sync-${payoutId}`);
+      const response = await API.post(`wallet/payouts/${payoutId}/sync/`);
+      setFeedbackMessage(response.data.message || "Payout status refreshed.");
+      await fetchData();
+    } catch (err) {
+      setErrorMessage(parseError(err, "Unable to refresh payout status."));
+    } finally {
+      setWorkingAction("");
+    }
+  }
 
   return (
-    <div style={container}>
-      <div style={hero}>
-        <div style={heroCopy}>
-          <p style={eyebrow}>Wallet</p>
-          <h1 style={heroTitle}>Move money safely between your wallet and group activity.</h1>
-          <p style={heroText}>
-            Top up instantly through Razorpay, track every credit and debit, and keep your
-            sharing and buy-together flows funded from one place.
-          </p>
-          <div style={quickTopups}>
-            {["100", "300", "500", "1000"].map((amount) => (
-              <button
-                key={amount}
-                type="button"
-                style={quickAmountButton(topupAmount === amount)}
-                onClick={() => setTopupAmount(amount)}
-              >
-                Rs {amount}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div style={balanceCard}>
-          <p style={cardLabel}>Available balance</p>
-          <h2 style={balanceValue}>{formatCurrency(balance)}</h2>
-          <p style={balanceHint}>Used for joins, escrow-backed group buys, and shared-plan payouts.</p>
-          {walletPayments && (
-            <div style={modePill(walletPayments.mode)}>
-              {walletPayments.mode_label}
+    <div className="sv-page">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="sv-light-hero">
+            <p className="sv-eyebrow">Wallet</p>
+            <h1 className="sv-display mt-4 max-w-3xl">
+              Top up, save payout details, and move wallet money through real rails.
+            </h1>
+            <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
+              Razorpay handles wallet top-ups. RazorpayX handles real withdrawals to your saved
+              bank account or UPI ID, with webhook-based status updates and automatic wallet
+              recovery for failed or reversed payouts.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-2">
+              {["100", "300", "500", "1000"].map((amount) => (
+                <button key={amount} type="button" className="sv-chip normal-case" onClick={() => setTopupAmount(amount)}>
+                  Rs {amount}
+                </button>
+              ))}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
 
-      {walletPayments && (
-        <div style={paymentModeBanner(walletPayments.mode)}>
-          {walletPayments.helper_text}
-        </div>
-      )}
-
-      {(feedbackMessage || errorMessage) && (
-        <div style={messageBanner(errorMessage ? "error" : "success")}>
-          {errorMessage || feedbackMessage}
-        </div>
-      )}
-
-      <div style={walletGrid}>
-        <form style={actionCard} onSubmit={startWalletTopup}>
-          <div style={cardHeader}>
-            <div>
-              <p style={cardEyebrow}>Top up</p>
-              <h3 style={cardTitle}>Add money with Razorpay</h3>
+          <aside className="sv-card bg-[linear-gradient(135deg,#0f172a_0%,#132033_60%,#0f766e_100%)] text-white">
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-300">Available balance</p>
+            <h2 className="mt-4 text-4xl font-bold">{formatCurrency(balance)}</h2>
+            <p className="mt-3 text-sm leading-7 text-slate-300">
+              Used for joins, escrow-backed buy-together groups, and creator payouts.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {topupConfig ? <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]">{topupConfig.mode_label}</span> : null}
+              {payoutConfig ? <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]">{payoutConfig.mode_label}</span> : null}
             </div>
-            <span style={highlightPill}>UPI, cards, netbanking</span>
-          </div>
+          </aside>
+        </section>
 
-          <label style={label}>
-            Amount
-            <input
-              type="number"
-              min="1"
-              step="0.01"
-              value={topupAmount}
-              onChange={(event) => setTopupAmount(event.target.value)}
-              placeholder="Enter amount"
-              style={input}
-            />
-          </label>
+        {topupConfig ? <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">{topupConfig.helper_text}</div> : null}
+        {payoutConfig ? <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">{payoutConfig.helper_text}</div> : null}
+        {feedbackMessage ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{feedbackMessage}</div> : null}
+        {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{errorMessage}</div> : null}
 
-          <p style={supportingText}>
-            Your wallet is credited only after the payment is verified successfully.
-          </p>
-
-          <button
-            type="submit"
-            style={primaryButton}
-            disabled={workingAction !== "" || !walletPayments?.topup_enabled}
-          >
-            {workingAction === "add" ? "Opening checkout..." : "Add money securely"}
-          </button>
-        </form>
-
-        <form style={actionCard} onSubmit={withdrawMoney}>
-          <div style={cardHeader}>
-            <div>
-              <p style={cardEyebrow}>Withdraw</p>
-              <h3 style={cardTitle}>Move money out of wallet</h3>
+        <section className="grid gap-6 xl:grid-cols-3">
+          <form className="sv-card space-y-4" onSubmit={startWalletTopup}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="sv-eyebrow">Top Up</p>
+                <h2 className="sv-title mt-2">Add money with Razorpay</h2>
+              </div>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">UPI, cards, netbanking</span>
             </div>
-            <span style={neutralPill}>Wallet balance required</span>
-          </div>
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Amount
+              <input className="sv-input" type="number" min="1" step="0.01" value={topupAmount} onChange={(event) => setTopupAmount(event.target.value)} />
+            </label>
+            <p className="text-sm leading-7 text-slate-600">Your wallet is credited only after the payment is verified successfully.</p>
+            <button className="sv-btn-primary w-full justify-center" type="submit" disabled={workingAction !== "" || !topupConfig?.topup_enabled}>
+              {workingAction === "topup" ? "Opening checkout..." : "Add money securely"}
+            </button>
+          </form>
 
-          <label style={label}>
-            Amount
-            <input
-              type="number"
-              min="1"
-              step="0.01"
-              value={withdrawAmount}
-              onChange={(event) => setWithdrawAmount(event.target.value)}
-              placeholder="Enter withdrawal amount"
-              style={input}
-            />
-          </label>
+          <form className="sv-card space-y-4" onSubmit={savePayoutAccount}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="sv-eyebrow">Payout Method</p>
+                <h2 className="sv-title mt-2">Save where withdrawals should go</h2>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Bank or UPI</span>
+            </div>
 
-          <p style={supportingText}>
-            Withdrawals reduce your in-app wallet balance immediately so your activity stays in sync.
-          </p>
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Destination type
+              <select className="sv-input" value={payoutForm.account_type} onChange={(event) => {
+                const accountType = event.target.value;
+                setPayoutForm((current) => ({ ...current, account_type: accountType, bank_account_number: "", confirm_bank_account_number: "", vpa_address: "" }));
+                setWithdrawMode(accountType === "vpa" ? "UPI" : "IMPS");
+              }}>
+                <option value="bank_account">Bank account</option>
+                <option value="vpa">UPI ID</option>
+              </select>
+            </label>
 
-          <button type="submit" style={secondaryButton} disabled={workingAction !== ""}>
-            {workingAction === "withdraw" ? "Withdrawing..." : "Withdraw money"}
-          </button>
-        </form>
-      </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                Contact name
+                <input className="sv-input" value={payoutForm.contact_name} onChange={(event) => setPayoutForm((current) => ({ ...current, contact_name: event.target.value }))} />
+              </label>
+              <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                Contact phone
+                <input className="sv-input" value={payoutForm.contact_phone} onChange={(event) => setPayoutForm((current) => ({ ...current, contact_phone: event.target.value }))} />
+              </label>
+            </div>
 
-      <section style={historySection}>
-        <div style={historyHeader}>
-          <div>
-            <p style={cardEyebrow}>History</p>
-            <h3 style={cardTitle}>Transaction activity</h3>
-          </div>
-          <span style={historyMeta}>{transactions.length} record(s)</span>
-        </div>
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Contact email
+              <input className="sv-input" type="email" value={payoutForm.contact_email} onChange={(event) => setPayoutForm((current) => ({ ...current, contact_email: event.target.value }))} />
+            </label>
 
-        <div style={historyList}>
-          {transactions.length === 0 ? (
-            <p style={emptyState}>No transactions yet.</p>
-          ) : (
-            transactions.map((transaction) => (
-              <div key={transaction.id} style={transactionCard}>
-                <div>
-                  <div style={transactionHeader}>
-                    <span style={transactionTitle}>{transaction.title}</span>
-                    <span style={typePill(transaction.type)}>{transaction.type}</span>
-                  </div>
-                  <p style={transactionText}>{transaction.description}</p>
-                  <p style={metaText}>
-                    {transaction.mode_label}
-                    {transaction.group_name ? ` | ${transaction.group_name}` : ""}
-                  </p>
+            {payoutForm.account_type === "bank_account" ? (
+              <>
+                <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                  Account holder name
+                  <input className="sv-input" value={payoutForm.bank_account_holder_name} onChange={(event) => setPayoutForm((current) => ({ ...current, bank_account_holder_name: event.target.value }))} />
+                </label>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                    Account number
+                    <input className="sv-input" type="password" value={payoutForm.bank_account_number} onChange={(event) => setPayoutForm((current) => ({ ...current, bank_account_number: event.target.value }))} placeholder={payoutAccount?.bank_account_last4 ? "Re-enter to update" : "Account number"} />
+                  </label>
+                  <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                    Confirm account number
+                    <input className="sv-input" type="password" value={payoutForm.confirm_bank_account_number} onChange={(event) => setPayoutForm((current) => ({ ...current, confirm_bank_account_number: event.target.value }))} />
+                  </label>
                 </div>
+                <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                  IFSC
+                  <input className="sv-input" value={payoutForm.bank_account_ifsc} onChange={(event) => setPayoutForm((current) => ({ ...current, bank_account_ifsc: event.target.value.toUpperCase() }))} />
+                </label>
+              </>
+            ) : (
+              <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                UPI ID
+                <input className="sv-input" value={payoutForm.vpa_address} onChange={(event) => setPayoutForm((current) => ({ ...current, vpa_address: event.target.value }))} placeholder={payoutAccount?.account_type === "vpa" ? "Re-enter to update" : "name@bank"} />
+              </label>
+            )}
 
-                <div style={transactionRight}>
-                  <p style={amountText(transaction.type)}>
+            <p className="text-sm leading-7 text-slate-600">
+              {payoutAccount ? `Saved destination: ${payoutAccount.masked_destination || "Ready to use"}` : "Save this once so future withdrawals can go through the real payout rail."}
+            </p>
+            <button className="sv-btn-secondary w-full justify-center" type="submit" disabled={workingAction !== "" || !payoutConfig?.payout_enabled}>
+              {workingAction === "save-payout" ? "Saving payout method..." : "Save payout method"}
+            </button>
+          </form>
+
+          <form className="sv-card space-y-4" onSubmit={withdrawMoney}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="sv-eyebrow">Withdraw</p>
+                <h2 className="sv-title mt-2">Send money to your payout method</h2>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                {payoutAccount ? payoutAccount.masked_destination : "Payout method required"}
+              </span>
+            </div>
+
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Amount
+              <input className="sv-input" type="number" min="1" step="0.01" value={withdrawAmount} onChange={(event) => setWithdrawAmount(event.target.value)} />
+            </label>
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Transfer mode
+              <select className="sv-input" value={payoutAccount?.account_type === "vpa" ? "UPI" : withdrawMode} onChange={(event) => setWithdrawMode(event.target.value)} disabled={payoutAccount?.account_type === "vpa"}>
+                {payoutModes.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
+              </select>
+            </label>
+
+            <p className="text-sm leading-7 text-slate-600">
+              Real withdrawals reserve wallet balance immediately. Failed or reversed payouts are returned automatically.
+            </p>
+            <button className="sv-btn-primary w-full justify-center" type="submit" disabled={!payoutConfig?.payout_enabled || !payoutAccount || workingAction !== ""}>
+              {workingAction === "withdraw" ? "Creating payout..." : "Withdraw to payout method"}
+            </button>
+          </form>
+        </section>
+
+        <section className="sv-card">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="sv-eyebrow">Payout Requests</p>
+              <h2 className="sv-title mt-2">Recent withdrawals</h2>
+            </div>
+            <span className="text-sm text-slate-500">{payouts.length} request(s)</span>
+          </div>
+          <div className="mt-5 space-y-4">
+            {payouts.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">No payout requests yet.</div>
+            ) : payouts.map((payout) => {
+              const canSync = ["pending", "queued", "processing"].includes(payout.status);
+              return (
+                <div key={payout.id} className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-white/80 p-5 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-base font-semibold text-slate-950">{payout.destination_label}</p>
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(payout.status)}`}>{payout.status}</span>
+                    </div>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">{payout.failure_reason || `Mode: ${payout.mode}${payout.utr ? ` | UTR: ${payout.utr}` : ""}`}</p>
+                    <p className="text-xs text-slate-500">Requested on {new Date(payout.requested_at).toLocaleString()}</p>
+                  </div>
+                  <div className="text-left md:text-right">
+                    <p className="text-lg font-semibold text-rose-700">- {formatCurrency(payout.amount)}</p>
+                    {canSync ? (
+                      <button type="button" className="sv-btn-secondary mt-3" onClick={() => syncPayout(payout.id)} disabled={workingAction !== "" && workingAction !== `sync-${payout.id}`}>
+                        {workingAction === `sync-${payout.id}` ? "Refreshing..." : "Refresh status"}
+                      </button>
+                    ) : (
+                      <p className="mt-2 text-xs text-slate-500">{payout.processed_at ? new Date(payout.processed_at).toLocaleString() : "Status settled"}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="sv-card">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="sv-eyebrow">History</p>
+              <h2 className="sv-title mt-2">Transaction activity</h2>
+            </div>
+            <span className="text-sm text-slate-500">{transactions.length} record(s)</span>
+          </div>
+          <div className="mt-5 space-y-4">
+            {transactions.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">No transactions yet.</div>
+            ) : transactions.map((transaction) => (
+              <div key={transaction.id} className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-white/80 p-5 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-base font-semibold text-slate-950">{transaction.title}</p>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${transaction.type === "credit" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{transaction.type}</span>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(transaction.status)}`}>{transaction.status}</span>
+                  </div>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">{transaction.description}</p>
+                  <p className="text-xs text-slate-500">{transaction.mode_label}{transaction.group_name ? ` | ${transaction.group_name}` : ""}</p>
+                </div>
+                <div className="text-left md:text-right">
+                  <p className={`text-lg font-semibold ${transaction.type === "credit" ? "text-emerald-700" : "text-rose-700"}`}>
                     {transaction.type === "credit" ? "+" : "-"} {formatCurrency(transaction.amount)}
                   </p>
-                  <p style={metaText}>
-                    {new Date(transaction.created_at).toLocaleDateString()}
-                  </p>
+                  <p className="mt-2 text-xs text-slate-500">{new Date(transaction.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
-
-const container = {
-  padding: "32px",
-  background:
-    "radial-gradient(circle at top left, rgba(15,118,110,0.11), transparent 30%), radial-gradient(circle at bottom right, rgba(187,122,20,0.10), transparent 24%), linear-gradient(180deg, #f7f2e9 0%, #eef4f6 100%)",
-  minHeight: "100vh",
-};
-
-const hero = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-  gap: "20px",
-  alignItems: "stretch",
-};
-
-const heroCopy = {
-  background: "rgba(255,255,255,0.80)",
-  borderRadius: "32px",
-  border: "1px solid rgba(255, 255, 255, 0.72)",
-  boxShadow: "0 28px 70px rgba(15, 23, 42, 0.09)",
-  padding: "28px",
-  backdropFilter: "blur(14px)",
-};
-
-const eyebrow = {
-  margin: 0,
-  fontSize: "12px",
-  letterSpacing: "0.24em",
-  textTransform: "uppercase",
-  color: "#0f766e",
-  fontWeight: 700,
-};
-
-const heroTitle = {
-  margin: "10px 0 14px",
-  color: "#0f172a",
-  fontSize: "clamp(30px, 4vw, 44px)",
-  lineHeight: 1.02,
-  fontWeight: 800,
-};
-
-const heroText = {
-  margin: 0,
-  color: "#475569",
-  fontSize: "17px",
-  lineHeight: 1.7,
-  maxWidth: "720px",
-};
-
-const quickTopups = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "10px",
-  marginTop: "22px",
-};
-
-const quickAmountButton = (active) => ({
-  border: active ? "1px solid #0f766e" : "1px solid #cbd5e1",
-  background: active ? "#ccfbf1" : "#ffffff",
-  color: active ? "#115e59" : "#0f172a",
-  borderRadius: "999px",
-  padding: "10px 14px",
-  fontWeight: 700,
-  cursor: "pointer",
-});
-
-const balanceCard = {
-  background: "linear-gradient(145deg, #0f172a 0%, #162033 48%, #0f766e 100%)",
-  color: "#ffffff",
-  borderRadius: "32px",
-  padding: "28px",
-  boxShadow: "0 34px 90px rgba(15, 23, 42, 0.22)",
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "space-between",
-};
-
-const cardLabel = {
-  margin: 0,
-  fontSize: "13px",
-  letterSpacing: "0.16em",
-  textTransform: "uppercase",
-  color: "rgba(255,255,255,0.74)",
-};
-
-const balanceValue = {
-  margin: "14px 0 10px",
-  fontSize: "40px",
-  lineHeight: 1,
-};
-
-const balanceHint = {
-  margin: 0,
-  color: "rgba(255,255,255,0.78)",
-  lineHeight: 1.7,
-};
-
-const modePill = (mode) => ({
-  alignSelf: "flex-start",
-  marginTop: "18px",
-  background:
-    mode === "live" ? "rgba(16, 185, 129, 0.20)" : mode === "test" ? "rgba(250, 204, 21, 0.20)" : "rgba(148, 163, 184, 0.20)",
-  color:
-    mode === "live" ? "#bbf7d0" : mode === "test" ? "#fde68a" : "rgba(255,255,255,0.82)",
-  borderRadius: "999px",
-  padding: "8px 12px",
-  fontSize: "12px",
-  fontWeight: 700,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-});
-
-const paymentModeBanner = (mode) => ({
-  marginTop: "18px",
-  padding: "14px 18px",
-  borderRadius: "16px",
-  border:
-    mode === "live" ? "1px solid #a7f3d0" : mode === "test" ? "1px solid #fde68a" : "1px solid #cbd5e1",
-  background:
-    mode === "live" ? "#ecfdf5" : mode === "test" ? "#fefce8" : "#f8fafc",
-  color:
-    mode === "live" ? "#047857" : mode === "test" ? "#92400e" : "#475569",
-  fontWeight: 600,
-});
-
-const walletGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-  gap: "18px",
-  marginTop: "22px",
-};
-
-const actionCard = {
-  background: "rgba(255,255,255,0.82)",
-  borderRadius: "30px",
-  border: "1px solid rgba(255,255,255,0.72)",
-  boxShadow: "0 26px 70px rgba(15, 23, 42, 0.08)",
-  padding: "24px",
-  display: "flex",
-  flexDirection: "column",
-  gap: "16px",
-  backdropFilter: "blur(12px)",
-};
-
-const cardHeader = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "14px",
-  alignItems: "flex-start",
-  flexWrap: "wrap",
-};
-
-const cardEyebrow = {
-  margin: 0,
-  fontSize: "12px",
-  letterSpacing: "0.2em",
-  textTransform: "uppercase",
-  color: "#64748b",
-  fontWeight: 700,
-};
-
-const cardTitle = {
-  margin: "8px 0 0",
-  color: "#0f172a",
-  fontSize: "26px",
-  lineHeight: 1.05,
-  fontWeight: 800,
-};
-
-const highlightPill = {
-  background: "#ccfbf1",
-  color: "#115e59",
-  borderRadius: "999px",
-  padding: "8px 12px",
-  fontSize: "12px",
-  fontWeight: 700,
-};
-
-const neutralPill = {
-  background: "#e2e8f0",
-  color: "#334155",
-  borderRadius: "999px",
-  padding: "8px 12px",
-  fontSize: "12px",
-  fontWeight: 700,
-};
-
-const label = {
-  display: "grid",
-  gap: "8px",
-  color: "#334155",
-  fontWeight: 700,
-};
-
-const input = {
-  border: "1px solid rgba(148, 163, 184, 0.24)",
-  borderRadius: "20px",
-  padding: "14px 16px",
-  fontSize: "16px",
-  background: "rgba(255,255,255,0.92)",
-  outline: "none",
-};
-
-const supportingText = {
-  margin: 0,
-  color: "#64748b",
-  lineHeight: 1.6,
-};
-
-const primaryButton = {
-  background: "linear-gradient(135deg, #0f172a 0%, #1f3a4a 100%)",
-  color: "#ffffff",
-  border: "none",
-  borderRadius: "999px",
-  padding: "14px 18px",
-  fontWeight: 700,
-  cursor: "pointer",
-  boxShadow: "0 12px 24px rgba(15, 23, 42, 0.14)",
-};
-
-const secondaryButton = {
-  background: "rgba(255,255,255,0.88)",
-  color: "#0f172a",
-  border: "1px solid rgba(148, 163, 184, 0.24)",
-  borderRadius: "999px",
-  padding: "14px 18px",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const historySection = {
-  marginTop: "24px",
-  background: "rgba(255,255,255,0.82)",
-  borderRadius: "30px",
-  border: "1px solid rgba(255,255,255,0.72)",
-  boxShadow: "0 26px 70px rgba(15, 23, 42, 0.08)",
-  padding: "24px",
-  backdropFilter: "blur(12px)",
-};
-
-const historyHeader = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "16px",
-  alignItems: "center",
-  flexWrap: "wrap",
-};
-
-const historyMeta = {
-  color: "#64748b",
-  fontSize: "14px",
-};
-
-const historyList = {
-  marginTop: "10px",
-};
-
-const emptyState = {
-  margin: "18px 0 0",
-  color: "#64748b",
-};
-
-const transactionCard = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "18px",
-  padding: "18px 0",
-  borderBottom: "1px solid #e2e8f0",
-};
-
-const transactionHeader = {
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
-  flexWrap: "wrap",
-};
-
-const transactionTitle = {
-  fontWeight: 700,
-  color: "#0f172a",
-};
-
-const transactionText = {
-  margin: "6px 0",
-  color: "#475569",
-  lineHeight: 1.6,
-};
-
-const transactionRight = {
-  textAlign: "right",
-  minWidth: "160px",
-};
-
-const metaText = {
-  margin: 0,
-  color: "#64748b",
-  fontSize: "13px",
-};
-
-const amountText = (type) => ({
-  margin: 0,
-  fontWeight: 700,
-  color: type === "credit" ? "#15803d" : "#b91c1c",
-});
-
-const typePill = (type) => ({
-  background: type === "credit" ? "#dcfce7" : "#fee2e2",
-  color: type === "credit" ? "#166534" : "#991b1b",
-  padding: "4px 10px",
-  borderRadius: "999px",
-  fontSize: "12px",
-  fontWeight: 700,
-  textTransform: "capitalize",
-});
-
-const messageBanner = (tone) => ({
-  marginTop: "18px",
-  padding: "14px 18px",
-  borderRadius: "16px",
-  border: tone === "error" ? "1px solid #fecaca" : "1px solid #a7f3d0",
-  background: tone === "error" ? "#fff1f2" : "#ecfdf5",
-  color: tone === "error" ? "#b91c1c" : "#047857",
-  fontWeight: 600,
-});

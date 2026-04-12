@@ -236,6 +236,157 @@ class WalletTopupOrder(models.Model):
         return f"{self.user.username} top-up {self.amount} {self.currency}"
 
 
+class PayoutAccount(models.Model):
+    ACCOUNT_TYPE_CHOICES = (
+        ("bank_account", "Bank Account"),
+        ("vpa", "UPI VPA"),
+    )
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="payout_account")
+    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES, default="bank_account")
+    contact_name = models.CharField(max_length=120)
+    contact_email = models.EmailField(blank=True, default="")
+    contact_phone = models.CharField(max_length=20, blank=True, default="")
+    contact_type = models.CharField(max_length=20, default="customer")
+    provider_contact_id = models.CharField(max_length=100, blank=True, default="")
+    provider_fund_account_id = models.CharField(max_length=100, blank=True, default="")
+    bank_account_holder_name = models.CharField(max_length=120, blank=True, default="")
+    bank_account_ifsc = models.CharField(max_length=20, blank=True, default="")
+    bank_account_number = models.CharField(max_length=255, blank=True, default="")
+    bank_account_last4 = models.CharField(max_length=4, blank=True, default="")
+    vpa_address = models.CharField(max_length=255, blank=True, default="")
+    vpa_handle = models.CharField(max_length=255, blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    last_error = models.TextField(blank=True, default="")
+    last_synced_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at", "-id"]
+
+    def __str__(self):
+        return f"{self.user.username} payout account ({self.account_type})"
+
+    def set_bank_account_number(self, account_number):
+        normalized = (account_number or "").strip()
+        self.bank_account_number = encrypt_secret(normalized) if normalized else ""
+        self.bank_account_last4 = normalized[-4:] if len(normalized) >= 4 else normalized
+
+    def get_bank_account_number(self):
+        return decrypt_secret(self.bank_account_number)
+
+    def set_vpa_address(self, vpa_address):
+        normalized = (vpa_address or "").strip().lower()
+        self.vpa_address = encrypt_secret(normalized) if normalized else ""
+        self.vpa_handle = normalized
+
+    def get_vpa_address(self):
+        return decrypt_secret(self.vpa_address)
+
+    def clear_bank_account(self):
+        self.bank_account_holder_name = ""
+        self.bank_account_ifsc = ""
+        self.bank_account_number = ""
+        self.bank_account_last4 = ""
+
+    def clear_vpa(self):
+        self.vpa_address = ""
+        self.vpa_handle = ""
+
+    def get_masked_destination(self):
+        if self.account_type == "vpa":
+            address = self.get_vpa_address()
+            if not address:
+                return ""
+            username, separator, handle = address.partition("@")
+            if not separator:
+                return address
+            if len(username) <= 2:
+                masked_username = "*" * len(username)
+            else:
+                masked_username = f"{username[:2]}{'*' * max(len(username) - 2, 1)}"
+            return f"{masked_username}@{handle}"
+
+        if not self.bank_account_last4:
+            return ""
+        return f"Account ending {self.bank_account_last4}"
+
+
+class WalletPayout(models.Model):
+    STATUS_CHOICES = (
+        ("created", "Created"),
+        ("pending", "Pending"),
+        ("queued", "Queued"),
+        ("processing", "Processing"),
+        ("processed", "Processed"),
+        ("cancelled", "Cancelled"),
+        ("reversed", "Reversed"),
+        ("rejected", "Rejected"),
+        ("failed", "Failed"),
+    )
+    MODE_CHOICES = (
+        ("UPI", "UPI"),
+        ("IMPS", "IMPS"),
+        ("NEFT", "NEFT"),
+        ("RTGS", "RTGS"),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="wallet_payouts")
+    payout_account = models.ForeignKey(
+        PayoutAccount,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="payouts",
+    )
+    transaction = models.OneToOneField(
+        "Transaction",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="wallet_payout",
+    )
+    refund_transaction = models.OneToOneField(
+        "Transaction",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="wallet_payout_refund",
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    amount_subunits = models.PositiveIntegerField()
+    currency = models.CharField(max_length=3, default="INR")
+    provider = models.CharField(max_length=30, default="razorpayx")
+    provider_payout_id = models.CharField(max_length=100, null=True, blank=True, unique=True)
+    provider_contact_id = models.CharField(max_length=100, blank=True, default="")
+    provider_fund_account_id = models.CharField(max_length=100, blank=True, default="")
+    provider_reference_id = models.CharField(max_length=40, unique=True)
+    idempotency_key = models.CharField(max_length=80, unique=True)
+    source_account_number = models.CharField(max_length=40)
+    mode = models.CharField(max_length=10, choices=MODE_CHOICES)
+    purpose = models.CharField(max_length=30, default="payout")
+    narration = models.CharField(max_length=30, blank=True, default="")
+    destination_label = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="created")
+    status_details = models.JSONField(default=dict, blank=True)
+    failure_reason = models.TextField(blank=True, default="")
+    provider_status_source = models.CharField(max_length=80, blank=True, default="")
+    utr = models.CharField(max_length=120, blank=True, default="")
+    fees = models.PositiveIntegerField(default=0)
+    tax = models.PositiveIntegerField(default=0)
+    processed_at = models.DateTimeField(null=True, blank=True)
+    wallet_restored_at = models.DateTimeField(null=True, blank=True)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-requested_at", "-id"]
+
+    def __str__(self):
+        return f"{self.user.username} payout {self.amount} {self.currency}"
+
+
 class RazorpayWebhookEvent(models.Model):
     STATUS_CHOICES = (
         ("processed", "Processed"),
@@ -247,6 +398,27 @@ class RazorpayWebhookEvent(models.Model):
     event_type = models.CharField(max_length=80)
     payment_id = models.CharField(max_length=100, blank=True, default="")
     provider_order_id = models.CharField(max_length=100, blank=True, default="")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="processed")
+    notes = models.TextField(blank=True, default="")
+    processed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-processed_at", "-id"]
+
+    def __str__(self):
+        return f"{self.event_type} ({self.event_id})"
+
+
+class RazorpayXPayoutWebhookEvent(models.Model):
+    STATUS_CHOICES = (
+        ("processed", "Processed"),
+        ("ignored", "Ignored"),
+        ("failed", "Failed"),
+    )
+
+    event_id = models.CharField(max_length=120, unique=True)
+    event_type = models.CharField(max_length=80)
+    payout_id = models.CharField(max_length=100, blank=True, default="")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="processed")
     notes = models.TextField(blank=True, default="")
     processed_at = models.DateTimeField(auto_now_add=True)

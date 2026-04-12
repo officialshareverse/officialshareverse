@@ -3,7 +3,7 @@ import PublicPageShell from "../components/PublicPageShell";
 const contactCards = [
   {
     title: "General support",
-    detail: "support@shareverse.app",
+    detail: "support@shareverse.in",
     helper: "Use this inbox for account help, refunds, payment issues, and launch support requests.",
   },
   {

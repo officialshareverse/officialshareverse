@@ -15,10 +15,13 @@ Use this list before opening ShareVerse to real users.
 
 - Razorpay live keys configured
 - Razorpay webhook live and signing correctly
+- RazorpayX live keys configured
+- RazorpayX payout webhook live and signing correctly
 - Real top-up flow tested with a small live payment
+- Real payout flow tested with a small live withdrawal
 - Wallet credit verified after webhook delivery
+- Wallet restoration verified for a failed or reversed payout
 - Refund path tested for an expired buy-together group
-- Decide whether to block or label wallet withdrawals until bank payout rails are implemented
 
 ## Security
 
@@ -29,20 +32,23 @@ Use this list before opening ShareVerse to real users.
 - Redis configured for production throttling
 - backend `.env` files excluded from git
 - access to payment secrets restricted to backend only
+- access to payout account details restricted to authenticated owners only
 
 ## Infrastructure
 
+- Render blueprint imported successfully
+- `shareverse-web` and `shareverse-api` are live
 - PostgreSQL configured and backed up
 - Redis configured
 - backend media storage is persistent
-- domain and HTTPS configured
+- `shareverse.in` and `api.shareverse.in` resolve correctly over HTTPS
 - CORS and allowed hosts match production domains
 - scheduled refund processor runs every 5 minutes
 - logging and error monitoring are enabled
 
 ## Support and Operations
 
-- `support@shareverse.app` or your support inbox is active
+- `support@shareverse.in` or your support inbox is active
 - refund policy matches actual operations
 - dispute handling process is documented internally
 - someone is monitoring payment failures and webhook issues

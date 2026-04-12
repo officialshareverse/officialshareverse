@@ -5,7 +5,7 @@ django-cors-headers==4.9.0
 django-filter==25.2
 cryptography==44.0.0
 redis==7.4.0
-
-# Optional production packages
-# psycopg[binary]>=3.2,<4.0
-
+dj-database-url==2.3.0
+gunicorn==23.0.0
+psycopg[binary]==3.2.9
+whitenoise==6.9.0
