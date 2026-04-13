@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 
+const streamingServicesImage = `${process.env.PUBLIC_URL}/streaming-services-collage.png`;
+
 function formatCurrency(value) {
   const numeric = Number(value || 0);
   return `Rs ${numeric.toFixed(2)}`;
@@ -128,20 +130,34 @@ export default function Home() {
           </div>
         ) : null}
 
-        <section className="sv-card-solid text-center md:text-left">
-          <p className="sv-eyebrow">Home</p>
-          <h1 className="mt-4 text-3xl font-bold leading-tight text-slate-950 md:text-5xl">
-            Split the cost of digital plans in one simple place.
-          </h1>
-          <p className="mx-auto mt-4 max-w-3xl text-base leading-8 text-slate-600 md:mx-0">
-            ShareVerse helps people organize shared costs for subscriptions, courses, memberships,
-            and software with clear group activity, chat, updates, and participation tracking.
-          </p>
+        <section className="sv-card-solid">
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(280px,0.92fr)]">
+            <div className="text-center md:text-left">
+              <p className="sv-eyebrow">Home</p>
+              <h1 className="mt-4 text-3xl font-bold leading-tight text-slate-950 md:text-5xl">
+                Split the cost of digital plans in one simple place.
+              </h1>
+              <p className="mx-auto mt-4 max-w-3xl text-base leading-8 text-slate-600 md:mx-0">
+                ShareVerse helps people organize shared costs for subscriptions, courses, memberships,
+                and software with clear group activity, chat, updates, and participation tracking.
+              </p>
 
-          <div className="mt-7 flex flex-wrap justify-center gap-3 md:justify-start">
-            <PrimaryButton onClick={() => navigate("/groups")}>Browse groups</PrimaryButton>
-            <SecondaryButton onClick={() => navigate("/create")}>Create group</SecondaryButton>
-            <SecondaryButton onClick={() => navigate("/my-shared")}>My groups</SecondaryButton>
+              <div className="mt-7 flex flex-wrap justify-center gap-3 md:justify-start">
+                <PrimaryButton onClick={() => navigate("/groups")}>Browse groups</PrimaryButton>
+                <SecondaryButton onClick={() => navigate("/create")}>Create group</SecondaryButton>
+                <SecondaryButton onClick={() => navigate("/my-shared")}>My groups</SecondaryButton>
+              </div>
+            </div>
+
+            <div className="mx-auto w-full max-w-md">
+              <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f7fafc_100%)] p-3 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+                <img
+                  src={streamingServicesImage}
+                  alt="Popular streaming and digital subscription services shown in colorful circles."
+                  className="w-full rounded-[22px] object-cover"
+                />
+              </div>
+            </div>
           </div>
         </section>
 

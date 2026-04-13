@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 import PublicFooter from "../components/PublicFooter";
 
-const heroIllustrationSrc = "/streaming-services-collage.png";
+const heroIllustrationSrc = `${process.env.PUBLIC_URL}/streaming-services-collage.png`;
 
 const featureNotes = [
   "Split costs with a group",
