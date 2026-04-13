@@ -14,6 +14,7 @@ import NotificationsInbox from "./pages/NotificationsInbox";
 import PrivacyPage from "./pages/PrivacyPage";
 import Profile from "./pages/Profile";
 import RefundPolicyPage from "./pages/RefundPolicyPage";
+import ShippingPolicyPage from "./pages/ShippingPolicyPage";
 import Signup from "./pages/Signup";
 import SupportPage from "./pages/SupportPage";
 import TermsPage from "./pages/TermsPage";
@@ -74,6 +75,7 @@ function App() {
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/refunds" element={<RefundPolicyPage />} />
+        <Route path="/shipping" element={<ShippingPolicyPage />} />
         <Route path="/support" element={<SupportPage />} />
 
         <Route

@@ -259,6 +259,10 @@ export default function Login({ setIsAuth }) {
             <Link to="/privacy" className="font-semibold text-teal-800 hover:text-teal-700">
               Privacy Policy
             </Link>
+            ,{" "}
+            <Link to="/shipping" className="font-semibold text-teal-800 hover:text-teal-700">
+              Shipping Policy
+            </Link>
             , and{" "}
             <Link to="/support" className="font-semibold text-teal-800 hover:text-teal-700">
               Support

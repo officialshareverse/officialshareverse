@@ -4,6 +4,7 @@ const footerLinks = [
   { to: "/terms", label: "Terms" },
   { to: "/privacy", label: "Privacy" },
   { to: "/refunds", label: "Refund Policy" },
+  { to: "/shipping", label: "Shipping Policy" },
   { to: "/support", label: "Support" },
 ];
 

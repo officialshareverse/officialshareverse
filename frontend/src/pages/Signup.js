@@ -344,6 +344,10 @@ export default function Signup() {
                     <Link to="/refunds" className="font-semibold text-teal-800 hover:text-teal-700">
                       Refund Policy
                     </Link>
+                    ,{" "}
+                    <Link to="/shipping" className="font-semibold text-teal-800 hover:text-teal-700">
+                      Shipping Policy
+                    </Link>
                     .
                   </p>
                 </form>
