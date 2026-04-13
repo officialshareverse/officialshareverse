@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 
 import PublicFooter from "../components/PublicFooter";
 
+const heroIllustrationSrc = "/streaming-services-collage.png";
+
 const featureNotes = [
   "Split costs with a group",
   "Group chat for members",
@@ -61,30 +63,47 @@ export default function Landing() {
           </div>
         </header>
 
-        <section className="sv-light-hero text-center">
-          <p className="sv-eyebrow">Split more. Pay less.</p>
-          <h1 className="sv-display mx-auto mt-4 max-w-4xl">
-            A simple platform for splitting the cost of subscriptions, courses, software, and memberships.
-          </h1>
-          <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-600">
-            ShareVerse helps people organize group payments, participation, and member coordination for digital plans with a cleaner flow for updates, accountability, and shared costs.
-          </p>
+        <section className="sv-light-hero">
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
+            <div className="text-center lg:text-left">
+              <p className="sv-eyebrow">Split more. Pay less.</p>
+              <h1 className="sv-display mt-4 max-w-4xl">
+                A simple platform for splitting the cost of subscriptions, courses, software, and memberships.
+              </h1>
+              <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
+                ShareVerse helps people organize group payments, participation, and member coordination for digital
+                plans with a cleaner flow for updates, accountability, and shared costs.
+              </p>
 
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link to="/signup" className="sv-btn-primary">
-              Get started
-            </Link>
-            <Link to="/login" className="sv-btn-secondary">
-              I already have an account
-            </Link>
-          </div>
+              <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
+                <Link to="/signup" className="sv-btn-primary">
+                  Get started
+                </Link>
+                <Link to="/login" className="sv-btn-secondary">
+                  I already have an account
+                </Link>
+              </div>
 
-          <div className="mt-8 flex flex-wrap justify-center gap-2">
-            {featureNotes.map((note) => (
-              <span key={note} className="sv-chip normal-case tracking-[0.04em]">
-                {note}
-              </span>
-            ))}
+              <div className="mt-8 flex flex-wrap justify-center gap-2 lg:justify-start">
+                {featureNotes.map((note) => (
+                  <span key={note} className="sv-chip normal-case tracking-[0.04em]">
+                    {note}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="mx-auto w-full max-w-xl">
+              <div className="overflow-hidden rounded-[32px] border border-white/75 bg-white/88 p-4 shadow-[0_24px_60px_rgba(15,23,42,0.1)]">
+                <div className="rounded-[28px] bg-[radial-gradient(circle_at_top_right,rgba(236,72,153,0.12),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(34,197,94,0.12),transparent_26%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3">
+                  <img
+                    src={heroIllustrationSrc}
+                    alt="Popular streaming and digital subscription services shown as colorful circles."
+                    className="w-full rounded-[24px] object-cover"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
