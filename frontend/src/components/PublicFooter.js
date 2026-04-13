@@ -25,7 +25,7 @@ export default function PublicFooter({ compact = false }) {
             ShareVerse
           </p>
           <p className="mt-2 text-sm uppercase tracking-[0.18em] text-slate-500">
-            Split costs. Coordinate clearly.
+            Split more. Pay less.
           </p>
         </div>
 

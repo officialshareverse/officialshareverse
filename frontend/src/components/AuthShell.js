@@ -44,7 +44,7 @@ export default function AuthShell({
               </Link>
 
               <p className="hidden text-sm uppercase tracking-[0.18em] text-slate-500 md:block">
-                Digital plan cost splitting and group coordination
+                Split more. Pay less.
               </p>
             </div>
 

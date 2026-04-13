@@ -62,7 +62,7 @@ export default function Landing() {
         </header>
 
         <section className="sv-light-hero text-center">
-          <p className="sv-eyebrow">Split costs. Coordinate clearly.</p>
+          <p className="sv-eyebrow">Split more. Pay less.</p>
           <h1 className="sv-display mx-auto mt-4 max-w-4xl">
             A simple platform for splitting the cost of subscriptions, courses, software, and memberships.
           </h1>
