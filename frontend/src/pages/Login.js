@@ -240,8 +240,8 @@ export default function Login({ setIsAuth }) {
   return (
     <AuthShell
       eyebrow="Welcome back"
-      title="Return to your wallet, groups, and shared plans."
-      subtitle="Log in to manage your subscription-sharing payouts, join active plans, or complete a buy-together group."
+      title="Return to your wallet, groups, and shared-cost plans."
+      subtitle="Log in to manage your group activity, join active digital plans, or complete a buy-together group."
       footer={
         <div className="space-y-3">
           <p className="text-sm text-slate-600">
@@ -280,7 +280,7 @@ export default function Login({ setIsAuth }) {
           Sign in to ShareVerse
         </h2>
         <p className="mt-3 text-sm leading-7 text-slate-600">
-          Use the username you created at signup. Your wallet, hosted groups, and member activity will be waiting for you.
+          Use the username you created at signup. Your wallet, joined groups, and member activity will be waiting for you.
         </p>
 
         {notice ? (

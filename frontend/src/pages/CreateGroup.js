@@ -46,7 +46,7 @@ function validateForm(form, isSharing) {
   const price = Number(form.price_per_slot);
 
   if (!form.subscription_name.trim()) {
-    errors.subscription_name = "Add the subscription name.";
+    errors.subscription_name = "Add the plan, course, or tool name.";
   }
 
   if (!form.total_slots || !Number.isInteger(slotCount) || slotCount <= 0) {
@@ -86,7 +86,7 @@ function getModeConfig(mode) {
       eyebrow: "Buy Together",
       title: "Create a funded group before purchase",
       description:
-        "Use this when nobody has purchased the subscription yet and members need to fill the group first.",
+        "Use this when nobody has purchased the plan, course, or tool yet and members need to fill the group first.",
       summaryTitle: "Group funding summary",
       amountLabel: "Contribution per member",
       targetLabel: "Group target when full",
@@ -99,9 +99,9 @@ function getModeConfig(mode) {
 
   return {
     eyebrow: "Share Existing Plan",
-    title: "Open paid slots on a subscription you already manage",
+    title: "Open paid spots on a plan you already manage",
     description:
-      "Use this when you already have the subscription and want to offer available slots for the current cycle.",
+      "Use this when you already have the plan, course, membership, or tool and want to coordinate shared costs for the current cycle.",
     summaryTitle: "Sharing summary",
     amountLabel: "Price per member",
     targetLabel: "Potential payout when full",
@@ -365,15 +365,15 @@ export default function CreateGroup() {
               <ModeCard
                 active={form.mode === "sharing"}
                 badgeTone="sky"
-                title="Share an existing plan"
-                description="Open paid slots on a subscription you already manage for the current billing window."
+                title="Split an existing plan"
+                description="Open paid spots on a digital plan, course, or tool you already manage for the current billing window."
                 onClick={() => handleModeChange("sharing")}
               />
               <ModeCard
                 active={form.mode === "group_buy"}
                 badgeTone="amber"
                 title="Buy together first"
-                description="Collect member commitments before the subscription is purchased and activated."
+                description="Collect member commitments before the plan, course, or tool is purchased and activated."
                 onClick={() => handleModeChange("group_buy")}
               />
             </div>
@@ -403,13 +403,13 @@ export default function CreateGroup() {
 
               <div className="mt-5 grid gap-5">
                 <div>
-                  <label className="text-sm font-semibold text-slate-700">Subscription name</label>
+                  <label className="text-sm font-semibold text-slate-700">Plan, course, or tool name</label>
                   <input
                     type="text"
                     name="subscription_name"
                     value={form.subscription_name}
                     onChange={handleChange}
-                    placeholder="Netflix, Spotify, YouTube Premium"
+                    placeholder="Netflix, Coursera, Canva, ChatGPT Plus"
                     className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
                   />
                   <InputError message={errors.subscription_name} />
@@ -439,7 +439,7 @@ export default function CreateGroup() {
                         </button>
                       ))
                     ) : (
-                      <span className="text-sm text-slate-500">Add any subscription name manually.</span>
+                      <span className="text-sm text-slate-500">Add any plan, course, or tool name manually.</span>
                     )}
                   </div>
                 </div>
@@ -537,7 +537,7 @@ export default function CreateGroup() {
                 <p className="text-xs uppercase tracking-[0.22em] text-sky-700">Owner Access</p>
                 <h3 className="mt-2 text-xl font-semibold text-slate-900">Secure access details</h3>
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                  Save the login details you manage for this subscription. Joined members do not see these details on-platform; access is coordinated privately by you.
+                  Save the login details you manage for this plan. Joined members do not see these details on-platform; access is coordinated privately by you.
                 </p>
 
                 <div className="mt-5 grid gap-5 md:grid-cols-2">
@@ -597,7 +597,7 @@ export default function CreateGroup() {
                 <h3 className="mt-2 text-xl font-semibold text-slate-900">What happens after the group fills</h3>
                 <div className="mt-4 grid gap-3 md:grid-cols-3">
                   <DetailRow label="1" value="Members join and funds are held" muted />
-                  <DetailRow label="2" value="Creator buys the subscription" muted />
+                  <DetailRow label="2" value="Creator completes the purchase" muted />
                   <DetailRow label="3" value="Members confirm access before payout" muted />
                 </div>
               </section>
@@ -638,7 +638,7 @@ export default function CreateGroup() {
 
               <div className="mt-5 space-y-3">
                 <DetailRow
-                  label="Subscription"
+                  label="Plan"
                   value={form.subscription_name.trim() || "Name not set yet"}
                   muted={!form.subscription_name.trim()}
                 />

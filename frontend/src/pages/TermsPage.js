@@ -4,7 +4,7 @@ const sections = [
   {
     title: "1. Using ShareVerse",
     body:
-      "ShareVerse helps members coordinate shared plans, buy-together groups, wallet-backed payments, and group communication. By using the platform, you agree to provide accurate account details and use the service only for lawful, policy-compliant participation.",
+      "ShareVerse helps members coordinate group cost-splitting for digital plans such as subscriptions, courses, memberships, software tools, and buy-together purchases. By using the platform, you agree to provide accurate account details and use the service only for lawful, policy-compliant participation.",
   },
   {
     title: "2. Accounts and security",
@@ -14,7 +14,7 @@ const sections = [
   {
     title: "3. Groups, hosts, and members",
     body:
-      "Hosts are responsible for accurate group listings, fair pricing, and timely coordination with members. Members are responsible for paying through the platform, following group rules, and using access only as allowed by the underlying provider and applicable law.",
+      "Hosts are responsible for accurate group listings, fair pricing, and timely coordination with members. Members are responsible for paying through the platform, following group rules, and using any resulting access only as allowed by the underlying provider and applicable law. ShareVerse is a coordination and cost-splitting tool, not a guarantee that a provider permits a specific arrangement.",
   },
   {
     title: "4. Payments and wallet",
@@ -43,7 +43,7 @@ export default function TermsPage() {
     <PublicPageShell
       eyebrow="Terms of service"
       title="Rules for using ShareVerse responsibly and safely."
-      intro="These terms describe how members, hosts, and purchasers should use ShareVerse. They are a strong launch draft for your product, but you should still have them reviewed by a qualified lawyer before going fully public."
+      intro="These terms describe how members, hosts, and purchasers should use ShareVerse as a coordination and cost-splitting platform. They are a strong launch draft for your product, but you should still have them reviewed by a qualified lawyer before going fully public."
     >
       <div className="grid gap-4">
         {sections.map((section) => (

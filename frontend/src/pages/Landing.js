@@ -3,21 +3,21 @@ import { Link } from "react-router-dom";
 import PublicFooter from "../components/PublicFooter";
 
 const featureNotes = [
-  "Wallet-backed joins",
+  "Split costs with a group",
   "Group chat for members",
   "Clear status and confirmation flow",
 ];
 
 const modes = [
   {
-    eyebrow: "Sharing",
-    title: "Share a plan you already manage",
-    body: "Open available spots in an active subscription and let members join the current cycle with clear pricing.",
+    eyebrow: "Existing plans",
+    title: "Coordinate shared costs for a plan you already manage",
+    body: "Open group spots for a subscription, course, membership, or software plan and let members join with clear pricing.",
   },
   {
-    eyebrow: "Buy Together",
+    eyebrow: "Buy together",
     title: "Create a group before the purchase happens",
-    body: "Collect members first, fill the group, and move forward together once the plan is ready to be activated.",
+    body: "Collect members first, fill the group, and move forward together once the digital plan or course is ready to be purchased.",
   },
 ];
 
@@ -62,13 +62,12 @@ export default function Landing() {
         </header>
 
         <section className="sv-light-hero text-center">
-          <p className="sv-eyebrow">Share together. Buy together.</p>
+          <p className="sv-eyebrow">Split costs. Coordinate clearly.</p>
           <h1 className="sv-display mx-auto mt-4 max-w-4xl">
-            A simple platform for shared plans and buy-together groups.
+            A simple platform for splitting the cost of subscriptions, courses, software, and memberships.
           </h1>
           <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-600">
-            ShareVerse helps people organize subscription sharing and group purchases with a cleaner
-            flow for payments, updates, and member coordination.
+            ShareVerse helps people organize group payments, participation, and member coordination for digital plans with a cleaner flow for updates, accountability, and shared costs.
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -104,8 +103,8 @@ export default function Landing() {
             <p className="sv-eyebrow">Why ShareVerse</p>
             <h2 className="sv-title mt-3">Everything important stays in one place</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              Instead of managing group activity across scattered messages and payments, ShareVerse
-              keeps the essential parts together in one simple product.
+              Instead of managing shared-cost activity across scattered messages and manual tracking, ShareVerse
+              keeps the essential coordination steps together in one simple product.
             </p>
           </div>
 

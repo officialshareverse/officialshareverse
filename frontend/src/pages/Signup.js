@@ -19,16 +19,16 @@ function getSignupError(errorData) {
 
 const highlights = [
   {
-    title: "Share subscriptions",
-    body: "Host existing plans and open paid slots for members.",
+    title: "Split existing plan costs",
+    body: "Open shared-cost spots in a subscription, course, membership, or tool you already manage.",
   },
   {
     title: "Buy together",
-    body: "Fill a group first, then activate the subscription together.",
+    body: "Fill a group first, then complete the purchase together.",
   },
   {
-    title: "Wallet-backed flow",
-    body: "Use one wallet across joins, payouts, and group activity.",
+    title: "One shared activity flow",
+    body: "Use one account across joins, updates, chats, and group coordination.",
   },
 ];
 
@@ -91,7 +91,7 @@ export default function Signup() {
       navigate("/login", {
         replace: true,
         state: {
-          message: "Account created successfully. Sign in to start sharing or buying together.",
+          message: "Account created successfully. Sign in to start splitting costs or buying together.",
         },
       });
     } catch (err) {
@@ -133,10 +133,10 @@ export default function Signup() {
                 Create your account
               </p>
               <h1 className="mt-5 text-4xl font-bold leading-tight md:text-[2.9rem]">
-                Start sharing subscriptions or building buy-together groups.
+                Start splitting the cost of digital plans or building buy-together groups.
               </h1>
               <p className="mt-5 max-w-xl text-base leading-8 text-slate-200">
-                Create one account for hosting plans, joining groups, managing wallet payments, and activating group-buy subscriptions when members are ready.
+                Create one account for coordinating subscriptions, courses, memberships, software tools, and buy-together groups when members are ready.
               </p>
 
               <div className="mt-8 grid gap-4">
@@ -152,9 +152,9 @@ export default function Signup() {
               </div>
 
               <div className="mt-8 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">
-                <span>Wallet-backed joins</span>
-                <span>Owner payouts</span>
-                <span>Group activation</span>
+                <span>Shared-cost groups</span>
+                <span>Member coordination</span>
+                <span>Group activity tracking</span>
               </div>
             </section>
 
@@ -167,7 +167,7 @@ export default function Signup() {
                   Create your ShareVerse account
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Your profile helps other members trust you when you host a subscription-sharing plan or organize a buy-together subscription.
+                  Your profile helps other members trust you when you organize a shared-cost group or coordinate a buy-together purchase.
                 </p>
 
                 {error ? (
@@ -319,7 +319,7 @@ export default function Signup() {
                     </div>
 
                     <div className="mt-5 rounded-2xl bg-slate-950 px-4 py-4 text-sm leading-7 text-slate-200">
-                      This account will work across wallet payments, hosted sharing groups, and buy-together subscription purchases.
+                      This account will work across joined groups, hosted groups, group chat, and buy-together purchases.
                     </div>
                   </section>
 

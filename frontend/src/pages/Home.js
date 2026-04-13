@@ -87,7 +87,7 @@ export default function Home() {
       return {
         label: "Explore now",
         title: "Open groups are ready to browse.",
-        body: "See active sharing plans and buy-together groups before you decide where to join.",
+        body: "See active cost-splitting groups and buy-together groups before you decide where to join.",
         cta: "Browse Groups",
         onClick: () => navigate("/groups"),
       };
@@ -96,7 +96,7 @@ export default function Home() {
     return {
       label: "Get started",
       title: "Create your first group on ShareVerse.",
-      body: "Start with a plan you already manage or open a buy-together group and invite members.",
+      body: "Start with a digital plan you already manage or open a buy-together group and invite members.",
       cta: "Create Group",
       onClick: () => navigate("/create"),
     };
@@ -125,10 +125,10 @@ export default function Home() {
           <div className="sv-light-hero">
             <p className="sv-eyebrow">Home</p>
             <h1 className="sv-display mt-4 max-w-3xl">
-              ShareVerse helps people share plans and buy together with less friction.
+              ShareVerse helps people split the cost of digital plans and buy together with less friction.
             </h1>
             <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
-              Host unused spots in a plan you already manage, or create a buy-together group that fills
+              Coordinate shared costs for a subscription, course, membership, or software plan you already manage, or create a buy-together group that fills
               before the purchase happens. Wallet balance, member confirmations, group chat, and
               notifications stay connected in one flow.
             </p>
@@ -140,9 +140,9 @@ export default function Home() {
             </div>
 
             <div className="mt-8 flex flex-wrap gap-2">
-              <MiniTag>Share existing plans</MiniTag>
+              <MiniTag>Split existing plan costs</MiniTag>
               <MiniTag>Buy together with a group</MiniTag>
-              <MiniTag>Wallet-backed joins</MiniTag>
+              <MiniTag>Digital plan coordination</MiniTag>
               <MiniTag>Chat and confirmations</MiniTag>
             </div>
           </div>
@@ -174,9 +174,9 @@ export default function Home() {
 
         <section className="grid gap-4 md:grid-cols-3">
           <ExplainCard
-            eyebrow="Sharing"
-            title="Open a plan you already manage"
-            body="Create a sharing group, set the number of spots, and let members join with wallet-backed payments. Access stays coordinated privately by the owner."
+            eyebrow="Existing plans"
+            title="Open a plan, course, or tool you already manage"
+            body="Create a cost-splitting group, set the number of spots, and let members join with clear participation terms. Access stays coordinated privately by the owner."
           />
           <ExplainCard
             eyebrow="Buy together"
@@ -192,21 +192,21 @@ export default function Home() {
 
         <section className="grid gap-6 lg:grid-cols-2">
           <FlowCard
-            eyebrow="How sharing works"
-            title="For plans that already exist"
+            eyebrow="How existing-plan groups work"
+            title="For plans, courses, tools, or memberships that already exist"
             steps={[
-              "Create a sharing group for the plan you already manage.",
+              "Create a group for the digital plan you already manage.",
               "Members join available spots and pay from their wallet.",
-              "You coordinate access privately and keep the group active from My Groups.",
+              "You coordinate participation privately and keep the group active from My Groups.",
             ]}
           />
           <FlowCard
             eyebrow="How buy together works"
-            title="For plans the group wants to activate together"
+            title="For digital plans the group wants to activate together"
             steps={[
               "Create a buy-together group with the required number of members.",
               "Members join first and funds stay held until the group is full.",
-              "The purchaser completes the plan, shares access off-platform, and payout releases after confirmations.",
+              "The purchaser completes the plan, coordinates access off-platform, and payout releases after confirmations.",
             ]}
           />
         </section>

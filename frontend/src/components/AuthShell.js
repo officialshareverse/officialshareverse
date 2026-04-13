@@ -4,13 +4,13 @@ import PublicFooter from "./PublicFooter";
 
 const valueProps = [
   {
-    title: "Share existing subscriptions",
-    description: "Open paid slots when you already own a plan and want recurring revenue from unused seats.",
+    title: "Split existing digital plan costs",
+    description: "Coordinate cost-sharing for a subscription, course, membership, or software plan you already manage.",
     tone: "bg-sky-100 text-sky-900",
   },
   {
     title: "Buy together as a group",
-    description: "Pool money with other members first, then activate the subscription once the group is ready.",
+    description: "Collect commitments first, then complete the purchase together once the group is ready.",
     tone: "bg-amber-100 text-amber-900",
   },
 ];
@@ -44,7 +44,7 @@ export default function AuthShell({
               </Link>
 
               <p className="hidden text-sm uppercase tracking-[0.18em] text-slate-500 md:block">
-                Shared plans and buy-together groups
+                Digital plan cost splitting and group coordination
               </p>
             </div>
 
@@ -79,9 +79,9 @@ export default function AuthShell({
               </div>
 
               <div className="mt-10 flex flex-wrap gap-6 text-sm text-slate-600">
-                <span>Wallet-backed joins</span>
-                <span>Owner payouts</span>
-                <span>Group-buy activation flow</span>
+                <span>Group cost splitting</span>
+                <span>Shared coordination</span>
+                <span>Status-based activity flow</span>
               </div>
             </div>
           </section>

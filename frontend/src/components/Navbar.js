@@ -89,7 +89,7 @@ export default function Navbar({ setIsAuth }) {
             <h1 className="text-xl font-bold leading-none text-slate-950">
               ShareVerse
             </h1>
-            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">Share together. Buy together.</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">Split costs. Coordinate clearly.</p>
           </div>
         </div>
 
