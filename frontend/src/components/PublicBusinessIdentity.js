@@ -1,5 +1,5 @@
 export const BUSINESS_OPERATOR_NAME = "Chetak Harichandra Pagare";
-export const SUPPORT_EMAIL = "support@shareverse.in";
+export const SUPPORT_EMAIL = "support.shareverse@gmail.com";
 export const SUPPORT_PHONE = "+91 88569 58201";
 export const REGISTERED_ADDRESS_LINES = [
   "House No. 01, Akkalkuwa Road",
