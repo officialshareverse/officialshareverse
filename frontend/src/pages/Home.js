@@ -10,10 +10,6 @@ function formatCurrency(value) {
   return `Rs ${numeric.toFixed(2)}`;
 }
 
-function getModeLabel(mode) {
-  return mode === "group_buy" ? "Buy together" : "Sharing";
-}
-
 export default function Home() {
   const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
@@ -176,37 +172,6 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="sv-card">
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-            <div>
-              <p className="sv-eyebrow">Open groups</p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-950">A small preview of what is active now</h2>
-            </div>
-            <SecondaryButton onClick={() => navigate("/groups")}>Browse all groups</SecondaryButton>
-          </div>
-
-          {groups.length === 0 ? (
-            <div className="mt-5 rounded-[24px] border border-dashed border-slate-300 bg-slate-50 p-6 text-sm leading-7 text-slate-600">
-              No open groups are live right now. You can create the first one from the Create Group page.
-            </div>
-          ) : (
-            <div className="mt-5 space-y-3">
-              {groups.slice(0, 3).map((group) => (
-                <PreviewRow
-                  key={group.id}
-                  subscriptionName={group.subscription_name}
-                  ownerName={group.owner_name}
-                  modeLabel={getModeLabel(group.mode)}
-                  joinPrice={group.join_price}
-                  pricePerSlot={group.price_per_slot}
-                  isProrated={group.is_prorated}
-                  seats={`${group.filled_slots}/${group.total_slots}`}
-                  statusLabel={group.status_label}
-                />
-              ))}
-            </div>
-          )}
-        </section>
       </div>
     </div>
   );
@@ -233,48 +198,6 @@ function StatCard({ label, value }) {
     <article className="sv-stat-card">
       <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
       <p className="mt-3 text-2xl font-bold text-slate-950">{value}</p>
-    </article>
-  );
-}
-
-function PreviewRow({
-  subscriptionName,
-  ownerName,
-  modeLabel,
-  joinPrice,
-  pricePerSlot,
-  isProrated,
-  seats,
-  statusLabel,
-}) {
-  const priceToShow = isProrated ? joinPrice : pricePerSlot;
-
-  return (
-    <article className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-white/78 px-5 py-5 md:flex-row md:items-center md:justify-between">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-lg font-semibold text-slate-950">{subscriptionName}</h3>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-            {modeLabel}
-          </span>
-        </div>
-        <p className="mt-1 text-sm text-slate-500">Hosted by {ownerName}</p>
-      </div>
-
-      <div className="grid gap-3 text-sm text-slate-600 md:grid-cols-3 md:text-right">
-        <div>
-          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Price</p>
-          <p className="mt-1 font-semibold text-slate-950">{formatCurrency(priceToShow)}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Seats</p>
-          <p className="mt-1 font-semibold text-slate-950">{seats}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Stage</p>
-          <p className="mt-1 font-semibold text-slate-950">{statusLabel}</p>
-        </div>
-      </div>
     </article>
   );
 }
