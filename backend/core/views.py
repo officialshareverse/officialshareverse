@@ -2406,7 +2406,7 @@ class GroupChatInboxView(APIView):
         )
 
 
-def build_profile_response(user):
+def build_profile_response(user, request=None):
     wallet, _ = Wallet.objects.get_or_create(user=user)
     joined_groups = GroupMember.objects.filter(user=user)
     created_groups = Group.objects.filter(owner=user)
@@ -2429,9 +2429,18 @@ def build_profile_response(user):
             user.get_full_name(),
             user.email,
             user.phone,
+            user.profile_picture,
         ]
     )
-    completion_percent = int((completed_fields / 3) * 100)
+    completion_percent = int((completed_fields / 4) * 100)
+
+    profile_picture_url = ""
+    if user.profile_picture:
+        try:
+            relative_url = user.profile_picture.url
+            profile_picture_url = request.build_absolute_uri(relative_url) if request else relative_url
+        except ValueError:
+            profile_picture_url = ""
 
     return {
         "username": user.username,
@@ -2440,6 +2449,8 @@ def build_profile_response(user):
         "full_name": user.get_full_name(),
         "email": user.email,
         "phone": user.phone,
+        "profile_picture_url": profile_picture_url,
+        "has_profile_picture": bool(profile_picture_url),
         "date_joined": user.date_joined,
         "trust_score": user.trust_score,
         "is_verified": user.is_verified,
@@ -2474,7 +2485,7 @@ class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response(build_profile_response(request.user))
+        return Response(build_profile_response(request.user, request))
 
     def patch(self, request):
         serializer = ProfileUpdateSerializer(
@@ -2484,7 +2495,7 @@ class ProfileView(APIView):
         )
         if serializer.is_valid():
             serializer.save()
-            return Response(build_profile_response(request.user))
+            return Response(build_profile_response(request.user, request))
         return Response(serializer.errors, status=400)
 
 

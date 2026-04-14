@@ -15,6 +15,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=15, unique=True, blank=True, null=True)
     trust_score = models.FloatField(default=0)
     is_verified = models.BooleanField(default=False)
+    profile_picture = models.ImageField(upload_to="profile-pictures/", blank=True, null=True)
 
     def __str__(self):
         return self.username
