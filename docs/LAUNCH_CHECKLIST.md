@@ -15,13 +15,13 @@ Use this list before opening ShareVerse to real users.
 
 - Razorpay live keys configured
 - Razorpay webhook live and signing correctly
-- RazorpayX live keys configured
-- RazorpayX payout webhook live and signing correctly
 - Real top-up flow tested with a small live payment
-- Real payout flow tested with a small live withdrawal
+- Manual withdrawal request flow tested with a small withdrawal
+- Manual payout completion tested from Django admin
 - Wallet credit verified after webhook delivery
-- Wallet restoration verified for a failed or reversed payout
+- Wallet balance deduction verified after admin payout completion
 - Refund path tested for an expired buy-together group
+- If automated payouts are enabled later, payout webhook and reversal handling retested end to end
 
 ## Security
 
@@ -33,11 +33,12 @@ Use this list before opening ShareVerse to real users.
 - backend `.env` files excluded from git
 - access to payment secrets restricted to backend only
 - access to payout account details restricted to authenticated owners only
+- admin payout processing restricted to trusted operators only
 
 ## Infrastructure
 
-- Render blueprint imported successfully
-- `shareverse-web` and `shareverse-api` are live
+- Vercel frontend is live at `https://shareverse.in`
+- VPS backend is live at `https://api.shareverse.in`
 - PostgreSQL configured and backed up
 - Redis configured
 - backend media storage is persistent
@@ -45,13 +46,15 @@ Use this list before opening ShareVerse to real users.
 - CORS and allowed hosts match production domains
 - scheduled refund processor runs every 5 minutes
 - logging and error monitoring are enabled
+- Django admin access confirmed at `https://api.shareverse.in/admin/`
 
 ## Support and Operations
 
-- `support@shareverse.in` or your support inbox is active
+- `support.shareverse@gmail.com` or your support inbox is active
 - refund policy matches actual operations
 - dispute handling process is documented internally
 - someone is monitoring payment failures and webhook issues
+- someone is monitoring manual payout requests and 24-hour transfer commitments
 - support response targets are defined
 
 ## Legal and Policy

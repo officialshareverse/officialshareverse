@@ -12,7 +12,7 @@ It combines group creation, wallet-backed joins, member chat, notifications, rat
 - JWT-based authentication with signup, login, forgot password, and OTP reset
 - Sharing groups with owner-managed access coordination
 - Buy-together groups with escrow-style holds, proof upload, member confirmations, disputes, and timed refunds
-- Wallet balance, transaction history, Razorpay top-ups, and RazorpayX payout requests
+- Wallet balance, transaction history, Razorpay top-ups, and manual withdrawal requests with admin payout completion
 - Group chat, chat inbox, unread counts, and notifications
 - Ratings and trust signals on user profiles
 - Legal/support pages for terms, privacy, refunds, and support
@@ -22,7 +22,7 @@ It combines group creation, wallet-backed joins, member chat, notifications, rat
 
 - Frontend: React 19, React Router, Axios, Tailwind utility styling
 - Backend: Django, Django REST Framework, SimpleJWT
-- Payments: Razorpay Orders API and webhook verification
+- Payments: Razorpay Orders API, webhook verification, and manual payout operations through Django admin
 - Cache / throttling: Redis when configured, local memory fallback otherwise
 - Database: SQLite by default, PostgreSQL-ready through environment variables
 
@@ -86,7 +86,7 @@ Backend env example: [backend/.env.example](backend/.env.example)
 
 Frontend env example: [frontend/.env.example](frontend/.env.example)
 
-Important backend values:
+Important backend values for the live setup:
 
 - `DJANGO_SECRET_KEY`
 - `DJANGO_DEBUG`
@@ -99,20 +99,24 @@ Important backend values:
 - `RAZORPAY_KEY_ID`
 - `RAZORPAY_KEY_SECRET`
 - `RAZORPAY_WEBHOOK_SECRET`
+- `DATABASE_URL`
+- `DJANGO_REDIS_URL`
+- `POSTGRES_*`
+
+Optional future payout-automation values:
+
 - `RAZORPAYX_KEY_ID`
 - `RAZORPAYX_KEY_SECRET`
 - `RAZORPAYX_WEBHOOK_SECRET`
 - `RAZORPAYX_SOURCE_ACCOUNT_NUMBER`
-- `DATABASE_URL`
-- `DJANGO_REDIS_URL`
-- `POSTGRES_*`
 
 ## Payment Notes
 
 - Wallet top-ups use Razorpay order creation plus signature verification.
 - Razorpay webhooks are supported at `/api/payments/razorpay/webhook/`.
-- Wallet withdrawals use RazorpayX payout requests with a saved bank account or UPI destination.
-- RazorpayX payout webhooks are supported at `/api/payments/razorpayx/webhook/`.
+- Wallet withdrawals currently use a manual request flow plus Django admin payout completion.
+- Admin payout processing deducts wallet balance only after you mark the manual transfer as sent.
+- RazorpayX payout webhooks are supported at `/api/payments/razorpayx/webhook/` if you enable automated payouts later.
 
 ## Background Jobs
 
@@ -125,18 +129,18 @@ python manage.py process_expired_group_buy_refunds
 
 Recommended schedule: every `5 minutes`.
 
-## Render Deployment
+## Optional Render Blueprint
 
-This repo now includes a Render blueprint at [render.yaml](render.yaml).
+This repo includes a Render blueprint at [render.yaml](render.yaml), but the current live production setup uses:
 
-Recommended production shape for this project:
+- frontend: Vercel at `https://shareverse.in`
+- backend API: VPS at `https://api.shareverse.in`
+- PostgreSQL: VPS-hosted database
+- Redis: VPS-hosted Redis
+- payments: Razorpay live keys plus webhook
+- withdrawals: manual request flow plus Django admin completion
 
-- frontend static site: `https://shareverse.in`
-- backend API: `https://api.shareverse.in`
-- PostgreSQL: Render managed database
-- Redis: Render managed Redis
-
-The blueprint provisions:
+If you return to Render later, the blueprint provisions:
 
 - `shareverse-web` for the React frontend
 - `shareverse-api` for the Django backend
@@ -166,7 +170,8 @@ Then trigger a frontend redeploy.
 - Set `DJANGO_EXPOSE_DEV_OTP=false`.
 - Keep `CREDENTIAL_ENCRYPTION_KEY` stable across deploys.
 - Configure Razorpay live keys and webhook secret through environment variables, never in frontend code.
-- Configure RazorpayX keys, webhook secret, and source account number through environment variables before enabling withdrawals.
+- Keep the current manual withdrawal flow in place until an automated payout provider is approved and tested.
+- If you later automate withdrawals, configure the payout provider keys, webhook secret, and source account number through environment variables before enabling it publicly.
 - Serve backend media from durable storage if purchase proof uploads matter in production.
 
 ## Launch Docs
