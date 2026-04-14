@@ -1,4 +1,5 @@
 import PublicPageShell from "../components/PublicPageShell";
+import PublicBusinessIdentity from "../components/PublicBusinessIdentity";
 
 const sections = [
   {
@@ -45,6 +46,8 @@ export default function ShippingPolicyPage() {
       <div className="mt-6 rounded-[24px] border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-900 md:p-6">
         If a payment partner or reviewer needs a plain-language summary: ShareVerse is a web-based service, all delivery is digital, and no physical order fulfillment is involved.
       </div>
+
+      <PublicBusinessIdentity title="Business contact for delivery questions" />
     </PublicPageShell>
   );
 }

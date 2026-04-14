@@ -1,5 +1,11 @@
 import { Link } from "react-router-dom";
 
+import {
+  BUSINESS_OPERATOR_NAME,
+  SUPPORT_EMAIL,
+  SUPPORT_PHONE,
+} from "./PublicBusinessIdentity";
+
 const footerLinks = [
   { to: "/about", label: "About" },
   { to: "/terms", label: "Terms" },
@@ -27,6 +33,11 @@ export default function PublicFooter({ compact = false }) {
           </p>
           <p className="mt-2 text-sm uppercase tracking-[0.18em] text-slate-500">
             Split more. Pay less.
+          </p>
+          <p className="mt-3 text-sm leading-7 text-slate-600">
+            Operated by {BUSINESS_OPERATOR_NAME}
+            <br />
+            Support: {SUPPORT_EMAIL} | {SUPPORT_PHONE}
           </p>
         </div>
 

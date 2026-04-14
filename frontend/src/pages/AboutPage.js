@@ -1,4 +1,10 @@
 import PublicPageShell from "../components/PublicPageShell";
+import {
+  BUSINESS_OPERATOR_NAME,
+  REGISTERED_ADDRESS_LINES,
+  SUPPORT_EMAIL,
+  SUPPORT_PHONE,
+} from "../components/PublicBusinessIdentity";
 
 const aboutHighlights = [
   {
@@ -14,15 +20,8 @@ const aboutHighlights = [
   {
     title: "Operator details",
     body:
-      "ShareVerse is operated by Chetak Harichandra Pagare and is currently managed as an independent online business based in Maharashtra, India.",
+      `ShareVerse is operated by ${BUSINESS_OPERATOR_NAME} and is currently managed as an independent online business based in Maharashtra, India.`,
   },
-];
-
-const registeredAddress = [
-  "House No. 01, Akkalkuwa Road",
-  "Ramgad, Taloda",
-  "Nandurbar, Maharashtra 425413",
-  "India",
 ];
 
 export default function AboutPage() {
@@ -53,10 +52,13 @@ export default function AboutPage() {
             <h3 className="text-lg font-semibold text-slate-950">Business contact</h3>
             <div className="mt-3 space-y-2 text-sm leading-7 text-slate-600 md:text-base">
               <p>
-                <span className="font-semibold text-slate-900">Email:</span> support@shareverse.in
+                <span className="font-semibold text-slate-900">Operator:</span> {BUSINESS_OPERATOR_NAME}
               </p>
               <p>
-                <span className="font-semibold text-slate-900">Phone:</span> +91 88569 58201
+                <span className="font-semibold text-slate-900">Email:</span> {SUPPORT_EMAIL}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-900">Phone:</span> {SUPPORT_PHONE}
               </p>
             </div>
           </div>
@@ -64,7 +66,7 @@ export default function AboutPage() {
           <div>
             <h3 className="text-lg font-semibold text-slate-950">Registered address</h3>
             <div className="mt-3 space-y-1 text-sm leading-7 text-slate-600 md:text-base">
-              {registeredAddress.map((line) => (
+              {REGISTERED_ADDRESS_LINES.map((line) => (
                 <p key={line}>{line}</p>
               ))}
             </div>

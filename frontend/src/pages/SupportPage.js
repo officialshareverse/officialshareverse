@@ -1,20 +1,31 @@
 import PublicPageShell from "../components/PublicPageShell";
+import {
+  BUSINESS_OPERATOR_NAME,
+  REGISTERED_ADDRESS_LINES,
+  SUPPORT_EMAIL,
+  SUPPORT_PHONE,
+} from "../components/PublicBusinessIdentity";
 
 const contactCards = [
   {
     title: "General support",
-    detail: "support@shareverse.in",
+    detail: SUPPORT_EMAIL,
     helper: "Use this inbox for account help, refunds, payment issues, and launch support requests.",
   },
   {
     title: "Phone support",
-    detail: "+91 88569 58201",
+    detail: SUPPORT_PHONE,
     helper: "Use this number for urgent contact, onboarding follow-ups, and provider verification requests during business hours.",
   },
   {
     title: "Registered address",
-    detail: "House No. 01, Akkalkuwa Road",
-    helper: "Ramgad, Taloda, Nandurbar, Maharashtra 425413, India",
+    detail: REGISTERED_ADDRESS_LINES[0],
+    helper: REGISTERED_ADDRESS_LINES.slice(1).join(", "),
+  },
+  {
+    title: "Operator",
+    detail: BUSINESS_OPERATOR_NAME,
+    helper: "Use this name consistently when a payment provider or verification team asks who operates the ShareVerse platform.",
   },
   {
     title: "Urgent access problem",
@@ -83,17 +94,19 @@ export default function SupportPage() {
         <div className="mt-4 grid gap-5 md:grid-cols-2">
           <div className="space-y-2 text-sm leading-7 text-slate-600 md:text-base">
             <p>
-              <span className="font-semibold text-slate-900">Support email:</span> support@shareverse.in
+              <span className="font-semibold text-slate-900">Operator:</span> {BUSINESS_OPERATOR_NAME}
             </p>
             <p>
-              <span className="font-semibold text-slate-900">Phone:</span> +91 88569 58201
+              <span className="font-semibold text-slate-900">Support email:</span> {SUPPORT_EMAIL}
+            </p>
+            <p>
+              <span className="font-semibold text-slate-900">Phone:</span> {SUPPORT_PHONE}
             </p>
           </div>
           <div className="space-y-1 text-sm leading-7 text-slate-600 md:text-base">
-            <p>House No. 01, Akkalkuwa Road</p>
-            <p>Ramgad, Taloda</p>
-            <p>Nandurbar, Maharashtra 425413</p>
-            <p>India</p>
+            {REGISTERED_ADDRESS_LINES.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
           </div>
         </div>
       </div>

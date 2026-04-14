@@ -1,4 +1,5 @@
 import PublicPageShell from "../components/PublicPageShell";
+import PublicBusinessIdentity from "../components/PublicBusinessIdentity";
 
 const sections = [
   {
@@ -56,6 +57,8 @@ export default function TermsPage() {
           </article>
         ))}
       </div>
+
+      <PublicBusinessIdentity title="Operator details for these terms" />
     </PublicPageShell>
   );
 }

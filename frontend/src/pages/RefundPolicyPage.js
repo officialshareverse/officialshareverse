@@ -1,4 +1,5 @@
 import PublicPageShell from "../components/PublicPageShell";
+import PublicBusinessIdentity from "../components/PublicBusinessIdentity";
 
 const cards = [
   {
@@ -45,6 +46,8 @@ export default function RefundPolicyPage() {
       <div className="mt-6 rounded-[24px] border border-amber-200 bg-amber-50 p-5 text-sm leading-7 text-amber-900 md:p-6">
         Refund timing depends on the payment provider, wallet status, and dispute review outcome. For launch, publish the expected turnaround clearly in your support process and align it with your payment partner settlement timelines.
       </div>
+
+      <PublicBusinessIdentity title="Refund and support contact details" />
     </PublicPageShell>
   );
 }

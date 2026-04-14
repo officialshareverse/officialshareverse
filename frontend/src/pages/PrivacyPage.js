@@ -1,4 +1,5 @@
 import PublicPageShell from "../components/PublicPageShell";
+import PublicBusinessIdentity from "../components/PublicBusinessIdentity";
 
 const sections = [
   {
@@ -46,6 +47,8 @@ export default function PrivacyPage() {
           </article>
         ))}
       </div>
+
+      <PublicBusinessIdentity title="Who to contact about privacy questions" />
     </PublicPageShell>
   );
 }
