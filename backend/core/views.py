@@ -2125,7 +2125,7 @@ class DashboardView(APIView):
             charged_amount = get_member_charged_amount(membership)
             join_pricing = get_group_join_pricing(
                 membership.group,
-                reference_date=membership.joined_at.date(),
+                reference_date=membership.joined_at,
             )
             owner_review_summary = build_review_summary_for_user(
                 membership.group.owner,

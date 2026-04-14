@@ -1,9 +1,12 @@
+from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
+from zoneinfo import ZoneInfo
 
 from django.utils import timezone
 
 
 MONEY_QUANTIZER = Decimal("0.01")
+OPERATIONAL_TIMEZONE = ZoneInfo("Asia/Kolkata")
 
 
 def normalize_money(amount):
@@ -38,12 +41,24 @@ def get_group_remaining_cycle_days(group, reference_date=None):
     if not group.start_date or not group.end_date:
         return 0
 
-    reference_date = reference_date or timezone.localdate()
+    reference_date = normalize_reference_date(reference_date)
     if reference_date < group.start_date:
         return get_group_total_cycle_days(group)
     if reference_date > group.end_date:
         return 0
     return (group.end_date - reference_date).days + 1
+
+
+def normalize_reference_date(reference_date=None):
+    if reference_date is None:
+        return timezone.localtime(timezone.now(), OPERATIONAL_TIMEZONE).date()
+
+    if isinstance(reference_date, datetime):
+        if timezone.is_naive(reference_date):
+            return reference_date.date()
+        return timezone.localtime(reference_date, OPERATIONAL_TIMEZONE).date()
+
+    return reference_date
 
 
 def get_group_join_pricing(group, reference_date=None):
