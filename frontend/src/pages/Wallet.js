@@ -193,7 +193,11 @@ export default function Wallet() {
         amount: withdrawAmount,
         payout_mode: withdrawMode,
       });
-      setFeedbackMessage(response.data.message || "Withdrawal request created.");
+      setFeedbackMessage(
+        payoutsLive
+          ? response.data.message || "Withdrawal request created."
+          : response.data.message || "Withdrawal request submitted. Money will be transferred within 24 hours after review."
+      );
       setWithdrawAmount("");
       await fetchData();
     } catch (err) {
@@ -230,8 +234,8 @@ export default function Wallet() {
             </h1>
             <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
               Razorpay handles live wallet top-ups today. You can also submit withdrawal requests
-              from this page now, and we will review and settle them manually until the automated
-              payout rail is fully activated.
+              from this page now, and we will review and settle them manually within 24 hours
+              until the automated payout rail is fully activated.
             </p>
             <div className="mt-7 flex flex-wrap gap-2">
               {["100", "300", "500", "1000"].map((amount) => (
@@ -264,7 +268,8 @@ export default function Wallet() {
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             Automated payouts are still pending provider activation, but you can now save a
             withdrawal destination and submit a request here for manual review. We will reach out
-            on {SUPPORT_EMAIL} if we need anything before settling it.
+            on {SUPPORT_EMAIL} if we need anything before settling it. Approved requests are
+            typically transferred within 24 hours.
           </div>
         )}
         {feedbackMessage ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{feedbackMessage}</div> : null}
@@ -400,7 +405,7 @@ export default function Wallet() {
               <p className="text-sm leading-7 text-slate-600">
                 {payoutsLive
                   ? "Real withdrawals reserve wallet balance immediately. Failed or reversed payouts are returned automatically."
-                  : "Manual withdrawal requests do not deduct wallet balance yet. We review the request first, send the money manually, and only then record the deduction."}
+                  : "Manual withdrawal requests do not deduct wallet balance yet. We review the request first, send the money manually within 24 hours, and only then record the deduction."}
               </p>
               <button className="sv-btn-primary w-full justify-center" type="submit" disabled={!payoutAccount || workingAction !== ""}>
                 {workingAction === "withdraw"
@@ -451,7 +456,7 @@ export default function Wallet() {
                         {payout.processed_at
                           ? new Date(payout.processed_at).toLocaleString()
                           : payout.status === "pending"
-                            ? "Under manual review"
+                            ? "Under manual review, usually within 24 hours"
                             : "Status settled"}
                       </p>
                     )}
