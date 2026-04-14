@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
+import AboutPage from "./pages/AboutPage";
 import ChatsInbox from "./pages/ChatsInbox";
 import CreateGroup from "./pages/CreateGroup";
 import GroupChat from "./pages/GroupChat";
@@ -72,6 +73,7 @@ function App() {
           }
         />
 
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/refunds" element={<RefundPolicyPage />} />

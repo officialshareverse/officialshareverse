@@ -7,6 +7,16 @@ const contactCards = [
     helper: "Use this inbox for account help, refunds, payment issues, and launch support requests.",
   },
   {
+    title: "Phone support",
+    detail: "+91 88569 58201",
+    helper: "Use this number for urgent contact, onboarding follow-ups, and provider verification requests during business hours.",
+  },
+  {
+    title: "Registered address",
+    detail: "House No. 01, Akkalkuwa Road",
+    helper: "Ramgad, Taloda, Nandurbar, Maharashtra 425413, India",
+  },
+  {
     title: "Urgent access problem",
     detail: "Report from My Groups first",
     helper: "Buy-together access issues should be reported inside the group flow so payout pauses automatically.",
@@ -43,7 +53,7 @@ export default function SupportPage() {
       title="How members can reach ShareVerse and get issues resolved."
       intro="Support is part of launch readiness. This page gives members one clear place to find help for accounts, wallet payments, group access, disputes, and policy questions."
     >
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {contactCards.map((card) => (
           <article
             key={card.title}
@@ -66,6 +76,26 @@ export default function SupportPage() {
           <li>Use the in-product access issue action for buy-together problems so payout pauses automatically.</li>
           <li>Include screenshots, payment reference, and timing details when something fails.</li>
         </ul>
+      </div>
+
+      <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <h2 className="text-2xl font-semibold text-slate-950">Compliance-ready contact summary</h2>
+        <div className="mt-4 grid gap-5 md:grid-cols-2">
+          <div className="space-y-2 text-sm leading-7 text-slate-600 md:text-base">
+            <p>
+              <span className="font-semibold text-slate-900">Support email:</span> support@shareverse.in
+            </p>
+            <p>
+              <span className="font-semibold text-slate-900">Phone:</span> +91 88569 58201
+            </p>
+          </div>
+          <div className="space-y-1 text-sm leading-7 text-slate-600 md:text-base">
+            <p>House No. 01, Akkalkuwa Road</p>
+            <p>Ramgad, Taloda</p>
+            <p>Nandurbar, Maharashtra 425413</p>
+            <p>India</p>
+          </div>
+        </div>
       </div>
 
       <div className="mt-6 grid gap-4">
