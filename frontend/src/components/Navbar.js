@@ -81,9 +81,9 @@ export default function Navbar({ setIsAuth }) {
   return (
     <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 sm:pt-4 md:px-6">
       <div className="sv-container">
-        <div className="flex items-center justify-between gap-3 rounded-[28px] border border-white/60 bg-white/80 px-4 py-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur md:px-5">
+        <div className="sv-brand-shell flex items-center justify-between gap-3 px-4 py-3 md:px-5">
         <div className="flex items-center gap-3">
-          <BrandMark sizeClass="h-10 w-10 sm:h-11 sm:w-11" />
+          <BrandMark glow sizeClass="h-10 w-10 sm:h-11 sm:w-11" />
           <div>
             <h1 className="text-lg font-bold leading-none text-slate-950 sm:text-xl">
               ShareVerse

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import BrandMark from "./BrandMark";
 import {
   BUSINESS_OPERATOR_NAME,
   SUPPORT_EMAIL,
@@ -28,12 +29,17 @@ export default function PublicFooter({ compact = false }) {
         }`}
       >
         <div className="max-w-xl">
-          <p className="text-xl font-bold leading-none text-slate-950 sm:text-2xl">
-            ShareVerse
-          </p>
-          <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-slate-500 sm:text-sm">
-            Split more. Pay less.
-          </p>
+          <div className="flex items-center gap-3">
+            <BrandMark glow sizeClass="h-10 w-10 sm:h-11 sm:w-11" />
+            <div>
+              <p className="text-xl font-bold leading-none text-slate-950 sm:text-2xl">
+                ShareVerse
+              </p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-slate-500 sm:text-sm">
+                Split more. Pay less.
+              </p>
+            </div>
+          </div>
           <div className="mt-3 space-y-1 text-sm leading-7 text-slate-600">
             <p>Operated by {BUSINESS_OPERATOR_NAME}</p>
             <p className="break-words">Support: {SUPPORT_EMAIL}</p>

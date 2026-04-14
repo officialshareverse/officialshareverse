@@ -19,6 +19,47 @@
     --sv-shadow: 0 26px 70px rgba(15, 23, 42, 0.09);
   }
 
+  @keyframes sv-float {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes sv-float-soft {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(0, -6px, 0);
+    }
+  }
+
+  @keyframes sv-rise {
+    0% {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes sv-pulse-glow {
+    0%,
+    100% {
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
+    }
+    50% {
+      box-shadow: 0 28px 70px rgba(15, 118, 110, 0.22);
+    }
+  }
+
   html {
     scroll-behavior: smooth;
   }
@@ -81,6 +122,21 @@
     box-shadow: var(--sv-shadow);
   }
 
+  .sv-brand-shell {
+    @apply relative overflow-hidden rounded-[26px] border border-white/65 shadow-[0_28px_80px_rgba(15,23,42,0.1)] backdrop-blur;
+    background: rgba(255, 255, 255, 0.84);
+  }
+
+  .sv-brand-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at top right, rgba(15, 118, 110, 0.12), transparent 28%),
+      radial-gradient(circle at bottom left, rgba(187, 122, 20, 0.12), transparent 28%);
+    pointer-events: none;
+  }
+
   .sv-soft-card {
     @apply rounded-[26px] border bg-white/70 p-5;
     border-color: rgba(148, 163, 184, 0.18);
@@ -106,6 +162,14 @@
       rgba(255, 255, 255, 0.78);
     box-shadow: var(--sv-shadow);
     backdrop-filter: blur(14px);
+  }
+
+  .sv-light-hero-grid {
+    background-image:
+      linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+    background-position: center;
+    background-size: 34px 34px;
   }
 
   .sv-eyebrow {
@@ -218,5 +282,45 @@
 
   .sv-grid-stats {
     @apply grid gap-4 sm:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .sv-animate-float {
+    animation: sv-float 6s ease-in-out infinite;
+  }
+
+  .sv-animate-float-soft {
+    animation: sv-float-soft 5s ease-in-out infinite;
+  }
+
+  .sv-animate-rise {
+    animation: sv-rise 0.7s ease-out both;
+  }
+
+  .sv-animate-glow {
+    animation: sv-pulse-glow 5s ease-in-out infinite;
+  }
+
+  .sv-delay-1 {
+    animation-delay: 0.12s;
+  }
+
+  .sv-delay-2 {
+    animation-delay: 0.24s;
+  }
+
+  .sv-delay-3 {
+    animation-delay: 0.36s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sv-animate-float,
+  .sv-animate-float-soft,
+  .sv-animate-rise,
+  .sv-animate-glow,
+  .sv-delay-1,
+  .sv-delay-2,
+  .sv-delay-3 {
+    animation: none !important;
   }
 }
