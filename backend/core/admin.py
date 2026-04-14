@@ -62,30 +62,45 @@ class ManualWalletPayoutAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["amount"].help_text = "Create this only after you have sent the money manually."
-        self.fields["destination_label"].help_text = (
-            "Optional if you pick a saved payout account. Example: UPI chetak@upi or Bank ending 9012."
-        )
+        if "amount" in self.fields:
+            self.fields["amount"].help_text = "Create this only after you have sent the money manually."
+        if "destination_label" in self.fields:
+            self.fields["destination_label"].help_text = (
+                "Optional if you pick a saved payout account. Example: UPI chetak@upi or Bank ending 9012."
+            )
 
         if self.instance and self.instance.pk:
             self.fields["external_reference"].initial = self.instance.utr
             self.fields["admin_notes"].initial = (self.instance.status_details or {}).get("admin_notes", "")
-            self.fields["amount"].help_text = "The wallet will be deducted only when you process this request."
+            if "amount" in self.fields:
+                self.fields["amount"].help_text = "The wallet will be deducted only when you process this request."
 
     def clean(self):
         cleaned_data = super().clean()
-        user = cleaned_data.get("user")
-        payout_account = cleaned_data.get("payout_account")
-        amount = cleaned_data.get("amount")
-        destination_label = (cleaned_data.get("destination_label") or "").strip()
+        user = cleaned_data.get("user") or getattr(self.instance, "user", None)
+        payout_account = (
+            cleaned_data.get("payout_account")
+            if "payout_account" in self.fields
+            else getattr(self.instance, "payout_account", None)
+        )
+        amount = (
+            cleaned_data.get("amount")
+            if "amount" in self.fields
+            else getattr(self.instance, "amount", None)
+        )
+        destination_label = (
+            (cleaned_data.get("destination_label") or "").strip()
+            if "destination_label" in self.fields
+            else (getattr(self.instance, "destination_label", "") or "").strip()
+        )
 
         if payout_account and user and payout_account.user_id != user.id:
             self.add_error("payout_account", "Choose a payout account that belongs to the selected user.")
 
-        if payout_account and not destination_label:
+        if payout_account and not destination_label and "destination_label" in self.fields:
             cleaned_data["destination_label"] = build_manual_payout_destination_label(payout_account)
 
-        if not payout_account and not cleaned_data.get("destination_label"):
+        if not payout_account and not destination_label and "destination_label" in self.fields:
             self.add_error(
                 "destination_label",
                 "Add a destination label when you are not using a saved payout account.",
