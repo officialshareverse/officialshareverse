@@ -142,7 +142,7 @@ export default function Home() {
                 and software with clear group activity, chat, updates, and participation tracking.
               </p>
 
-              <div className="mt-7 flex flex-wrap justify-center gap-3 md:justify-start">
+              <div className="mt-7 grid gap-3 sm:inline-flex sm:flex-wrap sm:justify-center md:justify-start">
                 <PrimaryButton onClick={() => navigate("/groups")}>Browse groups</PrimaryButton>
                 <SecondaryButton onClick={() => navigate("/create")}>Create group</SecondaryButton>
                 <SecondaryButton onClick={() => navigate("/my-shared")}>My groups</SecondaryButton>
@@ -150,11 +150,11 @@ export default function Home() {
             </div>
 
             <div className="mx-auto w-full max-w-md">
-              <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f7fafc_100%)] p-3 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+              <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f7fafc_100%)] p-2 shadow-[0_20px_50px_rgba(15,23,42,0.08)] md:rounded-[28px] md:p-3">
                 <img
                   src={streamingServicesImage}
                   alt="Popular streaming and digital subscription services shown in colorful circles."
-                  className="w-full rounded-[22px] object-cover"
+                  className="w-full rounded-[18px] object-cover md:rounded-[22px]"
                 />
               </div>
             </div>
@@ -177,7 +177,7 @@ export default function Home() {
         </section>
 
         <section className="sv-card">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div>
               <p className="sv-eyebrow">Open groups</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">A small preview of what is active now</h2>
@@ -214,7 +214,7 @@ export default function Home() {
 
 function PrimaryButton({ children, onClick }) {
   return (
-    <button onClick={onClick} className="sv-btn-primary">
+    <button onClick={onClick} className="sv-btn-primary w-full sm:w-auto">
       {children}
     </button>
   );
@@ -222,7 +222,7 @@ function PrimaryButton({ children, onClick }) {
 
 function SecondaryButton({ children, onClick }) {
   return (
-    <button onClick={onClick} className="sv-btn-secondary">
+    <button onClick={onClick} className="sv-btn-secondary w-full sm:w-auto">
       {children}
     </button>
   );

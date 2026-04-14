@@ -30,11 +30,11 @@ export default function AuthShell({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(15,118,110,0.14),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(187,122,20,0.12),_transparent_26%)]" />
 
         <div className="relative mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">
-          <section className="flex flex-1 flex-col justify-between px-6 py-8 lg:px-12 lg:py-10">
-            <div className="flex items-center justify-between">
+          <section className="flex flex-1 flex-col justify-between px-4 py-5 sm:px-6 sm:py-8 lg:px-12 lg:py-10">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <Link
                 to="/"
-                className="inline-flex items-center gap-3 rounded-full border border-white/70 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur"
+                className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-white/70 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur sm:w-auto sm:justify-start"
               >
                 <BrandMark />
                 <span className="text-xl font-bold leading-none">
@@ -47,27 +47,27 @@ export default function AuthShell({
               </p>
             </div>
 
-            <div className="my-12 max-w-2xl lg:my-0">
+            <div className="my-8 max-w-2xl lg:my-0">
               <p className="sv-eyebrow">
                 {eyebrow}
               </p>
               <h1
-                className="mt-5 text-5xl leading-[0.94] text-slate-950 md:text-6xl"
+                className="mt-4 text-4xl leading-[0.96] text-slate-950 md:mt-5 md:text-6xl"
               >
                 {title}
               </h1>
-              <p className="mt-5 max-w-xl text-lg leading-8 text-slate-700">
+              <p className="mt-4 max-w-xl text-base leading-7 text-slate-700 md:mt-5 md:text-lg md:leading-8">
                 {subtitle}
               </p>
 
-              <div className="mt-10 grid gap-4 md:grid-cols-2">
+              <div className="mt-8 grid gap-4 md:mt-10 md:grid-cols-2">
                 {valueProps.map((item) => (
                   <article
                     key={item.title}
-                    className="rounded-[28px] border border-white/70 bg-white/76 p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] backdrop-blur"
+                    className="rounded-[24px] border border-white/70 bg-white/76 p-4 shadow-[0_20px_50px_rgba(15,23,42,0.08)] backdrop-blur md:rounded-[28px] md:p-5"
                   >
                     <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] ${item.tone}`}
+                      className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] md:text-xs md:tracking-[0.22em] ${item.tone}`}
                     >
                       Product mode
                     </span>
@@ -77,7 +77,7 @@ export default function AuthShell({
                 ))}
               </div>
 
-              <div className="mt-10 flex flex-wrap gap-6 text-sm text-slate-600">
+              <div className="mt-8 flex flex-wrap gap-3 text-xs font-medium text-slate-600 sm:gap-6 sm:text-sm">
                 <span>Group cost splitting</span>
                 <span>Shared coordination</span>
                 <span>Status-based activity flow</span>
@@ -85,15 +85,15 @@ export default function AuthShell({
             </div>
           </section>
 
-          <section className="flex w-full items-center justify-center px-6 py-10 lg:max-w-xl lg:px-10">
-            <div className={`w-full ${panelWidthClass} rounded-[32px] border border-white/80 bg-white/86 p-7 shadow-[0_36px_90px_rgba(15,23,42,0.16)] backdrop-blur md:p-8`}>
+          <section className="flex w-full items-center justify-center px-4 pb-6 pt-0 sm:px-6 sm:py-10 lg:max-w-xl lg:px-10">
+            <div className={`w-full ${panelWidthClass} rounded-[26px] border border-white/80 bg-white/86 p-5 shadow-[0_36px_90px_rgba(15,23,42,0.16)] backdrop-blur md:rounded-[32px] md:p-8`}>
               {children}
               {footer ? <div className="mt-6 border-t border-slate-200 pt-5">{footer}</div> : null}
             </div>
           </section>
         </div>
 
-        <div className="px-6 pb-6 lg:px-10">
+        <div className="px-3 pb-4 sm:px-6 sm:pb-6 lg:px-10">
           <PublicFooter compact />
         </div>
       </div>

@@ -106,10 +106,10 @@ export default function Signup() {
   return (
     <div className="sv-page">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="mb-6 flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <Link
             to="/"
-            className="inline-flex items-center gap-3 rounded-full border border-slate-300 bg-white/90 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm"
+            className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-slate-300 bg-white/90 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm sm:w-auto sm:justify-start"
           >
             <BrandMark />
             <span className="text-xl font-bold leading-none">
@@ -117,7 +117,7 @@ export default function Signup() {
             </span>
           </Link>
 
-          <p className="text-sm text-slate-600">
+          <p className="text-center text-sm text-slate-600 sm:text-left">
             Already have an account?{" "}
             <Link to="/login" className="font-semibold text-teal-800 hover:text-teal-700">
               Sign in
@@ -125,44 +125,41 @@ export default function Signup() {
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-[34px] border border-white/80 bg-white/84 shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur">
+        <div className="overflow-hidden rounded-[26px] border border-white/80 bg-white/84 shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur md:rounded-[34px]">
           <div className="grid lg:grid-cols-[0.95fr_1.05fr]">
-            <section className="bg-[linear-gradient(145deg,#0f172a_0%,#1f2937_62%,#155e75_100%)] px-6 py-8 text-white md:px-8 md:py-10">
+            <section className="bg-[linear-gradient(145deg,#0f172a_0%,#1f2937_62%,#155e75_100%)] px-5 py-6 text-white md:px-8 md:py-10">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">
                 Create your account
               </p>
-              <h1 className="mt-5 text-4xl font-bold leading-tight md:text-[2.9rem]">
+              <h1 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl md:mt-5 md:text-[2.9rem]">
                 Start splitting the cost of digital plans or building buy-together groups.
               </h1>
-              <p className="mt-5 max-w-xl text-base leading-8 text-slate-200">
+              <p className="mt-4 max-w-xl text-sm leading-7 text-slate-200 md:mt-5 md:text-base md:leading-8">
                 Create one account for coordinating subscriptions, courses, memberships, software tools, and buy-together groups when members are ready.
               </p>
 
               <div className="mt-8 grid gap-4">
                 {highlights.map((item) => (
-                  <article
-                    key={item.title}
-                    className="rounded-[22px] border border-white/10 bg-white/10 p-5 backdrop-blur"
-                  >
+                  <article key={item.title} className="rounded-[20px] border border-white/10 bg-white/10 p-4 backdrop-blur md:rounded-[22px] md:p-5">
                     <h2 className="text-lg font-semibold">{item.title}</h2>
                     <p className="mt-2 text-sm leading-7 text-slate-200">{item.body}</p>
                   </article>
                 ))}
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">
+              <div className="mt-8 flex flex-wrap gap-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300 md:text-xs md:tracking-[0.22em]">
                 <span>Shared-cost groups</span>
                 <span>Member coordination</span>
                 <span>Group activity tracking</span>
               </div>
             </section>
 
-            <section className="px-6 py-8 md:px-8 md:py-10">
+            <section className="px-5 py-6 md:px-8 md:py-10">
               <div className="max-w-2xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
                   Signup
                 </p>
-                <h2 className="mt-3 text-3xl font-bold leading-tight text-slate-950 md:text-[2.4rem]">
+                <h2 className="mt-3 text-[2rem] font-bold leading-tight text-slate-950 md:text-[2.4rem]">
                   Create your ShareVerse account
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600">

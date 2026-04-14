@@ -43,20 +43,20 @@ export default function Landing() {
   return (
     <div className="sv-page">
       <div className="mx-auto max-w-6xl space-y-8">
-        <header className="flex flex-wrap items-center justify-between gap-4 rounded-[30px] border border-white/70 bg-white/78 px-5 py-4 shadow-[0_24px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+        <header className="flex flex-col items-stretch gap-4 rounded-[24px] border border-white/70 bg-white/78 px-4 py-4 shadow-[0_24px_60px_rgba(15,23,42,0.08)] backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:rounded-[30px] sm:px-5">
           <Link
             to="/"
-            className="inline-flex items-center gap-3 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900"
+            className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 sm:w-auto sm:justify-start"
           >
             <BrandMark />
             <span className="text-xl font-bold leading-none">ShareVerse</span>
           </Link>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Link to="/login" className="sv-btn-secondary">
+          <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+            <Link to="/login" className="sv-btn-secondary w-full sm:w-auto">
               Login
             </Link>
-            <Link to="/signup" className="sv-btn-primary">
+            <Link to="/signup" className="sv-btn-primary w-full sm:w-auto">
               Create account
             </Link>
           </div>
@@ -69,21 +69,21 @@ export default function Landing() {
               <h1 className="sv-display mt-4 max-w-4xl">
                 A simple platform for splitting the cost of subscriptions, courses, software, and memberships.
               </h1>
-              <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600 md:mt-5 md:text-base md:leading-8">
                 ShareVerse helps people organize group payments, participation, and member coordination for digital
                 plans with a cleaner flow for updates, accountability, and shared costs.
               </p>
 
-              <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
-                <Link to="/signup" className="sv-btn-primary">
+              <div className="mt-7 grid gap-3 sm:inline-flex sm:flex-wrap sm:justify-center lg:justify-start">
+                <Link to="/signup" className="sv-btn-primary w-full sm:w-auto">
                   Get started
                 </Link>
-                <Link to="/login" className="sv-btn-secondary">
+                <Link to="/login" className="sv-btn-secondary w-full sm:w-auto">
                   I already have an account
                 </Link>
               </div>
 
-              <div className="mt-8 flex flex-wrap justify-center gap-2 lg:justify-start">
+              <div className="mt-6 flex flex-wrap justify-center gap-2 lg:justify-start">
                 {featureNotes.map((note) => (
                   <span key={note} className="sv-chip normal-case tracking-[0.04em]">
                     {note}
@@ -93,12 +93,12 @@ export default function Landing() {
             </div>
 
             <div className="mx-auto w-full max-w-xl">
-              <div className="overflow-hidden rounded-[32px] border border-white/75 bg-white/88 p-4 shadow-[0_24px_60px_rgba(15,23,42,0.1)]">
-                <div className="rounded-[28px] bg-[radial-gradient(circle_at_top_right,rgba(236,72,153,0.12),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(34,197,94,0.12),transparent_26%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3">
+              <div className="overflow-hidden rounded-[26px] border border-white/75 bg-white/88 p-3 shadow-[0_24px_60px_rgba(15,23,42,0.1)] md:rounded-[32px] md:p-4">
+                <div className="rounded-[22px] bg-[radial-gradient(circle_at_top_right,rgba(236,72,153,0.12),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(34,197,94,0.12),transparent_26%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-2 md:rounded-[28px] md:p-3">
                   <img
                     src={heroIllustrationSrc}
                     alt="Popular streaming and digital subscription services shown as colorful circles."
-                    className="w-full rounded-[24px] object-cover"
+                    className="w-full rounded-[18px] object-cover md:rounded-[24px]"
                   />
                 </div>
               </div>
@@ -106,7 +106,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="grid gap-5 md:grid-cols-2">
+        <section className="grid gap-4 md:gap-5 md:grid-cols-2">
           {modes.map((mode) => (
             <article key={mode.title} className="sv-card-solid">
               <p className="sv-eyebrow">{mode.eyebrow}</p>
@@ -126,9 +126,9 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="mt-5 grid gap-4 md:mt-6 md:grid-cols-3">
             {trustPoints.map((point) => (
-              <div key={point.title} className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
+              <div key={point.title} className="rounded-[20px] border border-slate-200 bg-slate-50/80 p-4 md:rounded-[24px] md:p-5">
                 <h3 className="text-lg font-bold text-slate-950">{point.title}</h3>
                 <p className="mt-2 text-sm leading-7 text-slate-600">{point.body}</p>
               </div>

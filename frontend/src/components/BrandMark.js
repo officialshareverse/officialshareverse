@@ -4,7 +4,7 @@ export default function BrandMark({
   sizeClass = "h-9 w-9",
   roundedClass = "rounded-2xl",
   className = "",
-  imageClassName = "",
+  imageClassName = "object-contain p-1",
 }) {
   return (
     <span
@@ -13,7 +13,7 @@ export default function BrandMark({
       <img
         src={BRAND_LOGO_SRC}
         alt="ShareVerse logo"
-        className={`h-full w-full object-cover ${imageClassName}`}
+        className={`h-full w-full ${imageClassName}`}
       />
     </span>
   );

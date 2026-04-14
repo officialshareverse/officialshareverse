@@ -56,7 +56,7 @@
 
 @layer components {
   .sv-page {
-    @apply min-h-screen px-4 py-6 md:px-6;
+    @apply min-h-screen px-3 py-4 sm:px-4 sm:py-6 md:px-6;
     background:
       radial-gradient(circle at top left, rgba(15, 118, 110, 0.10), transparent 28%),
       radial-gradient(circle at bottom right, rgba(187, 122, 20, 0.10), transparent 26%),
@@ -68,7 +68,7 @@
   }
 
   .sv-card {
-    @apply rounded-[30px] border p-6 shadow-sm;
+    @apply rounded-[24px] border p-4 shadow-sm md:rounded-[30px] md:p-6;
     border-color: var(--sv-border);
     background: var(--sv-paper);
     box-shadow: var(--sv-shadow);
@@ -76,7 +76,7 @@
   }
 
   .sv-card-solid {
-    @apply rounded-[30px] border bg-white p-6 shadow-sm;
+    @apply rounded-[24px] border bg-white p-4 shadow-sm md:rounded-[30px] md:p-6;
     border-color: var(--sv-border);
     box-shadow: var(--sv-shadow);
   }
@@ -89,7 +89,7 @@
   }
 
   .sv-dark-hero {
-    @apply overflow-hidden rounded-[34px] border p-8 text-white;
+    @apply overflow-hidden rounded-[26px] border p-5 text-white md:rounded-[34px] md:p-8;
     border-color: rgba(255, 255, 255, 0.08);
     background:
       radial-gradient(circle at top right, rgba(190, 151, 74, 0.18), transparent 28%),
@@ -98,7 +98,7 @@
   }
 
   .sv-light-hero {
-    @apply overflow-hidden rounded-[34px] border p-8;
+    @apply overflow-hidden rounded-[26px] border p-5 md:rounded-[34px] md:p-8;
     border-color: rgba(255, 255, 255, 0.55);
     background:
       radial-gradient(circle at top right, rgba(15, 118, 110, 0.10), transparent 28%),
@@ -109,8 +109,8 @@
   }
 
   .sv-eyebrow {
-    @apply text-xs font-semibold uppercase;
-    letter-spacing: 0.28em;
+    @apply text-[11px] font-semibold uppercase md:text-xs;
+    letter-spacing: 0.18em;
     color: var(--sv-accent);
   }
 
@@ -120,7 +120,7 @@
   }
 
   .sv-display {
-    @apply text-3xl font-bold leading-[1.02] text-slate-950 md:text-5xl;
+    @apply text-[2.2rem] font-bold leading-[1.04] text-slate-950 sm:text-[2.6rem] md:text-5xl;
   }
 
   .sv-display-on-dark {
@@ -140,8 +140,8 @@
   }
 
   .sv-chip {
-    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase;
-    letter-spacing: 0.18em;
+    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase md:text-xs;
+    letter-spacing: 0.12em;
     border-color: rgba(148, 163, 184, 0.18);
     background: rgba(255, 255, 255, 0.72);
     color: #475569;

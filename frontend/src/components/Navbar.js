@@ -79,16 +79,16 @@ export default function Navbar({ setIsAuth }) {
   };
 
   return (
-    <header className="sticky top-0 z-40 px-4 pt-4 md:px-6">
+    <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 sm:pt-4 md:px-6">
       <div className="sv-container">
         <div className="flex items-center justify-between gap-3 rounded-[28px] border border-white/60 bg-white/80 px-4 py-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur md:px-5">
         <div className="flex items-center gap-3">
-          <BrandMark sizeClass="h-11 w-11" />
+          <BrandMark sizeClass="h-10 w-10 sm:h-11 sm:w-11" />
           <div>
-            <h1 className="text-xl font-bold leading-none text-slate-950">
+            <h1 className="text-lg font-bold leading-none text-slate-950 sm:text-xl">
               ShareVerse
             </h1>
-            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">Split more. Pay less.</p>
+            <p className="mt-1 hidden text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:block">Split more. Pay less.</p>
           </div>
         </div>
 

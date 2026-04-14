@@ -28,17 +28,17 @@ export default function PublicFooter({ compact = false }) {
         }`}
       >
         <div className="max-w-xl">
-          <p className="text-2xl font-bold leading-none text-slate-950">
+          <p className="text-xl font-bold leading-none text-slate-950 sm:text-2xl">
             ShareVerse
           </p>
-          <p className="mt-2 text-sm uppercase tracking-[0.18em] text-slate-500">
+          <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-slate-500 sm:text-sm">
             Split more. Pay less.
           </p>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
-            Operated by {BUSINESS_OPERATOR_NAME}
-            <br />
-            Support: {SUPPORT_EMAIL} | {SUPPORT_PHONE}
-          </p>
+          <div className="mt-3 space-y-1 text-sm leading-7 text-slate-600">
+            <p>Operated by {BUSINESS_OPERATOR_NAME}</p>
+            <p className="break-words">Support: {SUPPORT_EMAIL}</p>
+            <p>{SUPPORT_PHONE}</p>
+          </div>
         </div>
 
         <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
