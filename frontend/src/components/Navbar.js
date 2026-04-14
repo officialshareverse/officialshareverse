@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import BrandMark from "./BrandMark";
 
 const navItems = [
   { to: "/home", label: "Home" },
@@ -82,9 +83,7 @@ export default function Navbar({ setIsAuth }) {
       <div className="sv-container">
         <div className="flex items-center justify-between gap-3 rounded-[28px] border border-white/60 bg-white/80 px-4 py-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur md:px-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,#0f172a_0%,#14532d_100%)] text-sm font-bold text-white shadow-[0_12px_24px_rgba(15,23,42,0.18)]">
-            SV
-          </div>
+          <BrandMark sizeClass="h-11 w-11" />
           <div>
             <h1 className="text-xl font-bold leading-none text-slate-950">
               ShareVerse

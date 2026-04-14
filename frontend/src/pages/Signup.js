@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import BrandMark from "../components/BrandMark";
 import PublicFooter from "../components/PublicFooter";
 
 function getSignupError(errorData) {
@@ -110,9 +111,7 @@ export default function Signup() {
             to="/"
             className="inline-flex items-center gap-3 rounded-full border border-slate-300 bg-white/90 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm"
           >
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,#0f172a_0%,#14532d_100%)] text-xs font-bold text-white">
-              SV
-            </span>
+            <BrandMark />
             <span className="text-xl font-bold leading-none">
               ShareVerse
             </span>

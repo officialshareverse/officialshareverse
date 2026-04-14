@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import BrandMark from "../components/BrandMark";
 import PublicFooter from "../components/PublicFooter";
 
 const heroIllustrationSrc = `${process.env.PUBLIC_URL}/streaming-services-collage.png`;
@@ -47,9 +48,7 @@ export default function Landing() {
             to="/"
             className="inline-flex items-center gap-3 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900"
           >
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,#0f172a_0%,#14532d_100%)] text-xs font-bold text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
-              SV
-            </span>
+            <BrandMark />
             <span className="text-xl font-bold leading-none">ShareVerse</span>
           </Link>
 

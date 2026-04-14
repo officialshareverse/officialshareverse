@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import BrandMark from "./BrandMark";
 import PublicFooter from "./PublicFooter";
 
 const valueProps = [
@@ -35,9 +36,7 @@ export default function AuthShell({
                 to="/"
                 className="inline-flex items-center gap-3 rounded-full border border-white/70 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur"
               >
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,#0f172a_0%,#14532d_100%)] text-xs font-bold text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
-                  SV
-                </span>
+                <BrandMark />
                 <span className="text-xl font-bold leading-none">
                   ShareVerse
                 </span>
