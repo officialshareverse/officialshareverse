@@ -5,6 +5,7 @@ import tempfile
 import json
 from unittest.mock import patch
 
+from django.core.exceptions import ValidationError
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
@@ -33,6 +34,7 @@ from .models import (
     WalletPayout,
     WalletTopupOrder,
 )
+from .manual_payouts import create_manual_wallet_payout
 from .payments import PaymentGatewayError
 
 
@@ -218,6 +220,22 @@ class GroupFlowTests(APITestCase):
                 },
                 format="json",
             )
+
+    def create_local_bank_payout_account(self, user=None):
+        payout_user = user or self.owner
+        payout_account = PayoutAccount(
+            user=payout_user,
+            account_type="bank_account",
+            contact_name="Owner Account",
+            contact_email=payout_user.email,
+            contact_phone=payout_user.phone or "",
+            bank_account_holder_name="Owner Account",
+            bank_account_ifsc="HDFC0001234",
+            is_active=True,
+        )
+        payout_account.set_bank_account_number("123456789012")
+        payout_account.save()
+        return payout_account
 
     def test_signup_accepts_name_fields(self):
         response = self.client.post(
@@ -880,6 +898,62 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.data["error"], "Insufficient wallet balance")
         wallet.refresh_from_db()
         self.assertEqual(wallet.balance, Decimal("1000.00"))
+
+    def test_manual_wallet_payout_deducts_wallet_and_records_processed_transaction(self):
+        payout_account = self.create_local_bank_payout_account(self.owner)
+        wallet = Wallet.objects.get(user=self.owner)
+        staff_user = self.create_user("staffadmin", "9000000005", is_staff=True)
+
+        payout = create_manual_wallet_payout(
+            user=self.owner,
+            amount=Decimal("250.00"),
+            payout_account=payout_account,
+            created_by=staff_user,
+            external_reference="UTR-MANUAL-123",
+            admin_notes="Sent through bank transfer after support review.",
+        )
+
+        wallet.refresh_from_db()
+        payout.refresh_from_db()
+
+        self.assertEqual(wallet.balance, Decimal("750.00"))
+        self.assertEqual(payout.provider, "manual")
+        self.assertEqual(payout.status, "processed")
+        self.assertEqual(payout.provider_status_source, "admin_manual")
+        self.assertEqual(payout.utr, "UTR-MANUAL-123")
+        self.assertEqual(payout.transaction.status, "success")
+        self.assertEqual(payout.transaction.payment_method, "wallet_payout")
+        self.assertEqual(
+            payout.status_details["created_by_username"],
+            staff_user.username,
+        )
+        self.assertTrue(
+            Notification.objects.filter(
+                user=self.owner,
+                message__icontains="manual withdrawal",
+            ).exists()
+        )
+
+    def test_manual_wallet_payout_rejects_when_wallet_balance_is_too_low(self):
+        payout_account = self.create_local_bank_payout_account(self.owner)
+        wallet = Wallet.objects.get(user=self.owner)
+
+        with self.assertRaises(ValidationError):
+            create_manual_wallet_payout(
+                user=self.owner,
+                amount=Decimal("1500.00"),
+                payout_account=payout_account,
+                external_reference="UTR-TOO-HIGH",
+            )
+
+        wallet.refresh_from_db()
+        self.assertEqual(wallet.balance, Decimal("1000.00"))
+        self.assertFalse(
+            WalletPayout.objects.filter(
+                user=self.owner,
+                provider="manual",
+            ).exists()
+        )
 
     @override_settings(
         RAZORPAY_KEY_ID="rzp_test_123",

@@ -1,4 +1,8 @@
-from django.contrib import admin
+import json
+
+from django import forms
+from django.contrib import admin, messages
+from django.utils.safestring import mark_safe
 
 from .models import (
     CredentialRevealToken,
@@ -13,7 +17,9 @@ from .models import (
     Transaction,
     User,
     Wallet,
+    WalletPayout,
 )
+from .manual_payouts import build_manual_payout_destination_label, create_manual_wallet_payout
 
 
 @admin.register(Group)
@@ -32,6 +38,186 @@ class GroupAdmin(admin.ModelAdmin):
     list_filter = ("mode", "status", "proof_review_status")
     search_fields = ("subscription__name", "owner__username", "purchase_reference")
     readonly_fields = ("proof_submitted_at", "proof_reviewed_at", "funds_released_at", "created_at")
+
+
+class ManualWalletPayoutAdminForm(forms.ModelForm):
+    external_reference = forms.CharField(
+        required=False,
+        max_length=120,
+        help_text="Optional UTR, UPI reference, or internal transfer reference.",
+    )
+    admin_notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 4}),
+        help_text="Optional internal notes about this manual payout.",
+    )
+
+    class Meta:
+        model = WalletPayout
+        fields = ["user", "payout_account", "amount", "mode", "destination_label"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["amount"].help_text = "Create this only after you have sent the money manually."
+        self.fields["destination_label"].help_text = (
+            "Optional if you pick a saved payout account. Example: UPI chetak@upi or Bank ending 9012."
+        )
+
+        if self.instance and self.instance.pk:
+            self.fields["external_reference"].initial = self.instance.utr
+            self.fields["admin_notes"].initial = (self.instance.status_details or {}).get("admin_notes", "")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        user = cleaned_data.get("user")
+        payout_account = cleaned_data.get("payout_account")
+        amount = cleaned_data.get("amount")
+        destination_label = (cleaned_data.get("destination_label") or "").strip()
+
+        if payout_account and user and payout_account.user_id != user.id:
+            self.add_error("payout_account", "Choose a payout account that belongs to the selected user.")
+
+        if payout_account and not destination_label:
+            cleaned_data["destination_label"] = build_manual_payout_destination_label(payout_account)
+
+        if not payout_account and not cleaned_data.get("destination_label"):
+            self.add_error(
+                "destination_label",
+                "Add a destination label when you are not using a saved payout account.",
+            )
+
+        if user and amount is not None:
+            wallet = getattr(user, "wallet", None)
+            available_balance = wallet.balance if wallet else 0
+            if available_balance < amount:
+                self.add_error(
+                    "amount",
+                    f"This user only has Rs. {available_balance} available in the wallet.",
+                )
+
+        return cleaned_data
+
+
+@admin.register(WalletPayout)
+class WalletPayoutAdmin(admin.ModelAdmin):
+    form = ManualWalletPayoutAdminForm
+    list_display = (
+        "id",
+        "user",
+        "amount",
+        "status",
+        "provider",
+        "mode",
+        "destination_label",
+        "provider_status_source",
+        "processed_at",
+        "requested_at",
+    )
+    list_filter = ("status", "provider", "mode", "provider_status_source")
+    search_fields = (
+        "user__username",
+        "user__email",
+        "destination_label",
+        "provider_reference_id",
+        "provider_payout_id",
+        "utr",
+    )
+
+    def get_fields(self, request, obj=None):
+        if obj:
+            return (
+                "user",
+                "payout_account",
+                "amount",
+                "currency",
+                "status",
+                "mode",
+                "destination_label",
+                "provider",
+                "provider_reference_id",
+                "provider_payout_id",
+                "utr",
+                "provider_status_source",
+                "transaction",
+                "refund_transaction",
+                "processed_at",
+                "wallet_restored_at",
+                "requested_at",
+                "updated_at",
+                "status_details_pretty",
+                "failure_reason",
+            )
+
+        return (
+            "user",
+            "payout_account",
+            "amount",
+            "mode",
+            "destination_label",
+            "external_reference",
+            "admin_notes",
+        )
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return (
+                "user",
+                "payout_account",
+                "amount",
+                "currency",
+                "status",
+                "mode",
+                "destination_label",
+                "provider",
+                "provider_reference_id",
+                "provider_payout_id",
+                "utr",
+                "provider_status_source",
+                "transaction",
+                "refund_transaction",
+                "processed_at",
+                "wallet_restored_at",
+                "requested_at",
+                "updated_at",
+                "status_details_pretty",
+                "failure_reason",
+            )
+
+        return ()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        if change:
+            super().save_model(request, obj, form, change)
+            return
+
+        create_manual_wallet_payout(
+            user=form.cleaned_data["user"],
+            amount=form.cleaned_data["amount"],
+            payout_account=form.cleaned_data.get("payout_account"),
+            destination_label=form.cleaned_data.get("destination_label", ""),
+            mode=form.cleaned_data.get("mode"),
+            created_by=request.user,
+            external_reference=form.cleaned_data.get("external_reference", ""),
+            admin_notes=form.cleaned_data.get("admin_notes", ""),
+            wallet_payout=obj,
+        )
+
+        self.message_user(
+            request,
+            f"Manual payout of Rs. {obj.amount} recorded for {obj.user.username}.",
+            level=messages.SUCCESS,
+        )
+
+    def status_details_pretty(self, obj):
+        if not obj.status_details:
+            return "—"
+        pretty_json = json.dumps(obj.status_details, indent=2, sort_keys=True)
+        return mark_safe(f"<pre>{pretty_json}</pre>")
+
+    status_details_pretty.short_description = "Status details"
 
 
 admin.site.register(User)
