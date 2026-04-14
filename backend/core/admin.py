@@ -51,6 +51,10 @@ class ManualWalletPayoutAdminForm(forms.ModelForm):
         widget=forms.Textarea(attrs={"rows": 4}),
         help_text="Optional internal notes about this manual payout.",
     )
+    process_now = forms.BooleanField(
+        required=False,
+        help_text="Tick this after you have sent the money manually to deduct the wallet and mark the request completed.",
+    )
 
     class Meta:
         model = WalletPayout
@@ -66,6 +70,7 @@ class ManualWalletPayoutAdminForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             self.fields["external_reference"].initial = self.instance.utr
             self.fields["admin_notes"].initial = (self.instance.status_details or {}).get("admin_notes", "")
+            self.fields["amount"].help_text = "The wallet will be deducted only when you process this request."
 
     def clean(self):
         cleaned_data = super().clean()
@@ -86,7 +91,12 @@ class ManualWalletPayoutAdminForm(forms.ModelForm):
                 "Add a destination label when you are not using a saved payout account.",
             )
 
-        if user and amount is not None:
+        should_check_balance = not self.instance.pk or (
+            self.cleaned_data.get("process_now")
+            and self.instance.provider == "manual"
+            and self.instance.transaction_id is None
+        )
+        if should_check_balance and user and amount is not None:
             wallet = getattr(user, "wallet", None)
             available_balance = wallet.balance if wallet else 0
             if available_balance < amount:
@@ -123,7 +133,32 @@ class WalletPayoutAdmin(admin.ModelAdmin):
         "utr",
     )
 
+    def is_pending_manual_request(self, obj):
+        return bool(
+            obj
+            and obj.pk
+            and obj.provider == "manual"
+            and obj.transaction_id is None
+            and obj.status in {"created", "pending", "queued", "processing"}
+        )
+
     def get_fields(self, request, obj=None):
+        if self.is_pending_manual_request(obj):
+            return (
+                "user",
+                "payout_account",
+                "amount",
+                "mode",
+                "destination_label",
+                "status",
+                "requested_at",
+                "external_reference",
+                "admin_notes",
+                "process_now",
+                "status_details_pretty",
+                "failure_reason",
+            )
+
         if obj:
             return (
                 "user",
@@ -159,6 +194,19 @@ class WalletPayoutAdmin(admin.ModelAdmin):
         )
 
     def get_readonly_fields(self, request, obj=None):
+        if self.is_pending_manual_request(obj):
+            return (
+                "user",
+                "payout_account",
+                "amount",
+                "mode",
+                "destination_label",
+                "status",
+                "requested_at",
+                "status_details_pretty",
+                "failure_reason",
+            )
+
         if obj:
             return (
                 "user",
@@ -190,7 +238,30 @@ class WalletPayoutAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if change:
-            super().save_model(request, obj, form, change)
+            if self.is_pending_manual_request(obj) and form.cleaned_data.get("process_now"):
+                create_manual_wallet_payout(
+                    user=obj.user,
+                    amount=obj.amount,
+                    payout_account=obj.payout_account,
+                    destination_label=obj.destination_label,
+                    mode=obj.mode,
+                    created_by=request.user,
+                    external_reference=form.cleaned_data.get("external_reference", ""),
+                    admin_notes=form.cleaned_data.get("admin_notes", ""),
+                    wallet_payout=obj,
+                )
+                self.message_user(
+                    request,
+                    f"Manual withdrawal request for {obj.user.username} was marked as completed.",
+                    level=messages.SUCCESS,
+                )
+                return
+
+            self.message_user(
+                request,
+                "Tick 'Process now' after the money has been sent manually to complete this request.",
+                level=messages.INFO,
+            )
             return
 
         create_manual_wallet_payout(

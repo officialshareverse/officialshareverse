@@ -34,7 +34,7 @@ from .models import (
     WalletPayout,
     WalletTopupOrder,
 )
-from .manual_payouts import create_manual_wallet_payout
+from .manual_payouts import create_manual_wallet_payout, create_manual_wallet_payout_request
 from .payments import PaymentGatewayError
 
 
@@ -236,6 +236,34 @@ class GroupFlowTests(APITestCase):
         payout_account.set_bank_account_number("123456789012")
         payout_account.save()
         return payout_account
+
+    def test_user_can_save_local_payout_account_when_payout_provider_is_unconfigured(self):
+        self.authenticate(self.owner)
+        response = self.client.put(
+            "/api/wallet/payout-account/",
+            {
+                "account_type": "bank_account",
+                "contact_name": "Owner Account",
+                "contact_email": "owner@example.com",
+                "contact_phone": "9000000001",
+                "bank_account_holder_name": "Owner Account",
+                "bank_account_number": "123456789012",
+                "confirm_bank_account_number": "123456789012",
+                "bank_account_ifsc": "HDFC0001234",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["message"],
+            "Withdrawal destination saved for manual review requests.",
+        )
+        payout_account = PayoutAccount.objects.get(user=self.owner)
+        self.assertEqual(payout_account.provider_contact_id, "")
+        self.assertEqual(payout_account.provider_fund_account_id, "")
+        self.assertEqual(payout_account.bank_account_last4, "9012")
+        self.assertIsNone(payout_account.last_synced_at)
 
     def test_signup_accepts_name_fields(self):
         response = self.client.post(
@@ -933,6 +961,61 @@ class GroupFlowTests(APITestCase):
                 message__icontains="manual withdrawal",
             ).exists()
         )
+
+    def test_user_can_create_manual_wallet_payout_request_when_provider_is_unconfigured(self):
+        self.create_local_bank_payout_account(self.owner)
+        wallet = Wallet.objects.get(user=self.owner)
+
+        self.authenticate(self.owner)
+        response = self.client.post(
+            "/api/withdraw-money/",
+            {"amount": "250.00", "payout_mode": "IMPS"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            response.data["message"],
+            "Withdrawal request submitted for manual review.",
+        )
+        wallet.refresh_from_db()
+        self.assertEqual(wallet.balance, Decimal("1000.00"))
+        payout = WalletPayout.objects.get(user=self.owner, provider="manual")
+        self.assertEqual(payout.status, "pending")
+        self.assertIsNone(payout.transaction)
+        self.assertEqual(payout.provider_status_source, "user_manual_request")
+
+    def test_manual_wallet_payout_can_process_existing_request(self):
+        payout_account = self.create_local_bank_payout_account(self.owner)
+        wallet = Wallet.objects.get(user=self.owner)
+        staff_user = self.create_user("staffadmin", "9000000005", is_staff=True)
+        pending_request = create_manual_wallet_payout_request(
+            user=self.owner,
+            amount=Decimal("250.00"),
+            payout_account=payout_account,
+            mode="IMPS",
+        )
+
+        processed_payout = create_manual_wallet_payout(
+            user=self.owner,
+            amount=pending_request.amount,
+            payout_account=pending_request.payout_account,
+            destination_label=pending_request.destination_label,
+            mode=pending_request.mode,
+            created_by=staff_user,
+            external_reference="UTR-MANUAL-456",
+            admin_notes="Approved after bank transfer.",
+            wallet_payout=pending_request,
+        )
+
+        wallet.refresh_from_db()
+        processed_payout.refresh_from_db()
+
+        self.assertEqual(processed_payout.id, pending_request.id)
+        self.assertEqual(wallet.balance, Decimal("750.00"))
+        self.assertEqual(processed_payout.status, "processed")
+        self.assertEqual(processed_payout.utr, "UTR-MANUAL-456")
+        self.assertIsNotNone(processed_payout.transaction)
 
     def test_manual_wallet_payout_rejects_when_wallet_balance_is_too_low(self):
         payout_account = self.create_local_bank_payout_account(self.owner)

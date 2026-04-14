@@ -9,6 +9,7 @@ import math
 
 from django.conf import settings
 from django.contrib.auth import authenticate
+from django.core.exceptions import ValidationError
 from django.db import DatabaseError, connections, transaction
 from django.db.models import Avg, Count, ExpressionWrapper, F, IntegerField, Q, Sum, Value
 from django.utils import timezone
@@ -54,6 +55,7 @@ from .payments import (
     verify_razorpay_webhook_signature,
     verify_razorpayx_webhook_signature,
 )
+from .manual_payouts import create_manual_wallet_payout_request, save_manual_payout_account
 from .pricing import (
     get_group_join_pricing,
     get_member_charged_amount,
@@ -1772,12 +1774,19 @@ class PayoutAccountView(APIView):
 
         payout_config = build_wallet_payout_config()
         if not payout_config["payout_enabled"]:
+            existing_account = PayoutAccount.objects.filter(user=request.user).first()
+            payout_account = save_manual_payout_account(
+                request.user,
+                serializer.validated_data,
+                existing_account=existing_account,
+            )
             return Response(
                 {
-                    "error": "Real payouts are not configured on this server yet.",
+                    "message": "Withdrawal destination saved for manual review requests.",
+                    "payout_account": PayoutAccountSerializer(payout_account).data,
                     "payout_config": payout_config,
                 },
-                status=503,
+                status=200,
             )
 
         existing_account = PayoutAccount.objects.filter(user=request.user).first()
@@ -1812,18 +1821,8 @@ class WithdrawMoneyView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
 
-        payout_config = build_wallet_payout_config()
-        if not payout_config["payout_enabled"]:
-            return Response(
-                {
-                    "error": "Real payouts are not configured on this server yet.",
-                    "payout_config": payout_config,
-                },
-                status=503,
-            )
-
         payout_account = PayoutAccount.objects.filter(user=request.user, is_active=True).first()
-        if not payout_account or not payout_account.provider_fund_account_id:
+        if not payout_account:
             return Response(
                 {"error": "Add a payout method before requesting a withdrawal."},
                 status=400,
@@ -1831,6 +1830,34 @@ class WithdrawMoneyView(APIView):
 
         amount = serializer.validated_data["amount"].quantize(Decimal("0.01"))
         payout_mode = serializer.validated_data["payout_mode"]
+        payout_config = build_wallet_payout_config()
+        if not payout_config["payout_enabled"]:
+            try:
+                wallet_payout = create_manual_wallet_payout_request(
+                    user=request.user,
+                    amount=amount,
+                    payout_account=payout_account,
+                    mode=payout_mode,
+                )
+            except ValidationError as exc:
+                return Response({"error": exc.message}, status=400)
+
+            wallet, _ = Wallet.objects.get_or_create(user=request.user)
+            return Response(
+                {
+                    "message": "Withdrawal request submitted for manual review.",
+                    "balance": str(wallet.balance),
+                    "payout": WalletPayoutSerializer(wallet_payout).data,
+                    "payout_config": payout_config,
+                },
+                status=201,
+            )
+
+        if not payout_account.provider_fund_account_id:
+            return Response(
+                {"error": "Add a payout method before requesting a withdrawal."},
+                status=400,
+            )
 
         if payout_account.account_type == "vpa":
             payout_mode = "UPI"

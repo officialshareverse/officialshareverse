@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from .models import Notification, Transaction, Wallet, WalletPayout
+from .models import Notification, PayoutAccount, Transaction, Wallet, WalletPayout
 
 
 def build_manual_payout_destination_label(payout_account):
@@ -139,5 +139,112 @@ def create_manual_wallet_payout(
                 f"Support marked a manual withdrawal of Rs. {amount} to {normalized_destination} as completed."
             ),
         )
+
+    return payout
+
+
+def save_manual_payout_account(user, validated_data, existing_account=None):
+    account_type = validated_data["account_type"]
+    contact_name = validated_data.get("contact_name") or user.get_full_name() or user.username
+    contact_email = validated_data.get("contact_email") or user.email or ""
+    contact_phone = validated_data.get("contact_phone") or user.phone or ""
+
+    payout_account = existing_account or PayoutAccount(user=user)
+    payout_account.account_type = account_type
+    payout_account.contact_name = contact_name
+    payout_account.contact_email = contact_email
+    payout_account.contact_phone = contact_phone
+    payout_account.contact_type = "customer"
+    payout_account.provider_contact_id = ""
+    payout_account.provider_fund_account_id = ""
+    payout_account.is_active = True
+    payout_account.last_error = ""
+    payout_account.last_synced_at = None
+
+    if account_type == "bank_account":
+        payout_account.bank_account_holder_name = validated_data["bank_account_holder_name"]
+        payout_account.bank_account_ifsc = validated_data["bank_account_ifsc"]
+        payout_account.set_bank_account_number(validated_data["bank_account_number"])
+        payout_account.clear_vpa()
+    else:
+        payout_account.set_vpa_address(validated_data["vpa_address"])
+        payout_account.clear_bank_account()
+
+    payout_account.save()
+    return payout_account
+
+
+def create_manual_wallet_payout_request(
+    *,
+    user,
+    amount,
+    payout_account,
+    mode="IMPS",
+):
+    amount = Decimal(amount).quantize(Decimal("0.01"))
+    if amount <= 0:
+        raise ValidationError("Amount must be greater than zero.")
+
+    if not payout_account:
+        raise ValidationError("Add a payout method before requesting a withdrawal.")
+
+    if payout_account.user_id != user.id:
+        raise ValidationError("Selected payout account does not belong to this user.")
+
+    if not payout_account.is_active:
+        raise ValidationError("Selected payout account is inactive.")
+
+    existing_open_request = WalletPayout.objects.filter(
+        user=user,
+        provider="manual",
+        transaction__isnull=True,
+        status__in=["created", "pending", "queued", "processing"],
+    ).exists()
+    if existing_open_request:
+        raise ValidationError("You already have a withdrawal request under review.")
+
+    normalized_mode = normalize_manual_payout_mode(payout_account, mode)
+    normalized_destination = build_manual_payout_destination_label(payout_account)
+    currency = (getattr(settings, "RAZORPAY_CURRENCY", "INR") or "INR").strip().upper()
+    amount_subunits = int((amount * 100).quantize(Decimal("1")))
+
+    wallet, _ = Wallet.objects.get_or_create(user=user)
+    if wallet.balance < amount:
+        raise ValidationError("Insufficient wallet balance")
+
+    payout = WalletPayout.objects.create(
+        user=user,
+        payout_account=payout_account,
+        amount=amount,
+        amount_subunits=amount_subunits,
+        currency=currency,
+        provider="manual",
+        provider_payout_id=None,
+        provider_contact_id=payout_account.provider_contact_id,
+        provider_fund_account_id=payout_account.provider_fund_account_id,
+        provider_reference_id=f"manual_req_{secrets.token_hex(10)}"[:40],
+        idempotency_key=secrets.token_hex(24),
+        source_account_number="manual",
+        mode=normalized_mode,
+        purpose="payout",
+        narration=sanitize_manual_payout_narration(f"Manual request {user.username}"),
+        destination_label=normalized_destination,
+        status="pending",
+        status_details={
+            "manual": True,
+            "review_required": True,
+            "requested_by_user_id": user.id,
+            "requested_by_username": user.username,
+            "requested_at": timezone.now().isoformat(),
+        },
+        provider_status_source="user_manual_request",
+    )
+
+    Notification.objects.create(
+        user=user,
+        message=(
+            f"Your withdrawal request for Rs. {amount} to {normalized_destination} was submitted for manual review."
+        ),
+    )
 
     return payout
