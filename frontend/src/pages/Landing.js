@@ -89,7 +89,7 @@ export default function Landing() {
               className="aspect-[16/14] w-full object-cover object-center md:aspect-[16/11]"
             />
 
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.18)_0%,rgba(15,23,42,0.2)_24%,rgba(15,23,42,0.38)_56%,rgba(15,23,42,0.72)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.12)_0%,rgba(15,23,42,0.16)_28%,rgba(15,23,42,0.26)_58%,rgba(15,23,42,0.48)_100%)]" />
 
             <div className="absolute inset-x-0 top-0 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
               <div className="inline-flex w-fit items-center gap-3 rounded-full border border-white/18 bg-slate-950/30 px-3 py-2 text-left backdrop-blur-sm">
@@ -105,7 +105,7 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6 md:p-8">
+            <div className="absolute inset-0 flex items-center justify-center px-4 py-20 sm:px-6 md:px-8">
               <div className="mx-auto max-w-5xl text-center">
                 <p className="sv-eyebrow sv-animate-rise text-emerald-300">Split more. Pay less.</p>
                 <h1 className="sv-display sv-animate-rise sv-delay-1 mt-4 max-w-4xl mx-auto text-white">
