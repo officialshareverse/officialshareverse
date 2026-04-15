@@ -2224,6 +2224,14 @@ class GroupFlowTests(APITestCase):
         self.assertTrue(response.data["is_verified"])
         self.assertFalse(response.data["is_staff"])
 
+    def test_dashboard_returns_current_user_identity_for_client_personalization(self):
+        self.authenticate(self.owner)
+        response = self.client.get("/api/dashboard/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["current_user"]["id"], self.owner.id)
+        self.assertEqual(response.data["current_user"]["username"], self.owner.username)
+
     def test_profile_endpoint_allows_updating_account_details(self):
         self.authenticate(self.owner)
         response = self.client.patch(

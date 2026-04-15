@@ -17,6 +17,7 @@ export default function Home() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -52,6 +53,20 @@ export default function Home() {
       isMounted = false;
     };
   }, []);
+
+  const currentUserId = dashboard?.current_user?.id || null;
+  const onboardingStorageKey = currentUserId ? `sv-home-guide-seen-${currentUserId}` : "";
+
+  useEffect(() => {
+    if (!onboardingStorageKey) {
+      return;
+    }
+
+    const hasSeenGuide = window.localStorage.getItem(onboardingStorageKey) === "1";
+    if (!hasSeenGuide) {
+      setShowGuide(true);
+    }
+  }, [onboardingStorageKey]);
 
   const ownerSummary = dashboard?.owner_summary || {};
   const notifications = Array.isArray(dashboard?.notifications) ? dashboard.notifications : [];
@@ -108,6 +123,48 @@ export default function Home() {
     { label: "Unread updates", value: unreadNotifications },
   ];
 
+  const onboardingSteps = [
+    {
+      step: "01",
+      title: "Top up your wallet",
+      body: "Open Wallet and add money securely with Razorpay so you are ready to join groups smoothly.",
+      cta: "Open Wallet",
+      onClick: () => navigate("/wallet"),
+    },
+    {
+      step: "02",
+      title: "Browse or create a group",
+      body: "Check active groups on the platform or create your own shared subscription or buy-together plan.",
+      cta: "Browse Groups",
+      onClick: () => navigate("/groups"),
+    },
+    {
+      step: "03",
+      title: "Track updates in one place",
+      body: "Use My Groups, chat, and notifications to follow confirmations, proof uploads, and group progress.",
+      cta: "Open My Groups",
+      onClick: () => navigate("/my-shared"),
+    },
+    {
+      step: "04",
+      title: "Request withdrawals when needed",
+      body: "If you need money out, save your payout destination in Wallet and submit a withdrawal request for manual review, usually within 24 hours.",
+      cta: "Review Wallet",
+      onClick: () => navigate("/wallet"),
+    },
+  ];
+
+  const dismissGuide = () => {
+    if (onboardingStorageKey) {
+      window.localStorage.setItem(onboardingStorageKey, "1");
+    }
+    setShowGuide(false);
+  };
+
+  const openGuide = () => {
+    setShowGuide(true);
+  };
+
   if (loading) {
     return (
       <div className="sv-page">
@@ -120,6 +177,71 @@ export default function Home() {
 
   return (
     <div className="sv-page">
+      {showGuide ? (
+        <div className="sv-modal-backdrop px-3 py-4 sm:px-5">
+          <div className="sv-guide-modal">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-3xl">
+                <p className="sv-eyebrow">First-time guide</p>
+                <h2 className="mt-3 text-3xl font-bold leading-tight text-slate-950 md:text-[2.4rem]">
+                  Let&apos;s get your ShareVerse account moving in four simple steps.
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base md:leading-8">
+                  This walkthrough is shown once for each account on this device so new users know exactly where to start.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={dismissGuide}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {onboardingSteps.map((item, index) => (
+                <article
+                  key={item.step}
+                  className={`sv-guide-step ${index % 2 === 0 ? "sv-animate-float-soft" : "sv-animate-float"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white">
+                      {item.step}
+                    </span>
+                    <h3 className="text-lg font-semibold text-slate-950">{item.title}</h3>
+                  </div>
+                  <p className="mt-4 text-sm leading-7 text-slate-600">{item.body}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      dismissGuide();
+                      item.onClick();
+                    }}
+                    className="sv-btn-secondary mt-5 w-full justify-center sm:w-auto"
+                  >
+                    {item.cta}
+                  </button>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4">
+              <p className="text-sm leading-7 text-emerald-900">
+                Need help after this? Reach us from Support and we&apos;ll help you with top-ups, groups, or manual withdrawal review.
+              </p>
+              <button
+                type="button"
+                onClick={dismissGuide}
+                className="sv-btn-primary w-full justify-center sm:w-auto"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="mx-auto max-w-5xl space-y-6">
         {error ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -148,6 +270,7 @@ export default function Home() {
                 <PrimaryButton onClick={() => navigate("/groups")}>Browse groups</PrimaryButton>
                 <SecondaryButton onClick={() => navigate("/create")}>Create group</SecondaryButton>
                 <SecondaryButton onClick={() => navigate("/my-shared")}>My groups</SecondaryButton>
+                <SecondaryButton onClick={openGuide}>Show quick guide</SecondaryButton>
               </div>
             </div>
 

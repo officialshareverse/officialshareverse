@@ -2217,6 +2217,10 @@ class DashboardView(APIView):
         active_groups = memberships.filter(group__status="active").count()
 
         return Response({
+            "current_user": {
+                "id": user.id,
+                "username": user.username,
+            },
             "balance": str(wallet.balance),
             "wallet_balance": str(wallet.balance),
             "wallet_payments": build_wallet_payment_config(),
