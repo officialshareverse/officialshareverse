@@ -106,13 +106,13 @@ export default function Signup() {
   return (
     <div className="sv-page">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="mb-5 flex flex-col items-stretch gap-3 sm:mb-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <Link
             to="/"
-            className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-slate-300 bg-white/90 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm sm:w-auto sm:justify-start"
+            className="inline-flex w-full items-center justify-center gap-3 rounded-[22px] border border-slate-300 bg-white/90 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm sm:w-auto sm:justify-start sm:rounded-full"
           >
             <BrandMark />
-            <span className="text-xl font-bold leading-none">
+            <span className="text-lg font-bold leading-none sm:text-xl">
               ShareVerse
             </span>
           </Link>
@@ -127,7 +127,7 @@ export default function Signup() {
 
         <div className="overflow-hidden rounded-[26px] border border-white/80 bg-white/84 shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur md:rounded-[34px]">
           <div className="grid lg:grid-cols-[0.95fr_1.05fr]">
-            <section className="bg-[linear-gradient(145deg,#0f172a_0%,#1f2937_62%,#155e75_100%)] px-5 py-6 text-white md:px-8 md:py-10">
+            <section className="order-2 bg-[linear-gradient(145deg,#0f172a_0%,#1f2937_62%,#155e75_100%)] px-4 py-5 text-white md:px-8 md:py-10 lg:order-1">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">
                 Create your account
               </p>
@@ -154,7 +154,7 @@ export default function Signup() {
               </div>
             </section>
 
-            <section className="px-5 py-6 md:px-8 md:py-10">
+            <section className="order-1 px-4 py-5 md:px-8 md:py-10 lg:order-2">
               <div className="max-w-2xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
                   Signup

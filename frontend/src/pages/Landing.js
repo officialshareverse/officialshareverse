@@ -58,21 +58,21 @@ export default function Landing() {
   return (
     <div className="sv-page">
       <div className="mx-auto max-w-6xl space-y-8">
-        <header className="sv-brand-shell flex flex-col items-stretch gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <header className="sv-brand-shell flex flex-col items-stretch gap-3 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <Link
             to="/"
-            className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 sm:w-auto sm:justify-start"
+            className="inline-flex w-full items-center justify-center gap-3 rounded-[22px] border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 sm:w-auto sm:justify-start sm:rounded-full"
           >
             <BrandMark glow />
             <div>
-              <span className="block text-xl font-bold leading-none">ShareVerse</span>
+              <span className="block text-lg font-bold leading-none sm:text-xl">ShareVerse</span>
               <span className="mt-1 hidden text-[10px] uppercase tracking-[0.18em] text-slate-500 sm:block">
                 Split more. Pay less.
               </span>
             </div>
           </Link>
 
-          <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+          <div className="grid w-full grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
             <Link to="/login" className="sv-btn-secondary w-full sm:w-auto">
               Login
             </Link>
@@ -83,7 +83,7 @@ export default function Landing() {
         </header>
 
         <section className="sv-light-hero sv-light-hero-grid relative">
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+          <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)] lg:gap-8">
             <div className="text-center lg:text-left">
               <p className="sv-eyebrow sv-animate-rise">Split more. Pay less.</p>
               <h1 className="sv-display sv-animate-rise sv-delay-1 mt-4 max-w-4xl">
@@ -94,7 +94,7 @@ export default function Landing() {
                 track participation, keep updates visible, and manage shared payments in one calm place.
               </p>
 
-              <div className="sv-animate-rise sv-delay-3 mt-7 grid gap-3 sm:inline-flex sm:flex-wrap sm:justify-center lg:justify-start">
+              <div className="sv-animate-rise sv-delay-3 mt-7 grid gap-3 min-[420px]:grid-cols-2 sm:inline-flex sm:flex-wrap sm:justify-center lg:justify-start">
                 <Link to="/signup" className="sv-btn-primary w-full sm:w-auto">
                   Start with your first split
                 </Link>
@@ -114,7 +114,7 @@ export default function Landing() {
                 ))}
               </div>
 
-              <div className="mt-8 grid gap-3 md:grid-cols-3">
+              <div className="mt-7 grid gap-3 md:mt-8 md:grid-cols-3">
                 {heroHighlights.map((item, index) => (
                   <article
                     key={item.label}
@@ -127,7 +127,7 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-xl">
+            <div className="relative mx-auto w-full max-w-[22rem] sm:max-w-xl">
               <div className="absolute -left-3 top-5 hidden rounded-full border border-white/70 bg-white/85 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 shadow-[0_18px_42px_rgba(15,23,42,0.1)] md:block sv-animate-float">
                 Shared-cost groups
               </div>
@@ -135,8 +135,8 @@ export default function Landing() {
                 Trust-first flow
               </div>
 
-              <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f6fbfc_100%)] p-3 shadow-[0_28px_70px_rgba(15,23,42,0.12)] md:p-4">
-                <div className="rounded-[24px] border border-white/90 bg-[radial-gradient(circle_at_top_right,rgba(236,72,153,0.12),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(34,197,94,0.12),transparent_26%),linear-gradient(180deg,#ffffff_0%,#eef6f8_100%)] p-4 md:p-5">
+              <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f6fbfc_100%)] p-2.5 shadow-[0_28px_70px_rgba(15,23,42,0.12)] md:rounded-[28px] md:p-4">
+                <div className="rounded-[20px] border border-white/90 bg-[radial-gradient(circle_at_top_right,rgba(236,72,153,0.12),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(34,197,94,0.12),transparent_26%),linear-gradient(180deg,#ffffff_0%,#eef6f8_100%)] p-3 md:rounded-[24px] md:p-5">
                   <div className="grid gap-4">
                     <div className="flex items-center justify-between rounded-[24px] border border-slate-200 bg-white/92 px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
                       <div className="flex items-center gap-3">

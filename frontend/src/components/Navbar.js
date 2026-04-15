@@ -79,13 +79,13 @@ export default function Navbar({ setIsAuth }) {
   };
 
   return (
-    <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 sm:pt-4 md:px-6">
+    <header className="sticky top-0 z-40 px-2.5 pt-2.5 sm:px-4 sm:pt-4 md:px-6">
       <div className="sv-container">
-        <div className="sv-brand-shell flex items-center justify-between gap-3 px-4 py-3 md:px-5">
-        <div className="flex items-center gap-3">
-          <BrandMark glow sizeClass="h-10 w-10 sm:h-11 sm:w-11" />
-          <div>
-            <h1 className="text-lg font-bold leading-none text-slate-950 sm:text-xl">
+        <div className="sv-brand-shell flex items-center justify-between gap-3 px-3.5 py-3 sm:px-4 md:px-5">
+        <div className="min-w-0 flex items-center gap-2.5 sm:gap-3">
+          <BrandMark glow sizeClass="h-9 w-9 sm:h-11 sm:w-11" />
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-bold leading-none text-slate-950 sm:text-xl">
               ShareVerse
             </h1>
             <p className="mt-1 hidden text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:block">Split more. Pay less.</p>
@@ -122,16 +122,16 @@ export default function Navbar({ setIsAuth }) {
           <button
             type="button"
             onClick={() => setIsMenuOpen((current) => !current)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 lg:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-lg text-slate-700 transition hover:bg-slate-50 lg:hidden"
             aria-label="Toggle navigation"
           >
-            {isMenuOpen ? "X" : "="}
+            {isMenuOpen ? "×" : "☰"}
           </button>
         </div>
       </div>
 
       {isMenuOpen ? (
-        <div className="mt-3 rounded-[28px] border border-white/60 bg-white/88 px-4 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden">
+        <div className="mt-2 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-[24px] border border-white/60 bg-white/88 px-3.5 py-3.5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden">
           <nav className="grid gap-2">
             {navItems.map((item) => (
               <NavLink

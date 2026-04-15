@@ -30,14 +30,14 @@ export default function AuthShell({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(15,118,110,0.14),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(187,122,20,0.12),_transparent_26%)]" />
 
         <div className="relative mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">
-          <section className="flex flex-1 flex-col justify-between px-4 py-5 sm:px-6 sm:py-8 lg:px-12 lg:py-10">
+          <section className="order-2 flex flex-1 flex-col justify-between px-3 py-4 sm:px-6 sm:py-8 lg:order-1 lg:px-12 lg:py-10">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <Link
                 to="/"
-                className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-white/70 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur sm:w-auto sm:justify-start"
+                className="inline-flex w-full items-center justify-center gap-3 rounded-[22px] border border-white/70 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur sm:w-auto sm:justify-start sm:rounded-full"
               >
                 <BrandMark />
-                <span className="text-xl font-bold leading-none">
+                <span className="text-lg font-bold leading-none sm:text-xl">
                   ShareVerse
                 </span>
               </Link>
@@ -47,12 +47,12 @@ export default function AuthShell({
               </p>
             </div>
 
-            <div className="my-8 max-w-2xl lg:my-0">
+            <div className="my-6 max-w-2xl lg:my-0">
               <p className="sv-eyebrow">
                 {eyebrow}
               </p>
               <h1
-                className="mt-4 text-4xl leading-[0.96] text-slate-950 md:mt-5 md:text-6xl"
+                className="mt-4 text-[2.35rem] leading-[0.96] text-slate-950 sm:text-5xl md:mt-5 md:text-6xl"
               >
                 {title}
               </h1>
@@ -60,7 +60,7 @@ export default function AuthShell({
                 {subtitle}
               </p>
 
-              <div className="mt-8 grid gap-4 md:mt-10 md:grid-cols-2">
+              <div className="mt-7 grid gap-3 md:mt-10 md:grid-cols-2 md:gap-4">
                 {valueProps.map((item) => (
                   <article
                     key={item.title}
@@ -85,7 +85,7 @@ export default function AuthShell({
             </div>
           </section>
 
-          <section className="flex w-full items-center justify-center px-4 pb-6 pt-0 sm:px-6 sm:py-10 lg:max-w-xl lg:px-10">
+          <section className="order-1 flex w-full items-center justify-center px-3 pb-4 pt-0 sm:px-6 sm:py-10 lg:order-2 lg:max-w-xl lg:px-10">
             <div className={`w-full ${panelWidthClass} rounded-[26px] border border-white/80 bg-white/86 p-5 shadow-[0_36px_90px_rgba(15,23,42,0.16)] backdrop-blur md:rounded-[32px] md:p-8`}>
               {children}
               {footer ? <div className="mt-6 border-t border-slate-200 pt-5">{footer}</div> : null}

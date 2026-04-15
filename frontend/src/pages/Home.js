@@ -200,7 +200,7 @@ export default function Home() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="max-w-3xl">
                 <p className="sv-eyebrow">First-time guide</p>
-                <h2 className="mt-3 text-3xl font-bold leading-tight text-slate-950 md:text-[2.4rem]">
+                <h2 className="mt-3 text-[2rem] font-bold leading-tight text-slate-950 sm:text-[2.25rem] md:text-[2.4rem]">
                   Here&apos;s exactly where to click first and how to create your first group.
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base md:leading-8">
@@ -218,7 +218,7 @@ export default function Home() {
 
             <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Quick click map</p>
-              <div className="mt-4 grid gap-3 md:grid-cols-4">
+              <div className="mt-4 grid gap-3 min-[420px]:grid-cols-2 md:grid-cols-4">
                 {[
                   { label: "Create split", note: "Host a new plan", onClick: () => navigate("/create") },
                   { label: "Explore splits", note: "Join something open", onClick: () => navigate("/groups") },
@@ -312,7 +312,7 @@ export default function Home() {
                 with shared-cost tracking, chat, updates, and participation all in one workflow.
               </p>
 
-              <div className="mt-7 grid gap-3 sm:inline-flex sm:flex-wrap">
+              <div className="mt-7 grid gap-3 min-[420px]:grid-cols-2 sm:inline-flex sm:flex-wrap">
                 <PrimaryButton onClick={() => navigate("/groups")}>Explore splits</PrimaryButton>
                 <SecondaryButton onClick={() => navigate("/create")}>Create split</SecondaryButton>
                 <SecondaryButton onClick={() => navigate("/my-shared")}>My groups</SecondaryButton>
@@ -320,7 +320,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-md">
+            <div className="relative mx-auto w-full max-w-[21rem] sm:max-w-md">
               <div className="absolute -left-3 top-3 hidden rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white md:block sv-animate-float">
                 Shared-cost dashboard
               </div>

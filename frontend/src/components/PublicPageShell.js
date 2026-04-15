@@ -7,19 +7,19 @@ export default function PublicPageShell({ eyebrow, title, intro, children }) {
   return (
     <div className="sv-page text-slate-900">
       <div className="mx-auto max-w-6xl">
-        <header className="sv-brand-shell flex flex-col items-stretch gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <header className="sv-brand-shell flex flex-col items-stretch gap-3 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <Link
             to="/"
-            className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 sm:w-auto sm:justify-start"
+            className="inline-flex w-full items-center justify-center gap-3 rounded-[22px] border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 sm:w-auto sm:justify-start sm:rounded-full"
           >
             <BrandMark glow />
-            <span className="text-xl font-bold leading-none">
+            <span className="text-lg font-bold leading-none sm:text-xl">
               ShareVerse
             </span>
           </Link>
 
-          <div className="grid w-full grid-cols-2 gap-3 text-sm sm:flex sm:w-auto sm:flex-wrap sm:items-center">
-            <Link to="/login" className="font-medium text-slate-600 transition hover:text-slate-900">
+          <div className="grid w-full grid-cols-1 gap-2.5 text-sm min-[420px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+            <Link to="/login" className="sv-btn-secondary w-full justify-center px-4 py-2.5 sm:w-auto">
               Login
             </Link>
             <Link
@@ -31,7 +31,7 @@ export default function PublicPageShell({ eyebrow, title, intro, children }) {
           </div>
         </header>
 
-        <section className="sv-light-hero sv-light-hero-grid mt-6 px-5 py-6 md:mt-8 md:px-8 md:py-10">
+        <section className="sv-light-hero sv-light-hero-grid mt-5 px-4 py-5 md:mt-8 md:px-8 md:py-10">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
             <div>
               <p className="sv-eyebrow">{eyebrow}</p>
