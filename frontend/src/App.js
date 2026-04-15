@@ -5,6 +5,7 @@ import Navbar from "./components/Navbar";
 import AboutPage from "./pages/AboutPage";
 import ChatsInbox from "./pages/ChatsInbox";
 import CreateGroup from "./pages/CreateGroup";
+import FaqPage from "./pages/FaqPage";
 import GroupChat from "./pages/GroupChat";
 import Groups from "./pages/Groups";
 import Home from "./pages/Home";
@@ -74,6 +75,7 @@ function App() {
         />
 
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/faq" element={<FaqPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/refunds" element={<RefundPolicyPage />} />

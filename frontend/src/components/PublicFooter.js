@@ -9,6 +9,7 @@ import {
 
 const footerLinks = [
   { to: "/about", label: "About" },
+  { to: "/faq", label: "Q&A" },
   { to: "/terms", label: "Terms" },
   { to: "/privacy", label: "Privacy" },
   { to: "/refunds", label: "Refund Policy" },
