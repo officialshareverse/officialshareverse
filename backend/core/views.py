@@ -524,12 +524,17 @@ def build_wallet_payout_config():
     source_account_number = (getattr(settings, "RAZORPAYX_SOURCE_ACCOUNT_NUMBER", "") or "").strip()
     payout_enabled = bool(key_id and key_secret and source_account_number)
     webhook_enabled = bool(payout_enabled and webhook_secret)
-    is_live_mode = key_id.startswith("rzp_live_")
+    manual_review_enabled = not payout_enabled
+    is_live_mode = bool(payout_enabled and key_id.startswith("rzp_live_"))
 
-    if not payout_enabled:
-        mode = "unconfigured"
-        label = "Payouts not configured"
-        helper_text = "Add RazorpayX keys and a source account number before enabling real withdrawals."
+    if manual_review_enabled:
+        mode = "manual_review"
+        label = "Manual review payouts"
+        helper_text = (
+            "Withdrawal requests are live through manual review. "
+            "Users can save a payout destination and request a withdrawal, "
+            "then admins complete the transfer manually within 24 hours."
+        )
     elif is_live_mode:
         mode = "live"
         label = "Live payouts"
@@ -548,8 +553,9 @@ def build_wallet_payout_config():
         )
 
     return {
-        "provider": "razorpayx",
+        "provider": "razorpayx" if payout_enabled else "manual",
         "payout_enabled": payout_enabled,
+        "manual_review_enabled": manual_review_enabled,
         "webhook_enabled": webhook_enabled,
         "mode": mode,
         "mode_label": label,

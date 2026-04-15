@@ -255,7 +255,7 @@ export default function Wallet() {
             <div className="mt-5 flex flex-wrap gap-2">
               {topupConfig ? <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]">{topupConfig.mode_label}</span> : null}
               <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${payoutsLive ? "bg-white/10 text-white" : "bg-amber-400/15 text-amber-100"}`}>
-                {payoutsLive ? payoutConfig?.mode_label || "Payouts live" : "Manual withdrawal review"}
+                {payoutConfig?.mode_label || (payoutsLive ? "Payouts live" : "Manual withdrawal review")}
               </span>
             </div>
           </aside>

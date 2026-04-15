@@ -1397,6 +1397,26 @@ class GroupFlowTests(APITestCase):
         self.assertTrue(response.data["wallet_payments"]["topup_enabled"])
         self.assertTrue(response.data["wallet_payments"]["webhook_enabled"])
 
+    @override_settings(
+        RAZORPAY_KEY_ID="rzp_live_123",
+        RAZORPAY_KEY_SECRET="live_secret_123",
+        RAZORPAYX_KEY_ID="",
+        RAZORPAYX_KEY_SECRET="",
+        RAZORPAYX_WEBHOOK_SECRET="",
+        RAZORPAYX_SOURCE_ACCOUNT_NUMBER="",
+    )
+    def test_dashboard_reports_manual_review_wallet_payout_mode_without_automated_payouts(self):
+        self.authenticate(self.owner)
+        response = self.client.get("/api/dashboard/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["wallet_payouts_config"]["mode"], "manual_review")
+        self.assertEqual(response.data["wallet_payouts_config"]["mode_label"], "Manual review payouts")
+        self.assertEqual(response.data["wallet_payouts_config"]["provider"], "manual")
+        self.assertTrue(response.data["wallet_payouts_config"]["manual_review_enabled"])
+        self.assertFalse(response.data["wallet_payouts_config"]["payout_enabled"])
+        self.assertFalse(response.data["wallet_payouts_config"]["is_live_mode"])
+
     @override_settings(RAZORPAY_KEY_ID="", RAZORPAY_KEY_SECRET="")
     def test_wallet_topup_create_order_requires_gateway_configuration(self):
         self.authenticate(self.owner)
@@ -2233,3 +2253,18 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.data["database"], "ok")
         self.assertIn("payments", response.data)
         self.assertIn("payouts", response.data)
+
+    @override_settings(
+        RAZORPAY_KEY_ID="rzp_live_123",
+        RAZORPAY_KEY_SECRET="live_secret_123",
+        RAZORPAYX_KEY_ID="",
+        RAZORPAYX_KEY_SECRET="",
+        RAZORPAYX_WEBHOOK_SECRET="",
+        RAZORPAYX_SOURCE_ACCOUNT_NUMBER="",
+    )
+    def test_health_endpoint_reports_manual_review_payout_mode_without_automated_payouts(self):
+        response = self.client.get("/api/health/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["payments"], "live")
+        self.assertEqual(response.data["payouts"], "manual_review")
