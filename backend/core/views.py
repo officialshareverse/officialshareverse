@@ -1268,7 +1268,7 @@ class CreateGroupView(APIView):
             mode=mode,
         )
 
-        if mode == "sharing":
+        if mode == "sharing" and (access_identifier or access_password or access_notes):
             group.set_access_credentials(access_identifier, access_password, access_notes)
         else:
             group.clear_access_credentials()

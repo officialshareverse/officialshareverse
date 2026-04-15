@@ -32,15 +32,12 @@ function buildInitialForm() {
     mode: "sharing",
     total_slots: "2",
     price_per_slot: "",
-    access_identifier: "",
-    access_password: "",
-    access_notes: "",
     start_date: startDate,
     end_date: addDays(startDate, 29),
   };
 }
 
-function validateForm(form, isSharing) {
+function validateForm(form) {
   const errors = {};
   const slotCount = Number(form.total_slots);
   const price = Number(form.price_per_slot);
@@ -67,14 +64,6 @@ function validateForm(form, isSharing) {
 
   if (form.start_date && form.end_date && form.end_date < form.start_date) {
     errors.end_date = "End date cannot be earlier than the start date.";
-  }
-
-  if (isSharing && !form.access_identifier.trim()) {
-    errors.access_identifier = "Add the login email or username you manage.";
-  }
-
-  if (isSharing && !form.access_password.trim()) {
-    errors.access_password = "Add the password you manage for this plan.";
   }
 
   return errors;
@@ -165,8 +154,6 @@ export default function CreateGroup() {
   const [loading, setLoading] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [submitError, setSubmitError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-
   const isSharing = form.mode === "sharing";
   const modeConfig = getModeConfig(form.mode);
 
@@ -265,7 +252,7 @@ export default function CreateGroup() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const validationErrors = validateForm(form, isSharing);
+    const validationErrors = validateForm(form);
     setErrors(validationErrors);
     setSubmitError("");
 
@@ -280,9 +267,6 @@ export default function CreateGroup() {
       price_per_slot: form.price_per_slot,
       start_date: form.start_date,
       end_date: form.end_date,
-      access_identifier: isSharing ? form.access_identifier.trim() : "",
-      access_password: isSharing ? form.access_password : "",
-      access_notes: isSharing ? form.access_notes.trim() : "",
     };
 
     try {
@@ -534,61 +518,16 @@ export default function CreateGroup() {
 
             {isSharing ? (
               <section className="rounded-[28px] border border-sky-200 bg-sky-50/70 p-5 md:p-6">
-                <p className="text-xs uppercase tracking-[0.22em] text-sky-700">Owner Access</p>
-                <h3 className="mt-2 text-xl font-semibold text-slate-900">Secure access details</h3>
+                <p className="text-xs uppercase tracking-[0.22em] text-sky-700">Access Planning</p>
+                <h3 className="mt-2 text-xl font-semibold text-slate-900">Set the split up first, share access later</h3>
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                  Save the login details you manage for this plan. Joined members do not see these details on-platform; access is coordinated privately by you.
+                  You do not need to add login credentials while creating a sharing split. Publish the split first, fill members, and coordinate access later from My Splits when you are ready.
                 </p>
 
-                <div className="mt-5 grid gap-5 md:grid-cols-2">
-                  <div className="md:col-span-2">
-                    <label className="text-sm font-semibold text-slate-700">Login email or username</label>
-                    <input
-                      type="text"
-                      name="access_identifier"
-                      value={form.access_identifier}
-                      onChange={handleChange}
-                      placeholder="shared@email.com or account username"
-                      className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                    />
-                    <InputError message={errors.access_identifier} />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="text-sm font-semibold text-slate-700">Password</label>
-                    <div className="mt-2 flex items-center rounded-2xl border border-slate-300 bg-white focus-within:border-slate-900 focus-within:ring-2 focus-within:ring-slate-900/10">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        name="access_password"
-                        value={form.access_password}
-                        onChange={handleChange}
-                        placeholder="Password you manage for this plan"
-                        className="w-full rounded-l-2xl px-4 py-3 text-sm text-slate-900 outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((current) => !current)}
-                        className="border-l border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-                      >
-                        {showPassword ? "Hide" : "Show"}
-                      </button>
-                    </div>
-                    <InputError message={errors.access_password} />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="text-sm font-semibold text-slate-700">Owner notes</label>
-                    <textarea
-                      name="access_notes"
-                      value={form.access_notes}
-                      onChange={handleChange}
-                      placeholder="Optional reminders like profile name, PIN, device rules, or renewal notes"
-                      className="mt-2 min-h-[120px] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                    />
-                    <p className="mt-2 text-xs text-slate-500">
-                      Keep this short and practical so it stays easy to manage later.
-                    </p>
-                  </div>
+                <div className="mt-5 grid gap-3 md:grid-cols-3">
+                  <DetailRow label="1" value="Create the split with pricing and dates" muted />
+                  <DetailRow label="2" value="Let members join and pay for the cycle" muted />
+                  <DetailRow label="3" value="Share access privately when the split is ready" muted />
                 </div>
               </section>
             ) : (
@@ -692,9 +631,9 @@ export default function CreateGroup() {
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                  <h3 className="text-sm font-semibold text-slate-900">Access stays owner-managed</h3>
+                  <h3 className="text-sm font-semibold text-slate-900">Access is shared later</h3>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
-                    Keep coordination private and use group chat for updates. Member-facing pages focus on status, not raw login display.
+                    Create the split first, then handle any login or access-sharing details later from My Splits when members are ready.
                   </p>
                 </div>
               </div>

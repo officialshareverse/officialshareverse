@@ -295,14 +295,33 @@ class GroupFlowTests(APITestCase):
                 "price_per_slot": "199.00",
                 "start_date": "2026-04-20",
                 "end_date": "2026-04-19",
-                "access_identifier": "spotify-owner@example.com",
-                "access_password": "securepass",
             },
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("end_date", response.data)
+
+    def test_create_sharing_group_allows_empty_credentials(self):
+        self.authenticate(self.owner)
+        response = self.client.post(
+            "/api/create-group/",
+            {
+                "subscription_name": "Spotify",
+                "mode": "sharing",
+                "total_slots": 2,
+                "price_per_slot": "199.00",
+                "start_date": "2026-04-12",
+                "end_date": "2026-05-11",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        group = Group.objects.get(id=response.data["group_id"])
+        self.assertEqual(group.get_access_identifier(), "")
+        self.assertEqual(group.get_access_password(), "")
+        self.assertEqual(group.access_notes, "")
 
     def test_create_group_persists_exact_start_and_end_dates(self):
         self.authenticate(self.owner)
@@ -315,8 +334,6 @@ class GroupFlowTests(APITestCase):
                 "price_per_slot": "199.00",
                 "start_date": "2026-04-12",
                 "end_date": "2026-05-11",
-                "access_identifier": "spotify-owner@example.com",
-                "access_password": "securepass",
             },
             format="json",
         )
