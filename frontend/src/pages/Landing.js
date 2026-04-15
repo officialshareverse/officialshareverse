@@ -86,12 +86,12 @@ export default function Landing() {
             <img
               src={heroIllustrationSrc}
               alt="Illustration showing people coordinating digital plans, tools, and shared-cost participation across one connected platform."
-              className="aspect-[16/14] w-full object-cover object-center md:aspect-[16/11]"
+              className="aspect-[4/5] w-full object-cover object-center sm:aspect-[16/12] md:aspect-[16/11]"
             />
 
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.12)_0%,rgba(15,23,42,0.16)_28%,rgba(15,23,42,0.26)_58%,rgba(15,23,42,0.48)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.14)_0%,rgba(15,23,42,0.16)_26%,rgba(15,23,42,0.28)_56%,rgba(15,23,42,0.52)_100%)]" />
 
-            <div className="absolute inset-x-0 top-0 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="absolute inset-x-0 top-0 hidden gap-3 p-4 sm:flex sm:flex-row sm:items-center sm:justify-between sm:p-6">
               <div className="inline-flex w-fit items-center gap-3 rounded-full border border-white/18 bg-slate-950/30 px-3 py-2 text-left backdrop-blur-sm">
                 <BrandMark glow sizeClass="h-10 w-10" roundedClass="rounded-[14px]" />
                 <div>
@@ -105,20 +105,20 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="absolute inset-0 flex items-center justify-center px-4 py-20 sm:px-6 md:px-8">
+            <div className="absolute inset-0 flex items-center justify-center px-3 py-14 sm:px-6 sm:py-20 md:px-8">
               <div className="mx-auto max-w-5xl text-center">
                 <p className="sv-eyebrow sv-animate-rise text-emerald-300">Split more. Pay less.</p>
                 <h1 className="sv-display sv-animate-rise sv-delay-1 mt-4 max-w-4xl mx-auto text-white">
                   The shared-cost platform for subscriptions, courses, software, and memberships.
                 </h1>
-                <div className="sv-animate-rise sv-delay-2 mt-4 max-w-3xl mx-auto rounded-[24px] border border-white/12 bg-slate-950/28 px-5 py-4 shadow-[0_20px_48px_rgba(15,23,42,0.24)] backdrop-blur-sm md:mt-5 md:px-6">
-                  <p className="text-sm font-medium leading-7 text-white drop-shadow-[0_2px_10px_rgba(15,23,42,0.7)] md:text-base md:leading-8">
+                <div className="sv-animate-rise sv-delay-2 mt-4 max-w-3xl mx-auto rounded-[22px] border border-white/12 bg-slate-950/24 px-4 py-3.5 shadow-[0_20px_48px_rgba(15,23,42,0.24)] backdrop-blur-sm md:mt-5 md:rounded-[24px] md:px-6 md:py-4">
+                  <p className="text-[13px] font-medium leading-6 text-white drop-shadow-[0_2px_10px_rgba(15,23,42,0.7)] sm:text-sm sm:leading-7 md:text-base md:leading-8">
                     ShareVerse gives digital plans a cleaner system: create a split, coordinate members,
                     track participation, keep updates visible, and manage shared payments in one calm place.
                   </p>
                 </div>
 
-                <div className="sv-animate-rise sv-delay-3 mt-7 grid gap-3 min-[420px]:grid-cols-2 sm:inline-flex sm:flex-wrap sm:justify-center">
+                <div className="sv-animate-rise sv-delay-3 mt-6 grid gap-3 min-[420px]:grid-cols-2 sm:mt-7 sm:inline-flex sm:flex-wrap sm:justify-center">
                   <Link to="/signup" className="sv-btn-primary w-full sm:w-auto">
                     Start with your first split
                   </Link>
@@ -127,11 +127,11 @@ export default function Landing() {
                   </Link>
                 </div>
 
-                <div className="mt-6 flex flex-wrap justify-center gap-2">
+                <div className="mt-5 flex flex-wrap justify-center gap-2 sm:mt-6">
                   {featureNotes.map((note, index) => (
                     <span
                       key={note}
-                      className={`rounded-full border border-white/22 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm ${index === 1 ? "sv-delay-1" : index === 2 ? "sv-delay-2" : index === 3 ? "sv-delay-3" : ""}`}
+                      className={`rounded-full border border-white/22 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm sm:px-4 sm:py-2 sm:text-sm ${index === 1 ? "sv-delay-1" : index === 2 ? "sv-delay-2" : index === 3 ? "sv-delay-3" : ""}`}
                     >
                       {note}
                     </span>

@@ -21,7 +21,7 @@ export default function PublicFooter({ compact = false }) {
   return (
     <footer
       className={`border border-white/60 bg-white/78 backdrop-blur ${
-        compact ? "mt-8 rounded-[24px] px-4 py-4 shadow-[0_18px_48px_rgba(15,23,42,0.07)] sm:px-5" : "mt-12 rounded-[26px] px-4 py-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)] sm:mt-16 sm:rounded-[30px] sm:px-6 sm:py-8"
+        compact ? "mt-8 rounded-[24px] px-4 py-4 shadow-[0_18px_48px_rgba(15,23,42,0.07)] sm:px-5" : "mt-10 rounded-[24px] px-4 py-5 shadow-[0_24px_60px_rgba(15,23,42,0.08)] sm:mt-16 sm:rounded-[30px] sm:px-6 sm:py-8"
       }`}
     >
       <div

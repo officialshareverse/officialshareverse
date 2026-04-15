@@ -125,44 +125,44 @@ export default function Signup() {
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-[26px] border border-white/80 bg-white/84 shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur md:rounded-[34px]">
+        <div className="overflow-hidden rounded-[24px] border border-white/80 bg-white/84 shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur md:rounded-[34px]">
           <div className="grid lg:grid-cols-[0.95fr_1.05fr]">
-            <section className="order-2 bg-[linear-gradient(145deg,#0f172a_0%,#1f2937_62%,#155e75_100%)] px-4 py-5 text-white md:px-8 md:py-10 lg:order-1">
+            <section className="order-2 bg-[linear-gradient(145deg,#0f172a_0%,#1f2937_62%,#155e75_100%)] px-4 py-4 text-white md:px-8 md:py-10 lg:order-1">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">
                 Create your account
               </p>
-              <h1 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl md:mt-5 md:text-[2.9rem]">
+              <h1 className="mt-3 text-[2rem] font-bold leading-tight sm:mt-4 sm:text-4xl md:mt-5 md:text-[2.9rem]">
                 Start splitting the cost of digital plans or building buy-together groups.
               </h1>
-              <p className="mt-4 max-w-xl text-sm leading-7 text-slate-200 md:mt-5 md:text-base md:leading-8">
+              <p className="mt-3 max-w-xl text-sm leading-7 text-slate-200 md:mt-5 md:text-base md:leading-8">
                 Create one account for coordinating subscriptions, courses, memberships, software tools, and buy-together groups when members are ready.
               </p>
 
-              <div className="mt-8 grid gap-4">
+              <div className="mt-6 grid gap-3 md:mt-8 md:gap-4">
                 {highlights.map((item) => (
                   <article key={item.title} className="rounded-[20px] border border-white/10 bg-white/10 p-4 backdrop-blur md:rounded-[22px] md:p-5">
-                    <h2 className="text-lg font-semibold">{item.title}</h2>
-                    <p className="mt-2 text-sm leading-7 text-slate-200">{item.body}</p>
+                    <h2 className="text-base font-semibold sm:text-lg">{item.title}</h2>
+                    <p className="mt-2 text-sm leading-6 text-slate-200 md:leading-7">{item.body}</p>
                   </article>
                 ))}
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300 md:text-xs md:tracking-[0.22em]">
+              <div className="mt-6 flex flex-wrap gap-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300 md:mt-8 md:text-xs md:tracking-[0.22em]">
                 <span>Shared-cost groups</span>
                 <span>Member coordination</span>
                 <span>Group activity tracking</span>
               </div>
             </section>
 
-            <section className="order-1 px-4 py-5 md:px-8 md:py-10 lg:order-2">
+            <section className="order-1 px-4 py-4 md:px-8 md:py-10 lg:order-2">
               <div className="max-w-2xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
                   Signup
                 </p>
-                <h2 className="mt-3 text-[2rem] font-bold leading-tight text-slate-950 md:text-[2.4rem]">
+                <h2 className="mt-3 text-[1.8rem] font-bold leading-tight text-slate-950 sm:text-[2rem] md:text-[2.4rem]">
                   Create your ShareVerse account
                 </h2>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
+                <p className="mt-3 text-sm leading-6 text-slate-600 md:leading-7">
                   Your profile helps other members trust you when you organize a shared-cost group or coordinate a buy-together purchase.
                 </p>
 
@@ -172,8 +172,8 @@ export default function Signup() {
                   </div>
                 ) : null}
 
-                <form onSubmit={handleSignup} className="mt-7 space-y-6">
-                  <section className="rounded-[26px] border border-slate-200 bg-slate-50 p-5">
+                <form onSubmit={handleSignup} className="mt-6 space-y-5 md:mt-7 md:space-y-6">
+                  <section className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 md:rounded-[26px] md:p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -188,7 +188,7 @@ export default function Signup() {
                       </span>
                     </div>
 
-                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       <FieldShell label="First name" helper="Optional">
                         <input
                           type="text"
@@ -255,7 +255,7 @@ export default function Signup() {
                     </div>
                   </section>
 
-                  <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_16px_28px_rgba(15,23,42,0.05)]">
+                  <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_16px_28px_rgba(15,23,42,0.05)] md:rounded-[26px] md:p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">

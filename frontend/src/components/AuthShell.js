@@ -30,8 +30,8 @@ export default function AuthShell({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(15,118,110,0.14),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(187,122,20,0.12),_transparent_26%)]" />
 
         <div className="relative mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">
-          <section className="order-2 flex flex-1 flex-col justify-between px-3 py-4 sm:px-6 sm:py-8 lg:order-1 lg:px-12 lg:py-10">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <section className="order-2 flex flex-1 flex-col justify-between px-3 py-3 sm:px-6 sm:py-8 lg:order-1 lg:px-12 lg:py-10">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <Link
                 to="/"
                 className="inline-flex w-full items-center justify-center gap-3 rounded-[22px] border border-white/70 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur sm:w-auto sm:justify-start sm:rounded-full"
@@ -47,24 +47,24 @@ export default function AuthShell({
               </p>
             </div>
 
-            <div className="my-6 max-w-2xl lg:my-0">
+            <div className="my-5 max-w-2xl lg:my-0">
               <p className="sv-eyebrow">
                 {eyebrow}
               </p>
               <h1
-                className="mt-4 text-[2.35rem] leading-[0.96] text-slate-950 sm:text-5xl md:mt-5 md:text-6xl"
+                className="mt-3 text-[1.95rem] leading-[1] text-slate-950 sm:mt-4 sm:text-5xl md:mt-5 md:text-6xl"
               >
                 {title}
               </h1>
-              <p className="mt-4 max-w-xl text-base leading-7 text-slate-700 md:mt-5 md:text-lg md:leading-8">
+              <p className="mt-3 max-w-xl text-sm leading-7 text-slate-700 sm:text-base md:mt-5 md:text-lg md:leading-8">
                 {subtitle}
               </p>
 
-              <div className="mt-7 grid gap-3 md:mt-10 md:grid-cols-2 md:gap-4">
+              <div className="mt-6 grid gap-3 md:mt-10 md:grid-cols-2 md:gap-4">
                 {valueProps.map((item) => (
                   <article
                     key={item.title}
-                    className="rounded-[24px] border border-white/70 bg-white/76 p-4 shadow-[0_20px_50px_rgba(15,23,42,0.08)] backdrop-blur md:rounded-[28px] md:p-5"
+                    className="rounded-[22px] border border-white/70 bg-white/76 p-4 shadow-[0_20px_50px_rgba(15,23,42,0.08)] backdrop-blur md:rounded-[28px] md:p-5"
                   >
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] md:text-xs md:tracking-[0.22em] ${item.tone}`}
@@ -77,7 +77,7 @@ export default function AuthShell({
                 ))}
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-3 text-xs font-medium text-slate-600 sm:gap-6 sm:text-sm">
+              <div className="mt-7 flex flex-wrap gap-2.5 text-[11px] font-medium text-slate-600 sm:gap-6 sm:text-sm">
                 <span>Group cost splitting</span>
                 <span>Shared coordination</span>
                 <span>Status-based activity flow</span>
@@ -85,7 +85,7 @@ export default function AuthShell({
             </div>
           </section>
 
-          <section className="order-1 flex w-full items-center justify-center px-3 pb-4 pt-0 sm:px-6 sm:py-10 lg:order-2 lg:max-w-xl lg:px-10">
+          <section className="order-1 flex w-full items-center justify-center px-3 pb-3 pt-0 sm:px-6 sm:py-10 lg:order-2 lg:max-w-xl lg:px-10">
             <div className={`w-full ${panelWidthClass} rounded-[26px] border border-white/80 bg-white/86 p-5 shadow-[0_36px_90px_rgba(15,23,42,0.16)] backdrop-blur md:rounded-[32px] md:p-8`}>
               {children}
               {footer ? <div className="mt-6 border-t border-slate-200 pt-5">{footer}</div> : null}
