@@ -35,7 +35,7 @@ def get_mode_copy(mode):
 
     return {
         "label": "Share existing plan",
-        "description": "The owner already has the subscription and is sharing paid slots with members.",
+        "description": "Members are coordinating shared-cost access for this digital plan. Participation must follow the provider's terms and the host's confirmation flow.",
         "join_cta": "Join sharing group",
     }
 
