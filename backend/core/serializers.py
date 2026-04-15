@@ -789,7 +789,7 @@ class GroupListSerializer(serializers.ModelSerializer):
     unread_chat_count = serializers.SerializerMethodField()
     join_price = serializers.SerializerMethodField()
     join_subtotal = serializers.SerializerMethodField()
-    commission_amount = serializers.SerializerMethodField()
+    platform_fee_amount = serializers.SerializerMethodField()
     is_prorated = serializers.SerializerMethodField()
     remaining_cycle_days = serializers.SerializerMethodField()
     total_cycle_days = serializers.SerializerMethodField()
@@ -806,7 +806,7 @@ class GroupListSerializer(serializers.ModelSerializer):
             "price_per_slot",
             "join_price",
             "join_subtotal",
-            "commission_amount",
+            "platform_fee_amount",
             "is_prorated",
             "remaining_cycle_days",
             "total_cycle_days",
@@ -986,8 +986,8 @@ class GroupListSerializer(serializers.ModelSerializer):
     def get_join_subtotal(self, obj):
         return str(get_group_join_pricing(obj)["join_subtotal"])
 
-    def get_commission_amount(self, obj):
-        return str(get_group_join_pricing(obj)["commission_amount"])
+    def get_platform_fee_amount(self, obj):
+        return str(get_group_join_pricing(obj)["platform_fee_amount"])
 
     def get_is_prorated(self, obj):
         return get_group_join_pricing(obj)["is_prorated"]

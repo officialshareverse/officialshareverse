@@ -1312,7 +1312,7 @@ class JoinGroupView(APIView):
             wallet, _ = Wallet.objects.select_for_update().get_or_create(user=request.user)
             price = pricing["join_price"]
             contribution_amount = pricing["join_subtotal"]
-            commission_amount = pricing["commission_amount"]
+            platform_fee_amount = pricing["platform_fee_amount"]
 
             if wallet.balance < price:
                 return Response({"error": "Insufficient balance"}, status=400)
@@ -1325,7 +1325,7 @@ class JoinGroupView(APIView):
                 user=request.user,
                 has_paid=(group.mode == "group_buy"),
                 charged_amount=price,
-                platform_fee_amount=commission_amount,
+                platform_fee_amount=platform_fee_amount,
                 escrow_status="held" if group.mode == "group_buy" else "released",
             )
 
@@ -1358,7 +1358,7 @@ class JoinGroupView(APIView):
                     user=group.owner,
                     message=(
                         f"{request.user.username} joined your {group.subscription.name} sharing group "
-                        f"and paid Rs {price} (including Rs {commission_amount} platform fee)."
+                        f"and paid Rs {price} (including Rs {platform_fee_amount} platform fee)."
                     ),
                 )
             elif group.mode == "group_buy":
@@ -1417,7 +1417,7 @@ class JoinGroupView(APIView):
             "message": "Joined group successfully",
             "charged_amount": str(price),
             "join_subtotal": str(contribution_amount),
-            "commission_amount": str(commission_amount),
+            "platform_fee_amount": str(platform_fee_amount),
             "price_per_slot": str(group.price_per_slot),
             "is_prorated": pricing["is_prorated"],
             "remaining_cycle_days": pricing["remaining_cycle_days"],
@@ -2138,7 +2138,7 @@ class DashboardView(APIView):
         for membership in memberships:
             charged_amount = get_member_charged_amount(membership)
             contribution_amount = get_member_contribution_amount(membership)
-            commission_amount = get_member_platform_fee_amount(membership)
+            platform_fee_amount = get_member_platform_fee_amount(membership)
             join_pricing = get_group_join_pricing(
                 membership.group,
                 reference_date=membership.joined_at,
@@ -2161,7 +2161,7 @@ class DashboardView(APIView):
                     "price_per_slot": str(membership.group.price_per_slot),
                     "charged_amount": str(charged_amount),
                     "contribution_amount": str(contribution_amount),
-                    "commission_amount": str(commission_amount),
+                    "platform_fee_amount": str(platform_fee_amount),
                     "is_prorated": (
                         membership.group.mode == "sharing"
                         and charged_amount < membership.group.price_per_slot
@@ -2603,7 +2603,7 @@ class MyGroupDetailView(APIView):
                     "has_paid": member.has_paid,
                     "charged_amount": str(get_member_charged_amount(member)),
                     "contribution_amount": str(get_member_contribution_amount(member)),
-                    "commission_amount": str(get_member_platform_fee_amount(member)),
+                    "platform_fee_amount": str(get_member_platform_fee_amount(member)),
                     "escrow_status": member.escrow_status,
                     "access_confirmed": member.access_confirmed,
                     "access_confirmed_at": member.access_confirmed_at,

@@ -48,10 +48,10 @@ export default function Groups() {
   const joinGroup = async (group) => {
     const joinAmount = group.join_price || group.price_per_slot;
     const joinSubtotal = group.join_subtotal || group.price_per_slot;
-    const commissionAmount = group.commission_amount || 0;
+    const platformFeeAmount = group.platform_fee_amount || 0;
     const pricingNote = group.pricing_note ? `\n${group.pricing_note}` : "";
-    const feeNote = Number(commissionAmount) > 0
-      ? `\nThis total includes a 5% platform fee of Rs ${Number(commissionAmount).toFixed(2)}.`
+    const feeNote = Number(platformFeeAmount) > 0
+      ? `\nThis total includes a 5% platform fee of Rs ${Number(platformFeeAmount).toFixed(2)}.`
       : "";
 
     if (group.mode === "sharing") {
@@ -78,16 +78,16 @@ export default function Groups() {
       if (group.mode === "sharing") {
         const successNote = res.data?.pricing_note ? `\n${res.data.pricing_note}` : "";
         const successFeeNote =
-          Number(res.data?.commission_amount || 0) > 0
-            ? `\nThis included a 5% platform fee of Rs ${Number(res.data?.commission_amount || 0).toFixed(2)}.`
+          Number(res.data?.platform_fee_amount || 0) > 0
+            ? `\nThis included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
         alert(
           `Joined successfully\nRs ${res.data?.charged_amount || joinAmount} was charged.${successFeeNote}${successNote}\nAccess will be coordinated privately by the group owner.`
         );
       } else {
         const successFeeNote =
-          Number(res.data?.commission_amount || 0) > 0
-            ? `\nThis included a 5% platform fee of Rs ${Number(res.data?.commission_amount || 0).toFixed(2)}.`
+          Number(res.data?.platform_fee_amount || 0) > 0
+            ? `\nThis included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
         alert(`${res.data?.message || "Joined successfully"}${successFeeNote}`);
       }
@@ -264,9 +264,9 @@ export default function Groups() {
                   </div>
 
                   <div className="mt-4 space-y-1">
-                    {Number(group.commission_amount || 0) > 0 ? (
+                    {Number(group.platform_fee_amount || 0) > 0 ? (
                       <p className="text-xs leading-6 text-slate-600">
-                        Includes a 5% platform fee of {formatCurrency(group.commission_amount)}.
+                        Includes a 5% platform fee of {formatCurrency(group.platform_fee_amount)}.
                       </p>
                     ) : null}
                     {group.is_prorated ? (

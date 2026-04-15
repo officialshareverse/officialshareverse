@@ -7,7 +7,7 @@ from django.utils import timezone
 
 MONEY_QUANTIZER = Decimal("0.01")
 OPERATIONAL_TIMEZONE = ZoneInfo("Asia/Kolkata")
-GROUP_JOIN_COMMISSION_RATE = Decimal("0.05")
+GROUP_JOIN_PLATFORM_FEE_RATE = Decimal("0.05")
 
 
 def normalize_money(amount):
@@ -50,11 +50,11 @@ def sum_member_contribution_amounts(members):
     return normalize_money(total)
 
 
-def get_group_join_commission_amount(amount):
+def get_group_join_platform_fee_amount(amount):
     normalized_amount = normalize_money(amount)
     if normalized_amount <= Decimal("0.00"):
         return Decimal("0.00")
-    return normalize_money(normalized_amount * GROUP_JOIN_COMMISSION_RATE)
+    return normalize_money(normalized_amount * GROUP_JOIN_PLATFORM_FEE_RATE)
 
 
 def get_group_total_cycle_days(group):
@@ -93,12 +93,12 @@ def get_group_join_pricing(group, reference_date=None):
     remaining_cycle_days = get_group_remaining_cycle_days(group, reference_date=reference_date)
 
     if group.mode != "sharing" or total_cycle_days <= 0:
-        commission_amount = get_group_join_commission_amount(base_price)
+        platform_fee_amount = get_group_join_platform_fee_amount(base_price)
         return {
             "base_price": base_price,
             "join_subtotal": base_price,
-            "commission_amount": commission_amount,
-            "join_price": normalize_money(base_price + commission_amount),
+            "platform_fee_amount": platform_fee_amount,
+            "join_price": normalize_money(base_price + platform_fee_amount),
             "is_prorated": False,
             "remaining_cycle_days": remaining_cycle_days or total_cycle_days,
             "total_cycle_days": total_cycle_days,
@@ -121,13 +121,13 @@ def get_group_join_pricing(group, reference_date=None):
         if is_prorated
         else ""
     )
-    commission_amount = get_group_join_commission_amount(join_price)
+    platform_fee_amount = get_group_join_platform_fee_amount(join_price)
 
     return {
         "base_price": base_price,
         "join_subtotal": join_price,
-        "commission_amount": commission_amount,
-        "join_price": normalize_money(join_price + commission_amount),
+        "platform_fee_amount": platform_fee_amount,
+        "join_price": normalize_money(join_price + platform_fee_amount),
         "is_prorated": is_prorated,
         "remaining_cycle_days": remaining_cycle_days,
         "total_cycle_days": total_cycle_days,
