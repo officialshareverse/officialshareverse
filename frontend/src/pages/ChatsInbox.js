@@ -91,7 +91,7 @@ export default function ChatsInbox() {
               onClick={() => navigate("/my-shared")}
               className="sv-btn-ghost-dark"
             >
-              Back to My Groups
+              Back to My Splits
             </button>
           </div>
         </section>

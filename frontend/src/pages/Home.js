@@ -81,8 +81,8 @@ export default function Home() {
       return {
         label: "Next step",
         title: "One of your buy-together groups is ready to move.",
-        body: "Open My Groups to upload proof, coordinate access, or take the next action with your members.",
-        cta: "Open My Groups",
+        body: "Open My Splits to upload proof, coordinate access, or take the next action with your members.",
+        cta: "Open My Splits",
         onClick: () => navigate("/my-shared"),
       };
     }
@@ -92,7 +92,7 @@ export default function Home() {
         label: "Needs attention",
         title: "A joined group is waiting for your response.",
         body: "Review confirmations or issue updates so your membership keeps moving smoothly.",
-        cta: "Review My Groups",
+        cta: "Review My Splits",
         onClick: () => navigate("/my-shared"),
       };
     }
@@ -153,11 +153,11 @@ export default function Home() {
     },
     {
       step: "04",
-      title: "Use `My groups` to manage everything",
-      where: "Come back and click My groups after your group is live or after you join one.",
+      title: "Use `My splits` to manage everything",
+      where: "Come back and click My Splits after your group is live or after you join one.",
       body: "That is where you review members, chat updates, confirmations, proof uploads, and the next action your group needs.",
-      tip: "If you see alerts or unread updates, start with My groups first.",
-      cta: "Open My Groups",
+      tip: "If you see alerts or unread updates, start with My Splits first.",
+      cta: "Open My Splits",
       onClick: () => navigate("/my-shared"),
     },
     {
@@ -222,7 +222,7 @@ export default function Home() {
                 {[
                   { label: "Create split", note: "Host a new plan", onClick: () => navigate("/create") },
                   { label: "Explore splits", note: "Join something open", onClick: () => navigate("/groups") },
-                  { label: "My groups", note: "Manage updates", onClick: () => navigate("/my-shared") },
+                  { label: "My splits", note: "Manage updates", onClick: () => navigate("/my-shared") },
                   { label: "Wallet", note: "Top up or withdraw", onClick: () => navigate("/wallet") },
                 ].map((item) => (
                   <button
@@ -315,7 +315,7 @@ export default function Home() {
               <div className="mt-7 grid gap-3 min-[420px]:grid-cols-2 sm:inline-flex sm:flex-wrap">
                 <PrimaryButton onClick={() => navigate("/groups")}>Explore splits</PrimaryButton>
                 <SecondaryButton onClick={() => navigate("/create")}>Create split</SecondaryButton>
-                <SecondaryButton onClick={() => navigate("/my-shared")}>My groups</SecondaryButton>
+                <SecondaryButton onClick={() => navigate("/my-shared")}>My splits</SecondaryButton>
                 <SecondaryButton onClick={openGuide}>Show quick guide</SecondaryButton>
               </div>
             </div>

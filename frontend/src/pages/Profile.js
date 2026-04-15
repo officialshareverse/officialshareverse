@@ -296,7 +296,7 @@ export default function Profile() {
             Open wallet
           </button>
           <button type="button" className="sv-btn-secondary" onClick={() => navigate("/my-shared")}>
-            My groups
+            My splits
           </button>
           <button type="button" className="sv-btn-secondary" onClick={() => navigate("/create")}>
             Create split

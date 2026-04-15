@@ -84,7 +84,7 @@ export default function GroupChat() {
             onClick={() => navigate("/my-shared")}
             className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
           >
-            Back to My Groups
+            Back to My Splits
           </button>
         </div>
       </div>

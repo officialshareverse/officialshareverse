@@ -29,7 +29,7 @@ const contactCards = [
   },
   {
     title: "Urgent access problem",
-    detail: "Report from My Groups first",
+    detail: "Report from My Splits first",
     helper: "Buy-together access issues should be reported inside the group flow so payout pauses automatically.",
   },
   {

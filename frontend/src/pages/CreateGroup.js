@@ -294,8 +294,8 @@ export default function CreateGroup() {
       if (createdGroupId) {
         window.alert(
           isSharing
-            ? "Sharing group created. You can manage it from My Groups."
-            : "Buy-together group created. You can track it from My Groups."
+            ? "Sharing group created. You can manage it from My Splits."
+            : "Buy-together group created. You can track it from My Splits."
         );
       }
     } catch (err) {
@@ -335,7 +335,7 @@ export default function CreateGroup() {
               <div className="rounded-[24px] border border-white/15 bg-white/10 p-4 backdrop-blur">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-300">Control</p>
                 <p className="mt-2 text-xl font-semibold">Owner managed</p>
-                <p className="mt-2 text-sm text-slate-200">You can manage pricing, timing, and coordination from My Groups later.</p>
+                <p className="mt-2 text-sm text-slate-200">You can manage pricing, timing, and coordination from My Splits later.</p>
               </div>
             </div>
           </div>

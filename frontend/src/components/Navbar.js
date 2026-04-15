@@ -8,7 +8,7 @@ const navItems = [
   { to: "/home", label: "Home" },
   { to: "/groups", label: "Explore Splits" },
   { to: "/create", label: "Create Split" },
-  { to: "/my-shared", label: "My Groups" },
+  { to: "/my-shared", label: "My Splits" },
   { to: "/notifications", label: "Notifications", badgeKey: "notification" },
   { to: "/chats", label: "Chats", badgeKey: "chat" },
   { to: "/wallet", label: "Wallet" },

@@ -593,10 +593,10 @@ export default function MyShared() {
     <div style={container}>
       <div style={pageShell}>
       <div style={hero}>
-        <p style={eyebrow}>My groups</p>
-        <h2 style={heroTitle}>See the groups you created and the groups you joined</h2>
+        <p style={eyebrow}>My splits</p>
+        <h2 style={heroTitle}>See the splits you created and the splits you joined</h2>
         <p style={heroText}>
-          Manage the groups you host, keep track of your memberships, and follow access status from one place.
+          Manage the splits you host, keep track of your memberships, and follow access status from one place.
         </p>
       </div>
 
@@ -611,8 +611,8 @@ export default function MyShared() {
 
       <div style={sectionHeader}>
         <div>
-          <p style={sectionEyebrow}>Created groups</p>
-          <h3 style={sectionTitle}>Groups you host</h3>
+          <p style={sectionEyebrow}>Created splits</p>
+          <h3 style={sectionTitle}>Splits you host</h3>
         </div>
         <p style={sectionText}>Your owner tools stay here, including proof upload, member-confirmation tracking, refunds, edits, closure, and cleanup.</p>
       </div>
