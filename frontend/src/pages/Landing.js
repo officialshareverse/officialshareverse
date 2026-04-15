@@ -111,10 +111,12 @@ export default function Landing() {
                 <h1 className="sv-display sv-animate-rise sv-delay-1 mt-4 max-w-4xl mx-auto text-white">
                   The shared-cost platform for subscriptions, courses, software, and memberships.
                 </h1>
-                <p className="sv-animate-rise sv-delay-2 mt-4 max-w-3xl mx-auto text-sm leading-7 text-slate-200 md:mt-5 md:text-base md:leading-8">
-                  ShareVerse gives digital plans a cleaner system: create a split, coordinate members,
-                  track participation, keep updates visible, and manage shared payments in one calm place.
-                </p>
+                <div className="sv-animate-rise sv-delay-2 mt-4 max-w-3xl mx-auto rounded-[24px] border border-white/12 bg-slate-950/28 px-5 py-4 shadow-[0_20px_48px_rgba(15,23,42,0.24)] backdrop-blur-sm md:mt-5 md:px-6">
+                  <p className="text-sm font-medium leading-7 text-white drop-shadow-[0_2px_10px_rgba(15,23,42,0.7)] md:text-base md:leading-8">
+                    ShareVerse gives digital plans a cleaner system: create a split, coordinate members,
+                    track participation, keep updates visible, and manage shared payments in one calm place.
+                  </p>
+                </div>
 
                 <div className="sv-animate-rise sv-delay-3 mt-7 grid gap-3 min-[420px]:grid-cols-2 sm:inline-flex sm:flex-wrap sm:justify-center">
                   <Link to="/signup" className="sv-btn-primary w-full sm:w-auto">
