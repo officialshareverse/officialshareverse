@@ -126,30 +126,47 @@ export default function Home() {
   const onboardingSteps = [
     {
       step: "01",
-      title: "Top up your wallet",
-      body: "Open Wallet and add money securely with Razorpay so you are ready to join groups smoothly.",
-      cta: "Open Wallet",
-      onClick: () => navigate("/wallet"),
+      title: "Click `Create group` on this Home screen",
+      where: "Use the Create group button in the hero section.",
+      body: "Start there if you want to host a subscription, course, membership, or software plan for other users.",
+      tip: "If you only want to join an existing group, click Browse groups instead.",
+      cta: "Create Group",
+      onClick: () => navigate("/create"),
     },
     {
       step: "02",
-      title: "Browse or create a group",
-      body: "Check active groups on the platform or create your own shared subscription or buy-together plan.",
-      cta: "Browse Groups",
-      onClick: () => navigate("/groups"),
+      title: "Choose the right group type",
+      where: "Inside the create flow, pick the mode that matches your plan.",
+      body: "Choose Sharing if you already manage the plan and want members to join it. Choose Buy together if you want people to join first and purchase later as a group.",
+      tip: "Sharing works best for subscriptions you already control. Buy together works best when the purchase should happen only after members join.",
+      cta: "Open Create Flow",
+      onClick: () => navigate("/create"),
     },
     {
       step: "03",
-      title: "Track updates in one place",
-      body: "Use My Groups, chat, and notifications to follow confirmations, proof uploads, and group progress.",
+      title: "Fill the group details carefully",
+      where: "Stay on the create page and complete the form from top to bottom.",
+      body: "Add the subscription or plan, choose total slots, set the price per slot, and review the dates before publishing the group.",
+      tip: "Keep the title and pricing clear so members understand exactly what they are joining.",
+      cta: "Continue Setup",
+      onClick: () => navigate("/create"),
+    },
+    {
+      step: "04",
+      title: "Use `My groups` to manage everything",
+      where: "Come back and click My groups after your group is live or after you join one.",
+      body: "That is where you review members, chat updates, confirmations, proof uploads, and the next action your group needs.",
+      tip: "If you see alerts or unread updates, start with My groups first.",
       cta: "Open My Groups",
       onClick: () => navigate("/my-shared"),
     },
     {
-      step: "04",
-      title: "Request withdrawals when needed",
-      body: "If you need money out, save your payout destination in Wallet and submit a withdrawal request for manual review, usually within 24 hours.",
-      cta: "Review Wallet",
+      step: "05",
+      title: "Use `Wallet` for money actions",
+      where: "Open Wallet whenever you need to add money or request a withdrawal.",
+      body: "Top up your wallet with Razorpay before joining paid groups. If you ever need money out, save a destination and request a manual withdrawal review.",
+      tip: "Manual withdrawals are reviewed first and usually settled within 24 hours.",
+      cta: "Open Wallet",
       onClick: () => navigate("/wallet"),
     },
   ];
@@ -184,10 +201,10 @@ export default function Home() {
               <div className="max-w-3xl">
                 <p className="sv-eyebrow">First-time guide</p>
                 <h2 className="mt-3 text-3xl font-bold leading-tight text-slate-950 md:text-[2.4rem]">
-                  Let&apos;s get your ShareVerse account moving in four simple steps.
+                  Here&apos;s exactly where to click first and how to create your first group.
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base md:leading-8">
-                  This walkthrough is shown once for each account on this device so new users know exactly where to start.
+                  This walkthrough is shown once for each account on this device so new users can follow the real button names they see on ShareVerse.
                 </p>
               </div>
               <button
@@ -199,7 +216,32 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Quick click map</p>
+              <div className="mt-4 grid gap-3 md:grid-cols-4">
+                {[
+                  { label: "Create group", note: "Host a new plan", onClick: () => navigate("/create") },
+                  { label: "Browse groups", note: "Join something open", onClick: () => navigate("/groups") },
+                  { label: "My groups", note: "Manage updates", onClick: () => navigate("/my-shared") },
+                  { label: "Wallet", note: "Top up or withdraw", onClick: () => navigate("/wallet") },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => {
+                      dismissGuide();
+                      item.onClick();
+                    }}
+                    className="sv-guide-map-item text-left"
+                  >
+                    <span className="block text-sm font-semibold text-slate-950">{item.label}</span>
+                    <span className="mt-1 block text-xs leading-6 text-slate-500">{item.note}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {onboardingSteps.map((item, index) => (
                 <article
                   key={item.step}
@@ -211,7 +253,11 @@ export default function Home() {
                     </span>
                     <h3 className="text-lg font-semibold text-slate-950">{item.title}</h3>
                   </div>
+                  <p className="mt-4 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                    {item.where}
+                  </p>
                   <p className="mt-4 text-sm leading-7 text-slate-600">{item.body}</p>
+                  <p className="mt-3 text-xs leading-6 text-slate-500">{item.tip}</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -228,7 +274,7 @@ export default function Home() {
 
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4">
               <p className="text-sm leading-7 text-emerald-900">
-                Need help after this? Reach us from Support and we&apos;ll help you with top-ups, groups, or manual withdrawal review.
+                Need help after this? Open Support anytime and we&apos;ll help you with creating groups, joining groups, top-ups, or manual withdrawal review.
               </p>
               <button
                 type="button"
