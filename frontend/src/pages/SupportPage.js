@@ -1,7 +1,6 @@
 import PublicPageShell from "../components/PublicPageShell";
 import {
   BUSINESS_OPERATOR_NAME,
-  REGISTERED_ADDRESS_LINES,
   SUPPORT_EMAIL,
   SUPPORT_PHONE,
 } from "../components/PublicBusinessIdentity";
@@ -16,11 +15,6 @@ const contactCards = [
     title: "Phone support",
     detail: SUPPORT_PHONE,
     helper: "Use this number for urgent contact, onboarding follow-ups, and provider verification requests during business hours.",
-  },
-  {
-    title: "Registered address",
-    detail: REGISTERED_ADDRESS_LINES[0],
-    helper: REGISTERED_ADDRESS_LINES.slice(1).join(", "),
   },
   {
     title: "Operator",
@@ -90,24 +84,20 @@ export default function SupportPage() {
       </div>
 
       <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-        <h2 className="text-2xl font-semibold text-slate-950">Compliance-ready contact summary</h2>
-        <div className="mt-4 grid gap-5 md:grid-cols-2">
-          <div className="space-y-2 text-sm leading-7 text-slate-600 md:text-base">
-            <p>
-              <span className="font-semibold text-slate-900">Operator:</span> {BUSINESS_OPERATOR_NAME}
-            </p>
-            <p>
-              <span className="font-semibold text-slate-900">Support email:</span> {SUPPORT_EMAIL}
-            </p>
-            <p>
-              <span className="font-semibold text-slate-900">Phone:</span> {SUPPORT_PHONE}
-            </p>
-          </div>
-          <div className="space-y-1 text-sm leading-7 text-slate-600 md:text-base">
-            {REGISTERED_ADDRESS_LINES.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </div>
+        <h2 className="text-2xl font-semibold text-slate-950">Public contact summary</h2>
+        <div className="mt-4 space-y-2 text-sm leading-7 text-slate-600 md:text-base">
+          <p>
+            <span className="font-semibold text-slate-900">Operator:</span> {BUSINESS_OPERATOR_NAME}
+          </p>
+          <p>
+            <span className="font-semibold text-slate-900">Support email:</span> {SUPPORT_EMAIL}
+          </p>
+          <p>
+            <span className="font-semibold text-slate-900">Phone:</span> {SUPPORT_PHONE}
+          </p>
+          <p className="text-sm text-slate-500">
+            Registered address is shared only when needed for verification, compliance review, or formal support resolution.
+          </p>
         </div>
       </div>
 

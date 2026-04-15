@@ -17,24 +17,19 @@ export default function PublicBusinessIdentity({
       <h2 className="text-2xl font-semibold text-slate-950">{title}</h2>
       <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 md:text-base">{intro}</p>
 
-      <div className="mt-5 grid gap-5 md:grid-cols-2">
-        <div className="space-y-2 text-sm leading-7 text-slate-600 md:text-base">
-          <p>
-            <span className="font-semibold text-slate-900">Operator:</span> {BUSINESS_OPERATOR_NAME}
-          </p>
-          <p>
-            <span className="font-semibold text-slate-900">Support email:</span> {SUPPORT_EMAIL}
-          </p>
-          <p>
-            <span className="font-semibold text-slate-900">Phone:</span> {SUPPORT_PHONE}
-          </p>
-        </div>
-
-        <div className="space-y-1 text-sm leading-7 text-slate-600 md:text-base">
-          {REGISTERED_ADDRESS_LINES.map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-        </div>
+      <div className="mt-5 space-y-2 text-sm leading-7 text-slate-600 md:text-base">
+        <p>
+          <span className="font-semibold text-slate-900">Operator:</span> {BUSINESS_OPERATOR_NAME}
+        </p>
+        <p>
+          <span className="font-semibold text-slate-900">Support email:</span> {SUPPORT_EMAIL}
+        </p>
+        <p>
+          <span className="font-semibold text-slate-900">Phone:</span> {SUPPORT_PHONE}
+        </p>
+        <p className="text-sm text-slate-500">
+          Registered address is shared directly during verification or formal support review when required.
+        </p>
       </div>
     </div>
   );

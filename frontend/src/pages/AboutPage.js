@@ -1,7 +1,6 @@
 import PublicPageShell from "../components/PublicPageShell";
 import {
   BUSINESS_OPERATOR_NAME,
-  REGISTERED_ADDRESS_LINES,
   SUPPORT_EMAIL,
   SUPPORT_PHONE,
 } from "../components/PublicBusinessIdentity";
@@ -29,7 +28,7 @@ export default function AboutPage() {
     <PublicPageShell
       eyebrow="About us"
       title="What ShareVerse is and who operates it."
-      intro="This page gives users, payment providers, and partners a simple overview of the ShareVerse platform and the registered contact details behind it."
+      intro="This page gives users, payment providers, and partners a simple overview of the ShareVerse platform and the public contact details behind it."
     >
       <div className="grid gap-4 md:grid-cols-3">
         {aboutHighlights.map((item) => (
@@ -45,32 +44,21 @@ export default function AboutPage() {
 
       <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50 p-5 md:p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-          Registered contact details
+          Public contact details
         </p>
-        <div className="mt-4 grid gap-5 md:grid-cols-2">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-950">Business contact</h3>
-            <div className="mt-3 space-y-2 text-sm leading-7 text-slate-600 md:text-base">
-              <p>
-                <span className="font-semibold text-slate-900">Operator:</span> {BUSINESS_OPERATOR_NAME}
-              </p>
-              <p>
-                <span className="font-semibold text-slate-900">Email:</span> {SUPPORT_EMAIL}
-              </p>
-              <p>
-                <span className="font-semibold text-slate-900">Phone:</span> {SUPPORT_PHONE}
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold text-slate-950">Registered address</h3>
-            <div className="mt-3 space-y-1 text-sm leading-7 text-slate-600 md:text-base">
-              {REGISTERED_ADDRESS_LINES.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-            </div>
-          </div>
+        <div className="mt-4 space-y-2 text-sm leading-7 text-slate-600 md:text-base">
+          <p>
+            <span className="font-semibold text-slate-900">Operator:</span> {BUSINESS_OPERATOR_NAME}
+          </p>
+          <p>
+            <span className="font-semibold text-slate-900">Email:</span> {SUPPORT_EMAIL}
+          </p>
+          <p>
+            <span className="font-semibold text-slate-900">Phone:</span> {SUPPORT_PHONE}
+          </p>
+          <p className="text-sm text-slate-500">
+            Registered address is shared only during verification or formal compliance review when required.
+          </p>
         </div>
       </div>
     </PublicPageShell>
