@@ -47,11 +47,16 @@ export default function Groups() {
 
   const joinGroup = async (group) => {
     const joinAmount = group.join_price || group.price_per_slot;
+    const joinSubtotal = group.join_subtotal || group.price_per_slot;
+    const commissionAmount = group.commission_amount || 0;
     const pricingNote = group.pricing_note ? `\n${group.pricing_note}` : "";
+    const feeNote = Number(commissionAmount) > 0
+      ? `\nThis total includes a 5% platform fee of Rs ${Number(commissionAmount).toFixed(2)}.`
+      : "";
 
     if (group.mode === "sharing") {
       const confirmJoin = window.confirm(
-        `Join ${group.subscription_name} for Rs ${joinAmount}?\nYour wallet will be charged immediately and access will be coordinated privately by the group owner.${pricingNote}`
+        `Join ${group.subscription_name} for Rs ${joinAmount}?\nPlan contribution: Rs ${Number(joinSubtotal).toFixed(2)}.${feeNote}\nYour wallet will be charged immediately and access will be coordinated privately by the group owner.${pricingNote}`
       );
 
       if (!confirmJoin) {
@@ -59,7 +64,7 @@ export default function Groups() {
       }
     } else {
       const confirmJoin = window.confirm(
-        `Join buy-together group for ${group.subscription_name} at Rs ${joinAmount}?\nFunds are held first and released after the group completes its purchase flow.`
+        `Join buy-together group for ${group.subscription_name} at Rs ${joinAmount}?\nPlan contribution: Rs ${Number(joinSubtotal).toFixed(2)}.${feeNote}\nFunds are held first and released after the group completes its purchase flow.`
       );
 
       if (!confirmJoin) {
@@ -72,11 +77,19 @@ export default function Groups() {
       const res = await API.post("join-group/", { group_id: group.id });
       if (group.mode === "sharing") {
         const successNote = res.data?.pricing_note ? `\n${res.data.pricing_note}` : "";
+        const successFeeNote =
+          Number(res.data?.commission_amount || 0) > 0
+            ? `\nThis included a 5% platform fee of Rs ${Number(res.data?.commission_amount || 0).toFixed(2)}.`
+            : "";
         alert(
-          `Joined successfully\nRs ${res.data?.charged_amount || joinAmount} was charged.${successNote}\nAccess will be coordinated privately by the group owner.`
+          `Joined successfully\nRs ${res.data?.charged_amount || joinAmount} was charged.${successFeeNote}${successNote}\nAccess will be coordinated privately by the group owner.`
         );
       } else {
-        alert(res.data?.message || "Joined successfully");
+        const successFeeNote =
+          Number(res.data?.commission_amount || 0) > 0
+            ? `\nThis included a 5% platform fee of Rs ${Number(res.data?.commission_amount || 0).toFixed(2)}.`
+            : "";
+        alert(`${res.data?.message || "Joined successfully"}${successFeeNote}`);
       }
 
       fetchGroups();
@@ -238,19 +251,30 @@ export default function Groups() {
 
                   <div className="mt-5 space-y-2">
                     <InlineMetric
-                      label={group.is_prorated ? "Join now" : "Per member"}
-                      value={group.is_prorated ? formatCurrency(group.join_price) : formatCurrency(group.price_per_slot)}
+                      label={group.is_prorated ? "Pay now" : "Pay to join"}
+                      value={formatCurrency(group.join_price)}
+                    />
+                    <InlineMetric
+                      label="Plan contribution"
+                      value={formatCurrency(group.join_subtotal || group.price_per_slot)}
                     />
                     <InlineMetric label="Host" value={group.owner_name} />
                     <InlineMetric label="Stage" value={group.status_label} />
                     <InlineMetric label="Filled" value={`${group.filled_slots}/${group.total_slots}`} />
                   </div>
 
-                  {group.is_prorated ? (
-                    <p className="mt-4 text-xs leading-6 text-emerald-700">
-                      {group.pricing_note} Full cycle price: {formatCurrency(group.price_per_slot)}.
-                    </p>
-                  ) : null}
+                  <div className="mt-4 space-y-1">
+                    {Number(group.commission_amount || 0) > 0 ? (
+                      <p className="text-xs leading-6 text-slate-600">
+                        Includes a 5% platform fee of {formatCurrency(group.commission_amount)}.
+                      </p>
+                    ) : null}
+                    {group.is_prorated ? (
+                      <p className="text-xs leading-6 text-emerald-700">
+                        {group.pricing_note} Full cycle price before fee: {formatCurrency(group.price_per_slot)}.
+                      </p>
+                    ) : null}
+                  </div>
 
                   <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/90">
                     <div className={`h-full rounded-full ${tone.rail}`} style={{ width: `${progress}%` }} />

@@ -17,7 +17,12 @@ from .models import (
     User,
     WalletPayout,
 )
-from .pricing import get_group_join_pricing, get_member_charged_amount, sum_member_charged_amounts
+from .pricing import (
+    get_group_join_pricing,
+    get_member_charged_amount,
+    sum_member_charged_amounts,
+    sum_member_contribution_amounts,
+)
 
 
 def get_mode_copy(mode):
@@ -721,10 +726,11 @@ class GroupSerializer(serializers.ModelSerializer):
     def get_owner_revenue(self, obj):
         if obj.mode != "sharing":
             return "0.00"
-        revenue = Decimal("0.00")
-        for member in GroupMember.objects.filter(group=obj):
-            if member.user_id != obj.owner_id:
-                revenue += obj.price_per_slot
+        revenue = sum_member_contribution_amounts(
+            member
+            for member in GroupMember.objects.filter(group=obj).select_related("group")
+            if member.user_id != obj.owner_id
+        )
         return str(revenue)
 
     def get_next_action(self, obj):
@@ -782,6 +788,8 @@ class GroupListSerializer(serializers.ModelSerializer):
     reported_issues = serializers.SerializerMethodField()
     unread_chat_count = serializers.SerializerMethodField()
     join_price = serializers.SerializerMethodField()
+    join_subtotal = serializers.SerializerMethodField()
+    commission_amount = serializers.SerializerMethodField()
     is_prorated = serializers.SerializerMethodField()
     remaining_cycle_days = serializers.SerializerMethodField()
     total_cycle_days = serializers.SerializerMethodField()
@@ -797,6 +805,8 @@ class GroupListSerializer(serializers.ModelSerializer):
             "total_slots",
             "price_per_slot",
             "join_price",
+            "join_subtotal",
+            "commission_amount",
             "is_prorated",
             "remaining_cycle_days",
             "total_cycle_days",
@@ -871,13 +881,15 @@ class GroupListSerializer(serializers.ModelSerializer):
         if obj.mode != "sharing":
             return "0.00"
         members = GroupMember.objects.filter(group=obj).select_related("group")
-        revenue = sum_member_charged_amounts(member for member in members if member.user_id != obj.owner_id)
+        revenue = sum_member_contribution_amounts(
+            member for member in members if member.user_id != obj.owner_id
+        )
         return str(revenue)
 
     def get_held_amount(self, obj):
         if obj.mode != "group_buy":
             return "0.00"
-        total = sum_member_charged_amounts(
+        total = sum_member_contribution_amounts(
             GroupMember.objects.filter(group=obj, escrow_status="held").select_related("group")
         )
         return str(total)
@@ -970,6 +982,12 @@ class GroupListSerializer(serializers.ModelSerializer):
 
     def get_join_price(self, obj):
         return str(get_group_join_pricing(obj)["join_price"])
+
+    def get_join_subtotal(self, obj):
+        return str(get_group_join_pricing(obj)["join_subtotal"])
+
+    def get_commission_amount(self, obj):
+        return str(get_group_join_pricing(obj)["commission_amount"])
 
     def get_is_prorated(self, obj):
         return get_group_join_pricing(obj)["is_prorated"]

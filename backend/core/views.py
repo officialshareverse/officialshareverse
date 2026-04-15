@@ -59,7 +59,9 @@ from .manual_payouts import create_manual_wallet_payout_request, save_manual_pay
 from .pricing import (
     get_group_join_pricing,
     get_member_charged_amount,
-    sum_member_charged_amounts,
+    get_member_contribution_amount,
+    get_member_platform_fee_amount,
+    sum_member_contribution_amounts,
 )
 from .rate_limit import check_and_increment_rate_limit
 from .serializers import (
@@ -135,7 +137,7 @@ def get_group_buy_held_members(group):
 
 
 def get_group_buy_held_amount(group):
-    return sum_member_charged_amounts(get_group_buy_held_members(group))
+    return sum_member_contribution_amounts(get_group_buy_held_members(group))
 
 
 def get_group_buy_confirmed_member_count(group):
@@ -210,7 +212,7 @@ def release_group_buy_held_funds(group_id, allow_timeout_release=False):
         group.save(update_fields=["status"])
 
         owner_wallet, _ = Wallet.objects.select_for_update().get_or_create(user=group.owner)
-        release_amount = sum_member_charged_amounts(held_members)
+        release_amount = sum_member_contribution_amounts(held_members)
         owner_wallet.balance += release_amount
         owner_wallet.save()
 
@@ -224,7 +226,7 @@ def release_group_buy_held_funds(group_id, allow_timeout_release=False):
         )
 
         for member in held_members:
-            member_amount = get_member_charged_amount(member)
+            member_amount = get_member_contribution_amount(member)
             member.escrow_status = "released"
             member.save(update_fields=["escrow_status"])
             EscrowLedger.objects.create(
@@ -285,20 +287,21 @@ def refund_group_buy_held_funds(group_id, reason="manual"):
         group.save(update_fields=["status"])
 
         for member in held_members:
-            member_amount = get_member_charged_amount(member)
+            member_amount = get_member_contribution_amount(member)
+            refund_amount = get_member_charged_amount(member)
             wallet, _ = Wallet.objects.select_for_update().get_or_create(user=member.user)
-            wallet.balance += member_amount
+            wallet.balance += refund_amount
             wallet.save()
 
             member.escrow_status = "refunded"
-            member.refund_amount = member_amount
+            member.refund_amount = refund_amount
             member.refund_processed_at = refunded_at
             member.save(update_fields=["escrow_status", "refund_amount", "refund_processed_at"])
 
             Transaction.objects.create(
                 user=member.user,
                 group=group,
-                amount=member_amount,
+                amount=refund_amount,
                 type="credit",
                 status="success",
                 payment_method="refund",
@@ -324,7 +327,7 @@ def refund_group_buy_held_funds(group_id, reason="manual"):
                 user=member.user,
                 message=message,
             )
-            refunded_amount += member_amount
+            refunded_amount += refund_amount
 
         group.status = "refunded"
         group.is_refunded = True
@@ -1308,6 +1311,8 @@ class JoinGroupView(APIView):
         with transaction.atomic():
             wallet, _ = Wallet.objects.select_for_update().get_or_create(user=request.user)
             price = pricing["join_price"]
+            contribution_amount = pricing["join_subtotal"]
+            commission_amount = pricing["commission_amount"]
 
             if wallet.balance < price:
                 return Response({"error": "Insufficient balance"}, status=400)
@@ -1320,6 +1325,7 @@ class JoinGroupView(APIView):
                 user=request.user,
                 has_paid=(group.mode == "group_buy"),
                 charged_amount=price,
+                platform_fee_amount=commission_amount,
                 escrow_status="held" if group.mode == "group_buy" else "released",
             )
 
@@ -1334,13 +1340,13 @@ class JoinGroupView(APIView):
 
             if group.mode == "sharing":
                 owner_wallet, _ = Wallet.objects.select_for_update().get_or_create(user=group.owner)
-                owner_wallet.balance += price
+                owner_wallet.balance += contribution_amount
                 owner_wallet.save()
 
                 Transaction.objects.create(
                     user=group.owner,
                     group=group,
-                    amount=price,
+                    amount=contribution_amount,
                     type="credit",
                     status="success",
                     payment_method="group_share_payout",
@@ -1352,7 +1358,7 @@ class JoinGroupView(APIView):
                     user=group.owner,
                     message=(
                         f"{request.user.username} joined your {group.subscription.name} sharing group "
-                        f"and paid Rs {price}."
+                        f"and paid Rs {price} (including Rs {commission_amount} platform fee)."
                     ),
                 )
             elif group.mode == "group_buy":
@@ -1360,7 +1366,7 @@ class JoinGroupView(APIView):
                     user=request.user,
                     group=group,
                     member=member,
-                    amount=price,
+                    amount=contribution_amount,
                     entry_type="hold",
                     status="success",
                 )
@@ -1410,6 +1416,8 @@ class JoinGroupView(APIView):
         return Response({
             "message": "Joined group successfully",
             "charged_amount": str(price),
+            "join_subtotal": str(contribution_amount),
+            "commission_amount": str(commission_amount),
             "price_per_slot": str(group.price_per_slot),
             "is_prorated": pricing["is_prorated"],
             "remaining_cycle_days": pricing["remaining_cycle_days"],
@@ -2129,6 +2137,8 @@ class DashboardView(APIView):
         groups = []
         for membership in memberships:
             charged_amount = get_member_charged_amount(membership)
+            contribution_amount = get_member_contribution_amount(membership)
+            commission_amount = get_member_platform_fee_amount(membership)
             join_pricing = get_group_join_pricing(
                 membership.group,
                 reference_date=membership.joined_at,
@@ -2150,6 +2160,8 @@ class DashboardView(APIView):
                     "status_label": get_status_copy(membership.group),
                     "price_per_slot": str(membership.group.price_per_slot),
                     "charged_amount": str(charged_amount),
+                    "contribution_amount": str(contribution_amount),
+                    "commission_amount": str(commission_amount),
                     "is_prorated": (
                         membership.group.mode == "sharing"
                         and charged_amount < membership.group.price_per_slot
@@ -2590,6 +2602,8 @@ class MyGroupDetailView(APIView):
                     "username": member.user.username,
                     "has_paid": member.has_paid,
                     "charged_amount": str(get_member_charged_amount(member)),
+                    "contribution_amount": str(get_member_contribution_amount(member)),
+                    "commission_amount": str(get_member_platform_fee_amount(member)),
                     "escrow_status": member.escrow_status,
                     "access_confirmed": member.access_confirmed,
                     "access_confirmed_at": member.access_confirmed_at,

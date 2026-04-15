@@ -573,7 +573,7 @@ class GroupFlowTests(APITestCase):
         member_wallet.refresh_from_db()
 
         self.assertEqual(group.status, "active")
-        self.assertEqual(member_wallet.balance, Decimal("800.00"))
+        self.assertEqual(member_wallet.balance, Decimal("790.00"))
         self.assertEqual(owner_wallet.balance, Decimal("1200.00"))
         self.assertTrue(group.access_identifier.startswith("enc::"))
         self.assertTrue(group.access_password.startswith("enc::"))
@@ -665,7 +665,9 @@ class GroupFlowTests(APITestCase):
         response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["charged_amount"], "100.00")
+        self.assertEqual(response.data["charged_amount"], "105.00")
+        self.assertEqual(response.data["join_subtotal"], "100.00")
+        self.assertEqual(response.data["commission_amount"], "5.00")
         self.assertTrue(response.data["is_prorated"])
         self.assertEqual(response.data["remaining_cycle_days"], 10)
         self.assertEqual(response.data["total_cycle_days"], 30)
@@ -674,15 +676,16 @@ class GroupFlowTests(APITestCase):
         member_wallet.refresh_from_db()
         member = GroupMember.objects.get(group=group, user=self.member_one)
 
-        self.assertEqual(member.charged_amount, Decimal("100.00"))
-        self.assertEqual(member_wallet.balance, Decimal("900.00"))
+        self.assertEqual(member.charged_amount, Decimal("105.00"))
+        self.assertEqual(member.platform_fee_amount, Decimal("5.00"))
+        self.assertEqual(member_wallet.balance, Decimal("895.00"))
         self.assertEqual(owner_wallet.balance, Decimal("1100.00"))
         self.assertTrue(
             Transaction.objects.filter(
                 user=self.member_one,
                 group=group,
                 payment_method="wallet",
-                amount=Decimal("100.00"),
+                amount=Decimal("105.00"),
             ).exists()
         )
         self.assertTrue(
@@ -710,7 +713,9 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         payload = next(item for item in response.data if item["id"] == group.id)
         self.assertEqual(payload["price_per_slot"], "300.00")
-        self.assertEqual(payload["join_price"], "100.00")
+        self.assertEqual(payload["join_price"], "105.00")
+        self.assertEqual(payload["join_subtotal"], "100.00")
+        self.assertEqual(payload["commission_amount"], "5.00")
         self.assertTrue(payload["is_prorated"])
         self.assertEqual(payload["remaining_cycle_days"], 10)
         self.assertEqual(payload["total_cycle_days"], 30)
@@ -1598,10 +1603,29 @@ class GroupFlowTests(APITestCase):
         self.authenticate(self.member_one)
         first_response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
         self.assertEqual(first_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(first_response.data["charged_amount"], "210.00")
+        self.assertEqual(first_response.data["join_subtotal"], "200.00")
+        self.assertEqual(first_response.data["commission_amount"], "10.00")
 
         self.authenticate(self.member_two)
         second_response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
         self.assertEqual(second_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(second_response.data["charged_amount"], "210.00")
+
+        self.member_one.refresh_from_db()
+        self.member_two.refresh_from_db()
+        first_wallet = Wallet.objects.get(user=self.member_one)
+        second_wallet = Wallet.objects.get(user=self.member_two)
+        self.assertEqual(first_wallet.balance, Decimal("790.00"))
+        self.assertEqual(second_wallet.balance, Decimal("790.00"))
+        self.assertEqual(
+            GroupMember.objects.get(group=group, user=self.member_one).platform_fee_amount,
+            Decimal("10.00"),
+        )
+        self.assertEqual(
+            GroupMember.objects.get(group=group, user=self.member_two).platform_fee_amount,
+            Decimal("10.00"),
+        )
 
         group.refresh_from_db()
         self.assertEqual(group.status, "awaiting_purchase")
@@ -1974,6 +1998,42 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(member_two_wallet.balance, Decimal("1000.00"))
         self.assertEqual(GroupMember.objects.filter(group=group, escrow_status="refunded").count(), 2)
         self.assertEqual(EscrowLedger.objects.filter(group=group, entry_type="refund").count(), 2)
+
+    def test_group_buy_refund_returns_platform_fee_to_joined_member(self):
+        group = self.create_group(mode="group_buy", total_slots=1, status="forming")
+        member_wallet = Wallet.objects.get(user=self.member_one)
+
+        self.authenticate(self.member_one)
+        join_response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
+
+        self.assertEqual(join_response.status_code, status.HTTP_200_OK)
+        member_wallet.refresh_from_db()
+        self.assertEqual(member_wallet.balance, Decimal("790.00"))
+
+        self.authenticate(self.owner)
+        refund_response = self.client.post(f"/api/my-groups/{group.id}/refund/", format="json")
+
+        self.assertEqual(refund_response.status_code, status.HTTP_200_OK)
+        member_wallet.refresh_from_db()
+        payout_member = GroupMember.objects.get(group=group, user=self.member_one)
+        self.assertEqual(member_wallet.balance, Decimal("1000.00"))
+        self.assertEqual(payout_member.refund_amount, Decimal("210.00"))
+        self.assertTrue(
+            Transaction.objects.filter(
+                user=self.member_one,
+                group=group,
+                payment_method="refund",
+                amount=Decimal("210.00"),
+            ).exists()
+        )
+        self.assertTrue(
+            EscrowLedger.objects.filter(
+                user=self.member_one,
+                group=group,
+                entry_type="refund",
+                amount=Decimal("200.00"),
+            ).exists()
+        )
 
     def test_owner_group_detail_shows_member_payment_progress(self):
         group = self.create_group(mode="group_buy", total_slots=3, status="collecting")
