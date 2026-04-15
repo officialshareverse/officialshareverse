@@ -2,6 +2,7 @@ import json
 
 from django import forms
 from django.contrib import admin, messages
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from .models import (
@@ -12,6 +13,7 @@ from .models import (
     JoinRequest,
     Notification,
     PasswordResetOTP,
+    PayoutAccount,
     Review,
     Subscription,
     Transaction,
@@ -162,6 +164,7 @@ class WalletPayoutAdmin(admin.ModelAdmin):
             return (
                 "user",
                 "payout_account",
+                "manual_destination_details",
                 "amount",
                 "mode",
                 "destination_label",
@@ -178,6 +181,7 @@ class WalletPayoutAdmin(admin.ModelAdmin):
             return (
                 "user",
                 "payout_account",
+                "manual_destination_details",
                 "amount",
                 "currency",
                 "status",
@@ -201,6 +205,7 @@ class WalletPayoutAdmin(admin.ModelAdmin):
         return (
             "user",
             "payout_account",
+            "manual_destination_details",
             "amount",
             "mode",
             "destination_label",
@@ -213,6 +218,7 @@ class WalletPayoutAdmin(admin.ModelAdmin):
             return (
                 "user",
                 "payout_account",
+                "manual_destination_details",
                 "amount",
                 "mode",
                 "destination_label",
@@ -226,6 +232,7 @@ class WalletPayoutAdmin(admin.ModelAdmin):
             return (
                 "user",
                 "payout_account",
+                "manual_destination_details",
                 "amount",
                 "currency",
                 "status",
@@ -247,6 +254,37 @@ class WalletPayoutAdmin(admin.ModelAdmin):
             )
 
         return ()
+
+    def manual_destination_details(self, obj):
+        payout_account = getattr(obj, "payout_account", None)
+        if not payout_account:
+            return "No saved payout account attached."
+
+        if payout_account.account_type == "vpa":
+            vpa_address = payout_account.get_vpa_address() or "—"
+            return format_html(
+                "<div><strong>Account type:</strong> UPI VPA<br>"
+                "<strong>Name:</strong> {}<br>"
+                "<strong>UPI ID:</strong> {}<br>"
+                "<strong>Phone:</strong> {}</div>",
+                payout_account.contact_name or "—",
+                vpa_address,
+                payout_account.contact_phone or "—",
+            )
+
+        return format_html(
+            "<div><strong>Account type:</strong> Bank account<br>"
+            "<strong>Account holder:</strong> {}<br>"
+            "<strong>Account number:</strong> {}<br>"
+            "<strong>IFSC:</strong> {}<br>"
+            "<strong>Phone:</strong> {}</div>",
+            payout_account.bank_account_holder_name or payout_account.contact_name or "—",
+            payout_account.get_bank_account_number() or "—",
+            payout_account.bank_account_ifsc or "—",
+            payout_account.contact_phone or "—",
+        )
+
+    manual_destination_details.short_description = "Destination details"
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -304,6 +342,91 @@ class WalletPayoutAdmin(admin.ModelAdmin):
         return mark_safe(f"<pre>{pretty_json}</pre>")
 
     status_details_pretty.short_description = "Status details"
+
+
+@admin.register(PayoutAccount)
+class PayoutAccountAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "account_type",
+        "destination_summary",
+        "is_active",
+        "last_synced_at",
+        "updated_at",
+    )
+    list_filter = ("account_type", "is_active")
+    search_fields = (
+        "user__username",
+        "user__email",
+        "contact_name",
+        "contact_email",
+        "contact_phone",
+        "bank_account_holder_name",
+        "bank_account_ifsc",
+        "bank_account_last4",
+        "vpa_handle",
+    )
+    readonly_fields = (
+        "full_destination_details",
+        "provider_contact_id",
+        "provider_fund_account_id",
+        "last_error",
+        "last_synced_at",
+        "created_at",
+        "updated_at",
+    )
+    fields = (
+        "user",
+        "account_type",
+        "contact_name",
+        "contact_email",
+        "contact_phone",
+        "bank_account_holder_name",
+        "bank_account_ifsc",
+        "bank_account_last4",
+        "vpa_handle",
+        "full_destination_details",
+        "is_active",
+        "provider_contact_id",
+        "provider_fund_account_id",
+        "last_error",
+        "last_synced_at",
+        "created_at",
+        "updated_at",
+    )
+
+    def destination_summary(self, obj):
+        return obj.get_masked_destination() or "—"
+
+    destination_summary.short_description = "Destination"
+
+    def full_destination_details(self, obj):
+        if not obj:
+            return "Save the payout account first to view its destination details."
+
+        if obj.account_type == "vpa":
+            return format_html(
+                "<div><strong>UPI ID:</strong> {}<br>"
+                "<strong>Name:</strong> {}<br>"
+                "<strong>Phone:</strong> {}</div>",
+                obj.get_vpa_address() or "—",
+                obj.contact_name or "—",
+                obj.contact_phone or "—",
+            )
+
+        return format_html(
+            "<div><strong>Account holder:</strong> {}<br>"
+            "<strong>Account number:</strong> {}<br>"
+            "<strong>IFSC:</strong> {}<br>"
+            "<strong>Phone:</strong> {}</div>",
+            obj.bank_account_holder_name or obj.contact_name or "—",
+            obj.get_bank_account_number() or "—",
+            obj.bank_account_ifsc or "—",
+            obj.contact_phone or "—",
+        )
+
+    full_destination_details.short_description = "Full destination details"
 
 
 admin.site.register(User)

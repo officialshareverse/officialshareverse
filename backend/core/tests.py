@@ -1061,6 +1061,28 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertContains(response, "Process now")
         self.assertContains(response, "Status details")
+        self.assertContains(response, "Destination details")
+        self.assertContains(response, "123456789012")
+        self.assertContains(response, "HDFC0001234")
+        self.assertContains(response, f"/admin/core/payoutaccount/{payout_account.id}/change/")
+
+    def test_admin_can_open_saved_payout_account_change_page(self):
+        payout_account = self.create_local_bank_payout_account(self.owner)
+        admin_user = User.objects.create_superuser(
+            username="superadmin2",
+            email="superadmin2@example.com",
+            password="password123",
+        )
+
+        logged_in = self.client.login(username=admin_user.username, password="password123")
+
+        self.assertTrue(logged_in)
+        response = self.client.get(f"/admin/core/payoutaccount/{payout_account.id}/change/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertContains(response, "Full destination details")
+        self.assertContains(response, "123456789012")
+        self.assertContains(response, "HDFC0001234")
 
     def test_manual_wallet_payout_rejects_when_wallet_balance_is_too_low(self):
         payout_account = self.create_local_bank_payout_account(self.owner)
