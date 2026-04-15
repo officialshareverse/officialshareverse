@@ -82,94 +82,91 @@ export default function Landing() {
         </header>
 
         <section className="sv-light-hero sv-light-hero-grid relative">
-          <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)] lg:gap-8">
-            <div className="text-center lg:text-left">
-              <p className="sv-eyebrow sv-animate-rise">Split more. Pay less.</p>
-              <h1 className="sv-display sv-animate-rise sv-delay-1 mt-4 max-w-4xl">
-                The shared-cost platform for subscriptions, courses, software, and memberships.
-              </h1>
-              <p className="sv-animate-rise sv-delay-2 mt-4 max-w-3xl text-sm leading-7 text-slate-600 md:mt-5 md:text-base md:leading-8">
-                ShareVerse gives digital plans a cleaner system: create a group, coordinate members,
-                track participation, keep updates visible, and manage shared payments in one calm place.
-              </p>
+          <div className="mx-auto max-w-5xl text-center">
+            <p className="sv-eyebrow sv-animate-rise">Split more. Pay less.</p>
+            <h1 className="sv-display sv-animate-rise sv-delay-1 mt-4 max-w-4xl mx-auto">
+              The shared-cost platform for subscriptions, courses, software, and memberships.
+            </h1>
+            <p className="sv-animate-rise sv-delay-2 mt-4 max-w-3xl mx-auto text-sm leading-7 text-slate-600 md:mt-5 md:text-base md:leading-8">
+              ShareVerse gives digital plans a cleaner system: create a split, coordinate members,
+              track participation, keep updates visible, and manage shared payments in one calm place.
+            </p>
 
-              <div className="sv-animate-rise sv-delay-3 mt-7 grid gap-3 min-[420px]:grid-cols-2 sm:inline-flex sm:flex-wrap sm:justify-center lg:justify-start">
-                <Link to="/signup" className="sv-btn-primary w-full sm:w-auto">
-                  Start with your first split
-                </Link>
-                <Link to="/login" className="sv-btn-secondary w-full sm:w-auto">
-                  I already have an account
-                </Link>
-              </div>
-
-              <div className="mt-6 flex flex-wrap justify-center gap-2 lg:justify-start">
-                {featureNotes.map((note, index) => (
-                  <span
-                    key={note}
-                    className={`sv-chip sv-animate-rise normal-case tracking-[0.04em] ${index === 1 ? "sv-delay-1" : index === 2 ? "sv-delay-2" : index === 3 ? "sv-delay-3" : ""}`}
-                  >
-                    {note}
-                  </span>
-                ))}
-              </div>
-
-              <div className="mt-7 grid gap-3 md:mt-8 md:grid-cols-3">
-                {heroHighlights.map((item, index) => (
-                  <article
-                    key={item.label}
-                    className={`rounded-[22px] border border-white/70 bg-white/88 p-4 text-left shadow-[0_20px_48px_rgba(15,23,42,0.08)] ${index === 1 ? "sv-animate-float-soft" : index === 2 ? "sv-animate-float sv-delay-1" : "sv-animate-rise"}`}
-                  >
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
-                    <p className="mt-3 text-sm font-semibold leading-6 text-slate-950">{item.value}</p>
-                  </article>
-                ))}
-              </div>
+            <div className="sv-animate-rise sv-delay-3 mt-7 grid gap-3 min-[420px]:grid-cols-2 sm:inline-flex sm:flex-wrap sm:justify-center">
+              <Link to="/signup" className="sv-btn-primary w-full sm:w-auto">
+                Start with your first split
+              </Link>
+              <Link to="/login" className="sv-btn-secondary w-full sm:w-auto">
+                I already have an account
+              </Link>
             </div>
 
-            <div className="relative mx-auto w-full max-w-[22rem] sm:max-w-xl">
-              <div className="absolute -left-3 top-5 hidden rounded-full border border-white/70 bg-white/85 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 shadow-[0_18px_42px_rgba(15,23,42,0.1)] md:block sv-animate-float">
-                Shared-cost network
-              </div>
-              <div className="absolute -right-3 bottom-8 hidden rounded-full border border-fuchsia-200 bg-fuchsia-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-800 shadow-[0_18px_42px_rgba(15,23,42,0.1)] md:block sv-animate-float-soft">
-                Plans + people + payments
-              </div>
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
+              {featureNotes.map((note, index) => (
+                <span
+                  key={note}
+                  className={`sv-chip sv-animate-rise normal-case tracking-[0.04em] ${index === 1 ? "sv-delay-1" : index === 2 ? "sv-delay-2" : index === 3 ? "sv-delay-3" : ""}`}
+                >
+                  {note}
+                </span>
+              ))}
+            </div>
+          </div>
 
-              <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f6fbfc_100%)] p-2.5 shadow-[0_28px_70px_rgba(15,23,42,0.12)] md:rounded-[28px] md:p-4">
-                <div className="relative overflow-hidden rounded-[20px] border border-white/90 bg-[radial-gradient(circle_at_top_right,rgba(236,72,153,0.12),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(34,197,94,0.12),transparent_26%),linear-gradient(180deg,#ffffff_0%,#eef6f8_100%)] p-2.5 md:rounded-[24px] md:p-3">
-                  <div className="absolute left-4 top-4 z-10 inline-flex items-center gap-3 rounded-full border border-white/20 bg-slate-950/60 px-3 py-2 backdrop-blur">
-                    <BrandMark glow sizeClass="h-10 w-10" roundedClass="rounded-[14px]" />
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.18em] text-white/70">ShareVerse</p>
-                      <p className="mt-1 text-xs font-semibold text-white">Built for cleaner split coordination</p>
-                    </div>
+          <div className="mt-8 rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbfd_100%)] p-3 shadow-[0_28px_70px_rgba(15,23,42,0.12)] md:mt-10 md:rounded-[32px] md:p-5">
+            <div className="rounded-[22px] border border-white/80 bg-white/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur md:rounded-[28px] md:p-4">
+              <div className="mb-4 flex flex-col gap-3 rounded-[20px] border border-slate-200/80 bg-white/92 px-4 py-3 text-left shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:flex-row sm:items-center sm:justify-between md:px-5">
+                <div className="inline-flex items-center gap-3">
+                  <BrandMark glow sizeClass="h-11 w-11" roundedClass="rounded-[16px]" />
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">ShareVerse</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-950">A cleaner visual for how shared-cost splits work</p>
                   </div>
+                </div>
+                <div className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-800">
+                  Built for digital plans
+                </div>
+              </div>
 
-                  <img
-                    src={heroIllustrationSrc}
-                    alt="Illustration showing people coordinating digital plans, tools, and shared-cost participation across one connected platform."
-                    className="sv-animate-float-soft aspect-[4/3] w-full rounded-[18px] object-cover object-center md:aspect-[1.05/1]"
-                  />
+              <img
+                src={heroIllustrationSrc}
+                alt="Illustration showing people coordinating digital plans, tools, and shared-cost participation across one connected platform."
+                className="aspect-[16/11] w-full rounded-[20px] object-cover object-center shadow-[0_28px_65px_rgba(76,29,149,0.18)] md:rounded-[26px]"
+              />
 
-                  <div className="absolute inset-x-4 bottom-4 z-10 rounded-[22px] border border-white/15 bg-slate-950/68 p-4 text-white shadow-[0_20px_50px_rgba(15,23,42,0.22)] backdrop-blur">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-white/70">Why this fits ShareVerse</p>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                      <div>
-                        <p className="text-lg font-semibold">Subscriptions</p>
-                        <p className="mt-1 text-xs leading-6 text-white/70">Coordinate shared-cost access with clearer participation.</p>
-                      </div>
-                      <div>
-                        <p className="text-lg font-semibold">Courses & tools</p>
-                        <p className="mt-1 text-xs leading-6 text-white/70">Bring digital services, members, and updates into one flow.</p>
-                      </div>
-                      <div>
-                        <p className="text-lg font-semibold">Payments</p>
-                        <p className="mt-1 text-xs leading-6 text-white/70">Track contributions, platform fees, and wallet activity in one place.</p>
-                      </div>
-                    </div>
-                  </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4 text-left shadow-[0_16px_36px_rgba(15,23,42,0.05)]">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Subscriptions</p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-950">
+                    Keep shared-cost participation more organized than scattered chats.
+                  </p>
+                </div>
+                <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4 text-left shadow-[0_16px_36px_rgba(15,23,42,0.05)]">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Courses & tools</p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-950">
+                    Bring members, updates, and payment coordination into one shared flow.
+                  </p>
+                </div>
+                <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4 text-left shadow-[0_16px_36px_rgba(15,23,42,0.05)]">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Wallet activity</p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-950">
+                    Track contributions, platform fees, and split status without confusion.
+                  </p>
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="mt-7 grid gap-3 md:mt-8 md:grid-cols-3">
+            {heroHighlights.map((item, index) => (
+              <article
+                key={item.label}
+                className={`rounded-[22px] border border-white/70 bg-white/88 p-4 text-left shadow-[0_20px_48px_rgba(15,23,42,0.08)] ${index === 1 ? "sv-animate-float-soft" : index === 2 ? "sv-animate-float sv-delay-1" : "sv-animate-rise"}`}
+              >
+                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
+                <p className="mt-3 text-sm font-semibold leading-6 text-slate-950">{item.value}</p>
+              </article>
+            ))}
           </div>
         </section>
 
