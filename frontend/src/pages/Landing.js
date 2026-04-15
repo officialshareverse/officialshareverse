@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import BrandMark from "../components/BrandMark";
 import PublicFooter from "../components/PublicFooter";
 
-const heroIllustrationSrc = `${process.env.PUBLIC_URL}/streaming-services-collage.png`;
-const logoSrc = `${process.env.PUBLIC_URL}/shareverse-logo.jpeg`;
+const heroIllustrationSrc = `${process.env.PUBLIC_URL}/shareverse-hero-network.png`;
 
 const featureNotes = [
   "Subscriptions",
@@ -129,53 +128,42 @@ export default function Landing() {
 
             <div className="relative mx-auto w-full max-w-[22rem] sm:max-w-xl">
               <div className="absolute -left-3 top-5 hidden rounded-full border border-white/70 bg-white/85 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 shadow-[0_18px_42px_rgba(15,23,42,0.1)] md:block sv-animate-float">
-                Shared-cost groups
+                Shared-cost network
               </div>
-              <div className="absolute -right-3 bottom-8 hidden rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-800 shadow-[0_18px_42px_rgba(15,23,42,0.1)] md:block sv-animate-float-soft">
-                Trust-first flow
+              <div className="absolute -right-3 bottom-8 hidden rounded-full border border-fuchsia-200 bg-fuchsia-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-800 shadow-[0_18px_42px_rgba(15,23,42,0.1)] md:block sv-animate-float-soft">
+                Plans + people + payments
               </div>
 
               <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f6fbfc_100%)] p-2.5 shadow-[0_28px_70px_rgba(15,23,42,0.12)] md:rounded-[28px] md:p-4">
-                <div className="rounded-[20px] border border-white/90 bg-[radial-gradient(circle_at_top_right,rgba(236,72,153,0.12),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(34,197,94,0.12),transparent_26%),linear-gradient(180deg,#ffffff_0%,#eef6f8_100%)] p-3 md:rounded-[24px] md:p-5">
-                  <div className="grid gap-4">
-                    <div className="flex items-center justify-between rounded-[24px] border border-slate-200 bg-white/92 px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
-                      <div className="flex items-center gap-3">
-                        <BrandMark glow sizeClass="h-12 w-12" roundedClass="rounded-[18px]" />
-                        <div>
-                          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">ShareVerse</p>
-                          <p className="mt-1 text-sm font-semibold text-slate-950">Built for group coordination</p>
-                        </div>
-                      </div>
-                      <span className="rounded-full bg-slate-950 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
-                        Live beta
-                      </span>
+                <div className="relative overflow-hidden rounded-[20px] border border-white/90 bg-[radial-gradient(circle_at_top_right,rgba(236,72,153,0.12),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(34,197,94,0.12),transparent_26%),linear-gradient(180deg,#ffffff_0%,#eef6f8_100%)] p-2.5 md:rounded-[24px] md:p-3">
+                  <div className="absolute left-4 top-4 z-10 inline-flex items-center gap-3 rounded-full border border-white/20 bg-slate-950/60 px-3 py-2 backdrop-blur">
+                    <BrandMark glow sizeClass="h-10 w-10" roundedClass="rounded-[14px]" />
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-white/70">ShareVerse</p>
+                      <p className="mt-1 text-xs font-semibold text-white">Built for cleaner split coordination</p>
                     </div>
+                  </div>
 
-                    <div className="overflow-hidden rounded-[22px] border border-white/80 bg-white p-2 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
-                      <img
-                        src={heroIllustrationSrc}
-                        alt="Popular streaming and digital subscription services shown as colorful circles."
-                        className="sv-animate-float-soft w-full rounded-[18px] object-cover"
-                      />
-                    </div>
+                  <img
+                    src={heroIllustrationSrc}
+                    alt="Illustration showing people coordinating digital plans, tools, and shared-cost participation across one connected platform."
+                    className="sv-animate-float-soft aspect-[4/3] w-full rounded-[18px] object-cover object-center md:aspect-[1.05/1]"
+                  />
 
-                    <div className="grid gap-3 sm:grid-cols-[1.1fr_0.9fr]">
-                      <div className="rounded-[20px] border border-slate-200 bg-slate-950 p-4 text-white shadow-[0_18px_40px_rgba(15,23,42,0.14)]">
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-300">Best for</p>
-                        <p className="mt-3 text-lg font-semibold">Subscriptions, courses, software, memberships</p>
+                  <div className="absolute inset-x-4 bottom-4 z-10 rounded-[22px] border border-white/15 bg-slate-950/68 p-4 text-white shadow-[0_20px_50px_rgba(15,23,42,0.22)] backdrop-blur">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-white/70">Why this fits ShareVerse</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <p className="text-lg font-semibold">Subscriptions</p>
+                        <p className="mt-1 text-xs leading-6 text-white/70">Coordinate shared-cost access with clearer participation.</p>
                       </div>
-                      <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={logoSrc}
-                            alt="ShareVerse brand logo"
-                            className="h-12 w-12 rounded-[16px] border border-slate-200 object-cover shadow-[0_12px_24px_rgba(15,23,42,0.1)]"
-                          />
-                          <div>
-                            <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-800">What you get</p>
-                            <p className="mt-1 text-sm font-semibold text-slate-950">Cleaner than unmanaged group chats</p>
-                          </div>
-                        </div>
+                      <div>
+                        <p className="text-lg font-semibold">Courses & tools</p>
+                        <p className="mt-1 text-xs leading-6 text-white/70">Bring digital services, members, and updates into one flow.</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold">Payments</p>
+                        <p className="mt-1 text-xs leading-6 text-white/70">Track contributions, platform fees, and wallet activity in one place.</p>
                       </div>
                     </div>
                   </div>
