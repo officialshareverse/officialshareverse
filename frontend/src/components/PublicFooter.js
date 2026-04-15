@@ -25,7 +25,7 @@ export default function PublicFooter({ compact = false }) {
       }`}
     >
       <div
-        className={`mx-auto flex w-full max-w-6xl flex-col gap-4 ${
+        className={`mx-auto flex w-full max-w-6xl flex-col gap-3 ${
           compact ? "md:flex-row md:items-center md:justify-between" : "md:flex-row md:items-start md:justify-between"
         }`}
       >
@@ -41,14 +41,14 @@ export default function PublicFooter({ compact = false }) {
               </p>
             </div>
           </div>
-          <div className="mt-3 space-y-1 text-sm leading-7 text-slate-600">
+          <div className="mt-3 space-y-1 text-sm leading-6 text-slate-600">
             <p>Operated by {BUSINESS_OPERATOR_NAME}</p>
             <p className="break-words">Support: {SUPPORT_EMAIL}</p>
             <p>{SUPPORT_PHONE}</p>
           </div>
         </div>
 
-        <nav className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-slate-600 sm:flex sm:flex-wrap sm:gap-x-5">
+        <nav className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm text-slate-600 sm:flex sm:flex-wrap sm:gap-x-5">
           {footerLinks.map((item) => (
             <Link
               key={item.to}

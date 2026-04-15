@@ -86,10 +86,10 @@ export default function Landing() {
             <img
               src={heroIllustrationSrc}
               alt="Illustration showing people coordinating digital plans, tools, and shared-cost participation across one connected platform."
-              className="aspect-[4/5] w-full object-cover object-center sm:aspect-[16/12] md:aspect-[16/11]"
+              className="aspect-[4/4.85] w-full object-cover object-center sm:aspect-[16/12] md:aspect-[16/11]"
             />
 
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.14)_0%,rgba(15,23,42,0.16)_26%,rgba(15,23,42,0.28)_56%,rgba(15,23,42,0.52)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.08)_0%,rgba(15,23,42,0.1)_22%,rgba(15,23,42,0.22)_52%,rgba(15,23,42,0.56)_100%)] sm:bg-[linear-gradient(180deg,rgba(15,23,42,0.14)_0%,rgba(15,23,42,0.16)_26%,rgba(15,23,42,0.28)_56%,rgba(15,23,42,0.52)_100%)]" />
 
             <div className="absolute inset-x-0 top-0 hidden gap-3 p-4 sm:flex sm:flex-row sm:items-center sm:justify-between sm:p-6">
               <div className="inline-flex w-fit items-center gap-3 rounded-full border border-white/18 bg-slate-950/30 px-3 py-2 text-left backdrop-blur-sm">
@@ -105,7 +105,44 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="absolute inset-0 flex items-center justify-center px-3 py-14 sm:px-6 sm:py-20 md:px-8">
+            <div className="absolute inset-x-3 bottom-3 z-10 sm:hidden">
+              <div className="rounded-[24px] border border-white/14 bg-slate-950/54 px-4 py-4 shadow-[0_24px_70px_rgba(15,23,42,0.28)] backdrop-blur-md">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-300">
+                  Split more. Pay less.
+                </p>
+                <h1 className="mt-3 text-[1.85rem] font-bold leading-[1.02] text-white">
+                  Shared-cost plans, courses, software, and memberships.
+                </h1>
+                <p className="mt-3 text-[13px] leading-6 text-slate-200">
+                  Create a split, coordinate members, keep updates visible, and manage shared payments in one cleaner flow.
+                </p>
+
+                <div className="mt-4 grid gap-2.5">
+                  <Link to="/signup" className="sv-btn-primary w-full justify-center">
+                    Start with your first split
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/24 bg-white/88 px-4 py-3 text-sm font-semibold text-slate-950 shadow-[0_18px_42px_rgba(15,23,42,0.18)] backdrop-blur-sm transition hover:bg-white"
+                  >
+                    I already have an account
+                  </Link>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {featureNotes.map((note) => (
+                    <span
+                      key={note}
+                      className="rounded-full border border-white/18 bg-white/10 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm"
+                    >
+                      {note}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute inset-0 hidden items-center justify-center px-3 py-14 sm:flex sm:px-6 sm:py-20 md:px-8">
               <div className="mx-auto max-w-5xl text-center">
                 <p className="sv-eyebrow sv-animate-rise text-emerald-300">Split more. Pay less.</p>
                 <h1 className="sv-display sv-animate-rise sv-delay-1 mt-4 max-w-4xl mx-auto text-white">
@@ -141,7 +178,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="mt-7 grid gap-3 md:mt-8 md:grid-cols-3">
+          <div className="mt-5 grid gap-3 sm:mt-7 md:mt-8 md:grid-cols-3">
             {heroHighlights.map((item, index) => (
               <article
                 key={item.label}
