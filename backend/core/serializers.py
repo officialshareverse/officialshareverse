@@ -75,6 +75,12 @@ def get_status_copy(group):
             "failed": "Purchase failed",
         }
     else:
+        pending_confirmations = GroupMember.objects.filter(group=group, escrow_status="held").count()
+        if group.status != "closed" and pending_confirmations:
+            if pending_confirmations == 1:
+                return "Waiting for 1 access confirmation"
+            return f"Waiting for {pending_confirmations} access confirmations"
+
         mapping = {
             "forming": "Owner is opening slots",
             "collecting": "Members are joining and paying",
@@ -732,10 +738,14 @@ class GroupSerializer(serializers.ModelSerializer):
     def get_owner_revenue(self, obj):
         if obj.mode != "sharing":
             return "0.00"
-        revenue = sum_member_contribution_amounts(
-            member
-            for member in GroupMember.objects.filter(group=obj).select_related("group")
-            if member.user_id != obj.owner_id
+        revenue = (
+            Transaction.objects.filter(
+                user=obj.owner,
+                group=obj,
+                payment_method="group_share_payout",
+                status="success",
+            ).aggregate(total=Sum("amount"))["total"]
+            or Decimal("0.00")
         )
         return str(revenue)
 
@@ -763,6 +773,9 @@ class GroupSerializer(serializers.ModelSerializer):
             return f"Waiting for {remaining} more paid member(s)."
 
         remaining = max(obj.total_slots - self.get_filled_slots(obj), 0)
+        pending_confirmations = GroupMember.objects.filter(group=obj, escrow_status="held").count()
+        if pending_confirmations:
+            return f"Waiting for {pending_confirmations} member access confirmation(s) before payout."
         if obj.status == "active":
             return "Shared subscription is live."
         return f"Fill {remaining} more slot(s) to maximize owner revenue."
@@ -886,9 +899,14 @@ class GroupListSerializer(serializers.ModelSerializer):
     def get_owner_revenue(self, obj):
         if obj.mode != "sharing":
             return "0.00"
-        members = GroupMember.objects.filter(group=obj).select_related("group")
-        revenue = sum_member_contribution_amounts(
-            member for member in members if member.user_id != obj.owner_id
+        revenue = (
+            Transaction.objects.filter(
+                user=obj.owner,
+                group=obj,
+                payment_method="group_share_payout",
+                status="success",
+            ).aggregate(total=Sum("amount"))["total"]
+            or Decimal("0.00")
         )
         return str(revenue)
 
@@ -966,6 +984,9 @@ class GroupListSerializer(serializers.ModelSerializer):
             return f"Waiting for {remaining} more paid member(s)."
 
         remaining = max(obj.total_slots - self.get_filled_slots(obj), 0)
+        pending_confirmations = GroupMember.objects.filter(group=obj, escrow_status="held").count()
+        if pending_confirmations:
+            return f"Waiting for {pending_confirmations} member access confirmation(s) before payout."
         if obj.status == "active":
             return "Shared subscription is live."
         return f"Fill {remaining} more slot(s) to maximize owner revenue."

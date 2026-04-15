@@ -588,10 +588,14 @@ class GroupFlowTests(APITestCase):
         group.refresh_from_db()
         owner_wallet.refresh_from_db()
         member_wallet.refresh_from_db()
+        member = GroupMember.objects.get(group=group, user=self.member_one)
 
-        self.assertEqual(group.status, "active")
+        self.assertEqual(group.status, "collecting")
         self.assertEqual(member_wallet.balance, Decimal("790.00"))
-        self.assertEqual(owner_wallet.balance, Decimal("1200.00"))
+        self.assertEqual(owner_wallet.balance, Decimal("1000.00"))
+        self.assertTrue(member.has_paid)
+        self.assertEqual(member.escrow_status, "held")
+        self.assertFalse(member.access_confirmed)
         self.assertTrue(group.access_identifier.startswith("enc::"))
         self.assertTrue(group.access_password.startswith("enc::"))
         self.assertEqual(group.get_access_identifier(), "owner@sharedmail.com")
@@ -633,7 +637,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(reused_token_response.status_code, status.HTTP_400_BAD_REQUEST)
 
         self.assertTrue(GroupMember.objects.filter(group=group, user=self.member_one).exists())
-        self.assertTrue(
+        self.assertFalse(
             Transaction.objects.filter(
                 user=self.owner,
                 group=group,
@@ -651,19 +655,60 @@ class GroupFlowTests(APITestCase):
             access_password="stream-pass",
             access_notes="PIN is 4321.",
         )
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(
+            group=group,
+            user=self.member_one,
+            has_paid=True,
+            charged_amount=Decimal("210.00"),
+            platform_fee_amount=Decimal("10.00"),
+            escrow_status="held",
+        )
 
         self.authenticate(self.member_one)
         response = self.client.get("/api/dashboard/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["groups"]), 1)
+        self.assertTrue(response.data["groups"][0]["access_confirmation_required"])
         credentials = response.data["groups"][0]["credentials"]
         self.assertFalse(credentials["available"])
         self.assertFalse(credentials["requires_one_time_reveal"])
         self.assertEqual(
             credentials["message"],
             "Access is coordinated privately by the group owner.",
+        )
+
+    def test_confirming_access_for_sharing_group_releases_creator_payout(self):
+        group = self.create_group(
+            mode="sharing",
+            total_slots=2,
+            status="forming",
+        )
+        owner_wallet = Wallet.objects.get(user=self.owner)
+
+        self.authenticate(self.member_one)
+        join_response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
+        self.assertEqual(join_response.status_code, status.HTTP_200_OK)
+
+        confirm_response = self.client.post(f"/api/groups/{group.id}/confirm-access/", format="json")
+        self.assertEqual(confirm_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(confirm_response.data["message"], "Access confirmed. The host payout has been released.")
+
+        group.refresh_from_db()
+        owner_wallet.refresh_from_db()
+        member = GroupMember.objects.get(group=group, user=self.member_one)
+
+        self.assertEqual(group.status, "active")
+        self.assertTrue(member.access_confirmed)
+        self.assertEqual(member.escrow_status, "released")
+        self.assertEqual(owner_wallet.balance, Decimal("1200.00"))
+        self.assertTrue(
+            Transaction.objects.filter(
+                user=self.owner,
+                group=group,
+                payment_method="group_share_payout",
+                amount=Decimal("200.00"),
+            ).exists()
         )
 
     def test_late_joining_sharing_group_charges_only_for_remaining_days(self):
@@ -696,7 +741,8 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(member.charged_amount, Decimal("105.00"))
         self.assertEqual(member.platform_fee_amount, Decimal("5.00"))
         self.assertEqual(member_wallet.balance, Decimal("895.00"))
-        self.assertEqual(owner_wallet.balance, Decimal("1100.00"))
+        self.assertEqual(owner_wallet.balance, Decimal("1000.00"))
+        self.assertEqual(member.escrow_status, "held")
         self.assertTrue(
             Transaction.objects.filter(
                 user=self.member_one,
@@ -705,7 +751,7 @@ class GroupFlowTests(APITestCase):
                 amount=Decimal("105.00"),
             ).exists()
         )
-        self.assertTrue(
+        self.assertFalse(
             Transaction.objects.filter(
                 user=self.owner,
                 group=group,
@@ -1813,7 +1859,7 @@ class GroupFlowTests(APITestCase):
         response = self.client.post(f"/api/groups/{group.id}/confirm-access/", format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["error"], "The purchaser cannot confirm access as a member")
+        self.assertEqual(response.data["error"], "The host cannot confirm access as a member")
 
     def test_member_can_report_access_issue_and_pause_payout(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")

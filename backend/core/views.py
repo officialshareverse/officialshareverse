@@ -140,6 +140,10 @@ def get_group_buy_held_amount(group):
     return sum_member_contribution_amounts(get_group_buy_held_members(group))
 
 
+def get_sharing_held_members(group):
+    return GroupMember.objects.filter(group=group, escrow_status="held").select_related("user", "group")
+
+
 def get_group_buy_confirmed_member_count(group):
     return GroupMember.objects.filter(
         group=group,
@@ -261,6 +265,69 @@ def release_group_buy_held_funds(group_id, allow_timeout_release=False):
             )
 
     return release_amount, True
+
+
+def release_sharing_member_funds(member_id):
+    released_amount = Decimal("0.00")
+
+    with transaction.atomic():
+        try:
+            member = (
+                GroupMember.objects.select_for_update()
+                .select_related("group", "group__owner", "group__subscription", "user")
+                .get(id=member_id)
+            )
+        except GroupMember.DoesNotExist:
+            return released_amount, False
+
+        if member.group.mode != "sharing" or member.escrow_status != "held" or not member.has_paid:
+            return released_amount, False
+
+        owner_wallet, _ = Wallet.objects.select_for_update().get_or_create(user=member.group.owner)
+        released_amount = get_member_contribution_amount(member)
+        owner_wallet.balance += released_amount
+        owner_wallet.save()
+
+        Transaction.objects.create(
+            user=member.group.owner,
+            group=member.group,
+            amount=released_amount,
+            type="credit",
+            status="success",
+            payment_method="group_share_payout",
+        )
+
+        member.escrow_status = "released"
+        member.save(update_fields=["escrow_status"])
+
+        EscrowLedger.objects.create(
+            user=member.user,
+            group=member.group,
+            member=member,
+            amount=released_amount,
+            entry_type="release",
+            status="success",
+        )
+
+        member.group.status = "active"
+        member.group.save(update_fields=["status"])
+
+        Notification.objects.create(
+            user=member.group.owner,
+            message=(
+                f"{member.user.username} confirmed receiving access for {member.group.subscription.name}. "
+                "Your payout was released to your wallet."
+            ),
+        )
+        Notification.objects.create(
+            user=member.user,
+            message=(
+                f"You confirmed access for {member.group.subscription.name}. "
+                "The host payout has now been released."
+            ),
+        )
+
+    return released_amount, True
 
 
 def refund_group_buy_held_funds(group_id, reason="manual"):
@@ -1323,10 +1390,10 @@ class JoinGroupView(APIView):
             member = GroupMember.objects.create(
                 group=group,
                 user=request.user,
-                has_paid=(group.mode == "group_buy"),
+                has_paid=True,
                 charged_amount=price,
                 platform_fee_amount=platform_fee_amount,
-                escrow_status="held" if group.mode == "group_buy" else "released",
+                escrow_status="held",
             )
 
             Transaction.objects.create(
@@ -1339,26 +1406,31 @@ class JoinGroupView(APIView):
             )
 
             if group.mode == "sharing":
-                owner_wallet, _ = Wallet.objects.select_for_update().get_or_create(user=group.owner)
-                owner_wallet.balance += contribution_amount
-                owner_wallet.save()
-
-                Transaction.objects.create(
-                    user=group.owner,
+                EscrowLedger.objects.create(
+                    user=request.user,
                     group=group,
+                    member=member,
                     amount=contribution_amount,
-                    type="credit",
+                    entry_type="hold",
                     status="success",
-                    payment_method="group_share_payout",
                 )
 
-                group.status = "active"
-                group.save(update_fields=["status"])
+                if group.status == "forming":
+                    group.status = "collecting"
+                    group.save(update_fields=["status"])
                 Notification.objects.create(
                     user=group.owner,
                     message=(
                         f"{request.user.username} joined your {group.subscription.name} sharing group "
-                        f"and paid Rs {price} (including Rs {platform_fee_amount} platform fee)."
+                        f"and paid Rs {price} (including Rs {platform_fee_amount} platform fee). "
+                        "Payout will be released after the member confirms access."
+                    ),
+                )
+                Notification.objects.create(
+                    user=request.user,
+                    message=(
+                        f"You joined {group.subscription.name}. Confirm access after the host gives you access "
+                        "so the host payout can be released."
                     ),
                 )
             elif group.mode == "group_buy":
@@ -2171,11 +2243,14 @@ class DashboardView(APIView):
                     "pricing_note": join_pricing["pricing_note"],
                     "credentials": build_member_sharing_credentials(membership.group),
                     "access_confirmation_required": (
-                        membership.group.mode == "group_buy"
-                        and membership.group.status in {"proof_submitted", "disputed"}
-                        and membership.escrow_status == "held"
-                        and not membership.access_confirmed
-                    ),
+                        (
+                            membership.group.mode == "group_buy"
+                            and membership.group.status in {"proof_submitted", "disputed"}
+                        )
+                        or membership.group.mode == "sharing"
+                    )
+                    and membership.escrow_status == "held"
+                    and not membership.access_confirmed,
                     "can_report_access_issue": (
                         membership.group.mode == "group_buy"
                         and membership.group.status in {"proof_submitted", "disputed"}
@@ -2865,14 +2940,8 @@ class ConfirmGroupAccessView(APIView):
         except Group.DoesNotExist:
             return Response({"error": "Group not found"}, status=404)
 
-        if group.mode != "group_buy":
-            return Response({"error": "Only buy-together groups use access confirmation"}, status=400)
-
         if group.owner_id == request.user.id:
-            return Response({"error": "The purchaser cannot confirm access as a member"}, status=400)
-
-        if group.status not in {"proof_submitted", "disputed"}:
-            return Response({"error": "This group is not waiting for member confirmations"}, status=400)
+            return Response({"error": "The host cannot confirm access as a member"}, status=400)
 
         dispute_cleared = False
         with transaction.atomic():
@@ -2888,13 +2957,16 @@ class ConfirmGroupAccessView(APIView):
                     user=request.user,
                 )
             except GroupMember.DoesNotExist:
-                return Response({"error": "You are not a member of this buy-together group"}, status=404)
+                return Response({"error": "You are not a member of this group"}, status=404)
 
             if not member.has_paid or member.escrow_status != "held":
                 return Response({"error": "Only members with held contributions can confirm access"}, status=400)
 
             if member.access_confirmed:
                 return Response({"error": "You already confirmed receiving access"}, status=400)
+
+            if locked_group.mode == "group_buy" and locked_group.status not in {"proof_submitted", "disputed"}:
+                return Response({"error": "This group is not waiting for member confirmations"}, status=400)
 
             member.access_confirmed = True
             member.access_confirmed_at = timezone.now()
@@ -2911,7 +2983,11 @@ class ConfirmGroupAccessView(APIView):
                 ]
             )
 
-            if locked_group.status == "disputed" and not get_group_buy_access_issue_count(locked_group):
+            if (
+                locked_group.mode == "group_buy"
+                and locked_group.status == "disputed"
+                and not get_group_buy_access_issue_count(locked_group)
+            ):
                 next_deadline = timezone.now() + timedelta(
                     hours=BUY_TOGETHER_MEMBER_CONFIRMATION_WINDOW_HOURS
                 )
@@ -2923,14 +2999,32 @@ class ConfirmGroupAccessView(APIView):
                 )
                 dispute_cleared = True
 
-            Notification.objects.create(
-                user=locked_group.owner,
-                message=(
-                    f"{request.user.username} confirmed receiving access for {locked_group.subscription.name}. "
-                    "The reported issue is cleared and payout can continue."
-                    if dispute_cleared
-                    else f"{request.user.username} confirmed receiving access for {locked_group.subscription.name}."
-                ),
+            if locked_group.mode == "group_buy":
+                Notification.objects.create(
+                    user=locked_group.owner,
+                    message=(
+                        f"{request.user.username} confirmed receiving access for {locked_group.subscription.name}. "
+                        "The reported issue is cleared and payout can continue."
+                        if dispute_cleared
+                        else f"{request.user.username} confirmed receiving access for {locked_group.subscription.name}."
+                    ),
+                )
+
+        if group.mode == "sharing":
+            release_amount, released = release_sharing_member_funds(member.id)
+            group.refresh_from_db()
+            if not released:
+                return Response({"error": "Funds could not be released for this split"}, status=400)
+
+            return Response(
+                {
+                    "message": "Access confirmed. The host payout has been released.",
+                    "status": group.status,
+                    "released_amount": str(release_amount),
+                    "confirmed_members": 1,
+                    "remaining_confirmations": 0,
+                    "reported_issues": 0,
+                }
             )
 
         total_confirmed = get_group_buy_confirmed_member_count(group)

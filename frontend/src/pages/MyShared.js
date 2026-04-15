@@ -933,7 +933,7 @@ export default function MyShared() {
                         </div>
                       ) : (
                         <p style={subtleText}>
-                          Use this space to manage your group, keep credentials current, and coordinate updates with members through chat.
+                          Use this space to manage your group, keep access coordination clear, and watch for member confirmations before payouts reach your wallet.
                         </p>
                       )}
                     </div>
@@ -1098,9 +1098,7 @@ export default function MyShared() {
                       ) : (
                         <div style={membersList}>
                           {detail.members.map((member) => {
-                            const memberLabel = detail.mode === "group_buy"
-                              ? getEscrowLabel(member, detail.status)
-                              : "Member active";
+                            const memberLabel = getEscrowLabel(member, detail.status);
                             const reviewKey = getReviewKey(detail.id, member.user_id);
                             const reviewForm =
                               reviewForms[reviewKey] || getInitialReviewForm(member.rating?.my_review);
@@ -1369,11 +1367,26 @@ export default function MyShared() {
                   ) : (
                     <>
                       <p style={subtleText}>
-                        Access is coordinated privately by the group owner after you join.
+                        Access is coordinated privately by the host after you join.
                       </p>
                       <p style={subtleText}>
-                        This page shows your membership status, but not shared login credentials.
+                        Confirm access once the host has set you up. The host payout is released only after your confirmation.
                       </p>
+                      {group.access_confirmation_required ? (
+                        group.has_confirmed_access ? (
+                          <p style={proofApproved}>You already confirmed that you received access.</p>
+                        ) : (
+                          <div style={actionRow}>
+                            <button
+                              style={primaryButton}
+                              onClick={() => confirmMemberAccess(group.id)}
+                              disabled={confirmingId === group.id}
+                            >
+                              {confirmingId === group.id ? "Confirming..." : "I received access"}
+                            </button>
+                          </div>
+                        )
+                      ) : null}
                     </>
                   )}
                 </div>
@@ -1471,6 +1484,10 @@ function getEscrowLabel(member, groupStatus = "") {
 
   if ((groupStatus === "proof_submitted" || groupStatus === "disputed") && member.has_paid) {
     return "Awaiting confirmation";
+  }
+
+  if (member.escrow_status === "held" && member.has_paid) {
+    return "Awaiting access confirmation";
   }
 
   if (member.has_paid) {
