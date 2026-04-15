@@ -56,29 +56,36 @@ const useCases = [
 export default function Landing() {
   return (
     <div className="sv-page">
-      <div className="mx-auto max-w-6xl space-y-8">
-        <header className="sv-brand-shell flex flex-col items-stretch gap-3 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <Link
-            to="/"
-            className="inline-flex w-full items-center justify-center gap-3 rounded-[22px] border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 sm:w-auto sm:justify-start sm:rounded-full"
-          >
-            <BrandMark glow />
-            <div>
-              <span className="block text-lg font-bold leading-none sm:text-xl">ShareVerse</span>
-              <span className="mt-1 hidden text-[10px] uppercase tracking-[0.18em] text-slate-500 sm:block">
-                Split more. Pay less.
-              </span>
-            </div>
-          </Link>
+      <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
+        <header className="sv-brand-shell flex flex-col gap-2.5 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5">
+          <div className="flex items-center gap-2.5 sm:contents">
+            <Link
+              to="/"
+              className="inline-flex min-w-0 flex-1 items-center justify-start gap-3 rounded-[22px] border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 sm:w-auto sm:flex-none sm:justify-start sm:rounded-full sm:px-4"
+            >
+              <BrandMark glow sizeClass="h-9 w-9 sm:h-10 sm:w-10" />
+              <div className="min-w-0">
+                <span className="block truncate text-base font-bold leading-none sm:text-xl">ShareVerse</span>
+                <span className="mt-1 hidden text-[10px] uppercase tracking-[0.18em] text-slate-500 sm:block">
+                  Split more. Pay less.
+                </span>
+              </div>
+            </Link>
 
-          <div className="grid w-full grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+            <Link to="/login" className="sv-btn-secondary min-h-[46px] shrink-0 px-4 py-2.5 sm:hidden">
+              Login
+            </Link>
+          </div>
+
+          <div className="hidden w-full min-[420px]:grid-cols-2 gap-2.5 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
             <Link to="/login" className="sv-btn-secondary w-full sm:w-auto">
               Login
             </Link>
-            <Link to="/signup" className="sv-btn-primary w-full sm:w-auto">
-              Create account
-            </Link>
           </div>
+
+          <Link to="/signup" className="sv-btn-primary w-full sm:w-auto">
+            Create account
+          </Link>
         </header>
 
         <section className="sv-light-hero sv-light-hero-grid relative overflow-hidden">
@@ -86,10 +93,10 @@ export default function Landing() {
             <img
               src={heroIllustrationSrc}
               alt="Illustration showing people coordinating digital plans, tools, and shared-cost participation across one connected platform."
-              className="aspect-[4/4.85] w-full object-cover object-center sm:aspect-[16/12] md:aspect-[16/11]"
+              className="aspect-[4/3.25] w-full object-cover object-center sm:aspect-[16/12] md:aspect-[16/11]"
             />
 
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.08)_0%,rgba(15,23,42,0.1)_22%,rgba(15,23,42,0.22)_52%,rgba(15,23,42,0.56)_100%)] sm:bg-[linear-gradient(180deg,rgba(15,23,42,0.14)_0%,rgba(15,23,42,0.16)_26%,rgba(15,23,42,0.28)_56%,rgba(15,23,42,0.52)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.03)_0%,rgba(15,23,42,0.08)_42%,rgba(15,23,42,0.28)_100%)] sm:bg-[linear-gradient(180deg,rgba(15,23,42,0.14)_0%,rgba(15,23,42,0.16)_26%,rgba(15,23,42,0.28)_56%,rgba(15,23,42,0.52)_100%)]" />
 
             <div className="absolute inset-x-0 top-0 hidden gap-3 p-4 sm:flex sm:flex-row sm:items-center sm:justify-between sm:p-6">
               <div className="inline-flex w-fit items-center gap-3 rounded-full border border-white/18 bg-slate-950/30 px-3 py-2 text-left backdrop-blur-sm">
@@ -102,43 +109,6 @@ export default function Landing() {
 
               <div className="inline-flex w-fit rounded-full border border-white/22 bg-white/12 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-sm">
                 Digital plans, one shared flow
-              </div>
-            </div>
-
-            <div className="absolute inset-x-3 bottom-3 z-10 sm:hidden">
-              <div className="rounded-[24px] border border-white/14 bg-slate-950/54 px-4 py-4 shadow-[0_24px_70px_rgba(15,23,42,0.28)] backdrop-blur-md">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-300">
-                  Split more. Pay less.
-                </p>
-                <h1 className="mt-3 text-[1.85rem] font-bold leading-[1.02] text-white">
-                  Shared-cost plans, courses, software, and memberships.
-                </h1>
-                <p className="mt-3 text-[13px] leading-6 text-slate-200">
-                  Create a split, coordinate members, keep updates visible, and manage shared payments in one cleaner flow.
-                </p>
-
-                <div className="mt-4 grid gap-2.5">
-                  <Link to="/signup" className="sv-btn-primary w-full justify-center">
-                    Start with your first split
-                  </Link>
-                  <Link
-                    to="/login"
-                    className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/24 bg-white/88 px-4 py-3 text-sm font-semibold text-slate-950 shadow-[0_18px_42px_rgba(15,23,42,0.18)] backdrop-blur-sm transition hover:bg-white"
-                  >
-                    I already have an account
-                  </Link>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {featureNotes.map((note) => (
-                    <span
-                      key={note}
-                      className="rounded-full border border-white/18 bg-white/10 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm"
-                    >
-                      {note}
-                    </span>
-                  ))}
-                </div>
               </div>
             </div>
 
@@ -174,6 +144,40 @@ export default function Landing() {
                     </span>
                   ))}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="-mt-8 px-2.5 relative z-10 sm:hidden">
+            <div className="rounded-[26px] border border-white/80 bg-white/94 px-4 py-5 shadow-[0_28px_80px_rgba(15,23,42,0.14)] backdrop-blur">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
+                Split more. Pay less.
+              </p>
+              <h1 className="mt-3 text-[1.95rem] font-bold leading-[1.02] text-slate-950">
+                Shared-cost plans, courses, software, and memberships.
+              </h1>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Create a split, coordinate members, keep updates visible, and manage shared payments in one cleaner flow.
+              </p>
+
+              <div className="mt-5 grid gap-2.5">
+                <Link to="/signup" className="sv-btn-primary w-full justify-center">
+                  Start with your first split
+                </Link>
+                <Link to="/login" className="sv-btn-secondary w-full justify-center">
+                  I already have an account
+                </Link>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {featureNotes.map((note) => (
+                  <span
+                    key={note}
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-700"
+                  >
+                    {note}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
