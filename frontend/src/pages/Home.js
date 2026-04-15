@@ -100,18 +100,18 @@ export default function Home() {
     if (groups.length > 0) {
       return {
         label: "Explore",
-        title: "You already have active groups you can browse.",
-        body: "See open sharing and buy-together groups before deciding where you want to participate next.",
-        cta: "Browse Groups",
+        title: "You already have active splits you can explore.",
+        body: "See open sharing and buy-together splits before deciding where you want to participate next.",
+        cta: "Explore Splits",
         onClick: () => navigate("/groups"),
       };
     }
 
     return {
       label: "Get started",
-      title: "Create your first group on ShareVerse.",
-      body: "Start with a digital plan you already manage or open a new buy-together group from scratch.",
-      cta: "Create Group",
+      title: "Create your first split on ShareVerse.",
+      body: "Start with a digital plan you already manage or open a new buy-together split from scratch.",
+      cta: "Create Split",
       onClick: () => navigate("/create"),
     };
   }, [groups.length, membershipNeedsAttention, navigate, ownerSummary.buy_together_waiting]);
@@ -126,11 +126,11 @@ export default function Home() {
   const onboardingSteps = [
     {
       step: "01",
-      title: "Click `Create group` on this Home screen",
-      where: "Use the Create group button in the hero section.",
+      title: "Click `Create split` on this Home screen",
+      where: "Use the Create split button in the hero section.",
       body: "Start there if you want to host a subscription, course, membership, or software plan for other users.",
-      tip: "If you only want to join an existing group, click Browse groups instead.",
-      cta: "Create Group",
+      tip: "If you only want to join an existing split, click Explore splits instead.",
+      cta: "Create Split",
       onClick: () => navigate("/create"),
     },
     {
@@ -220,8 +220,8 @@ export default function Home() {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Quick click map</p>
               <div className="mt-4 grid gap-3 md:grid-cols-4">
                 {[
-                  { label: "Create group", note: "Host a new plan", onClick: () => navigate("/create") },
-                  { label: "Browse groups", note: "Join something open", onClick: () => navigate("/groups") },
+                  { label: "Create split", note: "Host a new plan", onClick: () => navigate("/create") },
+                  { label: "Explore splits", note: "Join something open", onClick: () => navigate("/groups") },
                   { label: "My groups", note: "Manage updates", onClick: () => navigate("/my-shared") },
                   { label: "Wallet", note: "Top up or withdraw", onClick: () => navigate("/wallet") },
                 ].map((item) => (
@@ -313,8 +313,8 @@ export default function Home() {
               </p>
 
               <div className="mt-7 grid gap-3 sm:inline-flex sm:flex-wrap">
-                <PrimaryButton onClick={() => navigate("/groups")}>Browse groups</PrimaryButton>
-                <SecondaryButton onClick={() => navigate("/create")}>Create group</SecondaryButton>
+                <PrimaryButton onClick={() => navigate("/groups")}>Explore splits</PrimaryButton>
+                <SecondaryButton onClick={() => navigate("/create")}>Create split</SecondaryButton>
                 <SecondaryButton onClick={() => navigate("/my-shared")}>My groups</SecondaryButton>
                 <SecondaryButton onClick={openGuide}>Show quick guide</SecondaryButton>
               </div>

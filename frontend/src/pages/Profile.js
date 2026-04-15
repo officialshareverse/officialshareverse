@@ -299,7 +299,7 @@ export default function Profile() {
             My groups
           </button>
           <button type="button" className="sv-btn-secondary" onClick={() => navigate("/create")}>
-            Create group
+            Create split
           </button>
         </section>
 

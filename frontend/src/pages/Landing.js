@@ -96,7 +96,7 @@ export default function Landing() {
 
               <div className="sv-animate-rise sv-delay-3 mt-7 grid gap-3 sm:inline-flex sm:flex-wrap sm:justify-center lg:justify-start">
                 <Link to="/signup" className="sv-btn-primary w-full sm:w-auto">
-                  Start with your first group
+                  Start with your first split
                 </Link>
                 <Link to="/login" className="sv-btn-secondary w-full sm:w-auto">
                   I already have an account

@@ -310,7 +310,7 @@ export default function CreateGroup() {
     <div className="sv-page">
       <div className="mx-auto max-w-7xl space-y-6">
         <section className="sv-dark-hero px-6 py-8 md:px-8">
-          <p className="sv-eyebrow-on-dark">Create Group</p>
+          <p className="sv-eyebrow-on-dark">Create Split</p>
           <div className="mt-4 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div>
               <h1 className="max-w-3xl text-4xl font-bold leading-tight md:text-5xl">

@@ -6,8 +6,8 @@ import BrandMark from "./BrandMark";
 
 const navItems = [
   { to: "/home", label: "Home" },
-  { to: "/groups", label: "Browse Groups" },
-  { to: "/create", label: "Create Group" },
+  { to: "/groups", label: "Explore Splits" },
+  { to: "/create", label: "Create Split" },
   { to: "/my-shared", label: "My Groups" },
   { to: "/notifications", label: "Notifications", badgeKey: "notification" },
   { to: "/chats", label: "Chats", badgeKey: "chat" },
