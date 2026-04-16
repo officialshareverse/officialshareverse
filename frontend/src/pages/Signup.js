@@ -44,6 +44,7 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -72,6 +73,11 @@ export default function Signup() {
 
     if (form.password !== form.confirmPassword) {
       setError("Password confirmation does not match.");
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setError("Please accept the Terms & Conditions before creating your account.");
       return;
     }
 
@@ -319,32 +325,63 @@ export default function Signup() {
                     </div>
                   </section>
 
+                  <section className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 md:rounded-[26px] md:p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                          Step 3
+                        </p>
+                        <h3 className="mt-2 text-xl font-semibold text-slate-950">
+                          Accept the platform terms
+                        </h3>
+                      </div>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                        Required
+                      </span>
+                    </div>
+
+                    <label className="mt-5 flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm leading-7 text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(e) => {
+                          setAcceptedTerms(e.target.checked);
+                          setError("");
+                        }}
+                        className="mt-1 h-5 w-5 rounded border-slate-300 text-teal-800 focus:ring-teal-700"
+                      />
+                      <span>
+                        I agree to the{" "}
+                        <Link to="/terms" className="font-semibold text-teal-800 hover:text-teal-700">
+                          Terms &amp; Conditions
+                        </Link>
+                        ,{" "}
+                        <Link to="/privacy" className="font-semibold text-teal-800 hover:text-teal-700">
+                          Privacy Policy
+                        </Link>
+                        ,{" "}
+                        <Link to="/refunds" className="font-semibold text-teal-800 hover:text-teal-700">
+                          Refund Policy
+                        </Link>
+                        , and{" "}
+                        <Link to="/shipping" className="font-semibold text-teal-800 hover:text-teal-700">
+                          Shipping Policy
+                        </Link>
+                        .
+                      </span>
+                    </label>
+                  </section>
+
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !acceptedTerms}
                     className="w-full rounded-[24px] bg-slate-950 px-4 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
                   >
                     {loading ? "Creating your account..." : "Create account"}
                   </button>
 
                   <p className="text-center text-xs leading-6 text-slate-500">
-                    By creating an account, you agree to the{" "}
-                    <Link to="/terms" className="font-semibold text-teal-800 hover:text-teal-700">
-                      Terms
-                    </Link>
-                    ,{" "}
-                    <Link to="/privacy" className="font-semibold text-teal-800 hover:text-teal-700">
-                      Privacy Policy
-                    </Link>
-                    , and{" "}
-                    <Link to="/refunds" className="font-semibold text-teal-800 hover:text-teal-700">
-                      Refund Policy
-                    </Link>
-                    ,{" "}
-                    <Link to="/shipping" className="font-semibold text-teal-800 hover:text-teal-700">
-                      Shipping Policy
-                    </Link>
-                    .
+                    Review the platform terms above before creating your ShareVerse account.
                   </p>
                 </form>
               </div>
