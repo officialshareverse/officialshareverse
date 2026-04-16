@@ -11,6 +11,53 @@ function formatCurrency(value) {
   return `Rs ${numeric.toFixed(2)}`;
 }
 
+function formatGroupType(value) {
+  if (!value) {
+    return "Split";
+  }
+
+  if (value === "buy_together") {
+    return "Buy together";
+  }
+
+  if (value === "sharing") {
+    return "Sharing";
+  }
+
+  return String(value)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) {
+    return "Good morning";
+  }
+  if (hour < 17) {
+    return "Good afternoon";
+  }
+  return "Good evening";
+}
+
+function getRecentSplitStatusTone(status) {
+  const normalized = String(status || "").toLowerCase();
+
+  if (normalized.includes("active") || normalized.includes("open") || normalized.includes("confirmed")) {
+    return "text-emerald-600";
+  }
+
+  if (normalized.includes("waiting") || normalized.includes("pending") || normalized.includes("review")) {
+    return "text-amber-600";
+  }
+
+  if (normalized.includes("closed") || normalized.includes("cancelled") || normalized.includes("completed")) {
+    return "text-slate-500";
+  }
+
+  return "text-slate-600";
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
@@ -75,6 +122,10 @@ export default function Home() {
   const membershipNeedsAttention = memberships.filter(
     (group) => group.access_confirmation_required || group.has_reported_access_issue
   ).length;
+  const greeting = getGreeting();
+  const currentUserFirstName = dashboard?.current_user?.first_name?.trim() || "there";
+  const walletBalanceValue = Number(dashboard?.wallet_balance || 0);
+  const recentGroups = groups.slice(0, 4);
 
   const primaryCard = useMemo(() => {
     if (ownerSummary.buy_together_waiting > 0) {
@@ -117,10 +168,34 @@ export default function Home() {
   }, [groups.length, membershipNeedsAttention, navigate, ownerSummary.buy_together_waiting]);
 
   const stats = [
-    { label: "Wallet balance", value: formatCurrency(dashboard?.wallet_balance) },
-    { label: "Groups joined", value: dashboard?.groups_joined || 0 },
-    { label: "Groups created", value: ownerSummary.total_groups_created || 0 },
-    { label: "Unread updates", value: unreadNotifications },
+    {
+      label: "Wallet balance",
+      value: formatCurrency(walletBalanceValue),
+      icon: <WalletStatIcon />,
+      onClick: () => navigate("/wallet"),
+      valueClassName: walletBalanceValue > 0 ? "text-emerald-600" : "text-amber-600",
+    },
+    {
+      label: "Groups joined",
+      value: dashboard?.groups_joined || 0,
+      icon: <UsersStatIcon />,
+      onClick: () => navigate("/my-shared"),
+      valueClassName: "text-slate-950",
+    },
+    {
+      label: "Groups created",
+      value: ownerSummary.total_groups_created || 0,
+      icon: <FolderPlusStatIcon />,
+      onClick: () => navigate("/my-shared"),
+      valueClassName: "text-slate-950",
+    },
+    {
+      label: "Unread updates",
+      value: unreadNotifications,
+      icon: <BellStatIcon />,
+      onClick: () => navigate("/notifications"),
+      valueClassName: unreadNotifications > 0 ? "text-rose-600" : "text-slate-950",
+    },
   ];
 
   const onboardingSteps = [
@@ -185,15 +260,24 @@ export default function Home() {
   if (loading) {
     return (
       <div className="sv-page">
-        <div className="mx-auto max-w-4xl space-y-3">
-          <div className="sv-skeleton h-48 sm:h-64" />
-          <div className="grid grid-cols-2 gap-3">
-            <div className="sv-skeleton h-20" />
-            <div className="sv-skeleton h-20" />
-            <div className="sv-skeleton h-20" />
-            <div className="sv-skeleton h-20" />
+        <div className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
+          <div className="sv-skeleton h-48 rounded-[20px] sm:h-64" />
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <div className="sv-skeleton h-20 rounded-[20px]" />
+            <div className="sv-skeleton h-20 rounded-[20px]" />
+            <div className="sv-skeleton h-20 rounded-[20px]" />
+            <div className="sv-skeleton h-20 rounded-[20px]" />
           </div>
-          <div className="sv-skeleton h-32" />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="sv-skeleton h-40 rounded-[20px]" />
+            <div className="sv-skeleton h-40 rounded-[20px]" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="sv-skeleton h-28 rounded-[20px]" />
+            <div className="sv-skeleton h-28 rounded-[20px]" />
+            <div className="sv-skeleton h-28 rounded-[20px]" />
+            <div className="sv-skeleton h-28 rounded-[20px]" />
+          </div>
         </div>
       </div>
     );
@@ -302,15 +386,17 @@ export default function Home() {
           </div>
         ) : null}
 
-        <section className="sv-dark-hero">
+        <section className="sv-dark-hero sv-animate-rise">
           <div className="grid items-center gap-5 sm:gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(240px,0.95fr)]">
             <div>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <BrandMark glow sizeClass="h-10 w-10 sm:h-12 sm:w-12" roundedClass="rounded-[14px] sm:rounded-[18px]" />
                 <span className="sv-chip-dark">Home</span>
-                <span className="sv-chip-dark">Top-ups live</span>
               </div>
 
+              <p className="sv-eyebrow-on-dark mt-4 sm:mt-5">
+                {greeting}, {currentUserFirstName} 👋
+              </p>
               <h1 className="sv-display-on-dark mt-4 max-w-4xl sm:mt-5">
                 Split the cost of digital plans in one cleaner, more visual place.
               </h1>
@@ -327,7 +413,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="relative mx-auto hidden w-full max-w-[18rem] sm:block sm:max-w-md">
+            <div className="relative mx-auto mt-5 w-full max-w-[12rem] sm:mt-0 sm:max-w-md">
               <div className="absolute -left-3 top-3 hidden rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white md:block sv-animate-float">
                 Shared-cost dashboard
               </div>
@@ -348,18 +434,21 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="sv-grid-stats">
+        <section className="sv-grid-stats sv-animate-rise sv-delay-1">
           {stats.map((item, index) => (
             <StatCard
               key={item.label}
               label={item.label}
               value={item.value}
+              icon={item.icon}
+              onClick={item.onClick}
+              valueClassName={item.valueClassName}
               className={index === 1 ? "sv-animate-float-soft" : index === 3 ? "sv-animate-float" : ""}
             />
           ))}
         </section>
 
-        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(220px,0.92fr)]">
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(220px,0.92fr)] sv-animate-rise sv-delay-2">
           <section className="sv-card">
             <p className="sv-eyebrow">{primaryCard.label}</p>
             <h2 className="mt-2 text-lg font-semibold text-slate-950 sm:mt-3 sm:text-2xl">{primaryCard.title}</h2>
@@ -371,19 +460,77 @@ export default function Home() {
 
           <aside className="sv-card">
             <p className="sv-eyebrow">Quick focus</p>
-            <h2 className="sv-title mt-1.5 sm:mt-2">What ShareVerse is best at</h2>
+            <h2 className="sv-title mt-1.5 sm:mt-2">Your current snapshot</h2>
             <div className="mt-3 space-y-2 sm:mt-5 sm:space-y-3">
               {[
-                "Coordinating subscription groups",
-                "Keeping contribution flow visible",
-                "Tracking members and updates cleanly",
+                { label: "Active memberships", value: memberships.length },
+                { label: "Groups you manage", value: ownerSummary.total_groups_created || 0 },
+                { label: "Total notifications", value: notifications.length },
               ].map((item) => (
-                <div key={item} className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-medium text-slate-700 sm:rounded-[20px] sm:px-4 sm:py-3 sm:text-sm">
-                  {item}
+                <div
+                  key={item.label}
+                  className="flex min-h-[44px] items-center justify-between gap-3 rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-medium text-slate-700 sm:rounded-[20px] sm:px-4 sm:py-3 sm:text-sm"
+                >
+                  <span>{item.label}</span>
+                  <span className="text-base font-bold text-slate-950 sm:text-lg">{item.value}</span>
                 </div>
               ))}
             </div>
           </aside>
+        </section>
+
+        <section className="sv-animate-rise sv-delay-3">
+          <div className="sv-divider" />
+          <div className="mt-4 sm:mt-5">
+            <p className="sv-eyebrow">Your recent splits</p>
+            <h2 className="sv-title mt-1.5">Recent activity</h2>
+          </div>
+
+          {recentGroups.length > 0 ? (
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {recentGroups.map((group) => (
+                <article key={group.id} className="sv-soft-card">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-base font-bold text-slate-950 sm:text-lg">{group.name}</h3>
+                      <div className="mt-2">
+                        <span className="sv-chip">{formatGroupType(group.group_type)}</span>
+                      </div>
+                    </div>
+                    <span className={`text-sm font-semibold ${getRecentSplitStatusTone(group.status)}`}>
+                      {formatGroupType(group.status)}
+                    </span>
+                  </div>
+
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/groups/${group.id}`)}
+                      className="sv-btn-secondary w-full sm:w-auto"
+                    >
+                      View
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="sv-soft-card mt-4">
+              <h3 className="text-lg font-semibold text-slate-950">No splits yet.</h3>
+              <p className="mt-2 text-sm leading-7 text-slate-600">
+                No splits yet. Explore or create your first one!
+              </p>
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => navigate("/groups")}
+                  className="sv-btn-secondary w-full sm:w-auto"
+                >
+                  Explore splits
+                </button>
+              </div>
+            </div>
+          )}
         </section>
       </div>
     </div>
@@ -406,11 +553,66 @@ function SecondaryButton({ children, onClick }) {
   );
 }
 
-function StatCard({ label, value, className = "" }) {
+function StatCard({ label, value, icon, onClick, valueClassName = "text-slate-950", className = "" }) {
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClick?.();
+    }
+  };
+
   return (
-    <article className={`sv-stat-card ${className}`}>
-      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">{label}</p>
-      <p className="mt-2 text-xl font-bold text-slate-950 sm:mt-3 sm:text-2xl">{value}</p>
+    <article
+      className={`sv-stat-card cursor-pointer ${className}`}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+    >
+      <div className="flex items-center gap-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+          {icon}
+        </span>
+        <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">{label}</p>
+      </div>
+      <p className={`mt-2 text-xl font-bold sm:mt-3 sm:text-2xl ${valueClassName}`}>{value}</p>
     </article>
+  );
+}
+
+function WalletStatIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4" aria-hidden="true">
+      <path d="M2.5 4.5A1.5 1.5 0 0 1 4 3h7.5A1.5 1.5 0 0 1 13 4.5v7A1.5 1.5 0 0 1 11.5 13H4A1.5 1.5 0 0 1 2.5 11.5v-7Z" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10.5 8h2.5v2h-2.5a1 1 0 1 1 0-2Z" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M4 5.5h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function UsersStatIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4" aria-hidden="true">
+      <path d="M5.5 7A2.5 2.5 0 1 0 5.5 2a2.5 2.5 0 0 0 0 5ZM11.5 8.5A2 2 0 1 0 11.5 4.5a2 2 0 0 0 0 4Z" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M1.5 13c0-2.1 2.1-3.5 4-3.5s4 1.4 4 3.5M9 13c.2-1.4 1.6-2.5 3.2-2.5.9 0 1.7.3 2.3.9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function FolderPlusStatIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4" aria-hidden="true">
+      <path d="M2.5 5A1.5 1.5 0 0 1 4 3.5h2.3l1.2 1.3H12A1.5 1.5 0 0 1 13.5 6.3v5.2A1.5 1.5 0 0 1 12 13H4a1.5 1.5 0 0 1-1.5-1.5V5Z" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M8 7v4M6 9h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function BellStatIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4" aria-hidden="true">
+      <path d="M8 2.5A3 3 0 0 0 5 5.5v1.2c0 .5-.2 1-.5 1.4L3.5 9.5V11h9V9.5l-1-1.4a2.4 2.4 0 0 1-.5-1.4V5.5A3 3 0 0 0 8 2.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M6.5 12.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
   );
 }
