@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
+import { getAuthToken } from "./auth/session";
 import Navbar from "./components/Navbar";
 import AboutPage from "./pages/AboutPage";
 import ChatsInbox from "./pages/ChatsInbox";
@@ -23,7 +24,7 @@ import TermsPage from "./pages/TermsPage";
 import Wallet from "./pages/Wallet";
 
 const isAuthenticated = () => {
-  return localStorage.getItem("token") !== null;
+  return getAuthToken() !== null;
 };
 
 const PrivateRoute = ({ children }) => {
@@ -38,7 +39,7 @@ function App() {
   const [isAuth, setIsAuth] = useState(isAuthenticated());
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     setIsAuth(!!token);
   }, []);
 

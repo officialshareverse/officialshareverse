@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import { clearAuthSession } from "../auth/session";
 import BrandMark from "./BrandMark";
 
 const navItems = [
@@ -71,7 +72,7 @@ export default function Navbar({ setIsAuth }) {
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    clearAuthSession();
     setIsAuth(false);
     navigate("/");
   };

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import { consumeAuthNotice, setAuthToken } from "../auth/session";
 import AuthShell from "../components/AuthShell";
 
 function extractApiError(errorData, fallbackMessage) {
@@ -56,6 +57,12 @@ export default function Login({ setIsAuth }) {
   });
 
   useEffect(() => {
+    const authNotice = consumeAuthNotice();
+
+    if (authNotice) {
+      setNotice(authNotice);
+    }
+
     if (location.state?.message) {
       setNotice(location.state.message);
       navigate(location.pathname, { replace: true, state: {} });
@@ -222,7 +229,7 @@ export default function Login({ setIsAuth }) {
         password: form.password,
       });
 
-      localStorage.setItem("token", res.data.access);
+      setAuthToken(res.data.access);
       setIsAuth(true);
       navigate("/home", { replace: true });
     } catch (err) {
