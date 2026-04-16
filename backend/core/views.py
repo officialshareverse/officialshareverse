@@ -58,6 +58,7 @@ from .payments import (
     verify_razorpayx_webhook_signature,
 )
 from .manual_payouts import create_manual_wallet_payout_request, save_manual_payout_account
+from .operation_logging import log_operation_event
 from .pricing import (
     get_group_earning_platform_fee_amount,
     get_group_earning_payout_amount,
@@ -292,6 +293,19 @@ def release_group_buy_held_funds(group_id, allow_timeout_release=False):
                 ),
             )
 
+    if release_amount > Decimal("0.00"):
+        log_operation_event(
+            "group_buy_payout_released",
+            group_id=group_id,
+            owner_id=group.owner_id,
+            owner_username=group.owner.username,
+            gross_release_amount=gross_release_amount,
+            released_amount=release_amount,
+            platform_fee_amount=creator_platform_fee_amount,
+            member_count=len(held_members),
+            release_reason="timeout_release" if allow_timeout_release else "member_confirmed",
+        )
+
     return release_amount, True
 
 
@@ -355,6 +369,20 @@ def release_sharing_member_funds(member_id):
                 f"You confirmed access for {member.group.subscription.name}. "
                 "The host payout has now been released."
             ),
+        )
+
+    if released_amount > Decimal("0.00"):
+        log_operation_event(
+            "sharing_payout_released",
+            group_id=member.group_id,
+            member_id=member.id,
+            member_user_id=member.user_id,
+            owner_id=member.group.owner_id,
+            owner_username=member.group.owner.username,
+            gross_release_amount=gross_release_amount,
+            released_amount=released_amount,
+            platform_fee_amount=creator_platform_fee_amount,
+            subscription_name=member.group.subscription.name,
         )
 
     return released_amount, True
@@ -442,6 +470,17 @@ def refund_group_buy_held_funds(group_id, reason="manual"):
         Notification.objects.create(
             user=group.owner,
             message=owner_message,
+        )
+
+    if refunded_amount > Decimal("0.00"):
+        log_operation_event(
+            "group_buy_funds_refunded",
+            group_id=group_id,
+            owner_id=group.owner_id,
+            owner_username=group.owner.username,
+            refunded_amount=refunded_amount,
+            reason=reason,
+            member_count=len(held_members),
         )
 
     return refunded_amount
@@ -806,6 +845,16 @@ def restore_wallet_for_failed_payout(locked_payout):
 
     locked_payout.wallet_restored_at = timezone.now()
     locked_payout.refund_transaction = refund_transaction
+    log_operation_event(
+        "wallet_payout_restored",
+        payout_id=locked_payout.id,
+        user_id=locked_payout.user_id,
+        username=locked_payout.user.username,
+        amount=locked_payout.amount,
+        provider=locked_payout.provider,
+        status=locked_payout.status,
+        refund_transaction_id=refund_transaction.id,
+    )
     return True
 
 
@@ -853,7 +902,22 @@ def apply_wallet_payout_state(wallet_payout_id, payout_details, *, status_source
 
         locked_payout.save()
 
-    return WalletPayout.objects.select_related("payout_account").get(id=wallet_payout_id)
+    final_payout = WalletPayout.objects.select_related("payout_account").get(id=wallet_payout_id)
+    log_operation_event(
+        "wallet_payout_state_updated",
+        payout_id=final_payout.id,
+        user_id=final_payout.user_id,
+        username=final_payout.user.username,
+        provider=final_payout.provider,
+        provider_payout_id=final_payout.provider_payout_id,
+        provider_reference_id=final_payout.provider_reference_id,
+        amount=final_payout.amount,
+        status=final_payout.status,
+        status_source=status_source,
+        failure_reason=final_payout.failure_reason,
+        utr=final_payout.utr,
+    )
+    return final_payout
 
 
 def mark_wallet_topup_failed(topup_order, message, payment_id="", signature=""):
@@ -870,6 +934,18 @@ def mark_wallet_topup_failed(topup_order, message, payment_id="", signature=""):
         update_fields.append("provider_signature")
 
     topup_order.save(update_fields=update_fields)
+    log_operation_event(
+        "wallet_topup_failed",
+        topup_order_id=topup_order.id,
+        user_id=topup_order.user_id,
+        username=topup_order.user.username,
+        amount=topup_order.amount,
+        currency=topup_order.currency,
+        provider_order_id=topup_order.provider_order_id,
+        payment_id=payment_id or topup_order.provider_payment_id,
+        reason=message,
+        status=topup_order.status,
+    )
 
 
 def validate_wallet_topup_payment_details(topup_order, payment_details):
@@ -938,8 +1014,20 @@ def credit_wallet_topup_order(topup_order_id, payment_id, signature=""):
             )
             credited_now = True
 
-    final_topup = WalletTopupOrder.objects.get(id=topup_order_id)
+    final_topup = WalletTopupOrder.objects.select_related("user").get(id=topup_order_id)
     final_wallet, _ = Wallet.objects.get_or_create(user=final_topup.user)
+    log_operation_event(
+        "wallet_topup_credited",
+        topup_order_id=final_topup.id,
+        user_id=final_topup.user_id,
+        username=final_topup.user.username,
+        amount=final_topup.amount,
+        currency=final_topup.currency,
+        provider_order_id=final_topup.provider_order_id,
+        payment_id=payment_id,
+        credited_now=credited_now,
+        wallet_balance=final_wallet.balance,
+    )
     return credited_now, final_topup, final_wallet
 
 
@@ -1792,6 +1880,20 @@ class JoinGroupView(APIView):
                             ),
                         )
 
+        log_operation_event(
+            "group_join_funds_held",
+            group_id=group.id,
+            group_mode=group.mode,
+            group_status=group.status,
+            member_id=member.id,
+            user_id=request.user.id,
+            username=request.user.username,
+            charged_amount=price,
+            contribution_amount=contribution_amount,
+            platform_fee_amount=platform_fee_amount,
+            wallet_balance=wallet.balance,
+        )
+
         return Response({
             "message": "Joined group successfully",
             "charged_amount": str(price),
@@ -1893,6 +1995,14 @@ class AddMoneyView(APIView):
                 },
             )
         except PaymentGatewayError as exc:
+            log_operation_event(
+                "wallet_topup_order_create_failed",
+                user_id=request.user.id,
+                username=request.user.username,
+                amount=amount,
+                currency=currency,
+                reason=str(exc),
+            )
             return Response({"error": str(exc)}, status=503)
 
         topup_order = WalletTopupOrder.objects.create(
@@ -1903,6 +2013,18 @@ class AddMoneyView(APIView):
             receipt=receipt,
             provider="razorpay",
             provider_order_id=gateway_order["id"],
+        )
+
+        log_operation_event(
+            "wallet_topup_order_created",
+            topup_order_id=topup_order.id,
+            user_id=request.user.id,
+            username=request.user.username,
+            amount=amount,
+            currency=currency,
+            amount_subunits=amount_subunits,
+            provider_order_id=gateway_order["id"],
+            receipt=receipt,
         )
 
         full_name = (
@@ -1952,6 +2074,13 @@ class VerifyWalletTopupView(APIView):
                 user=request.user,
             )
         except WalletTopupOrder.DoesNotExist:
+            log_operation_event(
+                "wallet_topup_verify_missing_order",
+                user_id=request.user.id,
+                username=request.user.username,
+                provider_order_id=order_id,
+                payment_id=payment_id,
+            )
             return Response({"error": "Top-up order not found."}, status=404)
 
         if topup_order.status == "paid" and topup_order.credited_at:
@@ -1967,6 +2096,15 @@ class VerifyWalletTopupView(APIView):
         try:
             signature_valid = verify_razorpay_signature(order_id, payment_id, signature)
         except PaymentGatewayError as exc:
+            log_operation_event(
+                "wallet_topup_verify_gateway_error",
+                topup_order_id=topup_order.id,
+                user_id=request.user.id,
+                username=request.user.username,
+                provider_order_id=order_id,
+                payment_id=payment_id,
+                reason=str(exc),
+            )
             return Response({"error": str(exc)}, status=503)
 
         if not signature_valid:
@@ -1976,6 +2114,15 @@ class VerifyWalletTopupView(APIView):
         try:
             payment_details = fetch_razorpay_payment(payment_id)
         except PaymentGatewayError as exc:
+            log_operation_event(
+                "wallet_topup_fetch_payment_failed",
+                topup_order_id=topup_order.id,
+                user_id=request.user.id,
+                username=request.user.username,
+                provider_order_id=order_id,
+                payment_id=payment_id,
+                reason=str(exc),
+            )
             return Response({"error": str(exc)}, status=503)
 
         validation_error = validate_wallet_topup_payment_details(topup_order, payment_details)
@@ -1989,6 +2136,15 @@ class VerifyWalletTopupView(APIView):
                 payment_details,
             )
         except PaymentGatewayError as exc:
+            log_operation_event(
+                "wallet_topup_capture_failed",
+                topup_order_id=topup_order.id,
+                user_id=request.user.id,
+                username=request.user.username,
+                provider_order_id=order_id,
+                payment_id=payment_id,
+                reason=str(exc),
+            )
             return Response({"error": str(exc)}, status=503)
 
         if not payment_captured:
@@ -2055,6 +2211,13 @@ class RazorpayWebhookView(APIView):
         )
 
         if RazorpayWebhookEvent.objects.filter(event_id=event_id).exists():
+            log_operation_event(
+                "wallet_topup_webhook_duplicate",
+                event_id=event_id,
+                event_type=event_type,
+                provider_order_id=provider_order_id,
+                payment_id=payment_id,
+            )
             return Response({"message": "Webhook already processed."}, status=200)
 
         if event_type not in {"payment.authorized", "payment.captured", "order.paid"}:
@@ -2066,6 +2229,13 @@ class RazorpayWebhookView(APIView):
                 status="ignored",
                 notes="Webhook event is not handled by wallet top-up processing.",
             )
+            log_operation_event(
+                "wallet_topup_webhook_ignored",
+                event_id=event_id,
+                event_type=event_type or "unknown",
+                provider_order_id=provider_order_id,
+                payment_id=payment_id,
+            )
             return Response({"message": "Webhook ignored."}, status=200)
 
         if not provider_order_id or not payment_id:
@@ -2076,6 +2246,13 @@ class RazorpayWebhookView(APIView):
                 provider_order_id=provider_order_id,
                 status="failed",
                 notes="Webhook payload did not include the required payment/order identifiers.",
+            )
+            log_operation_event(
+                "wallet_topup_webhook_invalid_payload",
+                event_id=event_id,
+                event_type=event_type,
+                provider_order_id=provider_order_id,
+                payment_id=payment_id,
             )
             return Response({"message": "Webhook received without a matching top-up payload."}, status=200)
 
@@ -2091,6 +2268,13 @@ class RazorpayWebhookView(APIView):
                 provider_order_id=provider_order_id,
                 status="ignored",
                 notes="No matching wallet top-up order was found.",
+            )
+            log_operation_event(
+                "wallet_topup_webhook_missing_order",
+                event_id=event_id,
+                event_type=event_type,
+                provider_order_id=provider_order_id,
+                payment_id=payment_id,
             )
             return Response({"message": "Webhook acknowledged."}, status=200)
 
@@ -2147,6 +2331,17 @@ class RazorpayWebhookView(APIView):
             status="processed",
             notes="Wallet top-up credited via webhook." if credited_now else "Webhook received after wallet was already credited.",
         )
+        log_operation_event(
+            "wallet_topup_webhook_processed",
+            event_id=event_id,
+            event_type=event_type,
+            topup_order_id=topup_order.id,
+            user_id=topup_order.user_id,
+            username=topup_order.user.username,
+            provider_order_id=provider_order_id,
+            payment_id=payment_id,
+            credited_now=credited_now,
+        )
         return Response({"message": "Webhook processed successfully."}, status=200)
 
 
@@ -2194,7 +2389,25 @@ class PayoutAccountView(APIView):
             if existing_account:
                 existing_account.last_error = str(exc)
                 existing_account.save(update_fields=["last_error", "updated_at"])
+            log_operation_event(
+                "payout_account_sync_failed",
+                user_id=request.user.id,
+                username=request.user.username,
+                payout_account_id=existing_account.id if existing_account else None,
+                account_type=serializer.validated_data.get("account_type"),
+                reason=str(exc),
+            )
             return Response({"error": str(exc)}, status=503)
+
+        log_operation_event(
+            "payout_account_saved",
+            user_id=request.user.id,
+            username=request.user.username,
+            payout_account_id=payout_account.id,
+            account_type=payout_account.account_type,
+            destination_label=build_payout_destination_label(payout_account),
+            provider="razorpayx",
+        )
 
         return Response(
             {
@@ -2326,6 +2539,17 @@ class WithdrawMoneyView(APIView):
                 "status_details": {"description": str(exc)},
             }
             wallet_payout = apply_wallet_payout_state(wallet_payout.id, failed_payload, status_source="api_error")
+            log_operation_event(
+                "wallet_payout_create_failed",
+                payout_id=wallet_payout.id,
+                user_id=request.user.id,
+                username=request.user.username,
+                amount=amount,
+                mode=payout_mode,
+                provider="razorpayx",
+                destination_label=destination_label,
+                reason=str(exc),
+            )
             wallet, _ = Wallet.objects.get_or_create(user=request.user)
             return Response(
                 {
@@ -2337,6 +2561,19 @@ class WithdrawMoneyView(APIView):
             )
 
         wallet_payout = apply_wallet_payout_state(wallet_payout.id, payout_response, status_source="api")
+        log_operation_event(
+            "wallet_payout_created",
+            payout_id=wallet_payout.id,
+            user_id=request.user.id,
+            username=request.user.username,
+            amount=amount,
+            mode=payout_mode,
+            provider="razorpayx",
+            destination_label=destination_label,
+            provider_reference_id=reference_id,
+            provider_payout_id=wallet_payout.provider_payout_id,
+            status=wallet_payout.status,
+        )
         wallet, _ = Wallet.objects.get_or_create(user=request.user)
         return Response(
             {
@@ -3316,6 +3553,17 @@ class ConfirmGroupAccessView(APIView):
                         else f"{request.user.username} confirmed receiving access for {locked_group.subscription.name}."
                     ),
                 )
+
+            log_operation_event(
+                "group_access_confirmed",
+                group_id=locked_group.id,
+                group_mode=locked_group.mode,
+                member_id=member.id,
+                user_id=request.user.id,
+                username=request.user.username,
+                group_status=locked_group.status,
+                dispute_cleared=dispute_cleared,
+            )
 
         if group.mode == "sharing":
             release_amount, released = release_sharing_member_funds(member.id)

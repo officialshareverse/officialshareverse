@@ -8,6 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import Notification, PayoutAccount, Transaction, Wallet, WalletPayout
+from .operation_logging import log_operation_event
 
 
 def build_manual_payout_destination_label(payout_account):
@@ -140,6 +141,21 @@ def create_manual_wallet_payout(
             ),
         )
 
+    log_operation_event(
+        "manual_payout_processed",
+        user_id=user.id,
+        username=user.username,
+        payout_id=wallet_payout.id if wallet_payout else payout.id,
+        amount=amount,
+        currency=currency,
+        destination_label=normalized_destination,
+        payout_account_id=payout_account.id if payout_account else None,
+        mode=normalized_mode,
+        external_reference=normalized_reference,
+        created_by_user_id=created_by.id if created_by else None,
+        provider="manual",
+    )
+
     return payout
 
 
@@ -171,6 +187,16 @@ def save_manual_payout_account(user, validated_data, existing_account=None):
         payout_account.clear_bank_account()
 
     payout_account.save()
+    log_operation_event(
+        "manual_payout_account_saved",
+        user_id=user.id,
+        username=user.username,
+        payout_account_id=payout_account.id,
+        account_type=account_type,
+        destination_label=build_manual_payout_destination_label(payout_account),
+        has_existing_account=bool(existing_account),
+        provider="manual",
+    )
     return payout_account
 
 
@@ -245,6 +271,20 @@ def create_manual_wallet_payout_request(
         message=(
             f"Your withdrawal request for Rs. {amount} to {normalized_destination} was submitted for manual review."
         ),
+    )
+
+    log_operation_event(
+        "manual_payout_requested",
+        user_id=user.id,
+        username=user.username,
+        payout_id=payout.id,
+        payout_account_id=payout_account.id,
+        amount=amount,
+        currency=currency,
+        destination_label=normalized_destination,
+        mode=normalized_mode,
+        provider="manual",
+        status=payout.status,
     )
 
     return payout
