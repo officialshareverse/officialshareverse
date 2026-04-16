@@ -4,6 +4,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { consumeAuthNotice, setAuthToken } from "../auth/session";
 import AuthShell from "../components/AuthShell";
+import { CheckCircleIcon, LoadingSpinner, ShieldIcon } from "../components/UiIcons";
+import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 function extractApiError(errorData, fallbackMessage) {
   if (!errorData || typeof errorData !== "object") {
@@ -55,6 +57,8 @@ export default function Login({ setIsAuth }) {
     new_password: "",
     confirm_password: "",
   });
+
+  useRevealOnScroll();
 
   useEffect(() => {
     const authNotice = consumeAuthNotice();
@@ -247,6 +251,8 @@ export default function Login({ setIsAuth }) {
     }
   };
 
+  const resetPasswordStrength = getPasswordStrength(resetForm.new_password);
+
   return (
     <AuthShell
       eyebrow="Welcome back"
@@ -283,13 +289,13 @@ export default function Login({ setIsAuth }) {
       }
     >
       <div>
-        <p className="sv-eyebrow">
+        <p className="sv-eyebrow sv-reveal">
           Login
         </p>
-        <h2 className="mt-3 text-3xl font-bold leading-tight text-slate-950 md:text-[2.35rem]">
+        <h2 className="sv-reveal mt-3 text-3xl font-bold leading-tight text-slate-950 md:text-[2.35rem]">
           Sign in to ShareVerse
         </h2>
-        <p className="mt-3 text-sm leading-7 text-slate-600">
+        <p className="sv-reveal mt-3 text-sm leading-7 text-slate-600">
           Use the username you created at signup. Your wallet, joined groups, and member activity will be waiting for you.
         </p>
 
@@ -305,7 +311,7 @@ export default function Login({ setIsAuth }) {
           </div>
         ) : null}
 
-        <form onSubmit={handleLogin} className="mt-6 space-y-4">
+        <form onSubmit={handleLogin} className="mt-6 space-y-4 sv-stagger">
           <FieldShell label="Username" helper="Enter the username linked to your account.">
             <input
               type="text"
@@ -348,7 +354,7 @@ export default function Login({ setIsAuth }) {
           </button>
 
           {showReset ? (
-            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 shadow-[0_12px_24px_rgba(15,23,42,0.04)]">
+            <div className="sv-glass-card rounded-[24px] p-4 shadow-[0_12px_24px_rgba(15,23,42,0.04)]">
               <p className="text-sm font-semibold text-slate-900">Reset your password</p>
               <p className="mt-1 text-xs text-slate-600">
                 {resetStep === "request"
@@ -419,6 +425,16 @@ export default function Login({ setIsAuth }) {
                       className="sv-input rounded-xl px-3 py-2"
                     />
 
+                    <div>
+                      <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        <span>Password strength</span>
+                        <span className={resetPasswordStrength.tone}>{resetPasswordStrength.label}</span>
+                      </div>
+                      <div className="sv-password-meter">
+                        <div className={`sv-password-meter-fill ${resetPasswordStrength.fill}`} style={{ width: `${resetPasswordStrength.width}%` }} />
+                      </div>
+                    </div>
+
                     <input
                       type="password"
                       name="confirm_password"
@@ -434,8 +450,9 @@ export default function Login({ setIsAuth }) {
                   type="button"
                   onClick={handleForgotPassword}
                   disabled={resetLoading}
-                  className="w-full rounded-xl bg-teal-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-teal-400"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-teal-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-teal-400"
                 >
+                  {resetLoading ? <LoadingSpinner /> : resetStep === "request" ? <ShieldIcon className="h-4 w-4" /> : <CheckCircleIcon className="h-4 w-4" />}
                   {resetLoading
                     ? resetStep === "request"
                       ? "Sending OTP..."
@@ -471,8 +488,9 @@ export default function Login({ setIsAuth }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-[22px] bg-slate-950 px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] bg-slate-950 px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
           >
+            {loading ? <LoadingSpinner /> : <ShieldIcon className="h-4 w-4" />}
             {loading ? "Signing you in..." : "Sign in"}
           </button>
         </form>
@@ -489,4 +507,33 @@ function FieldShell({ label, helper, children }) {
       <span className="mt-2 block text-xs text-slate-500">{helper}</span>
     </label>
   );
+}
+
+function getPasswordStrength(password) {
+  const value = password || "";
+  if (!value) {
+    return {
+      label: "Not set",
+      width: 0,
+      fill: "bg-slate-300",
+      tone: "text-slate-400",
+    };
+  }
+
+  let score = 0;
+  if (value.length >= 8) score += 1;
+  if (/[A-Z]/.test(value) && /[a-z]/.test(value)) score += 1;
+  if (/\d/.test(value)) score += 1;
+  if (/[^A-Za-z0-9]/.test(value)) score += 1;
+
+  if (score <= 1) {
+    return { label: "Weak", width: 28, fill: "bg-rose-500", tone: "text-rose-600" };
+  }
+  if (score === 2) {
+    return { label: "Fair", width: 55, fill: "bg-amber-500", tone: "text-amber-600" };
+  }
+  if (score === 3) {
+    return { label: "Strong", width: 78, fill: "bg-sky-500", tone: "text-sky-600" };
+  }
+  return { label: "Great", width: 100, fill: "bg-emerald-500", tone: "text-emerald-600" };
 }

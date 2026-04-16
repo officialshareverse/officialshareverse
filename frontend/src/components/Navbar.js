@@ -4,16 +4,26 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { clearAuthSession } from "../auth/session";
 import BrandMark from "./BrandMark";
+import {
+  BellIcon,
+  ChatIcon,
+  CompassIcon,
+  HomeIcon,
+  LayersIcon,
+  PlusIcon,
+  UserIcon,
+  WalletIcon,
+} from "./UiIcons";
 
 const navItems = [
-  { to: "/home", label: "Home" },
-  { to: "/groups", label: "Explore Splits" },
-  { to: "/create", label: "Create Split" },
-  { to: "/my-shared", label: "My Splits" },
-  { to: "/notifications", label: "Notifications", badgeKey: "notification" },
-  { to: "/chats", label: "Chats", badgeKey: "chat" },
-  { to: "/wallet", label: "Wallet" },
-  { to: "/profile", label: "Profile" },
+  { to: "/home", label: "Home", icon: HomeIcon },
+  { to: "/groups", label: "Explore Splits", icon: CompassIcon },
+  { to: "/create", label: "Create Split", icon: PlusIcon },
+  { to: "/my-shared", label: "My Splits", icon: LayersIcon },
+  { to: "/notifications", label: "Notifications", badgeKey: "notification", icon: BellIcon },
+  { to: "/chats", label: "Chats", badgeKey: "chat", icon: ChatIcon },
+  { to: "/wallet", label: "Wallet", icon: WalletIcon },
+  { to: "/profile", label: "Profile", icon: UserIcon },
 ];
 
 export default function Navbar({ setIsAuth }) {
@@ -52,24 +62,8 @@ export default function Navbar({ setIsAuth }) {
     };
   }, [location.pathname]);
 
-  const renderNavLabel = (item) => {
-    if (item.badgeKey !== "chat" && item.badgeKey !== "notification") {
-      return item.label;
-    }
-
-    const badgeCount = item.badgeKey === "chat" ? unreadChatCount : unreadNotificationCount;
-
-    return (
-      <span className="inline-flex items-center gap-2">
-        <span>{item.label}</span>
-        {badgeCount > 0 ? (
-          <span className="inline-flex min-w-[1.35rem] items-center justify-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[11px] font-bold text-white">
-            {badgeCount > 99 ? "99+" : badgeCount}
-          </span>
-        ) : null}
-      </span>
-    );
-  };
+  const getBadgeCount = (item) =>
+    item.badgeKey === "chat" ? unreadChatCount : item.badgeKey === "notification" ? unreadNotificationCount : 0;
 
   const logout = () => {
     clearAuthSession();
@@ -99,14 +93,31 @@ export default function Navbar({ setIsAuth }) {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `rounded-full px-4 py-2.5 text-sm font-semibold transition ${
+                  `sv-nav-link ${
                     isActive
                       ? "bg-slate-950 text-white shadow-[0_12px_20px_rgba(15,23,42,0.15)]"
                       : "text-slate-600 hover:bg-white hover:text-slate-950"
                   }`
                 }
               >
-                {renderNavLabel(item)}
+                {({ isActive }) => {
+                  const Icon = item.icon;
+                  const badgeCount = getBadgeCount(item);
+                  return (
+                    <>
+                      <span className={`sv-nav-icon relative ${isActive ? "border-white/20 bg-white/12 text-white" : ""}`}>
+                        <Icon className="h-4.5 w-4.5" />
+                        {badgeCount > 0 ? <span className="sv-nav-dot" /> : null}
+                      </span>
+                      <span>{item.label}</span>
+                      {badgeCount > 0 ? (
+                        <span className={`inline-flex min-w-[1.35rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold ${isActive ? "bg-white/14 text-white" : "bg-emerald-500 text-white"}`}>
+                          {badgeCount > 99 ? "99+" : badgeCount}
+                        </span>
+                      ) : null}
+                    </>
+                  );
+                }}
               </NavLink>
             ))}
           </nav>
@@ -126,8 +137,10 @@ export default function Navbar({ setIsAuth }) {
               className="inline-flex min-h-[42px] items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700 transition hover:bg-slate-50 lg:hidden"
               aria-label="Toggle navigation"
             >
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold tracking-normal text-slate-700">
-                {isMenuOpen ? "X" : "="}
+              <span className={`sv-hamburger ${isMenuOpen ? "is-open" : ""}`}>
+                <span />
+                <span />
+                <span />
               </span>
               <span>{isMenuOpen ? "Close" : "Menu"}</span>
             </button>
@@ -148,7 +161,24 @@ export default function Navbar({ setIsAuth }) {
                     }`
                   }
                 >
-                  {renderNavLabel(item)}
+                  {({ isActive }) => {
+                    const Icon = item.icon;
+                    const badgeCount = getBadgeCount(item);
+                    return (
+                      <span className="flex items-center gap-3">
+                        <span className={`sv-nav-icon relative ${isActive ? "border-white/20 bg-white/10 text-white" : ""}`}>
+                          <Icon className="h-4.5 w-4.5" />
+                          {badgeCount > 0 ? <span className="sv-nav-dot" /> : null}
+                        </span>
+                        <span className="flex-1">{item.label}</span>
+                        {badgeCount > 0 ? (
+                          <span className={`inline-flex min-w-[1.35rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold ${isActive ? "bg-white/14 text-white" : "bg-emerald-500 text-white"}`}>
+                            {badgeCount > 99 ? "99+" : badgeCount}
+                          </span>
+                        ) : null}
+                      </span>
+                    );
+                  }}
                 </NavLink>
               ))}
               <button

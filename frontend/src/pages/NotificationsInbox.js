@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import { BellIcon, CheckCircleIcon, ClockIcon, LoadingSpinner } from "../components/UiIcons";
+import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 function SummaryCard({ label, value, tone = "text-slate-900" }) {
   return (
@@ -24,6 +26,8 @@ export default function NotificationsInbox() {
   const [filter, setFilter] = useState("all");
   const [workingId, setWorkingId] = useState(null);
   const [markingAll, setMarkingAll] = useState(false);
+
+  useRevealOnScroll();
 
   useEffect(() => {
     let isMounted = true;
@@ -104,8 +108,25 @@ export default function NotificationsInbox() {
   if (loading) {
     return (
       <div className="sv-page">
-        <div className="mx-auto max-w-6xl rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-600">
-          Loading notifications...
+        <div className="mx-auto max-w-6xl space-y-6">
+          <section className="sv-skeleton-card space-y-4">
+            <div className="sv-skeleton h-4 w-28" />
+            <div className="sv-skeleton h-14 w-96 rounded-[22px]" />
+            <div className="sv-skeleton h-4 w-2/3" />
+          </section>
+          <section className="grid gap-4 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="sv-skeleton-card space-y-4">
+                <div className="sv-skeleton h-3 w-24" />
+                <div className="sv-skeleton h-8 w-20 rounded-[16px]" />
+              </div>
+            ))}
+          </section>
+          <section className="sv-skeleton-card space-y-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="sv-skeleton h-24 w-full rounded-[22px]" />
+            ))}
+          </section>
         </div>
       </div>
     );
@@ -114,7 +135,7 @@ export default function NotificationsInbox() {
   return (
     <div className="sv-page">
       <div className="mx-auto max-w-6xl space-y-6">
-        <section className="sv-dark-hero">
+        <section className="sv-dark-hero sv-reveal">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="sv-eyebrow-on-dark">Notifications</p>
@@ -135,7 +156,7 @@ export default function NotificationsInbox() {
           </div>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-3">
+        <section className="sv-stagger grid gap-4 sm:grid-cols-3">
           <SummaryCard label="All notifications" value={notifications.length} />
           <SummaryCard
             label="Unread"
@@ -149,7 +170,7 @@ export default function NotificationsInbox() {
           />
         </section>
 
-        <section className="sv-card">
+        <section className="sv-card sv-reveal">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Inbox</p>
@@ -180,7 +201,7 @@ export default function NotificationsInbox() {
                 disabled={markingAll || unreadCount === 0}
                 className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
               >
-                {markingAll ? "Marking..." : "Mark all read"}
+                {markingAll ? <><LoadingSpinner />Marking...</> : <><CheckCircleIcon className="h-4 w-4" />Mark all read</>}
               </button>
             </div>
           </div>
@@ -193,14 +214,22 @@ export default function NotificationsInbox() {
 
           <div className="mt-5 space-y-4">
             {visibleNotifications.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
-                {filter === "unread" ? "No unread notifications right now." : "No notifications yet."}
+              <div className="sv-empty-state">
+                <div className="sv-empty-icon">
+                  <BellIcon className="h-6 w-6" />
+                </div>
+                <p className="text-sm font-semibold text-slate-900">
+                  {filter === "unread" ? "No unread notifications right now." : "No notifications yet."}
+                </p>
+                <p className="mt-2 text-sm leading-7 text-slate-500">
+                  Confirmation prompts, wallet events, and group updates will appear here.
+                </p>
               </div>
             ) : (
               visibleNotifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`rounded-3xl border p-5 transition ${
+                  className={`sv-reveal rounded-3xl border p-5 transition ${
                     notification.is_read
                       ? "border-slate-200 bg-white"
                       : "border-emerald-200 bg-emerald-50/40"
@@ -213,7 +242,7 @@ export default function NotificationsInbox() {
                           className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
                             notification.is_read
                               ? "bg-slate-100 text-slate-600"
-                              : "bg-emerald-600 text-white"
+                              : "bg-emerald-600 text-white sv-status-pulse"
                           }`}
                         >
                           {notification.is_read ? "Read" : "Unread"}
@@ -228,9 +257,9 @@ export default function NotificationsInbox() {
                         type="button"
                         onClick={() => markAsRead(notification.id)}
                         disabled={workingId === notification.id}
-                        className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                        className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
                       >
-                        {workingId === notification.id ? "Saving..." : "Mark read"}
+                        {workingId === notification.id ? <><LoadingSpinner />Saving...</> : <><ClockIcon className="h-4 w-4" />Mark read</>}
                       </button>
                     ) : null}
                   </div>

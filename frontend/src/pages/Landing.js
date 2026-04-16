@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 
 import BrandMark from "../components/BrandMark";
 import PublicFooter from "../components/PublicFooter";
+import { CheckCircleIcon, ShieldIcon, SparkIcon } from "../components/UiIcons";
+import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 const heroIllustrationSrc = `${process.env.PUBLIC_URL}/shareverse-hero-network.png`;
 
@@ -54,10 +56,12 @@ const useCases = [
 ];
 
 export default function Landing() {
+  useRevealOnScroll();
+
   return (
     <div className="sv-page">
       <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
-        <header className="sv-brand-shell flex flex-col gap-2.5 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5">
+        <header className="sv-brand-shell sv-reveal flex flex-col gap-2.5 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5">
           <div className="flex items-center gap-2.5 sm:contents">
             <Link
               to="/"
@@ -88,7 +92,7 @@ export default function Landing() {
           </Link>
         </header>
 
-        <section className="sv-light-hero sv-light-hero-grid relative overflow-hidden">
+        <section className="sv-light-hero sv-light-hero-grid sv-reveal relative overflow-hidden">
           <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-slate-950 shadow-[0_30px_90px_rgba(15,23,42,0.16)] md:rounded-[36px]">
             <img
               src={heroIllustrationSrc}
@@ -110,6 +114,15 @@ export default function Landing() {
               <div className="inline-flex w-fit rounded-full border border-white/22 bg-white/12 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-sm">
                 Digital plans, one shared flow
               </div>
+            </div>
+
+            <div className="absolute left-5 top-24 hidden rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-sm md:block sv-animate-float-soft">
+              <SparkIcon className="h-5 w-5" />
+            </div>
+
+            <div className="absolute bottom-16 right-6 hidden rounded-full border border-white/18 bg-slate-950/20 px-3 py-2 text-[11px] font-semibold text-white backdrop-blur-sm lg:inline-flex lg:items-center lg:gap-2 sv-animate-float">
+              <ShieldIcon className="h-4 w-4" />
+              Safer shared payments
             </div>
 
             <div className="absolute inset-0 hidden items-center justify-center px-3 py-14 sm:flex sm:px-6 sm:py-20 md:px-8">
@@ -186,9 +199,12 @@ export default function Landing() {
             {heroHighlights.map((item, index) => (
               <article
                 key={item.label}
-                className={`rounded-[22px] border border-white/70 bg-white/88 p-4 text-left shadow-[0_20px_48px_rgba(15,23,42,0.08)] ${index === 1 ? "sv-animate-float-soft" : index === 2 ? "sv-animate-float sv-delay-1" : "sv-animate-rise"}`}
+                className={`sv-reveal rounded-[22px] border border-white/70 bg-white/88 p-4 text-left shadow-[0_20px_48px_rgba(15,23,42,0.08)] ${index === 1 ? "sv-animate-float-soft" : index === 2 ? "sv-animate-float sv-delay-1" : "sv-animate-rise"}`}
               >
-                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#0f172a_0%,#0f766e_100%)] text-white shadow-[0_12px_30px_rgba(15,23,42,0.18)]">
+                  {index === 0 ? <SparkIcon className="h-4 w-4" /> : index === 1 ? <CheckCircleIcon className="h-4 w-4" /> : <ShieldIcon className="h-4 w-4" />}
+                </div>
+                <p className="mt-4 text-[11px] uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
                 <p className="mt-3 text-sm font-semibold leading-6 text-slate-950">{item.value}</p>
               </article>
             ))}
@@ -197,7 +213,7 @@ export default function Landing() {
 
         <section className="grid gap-4 md:grid-cols-2">
           {modes.map((mode, index) => (
-            <article key={mode.title} className={`sv-card-solid relative overflow-hidden ${index === 0 ? "sv-animate-rise" : "sv-animate-rise sv-delay-1"}`}>
+            <article key={mode.title} className={`sv-card-solid sv-reveal relative overflow-hidden ${index === 0 ? "sv-animate-rise" : "sv-animate-rise sv-delay-1"}`}>
               <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-emerald-100/70 blur-3xl" />
               <p className="sv-eyebrow">{mode.eyebrow}</p>
               <h2 className="sv-title mt-3 max-w-lg">{mode.title}</h2>
@@ -206,7 +222,7 @@ export default function Landing() {
           ))}
         </section>
 
-        <section className="sv-card-solid">
+        <section className="sv-card-solid sv-reveal">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
             <div>
               <p className="sv-eyebrow">Why ShareVerse</p>
@@ -248,7 +264,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="sv-card-solid">
+        <section className="sv-card-solid sv-reveal">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center">
             <div>
               <p className="sv-eyebrow">Ready to start</p>

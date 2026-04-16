@@ -7,7 +7,7 @@ export default function PublicPageShell({ eyebrow, title, intro, children }) {
   return (
     <div className="sv-page text-slate-900">
       <div className="mx-auto max-w-6xl">
-        <header className="sv-brand-shell flex flex-col items-stretch gap-3 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <header className="sv-brand-shell sv-reveal flex flex-col items-stretch gap-3 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <Link
             to="/"
             className="inline-flex w-full items-center justify-center gap-3 rounded-[22px] border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 sm:w-auto sm:justify-start sm:rounded-full"
@@ -31,7 +31,7 @@ export default function PublicPageShell({ eyebrow, title, intro, children }) {
           </div>
         </header>
 
-        <section className="sv-light-hero sv-light-hero-grid mt-4 px-3.5 py-4 sm:mt-5 sm:px-4 sm:py-5 md:mt-8 md:px-8 md:py-10">
+        <section className="sv-light-hero sv-light-hero-grid sv-reveal mt-4 px-3.5 py-4 sm:mt-5 sm:px-4 sm:py-5 md:mt-8 md:px-8 md:py-10">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
             <div>
               <p className="sv-eyebrow">{eyebrow}</p>
@@ -40,7 +40,7 @@ export default function PublicPageShell({ eyebrow, title, intro, children }) {
                 {intro}
               </p>
 
-              <div className="mt-6 sm:mt-8">{children}</div>
+              <div className="mt-6 sm:mt-8 sv-stagger">{children}</div>
             </div>
 
             <div className="hidden lg:block">

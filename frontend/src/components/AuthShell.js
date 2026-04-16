@@ -31,7 +31,7 @@ export default function AuthShell({
 
         <div className="relative mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">
           <section className="order-2 flex flex-1 flex-col justify-between px-3 py-3 sm:px-6 sm:py-8 lg:order-1 lg:px-12 lg:py-10">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sv-reveal">
               <Link
                 to="/"
                 className="inline-flex w-full items-center justify-center gap-3 rounded-[22px] border border-white/70 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur sm:w-auto sm:justify-start sm:rounded-full"
@@ -47,7 +47,7 @@ export default function AuthShell({
               </p>
             </div>
 
-            <div className="my-5 max-w-2xl lg:my-0">
+            <div className="my-5 max-w-2xl lg:my-0 sv-reveal">
               <p className="sv-eyebrow">
                 {eyebrow}
               </p>
@@ -60,7 +60,7 @@ export default function AuthShell({
                 {subtitle}
               </p>
 
-              <div className="mt-6 grid gap-3 md:mt-10 md:grid-cols-2 md:gap-4">
+              <div className="mt-6 grid gap-3 md:mt-10 md:grid-cols-2 md:gap-4 sv-stagger">
                 {valueProps.map((item) => (
                   <article
                     key={item.title}
@@ -86,7 +86,7 @@ export default function AuthShell({
           </section>
 
           <section className="order-1 flex w-full items-center justify-center px-3 pb-3 pt-0 sm:px-6 sm:py-10 lg:order-2 lg:max-w-xl lg:px-10">
-            <div className={`w-full ${panelWidthClass} rounded-[26px] border border-white/80 bg-white/86 p-5 shadow-[0_36px_90px_rgba(15,23,42,0.16)] backdrop-blur md:rounded-[32px] md:p-8`}>
+            <div className={`sv-glow-border sv-animate-slide-up w-full ${panelWidthClass} rounded-[26px] border border-white/80 bg-white/86 p-5 shadow-[0_36px_90px_rgba(15,23,42,0.16)] backdrop-blur md:rounded-[32px] md:p-8`}>
               {children}
               {footer ? <div className="mt-6 border-t border-slate-200 pt-5">{footer}</div> : null}
             </div>

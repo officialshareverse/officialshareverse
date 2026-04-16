@@ -4,6 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import BrandMark from "../components/BrandMark";
 import PublicFooter from "../components/PublicFooter";
+import { CheckCircleIcon, LoadingSpinner, ShieldIcon } from "../components/UiIcons";
+import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 function getSignupError(errorData) {
   if (!errorData || typeof errorData !== "object") {
@@ -97,6 +99,8 @@ export default function Signup() {
   const [deliveryChannel, setDeliveryChannel] = useState("email");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useRevealOnScroll();
 
   const resetOtpState = (nextNotice = "") => {
     setSignupSessionId("");
@@ -201,6 +205,7 @@ export default function Signup() {
   };
 
   const hasVerificationSession = Boolean(signupSessionId);
+  const passwordStrength = getPasswordStrength(form.password);
 
   return (
     <div className="sv-page">
@@ -224,7 +229,7 @@ export default function Signup() {
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-[24px] border border-white/80 bg-white/84 shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur md:rounded-[34px]">
+        <div className="sv-glow-border overflow-hidden rounded-[24px] border border-white/80 bg-white/84 shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur md:rounded-[34px]">
           <div className="grid lg:grid-cols-[0.95fr_1.05fr]">
             <section className="order-2 bg-[linear-gradient(145deg,#0f172a_0%,#1f2937_62%,#155e75_100%)] px-4 py-4 text-white md:px-8 md:py-10 lg:order-1">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">
@@ -237,7 +242,7 @@ export default function Signup() {
                 Create one account for coordinating subscriptions, courses, memberships, software tools, and buy-together groups when members are ready.
               </p>
 
-              <div className="mt-6 grid gap-3 md:mt-8 md:gap-4">
+              <div className="mt-6 grid gap-3 md:mt-8 md:gap-4 sv-stagger">
                 {highlights.map((item) => (
                   <article key={item.title} className="rounded-[20px] border border-white/10 bg-white/10 p-4 backdrop-blur md:rounded-[22px] md:p-5">
                     <h2 className="text-base font-semibold sm:text-lg">{item.title}</h2>
@@ -255,13 +260,13 @@ export default function Signup() {
 
             <section className="order-1 px-4 py-4 md:px-8 md:py-10 lg:order-2">
               <div className="max-w-2xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <p className="sv-reveal text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
                   Signup
                 </p>
-                <h2 className="mt-3 text-[1.8rem] font-bold leading-tight text-slate-950 sm:text-[2rem] md:text-[2.4rem]">
+                <h2 className="sv-reveal mt-3 text-[1.8rem] font-bold leading-tight text-slate-950 sm:text-[2rem] md:text-[2.4rem]">
                   Create your ShareVerse account
                 </h2>
-                <p className="mt-3 text-sm leading-6 text-slate-600 md:leading-7">
+                <p className="sv-reveal mt-3 text-sm leading-6 text-slate-600 md:leading-7">
                   Your profile helps other members trust you when you organize a shared-cost group or coordinate a buy-together purchase.
                 </p>
 
@@ -278,7 +283,7 @@ export default function Signup() {
                 ) : null}
 
                 <form onSubmit={handleSignup} className="mt-6 space-y-5 md:mt-7 md:space-y-6">
-                  <section className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 md:rounded-[26px] md:p-5">
+                  <section className="sv-reveal rounded-[24px] border border-slate-200 bg-slate-50 p-4 md:rounded-[26px] md:p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -360,7 +365,7 @@ export default function Signup() {
                     </div>
                   </section>
 
-                  <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_16px_28px_rgba(15,23,42,0.05)] md:rounded-[26px] md:p-5">
+                  <section className="sv-reveal rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_16px_28px_rgba(15,23,42,0.05)] md:rounded-[26px] md:p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -395,6 +400,15 @@ export default function Signup() {
                             {showPassword ? "Hide" : "Show"}
                           </button>
                         </div>
+                        <div>
+                          <div className="mt-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            <span>Password strength</span>
+                            <span className={passwordStrength.tone}>{passwordStrength.label}</span>
+                          </div>
+                          <div className="sv-password-meter">
+                            <div className={`sv-password-meter-fill ${passwordStrength.fill}`} style={{ width: `${passwordStrength.width}%` }} />
+                          </div>
+                        </div>
                       </FieldShell>
 
                       <FieldShell label="Confirm password" helper="Re-enter the same password">
@@ -424,7 +438,7 @@ export default function Signup() {
                     </div>
                   </section>
 
-                  <section className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 md:rounded-[26px] md:p-5">
+                  <section className="sv-reveal rounded-[24px] border border-slate-200 bg-slate-50 p-4 md:rounded-[26px] md:p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -471,7 +485,7 @@ export default function Signup() {
                     </label>
                   </section>
 
-                  <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_16px_28px_rgba(15,23,42,0.05)] md:rounded-[26px] md:p-5">
+                  <section className="sv-reveal rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_16px_28px_rgba(15,23,42,0.05)] md:rounded-[26px] md:p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -503,8 +517,9 @@ export default function Signup() {
                         type="button"
                         onClick={handleRequestOtp}
                         disabled={otpLoading}
-                        className="rounded-[22px] border border-slate-300 bg-white px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-900 transition hover:border-teal-700 hover:text-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex items-center justify-center gap-2 rounded-[22px] border border-slate-300 bg-white px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-900 transition hover:border-teal-700 hover:text-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
                       >
+                        {otpLoading ? <LoadingSpinner /> : <ShieldIcon className="h-4 w-4" />}
                         {otpLoading
                           ? "Generating code..."
                           : hasVerificationSession
@@ -533,8 +548,9 @@ export default function Signup() {
                   <button
                     type="submit"
                     disabled={loading || !acceptedTerms || !hasVerificationSession}
-                    className="w-full rounded-[24px] bg-slate-950 px-4 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-[24px] bg-slate-950 px-4 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
                   >
+                    {loading ? <LoadingSpinner /> : <CheckCircleIcon className="h-4 w-4" />}
                     {loading
                       ? "Verifying and creating your account..."
                       : hasVerificationSession
@@ -565,4 +581,33 @@ function FieldShell({ label, helper, children }) {
       <span className="mt-2 block text-xs text-slate-500">{helper}</span>
     </label>
   );
+}
+
+function getPasswordStrength(password) {
+  const value = password || "";
+  if (!value) {
+    return {
+      label: "Not set",
+      width: 0,
+      fill: "bg-slate-300",
+      tone: "text-slate-400",
+    };
+  }
+
+  let score = 0;
+  if (value.length >= 8) score += 1;
+  if (/[A-Z]/.test(value) && /[a-z]/.test(value)) score += 1;
+  if (/\d/.test(value)) score += 1;
+  if (/[^A-Za-z0-9]/.test(value)) score += 1;
+
+  if (score <= 1) {
+    return { label: "Weak", width: 28, fill: "bg-rose-500", tone: "text-rose-600" };
+  }
+  if (score === 2) {
+    return { label: "Fair", width: 55, fill: "bg-amber-500", tone: "text-amber-600" };
+  }
+  if (score === 3) {
+    return { label: "Strong", width: 78, fill: "bg-sky-500", tone: "text-sky-600" };
+  }
+  return { label: "Great", width: 100, fill: "bg-emerald-500", tone: "text-emerald-600" };
 }

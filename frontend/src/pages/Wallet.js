@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 
 import API from "../api/axios";
+import {
+  BankIcon,
+  ClockIcon,
+  CreditIcon,
+  DebitIcon,
+  LoadingSpinner,
+  ShieldIcon,
+  WalletIcon as WalletGlyph,
+} from "../components/UiIcons";
+import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 const RAZORPAY_CHECKOUT_URL = "https://checkout.razorpay.com/v1/checkout.js";
 const SUPPORT_EMAIL = "support.shareverse@gmail.com";
@@ -85,7 +95,10 @@ export default function Wallet() {
   const [workingAction, setWorkingAction] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(true);
   const payoutsLive = Boolean(payoutConfig?.payout_enabled);
+
+  useRevealOnScroll();
 
   useEffect(() => {
     fetchData();
@@ -98,6 +111,7 @@ export default function Wallet() {
 
   async function fetchData() {
     try {
+      setLoading(true);
       const [dashboardResponse, transactionsResponse] = await Promise.all([
         API.get("dashboard/"),
         API.get("transactions/"),
@@ -117,6 +131,8 @@ export default function Wallet() {
     } catch (err) {
       console.error(err);
       setErrorMessage("Unable to load your wallet right now.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -223,11 +239,49 @@ export default function Wallet() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="sv-page">
+        <div className="mx-auto max-w-7xl space-y-6">
+          <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="sv-skeleton-card space-y-4">
+              <div className="sv-skeleton h-4 w-20" />
+              <div className="sv-skeleton h-14 w-4/5 rounded-[22px]" />
+              <div className="sv-skeleton h-4 w-full" />
+              <div className="sv-skeleton h-4 w-4/5" />
+              <div className="flex flex-wrap gap-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="sv-skeleton h-9 w-20 rounded-full" />
+                ))}
+              </div>
+            </div>
+            <div className="sv-skeleton-card space-y-4">
+              <div className="sv-skeleton h-4 w-28" />
+              <div className="sv-skeleton h-12 w-40 rounded-[20px]" />
+              <div className="sv-skeleton h-4 w-3/4" />
+            </div>
+          </section>
+          <section className="grid gap-6 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="sv-skeleton-card space-y-4">
+                <div className="sv-skeleton h-4 w-24" />
+                <div className="sv-skeleton h-10 w-2/3 rounded-[18px]" />
+                <div className="sv-skeleton h-12 w-full rounded-[18px]" />
+                <div className="sv-skeleton h-12 w-full rounded-[18px]" />
+                <div className="sv-skeleton h-12 w-full rounded-full" />
+              </div>
+            ))}
+          </section>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="sv-page">
       <div className="mx-auto max-w-7xl space-y-6">
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="sv-light-hero">
+          <div className="sv-light-hero sv-reveal">
             <p className="sv-eyebrow">Wallet</p>
             <h1 className="sv-display mt-4 max-w-3xl">
               Top up your wallet and keep shared-cost activity moving.
@@ -246,15 +300,22 @@ export default function Wallet() {
             </div>
           </div>
 
-          <aside className="sv-card bg-[linear-gradient(135deg,#0f172a_0%,#132033_60%,#0f766e_100%)] text-white">
+          <aside className="sv-card sv-reveal bg-[linear-gradient(135deg,#0f172a_0%,#132033_60%,#0f766e_100%)] text-white">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-300">Available balance</p>
-            <h2 className="mt-4 text-4xl font-bold">{formatCurrency(balance)}</h2>
+            <div className="mt-4 flex items-center gap-4">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-[20px] bg-white/10 text-white shadow-[0_18px_42px_rgba(15,23,42,0.2)]">
+                <WalletGlyph className="h-7 w-7" />
+              </span>
+              <h2 className="sv-count-up text-4xl font-bold">
+                <AnimatedValue value={formatCurrency(balance)} />
+              </h2>
+            </div>
             <p className="mt-3 text-sm leading-7 text-slate-300">
               Used for joins, shared-cost group activity, and buy-together flows inside ShareVerse.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               {topupConfig ? <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]">{topupConfig.mode_label}</span> : null}
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${payoutsLive ? "bg-white/10 text-white" : "bg-amber-400/15 text-amber-100"}`}>
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${payoutsLive ? "bg-white/10 text-white" : "bg-amber-400/15 text-amber-100 sv-status-pulse"}`}>
                 {payoutConfig?.mode_label || (payoutsLive ? "Payouts live" : "Manual withdrawal review")}
               </span>
             </div>
@@ -276,7 +337,7 @@ export default function Wallet() {
         {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{errorMessage}</div> : null}
 
         <section className="grid gap-6 xl:grid-cols-3">
-          <form className="sv-card space-y-4" onSubmit={startWalletTopup}>
+          <form className="sv-card sv-reveal space-y-4" onSubmit={startWalletTopup}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="sv-eyebrow">Top Up</p>
@@ -290,12 +351,12 @@ export default function Wallet() {
             </label>
             <p className="text-sm leading-7 text-slate-600">Your wallet is credited only after the payment is verified successfully.</p>
             <button className="sv-btn-primary w-full justify-center" type="submit" disabled={workingAction !== "" || !topupConfig?.topup_enabled}>
-              {workingAction === "topup" ? "Opening checkout..." : "Add money securely"}
+              {workingAction === "topup" ? <><LoadingSpinner />Opening checkout...</> : <><CreditIcon className="h-4 w-4" />Add money securely</>}
             </button>
           </form>
 
           <>
-            <form className="sv-card space-y-4" onSubmit={savePayoutAccount}>
+            <form className="sv-card sv-reveal space-y-4" onSubmit={savePayoutAccount}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="sv-eyebrow">Payout Method</p>
@@ -371,14 +432,14 @@ export default function Wallet() {
               </p>
               <button className="sv-btn-secondary w-full justify-center" type="submit" disabled={workingAction !== ""}>
                 {workingAction === "save-payout"
-                  ? "Saving payout method..."
+                  ? <><LoadingSpinner />Saving payout method...</>
                   : payoutsLive
-                    ? "Save payout method"
-                    : "Save withdrawal destination"}
+                    ? <><BankIcon className="h-4 w-4" />Save payout method</>
+                    : <><BankIcon className="h-4 w-4" />Save withdrawal destination</>}
               </button>
             </form>
 
-            <form className="sv-card space-y-4" onSubmit={withdrawMoney}>
+            <form className="sv-card sv-reveal space-y-4" onSubmit={withdrawMoney}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="sv-eyebrow">Withdraw</p>
@@ -410,17 +471,17 @@ export default function Wallet() {
               <button className="sv-btn-primary w-full justify-center" type="submit" disabled={!payoutAccount || workingAction !== ""}>
                 {workingAction === "withdraw"
                   ? payoutsLive
-                    ? "Creating payout..."
-                    : "Submitting request..."
+                    ? <><LoadingSpinner />Creating payout...</>
+                    : <><LoadingSpinner />Submitting request...</>
                   : payoutsLive
-                    ? "Withdraw to payout method"
-                    : "Request manual withdrawal"}
+                    ? <><DebitIcon className="h-4 w-4" />Withdraw to payout method</>
+                    : <><ClockIcon className="h-4 w-4" />Request manual withdrawal</>}
               </button>
             </form>
           </>
         </section>
 
-        <section className="sv-card">
+        <section className="sv-card sv-reveal">
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="sv-eyebrow">Payout Requests</p>
@@ -430,8 +491,16 @@ export default function Wallet() {
           </div>
           <div className="mt-5 space-y-4">
             {payouts.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
-                {payoutsLive ? "No payout requests yet." : "No manual withdrawal requests yet."}
+              <div className="sv-empty-state">
+                <div className="sv-empty-icon">
+                  <ClockIcon className="h-6 w-6" />
+                </div>
+                <p className="text-sm font-semibold text-slate-900">
+                  {payoutsLive ? "No payout requests yet." : "No manual withdrawal requests yet."}
+                </p>
+                <p className="mt-2 text-sm leading-7 text-slate-500">
+                  Your recent withdrawal requests and their review status will appear here.
+                </p>
               </div>
             ) : payouts.map((payout) => {
               const canSync = Boolean(payout.provider_payout_id) && ["pending", "queued", "processing"].includes(payout.status);
@@ -439,8 +508,11 @@ export default function Wallet() {
                 <div key={payout.id} className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-white/80 p-5 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                        {payout.mode === "UPI" ? <WalletGlyph className="h-4.5 w-4.5" /> : <BankIcon className="h-4.5 w-4.5" />}
+                      </span>
                       <p className="text-base font-semibold text-slate-950">{payout.destination_label}</p>
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(payout.status)}`}>{payout.status}</span>
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(payout.status)} ${["pending", "queued", "processing"].includes(payout.status) ? "sv-status-pulse" : ""}`}>{payout.status}</span>
                     </div>
                     <p className="mt-2 text-sm leading-7 text-slate-600">{payout.failure_reason || `Mode: ${payout.mode}${payout.utr ? ` | UTR: ${payout.utr}` : ""}`}</p>
                     <p className="text-xs text-slate-500">Requested on {new Date(payout.requested_at).toLocaleString()}</p>
@@ -467,7 +539,7 @@ export default function Wallet() {
           </div>
         </section>
 
-        <section className="sv-card">
+        <section className="sv-card sv-reveal">
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="sv-eyebrow">History</p>
@@ -477,14 +549,25 @@ export default function Wallet() {
           </div>
           <div className="mt-5 space-y-4">
             {transactions.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">No transactions yet.</div>
+              <div className="sv-empty-state">
+                <div className="sv-empty-icon">
+                  <ShieldIcon className="h-6 w-6" />
+                </div>
+                <p className="text-sm font-semibold text-slate-900">No transactions yet.</p>
+                <p className="mt-2 text-sm leading-7 text-slate-500">
+                  Top-ups, joins, payouts, and refunds will all appear here with their status.
+                </p>
+              </div>
             ) : transactions.map((transaction) => (
               <div key={transaction.id} className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-white/80 p-5 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${transaction.type === "credit" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                      {transaction.type === "credit" ? <CreditIcon className="h-4.5 w-4.5" /> : <DebitIcon className="h-4.5 w-4.5" />}
+                    </span>
                     <p className="text-base font-semibold text-slate-950">{transaction.title}</p>
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${transaction.type === "credit" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{transaction.type}</span>
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(transaction.status)}`}>{transaction.status}</span>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(transaction.status)} ${["pending", "queued", "processing"].includes(transaction.status) ? "sv-status-pulse" : ""}`}>{transaction.status}</span>
                   </div>
                   <p className="mt-2 text-sm leading-7 text-slate-600">{transaction.description}</p>
                   <p className="text-xs text-slate-500">{transaction.mode_label}{transaction.group_name ? ` | ${transaction.group_name}` : ""}</p>
@@ -502,4 +585,38 @@ export default function Wallet() {
       </div>
     </div>
   );
+}
+
+function AnimatedValue({ value }) {
+  const [displayValue, setDisplayValue] = useState(value);
+
+  useEffect(() => {
+    const raw = String(value);
+    const numericMatch = raw.match(/-?\d+(\.\d+)?/);
+    if (!numericMatch) {
+      setDisplayValue(raw);
+      return undefined;
+    }
+
+    const target = Number(numericMatch[0]);
+    const prefix = raw.slice(0, numericMatch.index);
+    const suffix = raw.slice((numericMatch.index || 0) + numericMatch[0].length);
+    const duration = 700;
+    const startedAt = performance.now();
+    let frameId = 0;
+
+    const step = (now) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const current = (target * progress).toFixed(2);
+      setDisplayValue(`${prefix}${current}${suffix}`);
+      if (progress < 1) {
+        frameId = window.requestAnimationFrame(step);
+      }
+    };
+
+    frameId = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [value]);
+
+  return displayValue;
 }

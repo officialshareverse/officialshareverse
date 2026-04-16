@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 import BrandMark from "../components/BrandMark";
+import { LayersIcon, SearchIcon, WalletIcon } from "../components/UiIcons";
+import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 const streamingServicesImage = `${process.env.PUBLIC_URL}/streaming-services-collage.png`;
 
@@ -18,6 +20,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showGuide, setShowGuide] = useState(false);
+
+  useRevealOnScroll();
 
   useEffect(() => {
     let isMounted = true;
@@ -185,8 +189,34 @@ export default function Home() {
   if (loading) {
     return (
       <div className="sv-page">
-        <div className="mx-auto max-w-4xl rounded-[28px] border border-slate-200 bg-white px-6 py-12 text-center text-slate-600 shadow-sm">
-          Loading home...
+        <div className="mx-auto max-w-5xl space-y-6">
+          <section className="sv-dark-hero">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
+              <div className="space-y-4">
+                <div className="sv-skeleton h-6 w-24" />
+                <div className="sv-skeleton h-14 w-full max-w-2xl rounded-[24px]" />
+                <div className="sv-skeleton h-14 w-full max-w-xl rounded-[24px]" />
+                <div className="sv-skeleton h-4 w-full max-w-2xl" />
+                <div className="sv-skeleton h-4 w-full max-w-xl" />
+                <div className="grid gap-3 min-[420px]:grid-cols-2 sm:inline-flex sm:flex-wrap">
+                  <div className="sv-skeleton h-12 w-full rounded-full sm:w-48" />
+                  <div className="sv-skeleton h-12 w-full rounded-full sm:w-40" />
+                </div>
+              </div>
+              <div className="sv-skeleton-card">
+                <div className="sv-skeleton h-72 w-full rounded-[22px]" />
+              </div>
+            </div>
+          </section>
+
+          <section className="sv-grid-stats">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="sv-skeleton-card space-y-4">
+                <div className="sv-skeleton h-3 w-24" />
+                <div className="sv-skeleton h-8 w-28 rounded-[14px]" />
+              </div>
+            ))}
+          </section>
         </div>
       </div>
     );
@@ -295,7 +325,7 @@ export default function Home() {
           </div>
         ) : null}
 
-        <section className="sv-dark-hero">
+        <section className="sv-dark-hero sv-reveal">
           <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
             <div>
               <div className="flex flex-wrap items-center gap-3">
@@ -341,7 +371,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="sv-grid-stats">
+        <section className="sv-grid-stats sv-stagger">
           {stats.map((item, index) => (
             <StatCard
               key={item.label}
@@ -353,7 +383,7 @@ export default function Home() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(250px,0.92fr)]">
-          <section className="sv-card">
+          <section className="sv-card sv-reveal">
             <p className="sv-eyebrow">{primaryCard.label}</p>
             <h2 className="mt-3 text-2xl font-semibold text-slate-950">{primaryCard.title}</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">{primaryCard.body}</p>
@@ -362,17 +392,20 @@ export default function Home() {
             </div>
           </section>
 
-          <aside className="sv-card">
+          <aside className="sv-card sv-reveal">
             <p className="sv-eyebrow">Quick focus</p>
             <h2 className="sv-title mt-2">What ShareVerse is best at</h2>
             <div className="mt-5 space-y-3">
               {[
-                "Coordinating subscription groups",
-                "Keeping contribution flow visible",
-                "Tracking members and updates cleanly",
+                { icon: LayersIcon, title: "Coordinating subscription groups" },
+                { icon: WalletIcon, title: "Keeping contribution flow visible" },
+                { icon: SearchIcon, title: "Tracking members and updates cleanly" },
               ].map((item) => (
-                <div key={item} className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
-                  {item}
+                <div key={item.title} className="flex items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
+                    <item.icon className="h-4.5 w-4.5" />
+                  </span>
+                  {item.title}
                 </div>
               ))}
             </div>
@@ -403,7 +436,50 @@ function StatCard({ label, value, className = "" }) {
   return (
     <article className={`sv-stat-card ${className}`}>
       <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-3 text-2xl font-bold text-slate-950">{value}</p>
+      <p className="sv-count-up mt-3 text-2xl font-bold text-slate-950">
+        <AnimatedValue value={value} />
+      </p>
     </article>
   );
+}
+
+function AnimatedValue({ value }) {
+  const [displayValue, setDisplayValue] = useState(value);
+
+  useEffect(() => {
+    const raw = String(value);
+    const numericMatch = raw.match(/-?\d+(\.\d+)?/);
+    if (!numericMatch) {
+      setDisplayValue(raw);
+      return undefined;
+    }
+
+    const target = Number(numericMatch[0]);
+    if (Number.isNaN(target)) {
+      setDisplayValue(raw);
+      return undefined;
+    }
+
+    const prefix = raw.slice(0, numericMatch.index);
+    const suffix = raw.slice((numericMatch.index || 0) + numericMatch[0].length);
+    const hasDecimals = numericMatch[0].includes(".");
+    const duration = 650;
+    const startedAt = performance.now();
+    let frameId = 0;
+
+    const step = (now) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const current = target * progress;
+      const next = hasDecimals ? current.toFixed(2) : Math.round(current).toString();
+      setDisplayValue(`${prefix}${next}${suffix}`);
+      if (progress < 1) {
+        frameId = window.requestAnimationFrame(step);
+      }
+    };
+
+    frameId = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [value]);
+
+  return displayValue;
 }

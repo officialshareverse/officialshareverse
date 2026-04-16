@@ -2,6 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import {
+  CheckCircleIcon,
+  ClockIcon,
+  CreditIcon,
+  LayersIcon,
+  ProgressRing,
+  RatingStars,
+  ShieldIcon,
+  SparkIcon,
+  WalletIcon,
+} from "../components/UiIcons";
+import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 function emptyForm() {
   return {
@@ -63,6 +75,8 @@ export default function Profile() {
   const [previewUrl, setPreviewUrl] = useState("");
   const [removeProfilePicture, setRemoveProfilePicture] = useState(false);
 
+  useRevealOnScroll();
+
   useEffect(() => {
     let isMounted = true;
 
@@ -116,6 +130,7 @@ export default function Profile() {
 
   const displayName = profile?.full_name || profile?.username || "Your profile";
   const liveProfilePicture = removeProfilePicture ? "" : previewUrl || profile?.profile_picture_url || "";
+  const trustGaugeValue = Math.min(100, Math.max(0, (Number(profile?.trust_score || 0) / 5) * 100));
 
   const startEditing = () => {
     if (!profile) {
@@ -230,8 +245,52 @@ export default function Profile() {
   if (!profile) {
     return (
       <div className="sv-page">
-        <div className="mx-auto max-w-4xl rounded-[28px] border border-slate-200 bg-white px-6 py-12 text-center text-slate-600 shadow-sm">
-          Loading profile...
+        <div className="sv-container max-w-6xl space-y-6">
+          <section className="sv-dark-hero">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
+              <div className="space-y-4">
+                <div className="sv-skeleton h-5 w-20" />
+                <div className="flex items-center gap-4">
+                  <div className="sv-skeleton h-24 w-24 rounded-[28px]" />
+                  <div className="space-y-3">
+                    <div className="sv-skeleton h-10 w-56 rounded-[20px]" />
+                    <div className="sv-skeleton h-4 w-32" />
+                    <div className="flex gap-2">
+                      <div className="sv-skeleton h-8 w-24 rounded-full" />
+                      <div className="sv-skeleton h-8 w-24 rounded-full" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="sv-skeleton-card space-y-4">
+                    <div className="sv-skeleton h-4 w-24" />
+                    <div className="sv-skeleton h-10 w-36 rounded-[18px]" />
+                    <div className="sv-skeleton h-20 w-full rounded-[22px]" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+            <div className="sv-skeleton-card space-y-4">
+              <div className="sv-skeleton h-4 w-24" />
+              <div className="sv-skeleton h-8 w-52 rounded-[18px]" />
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="sv-skeleton h-16 w-full rounded-[20px]" />
+              ))}
+            </div>
+            <div className="sv-skeleton-card space-y-4">
+              <div className="sv-skeleton h-4 w-24" />
+              <div className="sv-skeleton h-8 w-40 rounded-[18px]" />
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="sv-skeleton h-24 w-full rounded-[22px]" />
+              ))}
+            </div>
+          </section>
         </div>
       </div>
     );
@@ -240,7 +299,7 @@ export default function Profile() {
   return (
     <div className="sv-page">
       <div className="sv-container max-w-6xl space-y-6">
-        <section className="sv-dark-hero">
+        <section className="sv-dark-hero sv-reveal">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
             <div className="flex flex-col gap-5 md:flex-row md:items-center">
               <ProfileAvatar imageUrl={liveProfilePicture} initials={initials} size="large" />
@@ -251,54 +310,73 @@ export default function Profile() {
                 <p className="mt-3 text-sm text-slate-300 md:text-base">@{profile.username}</p>
 
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${profile.is_verified ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${
+                      profile.is_verified ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                    }`}
+                  >
                     {profile.is_verified ? "Verified member" : "Verification pending"}
                   </span>
                   <span className="sv-chip-dark">Joined {formatDate(profile.date_joined)}</span>
                   <span className="sv-chip-dark">{profile.has_profile_picture ? "Photo added" : "Photo missing"}</span>
                 </div>
+
+                <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-200">
+                  <span className="sv-icon-chip bg-white/10 text-white">
+                    <ShieldIcon className="h-4 w-4" />
+                    Trust-first profile
+                  </span>
+                  <span className="sv-icon-chip bg-white/10 text-white">
+                    <SparkIcon className="h-4 w-4" />
+                    Shared-cost host ready
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 sv-stagger">
               <MetricCard label="Wallet balance" value={formatCurrency(profile.wallet_balance)} dark />
               <MetricCard
                 label="Profile completion"
                 value={`${profile.profile_completion}%`}
                 dark
                 footer={
-                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/15">
-                    <div
-                      className="h-full rounded-full bg-[linear-gradient(90deg,#34d399_0%,#fbbf24_100%)]"
-                      style={{ width: `${profile.profile_completion}%` }}
-                    />
+                  <div className="mt-4 flex items-center gap-4">
+                    <ProgressRing value={profile.profile_completion} size={82} stroke={7} label={`${profile.profile_completion}%`} />
+                    <div className="text-sm leading-7 text-slate-300">
+                      Keep your photo, email, and phone current to make your account feel more complete and trusted.
+                    </div>
                   </div>
                 }
               />
               <MetricCard
-                label="Community rating"
-                value={profile.average_rating ? `${Number(profile.average_rating).toFixed(1)} / 5` : "New"}
+                label="Trust score"
+                value={`${Number(profile.trust_score).toFixed(1)} / 5.0`}
                 dark
                 footer={
-                  <p className="mt-3 text-xs leading-6 text-slate-300">
-                    {profile.review_count
-                      ? `${profile.review_count} review${profile.review_count === 1 ? "" : "s"} from group activity`
-                      : "Ratings will appear here after group activity."}
-                  </p>
+                  <div className="mt-4 flex items-center gap-4">
+                    <ProgressRing value={trustGaugeValue} size={82} stroke={7} label={Number(profile.trust_score).toFixed(1)} />
+                    <div className="text-sm leading-7 text-slate-300">
+                      Built from profile quality, healthy wallet activity, and successful group participation.
+                    </div>
+                  </div>
                 }
               />
             </div>
           </div>
         </section>
 
-        <section className="flex flex-wrap gap-3">
+        <section className="flex flex-wrap gap-3 sv-reveal">
           <button type="button" className="sv-btn-primary" onClick={() => navigate("/wallet")}>
+            <WalletIcon className="h-4 w-4" />
             Open wallet
           </button>
           <button type="button" className="sv-btn-secondary" onClick={() => navigate("/my-shared")}>
+            <LayersIcon className="h-4 w-4" />
             My splits
           </button>
           <button type="button" className="sv-btn-secondary" onClick={() => navigate("/create")}>
+            <SparkIcon className="h-4 w-4" />
             Create split
           </button>
         </section>
@@ -315,7 +393,7 @@ export default function Profile() {
         ) : null}
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-          <section className="sv-card space-y-6">
+          <section className="sv-card space-y-6 sv-reveal">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="sv-eyebrow">Identity</p>
@@ -329,8 +407,8 @@ export default function Profile() {
             </div>
 
             {isEditing ? (
-              <form className="space-y-5" onSubmit={handleSubmit}>
-                <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-4 md:p-5">
+              <form className="space-y-5 sv-stagger" onSubmit={handleSubmit}>
+                <div className="sv-glass-card p-4 md:p-5">
                   <div className="flex flex-col gap-4 md:flex-row md:items-center">
                     <ProfileAvatar imageUrl={liveProfilePicture} initials={initials} />
                     <div className="flex-1">
@@ -416,34 +494,47 @@ export default function Profile() {
                 </div>
               </form>
             ) : (
-              <div className="space-y-4">
-                <InfoRow label="Full name" value={profile.full_name || "Add your name to complete your profile"} />
-                <InfoRow label="Username" value={`@${profile.username}`} />
-                <InfoRow label="Email" value={profile.email || "Add an email address"} />
-                <InfoRow label="Phone" value={profile.phone || "Add a phone number"} />
-                <InfoRow label="Profile photo" value={profile.has_profile_picture ? "Added to your account" : "Add a photo to make your profile more complete"} />
+              <div className="space-y-4 sv-stagger">
+                <InfoRow
+                  icon={CheckCircleIcon}
+                  label="Full name"
+                  value={profile.full_name || "Add your name to complete your profile"}
+                />
+                <InfoRow icon={SparkIcon} label="Username" value={`@${profile.username}`} />
+                <InfoRow icon={CreditIcon} label="Email" value={profile.email || "Add an email address"} />
+                <InfoRow icon={ClockIcon} label="Phone" value={profile.phone || "Add a phone number"} />
+                <InfoRow
+                  icon={ShieldIcon}
+                  label="Profile photo"
+                  value={profile.has_profile_picture ? "Added to your account" : "Add a photo to make your profile more complete"}
+                />
               </div>
             )}
 
             <div className="rounded-[26px] border border-amber-200 bg-amber-50 p-5">
               <p className="sv-eyebrow">Trust score</p>
-              <h3 className="mt-3 text-2xl font-bold text-slate-950">{Number(profile.trust_score).toFixed(1)} / 5.0</h3>
-              <p className="mt-3 text-sm leading-7 text-amber-950">
-                Keep your contact details current, maintain healthy wallet activity, and complete successful groups to strengthen trust on ShareVerse.
-              </p>
+              <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+                <ProgressRing value={trustGaugeValue} size={92} stroke={8} label={Number(profile.trust_score).toFixed(1)} />
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-950">{Number(profile.trust_score).toFixed(1)} / 5.0</h3>
+                  <p className="mt-3 text-sm leading-7 text-amber-950">
+                    Keep your contact details current, maintain healthy wallet activity, and complete successful groups to strengthen trust on ShareVerse.
+                  </p>
+                </div>
+              </div>
             </div>
           </section>
 
           <section className="space-y-6">
-            <section className="sv-card">
+            <section className="sv-card sv-reveal">
               <p className="sv-eyebrow">Activity</p>
               <h2 className="sv-title mt-2">Platform summary</h2>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <StatCard label="Groups joined" value={profile.groups_joined} />
-                <StatCard label="Groups created" value={profile.groups_created} />
-                <StatCard label="Active memberships" value={profile.active_memberships} />
-                <StatCard label="Active hosting" value={profile.active_hosting} />
+              <div className="mt-5 grid gap-4 sm:grid-cols-2 sv-stagger">
+                <StatCard label="Groups joined" value={profile.groups_joined} icon={LayersIcon} />
+                <StatCard label="Groups created" value={profile.groups_created} icon={SparkIcon} />
+                <StatCard label="Active memberships" value={profile.active_memberships} icon={CheckCircleIcon} />
+                <StatCard label="Active hosting" value={profile.active_hosting} icon={ShieldIcon} />
               </div>
 
               <div className="mt-5 space-y-3 rounded-[24px] border border-slate-200 bg-white/80 p-5">
@@ -454,19 +545,51 @@ export default function Profile() {
               </div>
             </section>
 
-            <section className="sv-card">
+            <section className="sv-card sv-reveal">
               <p className="sv-eyebrow">Reputation</p>
               <h2 className="sv-title mt-2">Recent ratings</h2>
+
+              <div className="mt-5 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">Average rating</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-500">
+                      {profile.review_count
+                        ? `${profile.review_count} review${profile.review_count === 1 ? "" : "s"} from split activity`
+                        : "No public ratings yet"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-slate-950">
+                      {profile.average_rating ? Number(profile.average_rating).toFixed(1) : "0.0"}
+                    </p>
+                    <div className="mt-2 flex justify-end">
+                      <RatingStars rating={profile.average_rating || 0} />
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <div className="mt-5 space-y-4">
                 {profile.recent_reviews?.length ? (
                   profile.recent_reviews.map((review) => (
                     <article key={review.id} className="rounded-[22px] border border-slate-200 bg-white/80 p-4">
-                      <p className="text-base font-semibold text-slate-950">
-                        {review.rating} / 5 from @{review.reviewer_username}
-                      </p>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-base font-semibold text-slate-950">
+                            {review.rating} / 5 from @{review.reviewer_username}
+                          </p>
+                          <div className="mt-2">
+                            <RatingStars rating={review.rating} />
+                          </div>
+                        </div>
+                        <span className="sv-icon-chip bg-slate-100 text-slate-700">
+                          <CheckCircleIcon className="h-4 w-4" />
+                          Rated
+                        </span>
+                      </div>
                       <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-500">
-                        {review.group_name} • {formatDate(review.created_at)}
+                        {review.group_name} | {formatDate(review.created_at)}
                       </p>
                       {review.comment ? (
                         <p className="mt-3 text-sm leading-7 text-slate-600">{review.comment}</p>
@@ -474,8 +597,13 @@ export default function Profile() {
                     </article>
                   ))
                 ) : (
-                  <div className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
-                    No ratings yet. They will appear here once people review your group experience.
+                  <div className="sv-empty-state">
+                    <div className="sv-empty-icon">
+                      <ClockIcon className="h-6 w-6" />
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      No ratings yet. They will appear here once people review your split experience.
+                    </p>
                   </div>
                 )}
               </div>
@@ -522,19 +650,33 @@ function MetricCard({ label, value, footer, dark = false }) {
   );
 }
 
-function InfoRow({ label, value }) {
+function InfoRow({ icon: Icon, label, value }) {
   return (
     <div className="rounded-[22px] border border-slate-200 bg-white/80 px-4 py-4">
-      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-slate-500">
+        {Icon ? (
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
+            <Icon className="h-3.5 w-3.5" />
+          </span>
+        ) : null}
+        {label}
+      </div>
       <p className="mt-2 text-sm font-semibold text-slate-950 md:text-base">{value}</p>
     </div>
   );
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, icon: Icon }) {
   return (
     <article className="sv-stat-card">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
+        {Icon ? (
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
+            <Icon className="h-4.5 w-4.5" />
+          </span>
+        ) : null}
+      </div>
       <p className="mt-3 text-2xl font-bold text-slate-950">{value}</p>
     </article>
   );

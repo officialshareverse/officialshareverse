@@ -53,9 +53,10 @@ export default function PublicFooter({ compact = false }) {
             <Link
               key={item.to}
               to={item.to}
-              className="font-medium transition hover:text-slate-950"
+              className="group relative font-medium transition hover:text-slate-950"
             >
               {item.label}
+              <span className="absolute -bottom-1 left-0 h-[2px] w-full origin-left scale-x-0 rounded-full bg-slate-900 transition-transform duration-300 group-hover:scale-x-100" />
             </Link>
           ))}
         </nav>
