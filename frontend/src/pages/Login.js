@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
-import { consumeAuthNotice, setAuthToken } from "../auth/session";
 import AuthShell from "../components/AuthShell";
-import { CheckCircleIcon, LoadingSpinner, ShieldIcon } from "../components/UiIcons";
-import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 function extractApiError(errorData, fallbackMessage) {
   if (!errorData || typeof errorData !== "object") {
@@ -58,15 +55,7 @@ export default function Login({ setIsAuth }) {
     confirm_password: "",
   });
 
-  useRevealOnScroll();
-
   useEffect(() => {
-    const authNotice = consumeAuthNotice();
-
-    if (authNotice) {
-      setNotice(authNotice);
-    }
-
     if (location.state?.message) {
       setNotice(location.state.message);
       navigate(location.pathname, { replace: true, state: {} });
@@ -233,7 +222,7 @@ export default function Login({ setIsAuth }) {
         password: form.password,
       });
 
-      setAuthToken(res.data.access);
+      localStorage.setItem("token", res.data.access);
       setIsAuth(true);
       navigate("/home", { replace: true });
     } catch (err) {
@@ -251,22 +240,20 @@ export default function Login({ setIsAuth }) {
     }
   };
 
-  const resetPasswordStrength = getPasswordStrength(resetForm.new_password);
-
   return (
     <AuthShell
       eyebrow="Welcome back"
       title="Return to your wallet, groups, and shared-cost plans."
       subtitle="Log in to manage your group activity, join active digital plans, or complete a buy-together group."
       footer={
-        <div className="space-y-3">
-          <p className="text-sm text-slate-600">
+        <div className="space-y-2.5">
+          <p className="text-[13px] text-slate-600 sm:text-sm">
             New to ShareVerse?{" "}
             <Link to="/signup" className="font-semibold text-teal-800 hover:text-teal-700">
               Create an account
             </Link>
           </p>
-          <p className="text-xs leading-6 text-slate-500">
+          <p className="text-[11px] leading-5 text-slate-500 sm:text-xs sm:leading-6">
             Need the basics before continuing? Review the{" "}
             <Link to="/terms" className="font-semibold text-teal-800 hover:text-teal-700">
               Terms
@@ -289,29 +276,29 @@ export default function Login({ setIsAuth }) {
       }
     >
       <div>
-        <p className="sv-eyebrow sv-reveal">
+        <p className="sv-eyebrow">
           Login
         </p>
-        <h2 className="sv-reveal mt-3 text-3xl font-bold leading-tight text-slate-950 md:text-[2.35rem]">
+        <h2 className="mt-2 text-2xl font-bold leading-tight text-slate-950 sm:mt-3 sm:text-3xl md:text-[2.35rem]">
           Sign in to ShareVerse
         </h2>
-        <p className="sv-reveal mt-3 text-sm leading-7 text-slate-600">
+        <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:mt-3 sm:text-sm sm:leading-7">
           Use the username you created at signup. Your wallet, joined groups, and member activity will be waiting for you.
         </p>
 
         {notice ? (
-          <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-[13px] text-emerald-800 sm:mt-5 sm:px-4 sm:py-3 sm:text-sm">
             {notice}
           </div>
         ) : null}
 
         {error ? (
-          <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-[13px] text-rose-800 sm:mt-5 sm:px-4 sm:py-3 sm:text-sm">
             {error}
           </div>
         ) : null}
 
-        <form onSubmit={handleLogin} className="mt-6 space-y-4 sv-stagger">
+        <form onSubmit={handleLogin} className="mt-5 space-y-3.5 sm:mt-6 sm:space-y-4">
           <FieldShell label="Username" helper="Enter the username linked to your account.">
             <input
               type="text"
@@ -333,12 +320,12 @@ export default function Login({ setIsAuth }) {
                 placeholder="Enter your password"
                 value={form.password}
                 onChange={handleChange}
-                className="sv-input pr-20"
+                className="sv-input pr-16 sm:pr-20"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((current) => !current)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full px-3 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-200"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-2.5 py-1 text-[13px] font-semibold text-slate-600 hover:bg-slate-200 sm:right-3 sm:px-3 sm:text-sm"
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
@@ -348,33 +335,33 @@ export default function Login({ setIsAuth }) {
           <button
             type="button"
             onClick={toggleReset}
-            className="text-sm font-semibold text-teal-800 hover:text-teal-700"
+            className="text-[13px] font-semibold text-teal-800 hover:text-teal-700 sm:text-sm"
           >
             {showReset ? "Hide password reset" : "Forgot password?"}
           </button>
 
           {showReset ? (
-            <div className="sv-glass-card rounded-[24px] p-4 shadow-[0_12px_24px_rgba(15,23,42,0.04)]">
-              <p className="text-sm font-semibold text-slate-900">Reset your password</p>
-              <p className="mt-1 text-xs text-slate-600">
+            <div className="rounded-[18px] border border-slate-200 bg-slate-50/80 p-3.5 shadow-[0_12px_24px_rgba(15,23,42,0.04)] sm:rounded-[24px] sm:p-4">
+              <p className="text-[13px] font-semibold text-slate-900 sm:text-sm">Reset your password</p>
+              <p className="mt-1 text-[11px] text-slate-600 sm:text-xs">
                 {resetStep === "request"
                   ? "Verify your account with username and phone or email to receive OTP."
                   : "Enter OTP and your new password to finish reset."}
               </p>
 
               {resetError ? (
-                <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                <div className="mt-2.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] text-rose-700 sm:mt-3 sm:text-xs">
                   {resetError}
                 </div>
               ) : null}
 
               {devOtp && resetStep === "confirm" ? (
-                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <div className="mt-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800 sm:mt-3 sm:text-xs">
                   Development OTP: <strong>{devOtp}</strong>
                 </div>
               ) : null}
 
-              <div className="mt-3 space-y-3">
+              <div className="mt-2.5 space-y-2.5 sm:mt-3 sm:space-y-3">
                 <input
                   type="text"
                   name="username"
@@ -425,16 +412,6 @@ export default function Login({ setIsAuth }) {
                       className="sv-input rounded-xl px-3 py-2"
                     />
 
-                    <div>
-                      <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        <span>Password strength</span>
-                        <span className={resetPasswordStrength.tone}>{resetPasswordStrength.label}</span>
-                      </div>
-                      <div className="sv-password-meter">
-                        <div className={`sv-password-meter-fill ${resetPasswordStrength.fill}`} style={{ width: `${resetPasswordStrength.width}%` }} />
-                      </div>
-                    </div>
-
                     <input
                       type="password"
                       name="confirm_password"
@@ -450,9 +427,8 @@ export default function Login({ setIsAuth }) {
                   type="button"
                   onClick={handleForgotPassword}
                   disabled={resetLoading}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-teal-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-teal-400"
+                  className="w-full rounded-xl bg-teal-800 px-3 py-2 text-[13px] font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-teal-400 sm:text-sm"
                 >
-                  {resetLoading ? <LoadingSpinner /> : resetStep === "request" ? <ShieldIcon className="h-4 w-4" /> : <CheckCircleIcon className="h-4 w-4" />}
                   {resetLoading
                     ? resetStep === "request"
                       ? "Sending OTP..."
@@ -476,7 +452,7 @@ export default function Login({ setIsAuth }) {
                         confirm_password: "",
                       }));
                     }}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-100 sm:text-sm"
                   >
                     Request new OTP
                   </button>
@@ -488,9 +464,8 @@ export default function Login({ setIsAuth }) {
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] bg-slate-950 px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+            className="w-full rounded-[18px] bg-slate-950 px-4 py-3 text-[13px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400 sm:rounded-[22px] sm:text-sm sm:tracking-[0.16em]"
           >
-            {loading ? <LoadingSpinner /> : <ShieldIcon className="h-4 w-4" />}
             {loading ? "Signing you in..." : "Sign in"}
           </button>
         </form>
@@ -502,38 +477,9 @@ export default function Login({ setIsAuth }) {
 function FieldShell({ label, helper, children }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-slate-800">{label}</span>
+      <span className="mb-1.5 block text-[13px] font-semibold text-slate-800 sm:mb-2 sm:text-sm">{label}</span>
       {children}
-      <span className="mt-2 block text-xs text-slate-500">{helper}</span>
+      <span className="mt-1.5 block text-[11px] text-slate-500 sm:mt-2 sm:text-xs">{helper}</span>
     </label>
   );
-}
-
-function getPasswordStrength(password) {
-  const value = password || "";
-  if (!value) {
-    return {
-      label: "Not set",
-      width: 0,
-      fill: "bg-slate-300",
-      tone: "text-slate-400",
-    };
-  }
-
-  let score = 0;
-  if (value.length >= 8) score += 1;
-  if (/[A-Z]/.test(value) && /[a-z]/.test(value)) score += 1;
-  if (/\d/.test(value)) score += 1;
-  if (/[^A-Za-z0-9]/.test(value)) score += 1;
-
-  if (score <= 1) {
-    return { label: "Weak", width: 28, fill: "bg-rose-500", tone: "text-rose-600" };
-  }
-  if (score === 2) {
-    return { label: "Fair", width: 55, fill: "bg-amber-500", tone: "text-amber-600" };
-  }
-  if (score === 3) {
-    return { label: "Strong", width: 78, fill: "bg-sky-500", tone: "text-sky-600" };
-  }
-  return { label: "Great", width: 100, fill: "bg-emerald-500", tone: "text-emerald-600" };
 }

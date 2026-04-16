@@ -366,7 +366,7 @@ export default function Profile() {
           </div>
         </section>
 
-        <section className="flex flex-wrap gap-3 sv-reveal">
+        <section className="grid grid-cols-2 gap-2.5 sv-reveal sm:flex sm:flex-wrap sm:gap-3">
           <button type="button" className="sv-btn-primary" onClick={() => navigate("/wallet")}>
             <WalletIcon className="h-4 w-4" />
             Open wallet

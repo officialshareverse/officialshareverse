@@ -5,11 +5,11 @@ import API from "../api/axios";
 import { BellIcon, CheckCircleIcon, ClockIcon, LoadingSpinner } from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
-function SummaryCard({ label, value, tone = "text-slate-900" }) {
+function SummaryCard({ label, value, tone = "text-slate-900", className = "" }) {
   return (
-    <div className="sv-stat-card">
-      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className={`mt-3 text-2xl font-bold ${tone}`}>{value}</p>
+    <div className={`sv-stat-card ${className}`}>
+      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">{label}</p>
+      <p className={`mt-2 text-xl font-bold sm:mt-3 sm:text-2xl ${tone}`}>{value}</p>
     </div>
   );
 }
@@ -114,7 +114,7 @@ export default function NotificationsInbox() {
             <div className="sv-skeleton h-14 w-96 rounded-[22px]" />
             <div className="sv-skeleton h-4 w-2/3" />
           </section>
-          <section className="grid gap-4 sm:grid-cols-3">
+          <section className="grid gap-2 grid-cols-3 sm:gap-4">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="sv-skeleton-card space-y-4">
                 <div className="sv-skeleton h-3 w-24" />
@@ -134,16 +134,16 @@ export default function NotificationsInbox() {
 
   return (
     <div className="sv-page">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <section className="sv-dark-hero sv-reveal">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
+        <section className="sv-dark-hero">
+          <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
               <p className="sv-eyebrow-on-dark">Notifications</p>
-              <h1 className="sv-display-on-dark mt-3 max-w-4xl">
+              <h1 className="sv-display-on-dark mt-2 max-w-4xl sm:mt-3">
                 Stay on top of the next action
               </h1>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-slate-200">
-                See group updates, confirmation prompts, chat activity, and payout reminders in one inbox.
+              <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-4 sm:text-base sm:leading-8">
+                See group updates, confirmations, chat activity, and payout reminders in one inbox.
               </p>
             </div>
             <button
@@ -156,8 +156,8 @@ export default function NotificationsInbox() {
           </div>
         </section>
 
-        <section className="sv-stagger grid gap-4 sm:grid-cols-3">
-          <SummaryCard label="All notifications" value={notifications.length} />
+        <section className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
+          <SummaryCard label="All notifications" value={notifications.length} className="col-span-2 md:col-span-1" />
           <SummaryCard
             label="Unread"
             value={unreadCount}
@@ -176,11 +176,11 @@ export default function NotificationsInbox() {
               <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Inbox</p>
               <h2 className="mt-2 text-2xl font-bold text-slate-900">Recent updates</h2>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid w-full grid-cols-2 gap-2 min-[420px]:w-auto sm:flex sm:flex-wrap">
               <button
                 type="button"
                 onClick={() => setFilter("all")}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`rounded-full px-3 py-2 text-[13px] font-semibold transition sm:px-4 sm:text-sm ${
                   filter === "all" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
@@ -189,7 +189,7 @@ export default function NotificationsInbox() {
               <button
                 type="button"
                 onClick={() => setFilter("unread")}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`rounded-full px-3 py-2 text-[13px] font-semibold transition sm:px-4 sm:text-sm ${
                   filter === "unread" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
@@ -199,7 +199,7 @@ export default function NotificationsInbox() {
                 type="button"
                 onClick={markAllRead}
                 disabled={markingAll || unreadCount === 0}
-                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                className="col-span-2 rounded-full border border-slate-300 px-3 py-2 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 sm:col-span-1 sm:px-4 sm:text-sm"
               >
                 {markingAll ? <><LoadingSpinner />Marking...</> : <><CheckCircleIcon className="h-4 w-4" />Mark all read</>}
               </button>
@@ -229,7 +229,7 @@ export default function NotificationsInbox() {
               visibleNotifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`sv-reveal rounded-3xl border p-5 transition ${
+                  className={`rounded-[20px] border p-3.5 transition sm:rounded-3xl sm:p-5 ${
                     notification.is_read
                       ? "border-slate-200 bg-white"
                       : "border-emerald-200 bg-emerald-50/40"
@@ -239,7 +239,7 @@ export default function NotificationsInbox() {
                     <div className="max-w-3xl">
                       <div className="flex flex-wrap items-center gap-2">
                         <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
+                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] sm:px-3 sm:py-1 sm:text-xs sm:tracking-[0.18em] ${
                             notification.is_read
                               ? "bg-slate-100 text-slate-600"
                               : "bg-emerald-600 text-white sv-status-pulse"

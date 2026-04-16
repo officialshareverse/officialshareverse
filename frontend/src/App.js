@@ -43,6 +43,14 @@ function App() {
     setIsAuth(!!token);
   }, []);
 
+  useEffect(() => {
+    document.body.classList.toggle("sv-auth-shell-active", isAuth);
+
+    return () => {
+      document.body.classList.remove("sv-auth-shell-active");
+    };
+  }, [isAuth]);
+
   return (
     <BrowserRouter>
       {isAuth && <Navbar setIsAuth={setIsAuth} />}

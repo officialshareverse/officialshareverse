@@ -13,7 +13,6 @@ import {
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 const RAZORPAY_CHECKOUT_URL = "https://checkout.razorpay.com/v1/checkout.js";
-const SUPPORT_EMAIL = "support.shareverse@gmail.com";
 let razorpayLoaderPromise;
 
 function loadRazorpayCheckout() {
@@ -242,35 +241,13 @@ export default function Wallet() {
   if (loading) {
     return (
       <div className="sv-page">
-        <div className="mx-auto max-w-7xl space-y-6">
-          <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="sv-skeleton-card space-y-4">
-              <div className="sv-skeleton h-4 w-20" />
-              <div className="sv-skeleton h-14 w-4/5 rounded-[22px]" />
-              <div className="sv-skeleton h-4 w-full" />
-              <div className="sv-skeleton h-4 w-4/5" />
-              <div className="flex flex-wrap gap-2">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="sv-skeleton h-9 w-20 rounded-full" />
-                ))}
-              </div>
-            </div>
-            <div className="sv-skeleton-card space-y-4">
-              <div className="sv-skeleton h-4 w-28" />
-              <div className="sv-skeleton h-12 w-40 rounded-[20px]" />
-              <div className="sv-skeleton h-4 w-3/4" />
-            </div>
+        <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
+          <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="sv-skeleton h-44 sm:h-56" />
+            <div className="sv-skeleton h-36 sm:h-44" />
           </section>
-          <section className="grid gap-6 xl:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="sv-skeleton-card space-y-4">
-                <div className="sv-skeleton h-4 w-24" />
-                <div className="sv-skeleton h-10 w-2/3 rounded-[18px]" />
-                <div className="sv-skeleton h-12 w-full rounded-[18px]" />
-                <div className="sv-skeleton h-12 w-full rounded-[18px]" />
-                <div className="sv-skeleton h-12 w-full rounded-full" />
-              </div>
-            ))}
+          <section className="grid gap-3 sm:gap-6 xl:grid-cols-3">
+            {[1,2,3].map(i => <div key={i} className="sv-skeleton h-56 sm:h-72" />)}
           </section>
         </div>
       </div>
@@ -279,19 +256,18 @@ export default function Wallet() {
 
   return (
     <div className="sv-page">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="sv-light-hero sv-reveal">
             <p className="sv-eyebrow">Wallet</p>
-            <h1 className="sv-display mt-4 max-w-3xl">
-              Top up your wallet and keep shared-cost activity moving.
+            <h1 className="sv-display mt-3 max-w-3xl sm:mt-4">
+              Top up your wallet and keep activity moving.
             </h1>
-            <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
-              Razorpay handles live wallet top-ups today. You can also submit withdrawal requests
-              from this page now, and we will review and settle them manually within 24 hours
-              until the automated payout rail is fully activated.
+            <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-600 sm:mt-5 sm:text-base sm:leading-8">
+              Razorpay handles live wallet top-ups. Submit withdrawal requests
+              and we will review and settle them within 24 hours.
             </p>
-            <div className="mt-7 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-1.5 sm:mt-7 sm:gap-2">
               {["100", "300", "500", "1000"].map((amount) => (
                 <button key={amount} type="button" className="sv-chip normal-case" onClick={() => setTopupAmount(amount)}>
                   Rs {amount}
@@ -301,42 +277,39 @@ export default function Wallet() {
           </div>
 
           <aside className="sv-card sv-reveal bg-[linear-gradient(135deg,#0f172a_0%,#132033_60%,#0f766e_100%)] text-white">
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-300">Available balance</p>
-            <div className="mt-4 flex items-center gap-4">
-              <span className="inline-flex h-14 w-14 items-center justify-center rounded-[20px] bg-white/10 text-white shadow-[0_18px_42px_rgba(15,23,42,0.2)]">
-                <WalletGlyph className="h-7 w-7" />
+            <p className="text-[10px] uppercase tracking-[0.2em] text-slate-300 sm:text-xs sm:tracking-[0.24em]">Available balance</p>
+            <div className="mt-3 flex items-center gap-3 sm:mt-4 sm:gap-4">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-[16px] bg-white/10 text-white shadow-[0_18px_42px_rgba(15,23,42,0.2)] sm:h-14 sm:w-14 sm:rounded-[20px]">
+                <WalletGlyph className="h-5 w-5 sm:h-7 sm:w-7" />
               </span>
-              <h2 className="sv-count-up text-4xl font-bold">
+              <h2 className="sv-count-up text-2xl font-bold sm:text-4xl">
                 <AnimatedValue value={formatCurrency(balance)} />
               </h2>
             </div>
-            <p className="mt-3 text-sm leading-7 text-slate-300">
-              Used for joins, shared-cost group activity, and buy-together flows inside ShareVerse.
+            <p className="mt-2 text-[13px] leading-6 text-slate-300 sm:mt-3 sm:text-sm sm:leading-7">
+              Used for joins, group activity, and buy-together flows.
             </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {topupConfig ? <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]">{topupConfig.mode_label}</span> : null}
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${payoutsLive ? "bg-white/10 text-white" : "bg-amber-400/15 text-amber-100 sv-status-pulse"}`}>
-                {payoutConfig?.mode_label || (payoutsLive ? "Payouts live" : "Manual withdrawal review")}
+            <div className="mt-3 flex flex-wrap gap-1.5 sm:mt-5 sm:gap-2">
+              {topupConfig ? <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] sm:px-3 sm:text-xs sm:tracking-[0.12em]">{topupConfig.mode_label}</span> : null}
+              <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] sm:px-3 sm:text-xs sm:tracking-[0.12em] ${payoutsLive ? "bg-white/10 text-white" : "bg-amber-400/15 text-amber-100 sv-status-pulse"}`}>
+                {payoutConfig?.mode_label || (payoutsLive ? "Payouts live" : "Manual review")}
               </span>
             </div>
           </aside>
         </section>
 
-        {topupConfig ? <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">{topupConfig.helper_text}</div> : null}
+        {topupConfig ? <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-[13px] text-slate-700 sm:px-4 sm:py-3 sm:text-sm">{topupConfig.helper_text}</div> : null}
         {payoutsLive ? (
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">{payoutConfig.helper_text}</div>
+          <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-[13px] text-slate-700 sm:px-4 sm:py-3 sm:text-sm">{payoutConfig.helper_text}</div>
         ) : (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Automated payouts are still pending provider activation, but you can now save a
-            withdrawal destination and submit a request here for manual review. We will reach out
-            on {SUPPORT_EMAIL} if we need anything before settling it. Approved requests are
-            typically transferred within 24 hours.
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[13px] text-amber-900 sm:px-4 sm:py-3 sm:text-sm">
+            Automated payouts are pending activation. Save a withdrawal destination and submit here for manual review. Approved requests settle within 24 hours.
           </div>
         )}
-        {feedbackMessage ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{feedbackMessage}</div> : null}
-        {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{errorMessage}</div> : null}
+        {feedbackMessage ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[13px] text-emerald-900 sm:px-4 sm:py-3 sm:text-sm">{feedbackMessage}</div> : null}
+        {errorMessage ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-[13px] text-rose-900 sm:px-4 sm:py-3 sm:text-sm">{errorMessage}</div> : null}
 
-        <section className="grid gap-6 xl:grid-cols-3">
+        <section className="grid gap-3 sm:gap-6 xl:grid-cols-3">
           <form className="sv-card sv-reveal space-y-4" onSubmit={startWalletTopup}>
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -345,11 +318,11 @@ export default function Wallet() {
               </div>
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">UPI, cards, netbanking</span>
             </div>
-            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            <label className="grid gap-1.5 text-[13px] font-semibold text-slate-700 sm:gap-2 sm:text-sm">
               Amount
               <input className="sv-input" type="number" min="1" step="0.01" value={topupAmount} onChange={(event) => setTopupAmount(event.target.value)} />
             </label>
-            <p className="text-sm leading-7 text-slate-600">Your wallet is credited only after the payment is verified successfully.</p>
+            <p className="text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">Credited only after payment is verified.</p>
             <button className="sv-btn-primary w-full justify-center" type="submit" disabled={workingAction !== "" || !topupConfig?.topup_enabled}>
               {workingAction === "topup" ? <><LoadingSpinner />Opening checkout...</> : <><CreditIcon className="h-4 w-4" />Add money securely</>}
             </button>
@@ -367,7 +340,7 @@ export default function Wallet() {
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Bank or UPI</span>
               </div>
 
-              <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              <label className="grid gap-1.5 text-[13px] font-semibold text-slate-700 sm:gap-2 sm:text-sm">
                 Destination type
                 <select className="sv-input" value={payoutForm.account_type} onChange={(event) => {
                   const accountType = event.target.value;
@@ -380,17 +353,17 @@ export default function Wallet() {
               </label>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                <label className="grid gap-1.5 text-[13px] font-semibold text-slate-700 sm:gap-2 sm:text-sm">
                   Contact name
                   <input className="sv-input" value={payoutForm.contact_name} onChange={(event) => setPayoutForm((current) => ({ ...current, contact_name: event.target.value }))} />
                 </label>
-                <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                <label className="grid gap-1.5 text-[13px] font-semibold text-slate-700 sm:gap-2 sm:text-sm">
                   Contact phone
                   <input className="sv-input" value={payoutForm.contact_phone} onChange={(event) => setPayoutForm((current) => ({ ...current, contact_phone: event.target.value }))} />
                 </label>
               </div>
 
-              <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              <label className="grid gap-1.5 text-[13px] font-semibold text-slate-700 sm:gap-2 sm:text-sm">
                 Contact email
                 <input className="sv-input" type="email" value={payoutForm.contact_email} onChange={(event) => setPayoutForm((current) => ({ ...current, contact_email: event.target.value }))} />
               </label>
@@ -423,7 +396,7 @@ export default function Wallet() {
                 </label>
               )}
 
-              <p className="text-sm leading-7 text-slate-600">
+              <p className="text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
                 {payoutAccount
                   ? `Saved destination: ${payoutAccount.masked_destination || "Ready to use"}`
                   : payoutsLive
@@ -505,7 +478,7 @@ export default function Wallet() {
             ) : payouts.map((payout) => {
               const canSync = Boolean(payout.provider_payout_id) && ["pending", "queued", "processing"].includes(payout.status);
               return (
-                <div key={payout.id} className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-white/80 p-5 md:flex-row md:items-center md:justify-between">
+                <div key={payout.id} className="flex flex-col gap-3 rounded-[20px] border border-slate-200 bg-white/80 p-3.5 sm:gap-4 sm:rounded-[24px] sm:p-5 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
@@ -559,7 +532,7 @@ export default function Wallet() {
                 </p>
               </div>
             ) : transactions.map((transaction) => (
-              <div key={transaction.id} className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-white/80 p-5 md:flex-row md:items-center md:justify-between">
+              <div key={transaction.id} className="flex flex-col gap-3 rounded-[20px] border border-slate-200 bg-white/80 p-3.5 sm:gap-4 sm:rounded-[24px] sm:p-5 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${transaction.type === "credit" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>

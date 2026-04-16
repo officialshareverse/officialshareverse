@@ -5,9 +5,9 @@ import API from "../api/axios";
 import { ChatIcon, CheckCircleIcon, ClockIcon, LayersIcon } from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
-function SummaryCard({ label, value, tone = "text-slate-900" }) {
+function SummaryCard({ label, value, tone = "text-slate-900", className = "" }) {
   return (
-    <div className="sv-stat-card">
+    <div className={`sv-stat-card ${className}`}>
       <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
       <p className={`mt-3 text-2xl font-bold ${tone}`}>{value}</p>
     </div>
@@ -95,15 +95,15 @@ export default function ChatsInbox() {
 
   return (
     <div className="sv-page">
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
         <section className="sv-dark-hero sv-reveal">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
               <p className="sv-eyebrow-on-dark">Chats</p>
-              <h1 className="sv-display-on-dark mt-3 max-w-4xl">
+              <h1 className="sv-display-on-dark mt-2 max-w-4xl sm:mt-3">
                 All group conversations in one place
               </h1>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-slate-200">
+              <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-4 sm:text-base sm:leading-8">
                 See the latest message from every group, spot unread updates quickly, and jump straight into any conversation.
               </p>
             </div>
@@ -117,8 +117,8 @@ export default function ChatsInbox() {
           </div>
         </section>
 
-        <section className="sv-stagger grid gap-4 sm:grid-cols-3">
-          <SummaryCard label="Total chats" value={chatInbox.total_chats || 0} />
+        <section className="sv-stagger grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
+          <SummaryCard label="Total chats" value={chatInbox.total_chats || 0} className="col-span-2 md:col-span-1" />
           <SummaryCard
             label="Unread messages"
             value={chatInbox.total_unread_count || 0}
@@ -137,11 +137,11 @@ export default function ChatsInbox() {
               <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Inbox</p>
               <h2 className="mt-2 text-2xl font-bold text-slate-900">Your conversations</h2>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid w-full grid-cols-2 gap-2 min-[420px]:w-auto sm:flex sm:flex-wrap">
               <button
                 type="button"
                 onClick={() => setFilter("all")}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`rounded-full px-3 py-2 text-[13px] font-semibold transition sm:px-4 sm:text-sm ${
                   filter === "all" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
@@ -150,7 +150,7 @@ export default function ChatsInbox() {
               <button
                 type="button"
                 onClick={() => setFilter("unread")}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`rounded-full px-3 py-2 text-[13px] font-semibold transition sm:px-4 sm:text-sm ${
                   filter === "unread" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >

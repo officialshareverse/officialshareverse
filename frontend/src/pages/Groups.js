@@ -143,19 +143,19 @@ export default function Groups() {
   return (
     <div className="sv-page">
       {pendingJoinGroup ? (
-        <div className="sv-modal-backdrop px-3 py-6">
+        <div className="sv-modal-backdrop">
           <div className="sv-confirm-modal">
             <p className="sv-eyebrow">Join confirmation</p>
-            <h2 className="mt-3 text-2xl font-bold text-slate-950">
+            <h2 className="mt-2 text-lg font-bold text-slate-950 sm:mt-3 sm:text-2xl">
               {pendingJoinGroup.mode === "sharing" ? "Review this split before you join" : "Review this buy-together join"}
             </h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
+            <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:mt-3 sm:text-sm sm:leading-7">
               {pendingJoinGroup.mode === "sharing"
                 ? "Your wallet will be charged now, then the host coordinates access. The host is credited only after you confirm access inside ShareVerse."
                 : "Your contribution is held first. The group moves forward only after the buy-together flow is complete."}
             </p>
 
-            <div className="mt-5 space-y-3">
+            <div className="mt-3 space-y-2 sm:mt-5 sm:space-y-3">
               <InlineMetric label="Plan" value={pendingJoinGroup.subscription_name || pendingJoinGroup.subscription} />
               <InlineMetric label="Pay now" value={formatCurrency(pendingJoinSummary.amount)} />
               <InlineMetric label="Plan contribution" value={formatCurrency(pendingJoinSummary.subtotal)} />
@@ -163,16 +163,16 @@ export default function Groups() {
             </div>
 
             {pendingJoinGroup.pricing_note ? (
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[13px] text-emerald-900 sm:mt-4 sm:px-4 sm:py-3 sm:text-sm">
                 {pendingJoinGroup.pricing_note}
               </div>
             ) : null}
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <div className="mt-4 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:justify-end sm:gap-3">
               <button
                 type="button"
                 onClick={() => setPendingJoinGroup(null)}
-                className="sv-btn-secondary w-full justify-center sm:w-auto"
+                className="sv-btn-secondary w-full justify-center text-[13px] sm:w-auto sm:text-sm"
               >
                 Cancel
               </button>
@@ -180,7 +180,7 @@ export default function Groups() {
                 type="button"
                 onClick={() => joinGroup(pendingJoinGroup)}
                 disabled={joiningId === pendingJoinGroup.id}
-                className="sv-btn-primary w-full justify-center sm:w-auto"
+                className="sv-btn-primary w-full justify-center text-[13px] sm:w-auto sm:text-sm"
               >
                 {joiningId === pendingJoinGroup.id ? (
                   <>
@@ -199,50 +199,50 @@ export default function Groups() {
         </div>
       ) : null}
 
-      <div className="sv-container space-y-6">
-        <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+      <div className="sv-container space-y-4 sm:space-y-6">
+        <section className="grid gap-4 sm:gap-6 xl:grid-cols-[1.08fr_0.92fr]">
           <div className="sv-dark-hero sv-reveal">
             <p className="sv-eyebrow-on-dark">Marketplace</p>
-            <h1 className="sv-display-on-dark mt-4 max-w-4xl">
+            <h1 className="sv-display-on-dark mt-3 max-w-4xl sm:mt-4">
               Join the group flow that fits the way the plan is being organized.
             </h1>
-            <p className="mt-5 max-w-3xl text-base leading-8 text-slate-200">
+            <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-5 sm:text-base sm:leading-8">
               Sharing groups give access to an existing plan. Buy-together groups collect member
               commitments first and move forward only after the group is complete.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-2">
-              <span className="sv-chip-dark"><SearchIcon className="h-3.5 w-3.5" /> Search by plan or host</span>
-              <span className="sv-chip-dark"><ClockIcon className="h-3.5 w-3.5" /> Late-join proration for sharing</span>
-              <span className="sv-chip-dark"><WalletIcon className="h-3.5 w-3.5" /> Wallet-backed joins</span>
-              <span className="sv-chip-dark"><ShieldIcon className="h-3.5 w-3.5" /> Confirmation-based buy-together flow</span>
+            <div className="mt-4 flex flex-wrap gap-1.5 sm:mt-8 sm:gap-2">
+              <span className="sv-chip-dark"><SearchIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Search by plan</span>
+              <span className="sv-chip-dark"><ClockIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Late-join proration</span>
+              <span className="sv-chip-dark"><WalletIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Wallet-backed</span>
+              <span className="hidden sm:inline-flex sv-chip-dark"><ShieldIcon className="h-3.5 w-3.5" /> Confirmation-based flow</span>
             </div>
           </div>
 
           <div className="sv-card sv-reveal">
             <p className="sv-eyebrow">Filter groups</p>
-            <h2 className="mt-3 text-2xl font-bold leading-tight text-slate-950 md:text-[1.9rem]">
-              Search, narrow, and join with confidence
+            <h2 className="mt-2 text-lg font-bold leading-tight text-slate-950 sm:mt-3 sm:text-2xl md:text-[1.9rem]">
+              Search, narrow, and join
             </h2>
 
-            <label className="mt-5 block">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            <label className="mt-3 block sm:mt-5">
+              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs">
                 Search groups
               </span>
-              <div className="flex items-center gap-2 rounded-[22px] border border-slate-200 bg-white/70 px-4 py-3">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Search</span>
+              <div className="flex items-center gap-2 rounded-[16px] border border-slate-200 bg-white/70 px-3 py-2.5 sm:rounded-[22px] sm:px-4 sm:py-3">
+                <SearchIcon className="h-4 w-4 shrink-0 text-slate-400" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                   placeholder="Netflix, Spotify, host name..."
-                  className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                  className="w-full bg-transparent text-[13px] text-slate-900 outline-none placeholder:text-slate-400 sm:text-sm"
                 />
                 {searchTerm ? (
                   <button
                     type="button"
                     onClick={() => setSearchTerm("")}
-                    className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
+                    className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-200 sm:px-3 sm:py-1.5 sm:text-xs"
                   >
                     Clear
                   </button>
@@ -250,13 +250,13 @@ export default function Groups() {
               </div>
             </label>
 
-            <div className="mt-5 flex flex-wrap gap-2">
-              <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>All groups</FilterButton>
-              <FilterButton active={filter === "sharing"} onClick={() => setFilter("sharing")}>Share existing plan</FilterButton>
+            <div className="mt-3 flex flex-wrap gap-1.5 sm:mt-5 sm:gap-2">
+              <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>All</FilterButton>
+              <FilterButton active={filter === "sharing"} onClick={() => setFilter("sharing")}>Sharing</FilterButton>
               <FilterButton active={filter === "group_buy"} onClick={() => setFilter("group_buy")}>Buy together</FilterButton>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-3">
               <StatCard label="Total groups" value={stats.total} />
               <StatCard label="Open now" value={stats.open} />
               <StatCard label="Sharing" value={stats.sharing} />
@@ -314,7 +314,7 @@ export default function Groups() {
             </p>
           </div>
         ) : (
-          <section className="sv-stagger grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <section className="sv-stagger grid gap-3 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
             {filteredGroups.map((group) => {
               const isFull = group.filled_slots >= group.total_slots;
               const tone = getCardTone(group.mode);
@@ -326,23 +326,23 @@ export default function Groups() {
               return (
                 <article
                   key={group.id}
-                  className={`sv-reveal rounded-[30px] border p-5 shadow-[0_22px_60px_rgba(15,23,42,0.07)] ${tone.soft}`}
+                  className={`sv-reveal rounded-[20px] border p-3.5 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-5 ${tone.soft}`}
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Open group</p>
-                      <h3 className="mt-2 text-2xl font-bold leading-tight text-slate-950">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">Open group</p>
+                      <h3 className="mt-1.5 truncate text-lg font-bold leading-tight text-slate-950 sm:mt-2 sm:text-2xl">
                         {group.subscription_name || group.subscription}
                       </h3>
                     </div>
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${tone.chip}`}>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] sm:px-3 sm:py-1 sm:text-xs sm:tracking-[0.18em] ${tone.chip}`}>
                       {group.mode_label}
                     </span>
                   </div>
 
-                  <p className="mt-4 text-sm leading-7 text-slate-600">{group.mode_description}</p>
+                  <p className="mt-2.5 text-[13px] leading-6 text-slate-600 sm:mt-4 sm:text-sm sm:leading-7">{group.mode_description}</p>
 
-                  <div className="mt-5 space-y-2">
+                  <div className="mt-3 space-y-1.5 sm:mt-5 sm:space-y-2">
                     <InlineMetric
                       label={group.is_prorated ? "Pay now" : "Pay to join"}
                       value={formatCurrency(group.join_price)}
@@ -356,27 +356,27 @@ export default function Groups() {
                     <InlineMetric label="Filled" value={`${group.filled_slots}/${group.total_slots}`} />
                   </div>
 
-                  <div className="mt-4 space-y-1">
+                  <div className="mt-3 space-y-0.5 sm:mt-4 sm:space-y-1">
                     {Number(group.platform_fee_amount || 0) > 0 ? (
-                      <p className="text-xs leading-6 text-slate-600">
+                      <p className="text-[11px] leading-5 text-slate-600 sm:text-xs sm:leading-6">
                         Includes a 5% platform fee of {formatCurrency(group.platform_fee_amount)}.
                       </p>
                     ) : null}
                     {group.is_prorated ? (
-                      <p className="text-xs leading-6 text-emerald-700">
+                      <p className="text-[11px] leading-5 text-emerald-700 sm:text-xs sm:leading-6">
                         {group.pricing_note} Full cycle price before fee: {formatCurrency(group.price_per_slot)}.
                       </p>
                     ) : null}
                   </div>
 
-                  <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/90">
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/90 sm:mt-5 sm:h-2">
                     <div className={`sv-progress-animated h-full rounded-full ${tone.rail}`} style={{ width: `${progress}%`, backgroundImage: tone.rail.includes("amber") ? "linear-gradient(90deg,#f59e0b 0%,#fbbf24 35%,#d97706 100%)" : "linear-gradient(90deg,#0f766e 0%,#38bdf8 45%,#0f172a 100%)" }} />
                   </div>
 
                   <button
                     onClick={() => setPendingJoinGroup(group)}
                     disabled={isFull || joiningId === group.id}
-                    className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition ${
+                    className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 text-[13px] font-semibold transition sm:mt-5 sm:px-4 sm:py-3 sm:text-sm ${
                       isFull
                         ? "cursor-not-allowed bg-slate-300 text-white"
                         : "bg-slate-950 text-white hover:bg-slate-800"
@@ -398,7 +398,7 @@ function FilterButton({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`rounded-full px-4 py-2.5 text-sm font-semibold transition ${
+      className={`rounded-full px-3 py-2 text-[13px] font-semibold transition sm:px-4 sm:py-2.5 sm:text-sm ${
         active ? "bg-slate-950 text-white" : "border border-slate-200 bg-white/80 text-slate-700 hover:bg-white"
       }`}
     >
@@ -410,17 +410,17 @@ function FilterButton({ active, onClick, children }) {
 function StatCard({ label, value }) {
   return (
     <div className="sv-stat-card">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-slate-950">{value}</p>
+      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">{label}</p>
+      <p className="mt-1.5 text-xl font-bold text-slate-950 sm:mt-2 sm:text-2xl">{value}</p>
     </div>
   );
 }
 
 function InlineMetric({ label, value }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-white bg-white/70 px-4 py-3">
-      <span className="text-sm text-slate-500">{label}</span>
-      <span className="text-sm font-semibold text-slate-950">{value}</span>
+    <div className="flex items-center justify-between rounded-xl border border-white bg-white/70 px-3 py-2 sm:rounded-2xl sm:px-4 sm:py-3">
+      <span className="text-[12px] text-slate-500 sm:text-sm">{label}</span>
+      <span className="text-[12px] font-semibold text-slate-950 sm:text-sm">{value}</span>
     </div>
   );
 }

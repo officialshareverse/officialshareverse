@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 import BrandMark from "../components/BrandMark";
-import { LayersIcon, SearchIcon, WalletIcon } from "../components/UiIcons";
-import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 const streamingServicesImage = `${process.env.PUBLIC_URL}/streaming-services-collage.png`;
 
@@ -20,8 +18,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showGuide, setShowGuide] = useState(false);
-
-  useRevealOnScroll();
 
   useEffect(() => {
     let isMounted = true;
@@ -189,34 +185,15 @@ export default function Home() {
   if (loading) {
     return (
       <div className="sv-page">
-        <div className="mx-auto max-w-5xl space-y-6">
-          <section className="sv-dark-hero">
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
-              <div className="space-y-4">
-                <div className="sv-skeleton h-6 w-24" />
-                <div className="sv-skeleton h-14 w-full max-w-2xl rounded-[24px]" />
-                <div className="sv-skeleton h-14 w-full max-w-xl rounded-[24px]" />
-                <div className="sv-skeleton h-4 w-full max-w-2xl" />
-                <div className="sv-skeleton h-4 w-full max-w-xl" />
-                <div className="grid gap-3 min-[420px]:grid-cols-2 sm:inline-flex sm:flex-wrap">
-                  <div className="sv-skeleton h-12 w-full rounded-full sm:w-48" />
-                  <div className="sv-skeleton h-12 w-full rounded-full sm:w-40" />
-                </div>
-              </div>
-              <div className="sv-skeleton-card">
-                <div className="sv-skeleton h-72 w-full rounded-[22px]" />
-              </div>
-            </div>
-          </section>
-
-          <section className="sv-grid-stats">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="sv-skeleton-card space-y-4">
-                <div className="sv-skeleton h-3 w-24" />
-                <div className="sv-skeleton h-8 w-28 rounded-[14px]" />
-              </div>
-            ))}
-          </section>
+        <div className="mx-auto max-w-4xl space-y-3">
+          <div className="sv-skeleton h-48 sm:h-64" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="sv-skeleton h-20" />
+            <div className="sv-skeleton h-20" />
+            <div className="sv-skeleton h-20" />
+            <div className="sv-skeleton h-20" />
+          </div>
+          <div className="sv-skeleton h-32" />
         </div>
       </div>
     );
@@ -225,30 +202,30 @@ export default function Home() {
   return (
     <div className="sv-page">
       {showGuide ? (
-        <div className="sv-modal-backdrop px-3 py-4 sm:px-5">
+        <div className="sv-modal-backdrop">
           <div className="sv-guide-modal">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="max-w-3xl">
                 <p className="sv-eyebrow">First-time guide</p>
-                <h2 className="mt-3 text-[2rem] font-bold leading-tight text-slate-950 sm:text-[2.25rem] md:text-[2.4rem]">
+                <h2 className="mt-2 text-xl font-bold leading-tight text-slate-950 sm:mt-3 sm:text-2xl md:text-[2.4rem]">
                   Here&apos;s exactly where to click first and how to create your first group.
                 </h2>
-                <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base md:leading-8">
+                <p className="mt-3 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7 md:text-base md:leading-8">
                   This walkthrough is shown once for each account on this device so new users can follow the real button names they see on ShareVerse.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={dismissGuide}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-100 sm:px-4 sm:py-2 sm:text-sm"
               >
                 Close
               </button>
             </div>
 
-            <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Quick click map</p>
-              <div className="mt-4 grid gap-3 min-[420px]:grid-cols-2 md:grid-cols-4">
+            <div className="mt-4 rounded-[18px] border border-slate-200 bg-slate-50/90 p-3 sm:mt-6 sm:rounded-[24px] sm:p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:text-xs">Quick click map</p>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:gap-3 md:grid-cols-4">
                 {[
                   { label: "Create split", note: "Host a new plan", onClick: () => navigate("/create") },
                   { label: "Explore splits", note: "Join something open", onClick: () => navigate("/groups") },
@@ -264,37 +241,37 @@ export default function Home() {
                     }}
                     className="sv-guide-map-item text-left"
                   >
-                    <span className="block text-sm font-semibold text-slate-950">{item.label}</span>
-                    <span className="mt-1 block text-xs leading-6 text-slate-500">{item.note}</span>
+                    <span className="block text-[13px] font-semibold text-slate-950 sm:text-sm">{item.label}</span>
+                    <span className="mt-0.5 block text-[11px] leading-5 text-slate-500 sm:mt-1 sm:text-xs sm:leading-6">{item.note}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-4 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
               {onboardingSteps.map((item, index) => (
                 <article
                   key={item.step}
                   className={`sv-guide-step ${index % 2 === 0 ? "sv-animate-float-soft" : "sv-animate-float"}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white">
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-[12px] font-bold text-white sm:h-11 sm:w-11 sm:text-sm">
                       {item.step}
                     </span>
-                    <h3 className="text-lg font-semibold text-slate-950">{item.title}</h3>
+                    <h3 className="text-[14px] font-semibold leading-snug text-slate-950 sm:text-lg">{item.title}</h3>
                   </div>
-                  <p className="mt-4 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                  <p className="mt-3 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-2.5 text-[12px] font-medium text-slate-700 sm:mt-4 sm:rounded-[18px] sm:px-4 sm:py-3 sm:text-sm">
                     {item.where}
                   </p>
-                  <p className="mt-4 text-sm leading-7 text-slate-600">{item.body}</p>
-                  <p className="mt-3 text-xs leading-6 text-slate-500">{item.tip}</p>
+                  <p className="mt-3 text-[13px] leading-6 text-slate-600 sm:mt-4 sm:text-sm sm:leading-7">{item.body}</p>
+                  <p className="mt-2 text-[11px] leading-5 text-slate-500 sm:mt-3 sm:text-xs sm:leading-6">{item.tip}</p>
                   <button
                     type="button"
                     onClick={() => {
                       dismissGuide();
                       item.onClick();
                     }}
-                    className="sv-btn-secondary mt-5 w-full justify-center sm:w-auto"
+                    className="sv-btn-secondary mt-4 w-full justify-center text-[13px] sm:mt-5 sm:w-auto sm:text-sm"
                   >
                     {item.cta}
                   </button>
@@ -302,8 +279,8 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4">
-              <p className="text-sm leading-7 text-emerald-900">
+            <div className="mt-4 flex flex-col gap-3 rounded-[18px] border border-emerald-200 bg-emerald-50 px-3.5 py-3.5 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:rounded-[24px] sm:px-4 sm:py-4">
+              <p className="text-[13px] leading-6 text-emerald-900 sm:text-sm sm:leading-7">
                 Need help after this? Open Support anytime and we&apos;ll help you with creating groups, joining groups, top-ups, or manual withdrawal review.
               </p>
               <button
@@ -318,52 +295,52 @@ export default function Home() {
         </div>
       ) : null}
 
-      <div className="mx-auto max-w-5xl space-y-6">
+      <div className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
         {error ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-900 sm:px-4 sm:py-3 sm:text-sm">
             {error}
           </div>
         ) : null}
 
-        <section className="sv-dark-hero sv-reveal">
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
+        <section className="sv-dark-hero">
+          <div className="grid items-center gap-5 sm:gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(240px,0.95fr)]">
             <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <BrandMark glow sizeClass="h-12 w-12" roundedClass="rounded-[18px]" />
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <BrandMark glow sizeClass="h-10 w-10 sm:h-12 sm:w-12" roundedClass="rounded-[14px] sm:rounded-[18px]" />
                 <span className="sv-chip-dark">Home</span>
                 <span className="sv-chip-dark">Top-ups live</span>
               </div>
 
-              <h1 className="sv-display-on-dark mt-5 max-w-4xl">
+              <h1 className="sv-display-on-dark mt-4 max-w-4xl sm:mt-5">
                 Split the cost of digital plans in one cleaner, more visual place.
               </h1>
-              <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 md:text-base md:leading-8">
+              <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-300 sm:mt-4 sm:text-sm sm:leading-7 md:text-base md:leading-8">
                 ShareVerse keeps your subscriptions, memberships, courses, and software groups organized
                 with shared-cost tracking, chat, updates, and participation all in one workflow.
               </p>
 
-              <div className="mt-7 grid gap-3 min-[420px]:grid-cols-2 sm:inline-flex sm:flex-wrap">
+              <div className="mt-5 grid grid-cols-2 gap-2 sm:mt-7 sm:inline-flex sm:flex-wrap sm:gap-3">
                 <PrimaryButton onClick={() => navigate("/groups")}>Explore splits</PrimaryButton>
                 <SecondaryButton onClick={() => navigate("/create")}>Create split</SecondaryButton>
                 <SecondaryButton onClick={() => navigate("/my-shared")}>My splits</SecondaryButton>
-                <SecondaryButton onClick={openGuide}>Show quick guide</SecondaryButton>
+                <SecondaryButton onClick={openGuide}>Quick guide</SecondaryButton>
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-[21rem] sm:max-w-md">
-              <div className="absolute -left-3 top-3 hidden rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white md:block sv-animate-float">
+            <div className="relative mx-auto hidden w-full max-w-[18rem] sm:block sm:max-w-md">
+              <div className="absolute -left-3 top-3 hidden rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white md:block sv-animate-float">
                 Shared-cost dashboard
               </div>
-              <div className="absolute -right-3 bottom-8 hidden rounded-full border border-emerald-200/20 bg-emerald-300/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-100 md:block sv-animate-float-soft">
+              <div className="absolute -right-3 bottom-8 hidden rounded-full border border-emerald-200/20 bg-emerald-300/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-100 md:block sv-animate-float-soft">
                 One place for groups
               </div>
 
-              <div className="overflow-hidden rounded-[28px] border border-white/10 bg-white/10 p-3 shadow-[0_28px_70px_rgba(15,23,42,0.22)] backdrop-blur">
-                <div className="overflow-hidden rounded-[22px] border border-white/10 bg-white/95 p-2">
+              <div className="overflow-hidden rounded-[22px] border border-white/10 bg-white/10 p-2.5 shadow-[0_28px_70px_rgba(15,23,42,0.22)] backdrop-blur sm:rounded-[28px] sm:p-3">
+                <div className="overflow-hidden rounded-[18px] border border-white/10 bg-white/95 p-1.5 sm:rounded-[22px] sm:p-2">
                   <img
                     src={streamingServicesImage}
                     alt="Popular streaming and digital subscription services shown in colorful circles."
-                    className="sv-animate-float-soft w-full rounded-[18px] object-cover"
+                    className="sv-animate-float-soft w-full rounded-[14px] object-cover sm:rounded-[18px]"
                   />
                 </div>
               </div>
@@ -371,7 +348,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="sv-grid-stats sv-stagger">
+        <section className="sv-grid-stats">
           {stats.map((item, index) => (
             <StatCard
               key={item.label}
@@ -382,30 +359,27 @@ export default function Home() {
           ))}
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(250px,0.92fr)]">
-          <section className="sv-card sv-reveal">
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(220px,0.92fr)]">
+          <section className="sv-card">
             <p className="sv-eyebrow">{primaryCard.label}</p>
-            <h2 className="mt-3 text-2xl font-semibold text-slate-950">{primaryCard.title}</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">{primaryCard.body}</p>
-            <div className="mt-5">
+            <h2 className="mt-2 text-lg font-semibold text-slate-950 sm:mt-3 sm:text-2xl">{primaryCard.title}</h2>
+            <p className="mt-2 max-w-2xl text-[13px] leading-6 text-slate-600 sm:mt-3 sm:text-sm sm:leading-7">{primaryCard.body}</p>
+            <div className="mt-4 sm:mt-5">
               <PrimaryButton onClick={primaryCard.onClick}>{primaryCard.cta}</PrimaryButton>
             </div>
           </section>
 
-          <aside className="sv-card sv-reveal">
+          <aside className="sv-card">
             <p className="sv-eyebrow">Quick focus</p>
-            <h2 className="sv-title mt-2">What ShareVerse is best at</h2>
-            <div className="mt-5 space-y-3">
+            <h2 className="sv-title mt-1.5 sm:mt-2">What ShareVerse is best at</h2>
+            <div className="mt-3 space-y-2 sm:mt-5 sm:space-y-3">
               {[
-                { icon: LayersIcon, title: "Coordinating subscription groups" },
-                { icon: WalletIcon, title: "Keeping contribution flow visible" },
-                { icon: SearchIcon, title: "Tracking members and updates cleanly" },
+                "Coordinating subscription groups",
+                "Keeping contribution flow visible",
+                "Tracking members and updates cleanly",
               ].map((item) => (
-                <div key={item.title} className="flex items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
-                    <item.icon className="h-4.5 w-4.5" />
-                  </span>
-                  {item.title}
+                <div key={item} className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-medium text-slate-700 sm:rounded-[20px] sm:px-4 sm:py-3 sm:text-sm">
+                  {item}
                 </div>
               ))}
             </div>
@@ -418,7 +392,7 @@ export default function Home() {
 
 function PrimaryButton({ children, onClick }) {
   return (
-    <button onClick={onClick} className="sv-btn-primary w-full sm:w-auto">
+    <button onClick={onClick} className="sv-btn-primary w-full text-[13px] sm:w-auto sm:text-sm">
       {children}
     </button>
   );
@@ -426,7 +400,7 @@ function PrimaryButton({ children, onClick }) {
 
 function SecondaryButton({ children, onClick }) {
   return (
-    <button onClick={onClick} className="sv-btn-secondary w-full sm:w-auto">
+    <button onClick={onClick} className="sv-btn-secondary w-full text-[13px] sm:w-auto sm:text-sm">
       {children}
     </button>
   );
@@ -435,51 +409,8 @@ function SecondaryButton({ children, onClick }) {
 function StatCard({ label, value, className = "" }) {
   return (
     <article className={`sv-stat-card ${className}`}>
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="sv-count-up mt-3 text-2xl font-bold text-slate-950">
-        <AnimatedValue value={value} />
-      </p>
+      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">{label}</p>
+      <p className="mt-2 text-xl font-bold text-slate-950 sm:mt-3 sm:text-2xl">{value}</p>
     </article>
   );
-}
-
-function AnimatedValue({ value }) {
-  const [displayValue, setDisplayValue] = useState(value);
-
-  useEffect(() => {
-    const raw = String(value);
-    const numericMatch = raw.match(/-?\d+(\.\d+)?/);
-    if (!numericMatch) {
-      setDisplayValue(raw);
-      return undefined;
-    }
-
-    const target = Number(numericMatch[0]);
-    if (Number.isNaN(target)) {
-      setDisplayValue(raw);
-      return undefined;
-    }
-
-    const prefix = raw.slice(0, numericMatch.index);
-    const suffix = raw.slice((numericMatch.index || 0) + numericMatch[0].length);
-    const hasDecimals = numericMatch[0].includes(".");
-    const duration = 650;
-    const startedAt = performance.now();
-    let frameId = 0;
-
-    const step = (now) => {
-      const progress = Math.min(1, (now - startedAt) / duration);
-      const current = target * progress;
-      const next = hasDecimals ? current.toFixed(2) : Math.round(current).toString();
-      setDisplayValue(`${prefix}${next}${suffix}`);
-      if (progress < 1) {
-        frameId = window.requestAnimationFrame(step);
-      }
-    };
-
-    frameId = window.requestAnimationFrame(step);
-    return () => window.cancelAnimationFrame(frameId);
-  }, [value]);
-
-  return displayValue;
 }
