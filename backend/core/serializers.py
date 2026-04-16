@@ -184,9 +184,99 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ["username", "first_name", "last_name", "email", "phone", "password"]
 
+    def validate_username(self, value):
+        normalized = (value or "").strip()
+        if not normalized:
+            raise serializers.ValidationError("Username is required.")
+        if User.objects.filter(username__iexact=normalized).exists():
+            raise serializers.ValidationError("This username is already in use.")
+        return normalized
+
+    def validate_email(self, value):
+        normalized = (value or "").strip().lower()
+        if not normalized:
+            raise serializers.ValidationError("Email is required.")
+        if User.objects.filter(email__iexact=normalized).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return normalized
+
+    def validate_phone(self, value):
+        normalized = (value or "").strip()
+        if not normalized:
+            return None
+        if User.objects.filter(phone=normalized).exists():
+            raise serializers.ValidationError("This phone number is already in use.")
+        return normalized
+
     def create(self, validated_data):
+        is_verified = validated_data.pop("is_verified", False)
         validated_data["password"] = make_password(validated_data["password"])
+        validated_data["email"] = (validated_data.get("email") or "").strip().lower()
+        validated_data["phone"] = (validated_data.get("phone") or "").strip() or None
+        validated_data["is_verified"] = is_verified
         return super().create(validated_data)
+
+
+class SignupRequestOTPSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+    def validate_username(self, value):
+        normalized = (value or "").strip()
+        if not normalized:
+            raise serializers.ValidationError("Username is required.")
+        if User.objects.filter(username__iexact=normalized).exists():
+            raise serializers.ValidationError("This username is already in use.")
+        return normalized
+
+    def validate_email(self, value):
+        normalized = (value or "").strip().lower()
+        if not normalized:
+            raise serializers.ValidationError("Email is required.")
+        if User.objects.filter(email__iexact=normalized).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return normalized
+
+    def validate_phone(self, value):
+        normalized = (value or "").strip()
+        if not normalized:
+            return ""
+        if User.objects.filter(phone=normalized).exists():
+            raise serializers.ValidationError("This phone number is already in use.")
+        return normalized
+
+    def validate(self, attrs):
+        attrs["channel"] = "email"
+        return attrs
+
+
+class SignupConfirmSerializer(serializers.Serializer):
+    signup_session_id = serializers.UUIDField()
+    otp = serializers.CharField(min_length=6, max_length=6)
+    username = serializers.CharField()
+    first_name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    last_name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    email = serializers.EmailField()
+    phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    password = serializers.CharField(min_length=8, write_only=True)
+
+    def validate(self, attrs):
+        attrs["username"] = (attrs.get("username") or "").strip()
+        attrs["email"] = (attrs.get("email") or "").strip().lower()
+        attrs["phone"] = (attrs.get("phone") or "").strip()
+        attrs["otp"] = (attrs.get("otp") or "").strip()
+        attrs["first_name"] = (attrs.get("first_name") or "").strip()
+        attrs["last_name"] = (attrs.get("last_name") or "").strip()
+
+        if not attrs["username"]:
+            raise serializers.ValidationError({"username": "Username is required."})
+        if not attrs["email"]:
+            raise serializers.ValidationError({"email": "Email is required."})
+        if not attrs["otp"].isdigit():
+            raise serializers.ValidationError({"otp": "OTP must be a 6-digit code."})
+
+        return attrs
 
 
 class ForgotPasswordRequestSerializer(serializers.Serializer):

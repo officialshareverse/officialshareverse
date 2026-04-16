@@ -27,6 +27,7 @@ from .models import (
     RazorpayWebhookEvent,
     RazorpayXPayoutWebhookEvent,
     Review,
+    SignupOTP,
     Subscription,
     Transaction,
     User,
@@ -265,7 +266,22 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(payout_account.bank_account_last4, "9012")
         self.assertIsNone(payout_account.last_synced_at)
 
-    def test_signup_accepts_name_fields(self):
+    def test_signup_accepts_name_fields_after_otp_verification(self):
+        request_response = self.client.post(
+            "/api/signup/request-otp/",
+            {
+                "username": "newuser",
+                "email": "newuser@example.com",
+                "phone": "9111111111",
+            },
+            format="json",
+        )
+
+        self.assertEqual(request_response.status_code, status.HTTP_200_OK)
+        self.assertIn("signup_session_id", request_response.data)
+        self.assertIn("dev_otp", request_response.data)
+        self.assertEqual(SignupOTP.objects.count(), 1)
+
         response = self.client.post(
             "/api/signup/",
             {
@@ -275,6 +291,8 @@ class GroupFlowTests(APITestCase):
                 "email": "newuser@example.com",
                 "phone": "9111111111",
                 "password": "password123",
+                "signup_session_id": request_response.data["signup_session_id"],
+                "otp": request_response.data["dev_otp"],
             },
             format="json",
         )
@@ -283,6 +301,35 @@ class GroupFlowTests(APITestCase):
         created_user = User.objects.get(username="newuser")
         self.assertEqual(created_user.first_name, "New")
         self.assertEqual(created_user.last_name, "Member")
+        self.assertTrue(created_user.is_verified)
+
+    def test_signup_rejects_invalid_otp(self):
+        request_response = self.client.post(
+            "/api/signup/request-otp/",
+            {
+                "username": "otpuser",
+                "email": "otpuser@example.com",
+            },
+            format="json",
+        )
+
+        self.assertEqual(request_response.status_code, status.HTTP_200_OK)
+
+        response = self.client.post(
+            "/api/signup/",
+            {
+                "username": "otpuser",
+                "email": "otpuser@example.com",
+                "password": "password123",
+                "signup_session_id": request_response.data["signup_session_id"],
+                "otp": "000000",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["attempts_remaining"], 4)
+        self.assertFalse(User.objects.filter(username="otpuser").exists())
 
     def test_create_group_rejects_end_date_before_start_date(self):
         self.authenticate(self.owner)

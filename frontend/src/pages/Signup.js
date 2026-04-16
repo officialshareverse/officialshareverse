@@ -10,12 +10,54 @@ function getSignupError(errorData) {
     return "We could not create your account right now.";
   }
 
+  if (typeof errorData.error === "string" && errorData.error.trim()) {
+    const retryAfter = errorData.retry_after_seconds;
+    if (typeof retryAfter === "number" && retryAfter > 0) {
+      return `${errorData.error} Try again in ${retryAfter}s.`;
+    }
+    return errorData.error;
+  }
+
   const firstField = Object.values(errorData)[0];
   if (Array.isArray(firstField) && firstField.length > 0) {
     return firstField[0];
   }
 
+  if (typeof firstField === "string" && firstField.trim()) {
+    return firstField;
+  }
+
   return "We could not create your account right now.";
+}
+
+function validateSignupForm(form, acceptedTerms, requireOtp = false, otpCode = "") {
+  if (!form.username.trim() || !form.email.trim() || !form.password) {
+    return "Username, email, and password are required.";
+  }
+
+  if (form.password.length < 8) {
+    return "Use at least 8 characters for your password.";
+  }
+
+  if (form.password !== form.confirmPassword) {
+    return "Password confirmation does not match.";
+  }
+
+  if (!acceptedTerms) {
+    return "Please accept the Terms & Conditions before creating your account.";
+  }
+
+  if (requireOtp) {
+    if (!otpCode.trim()) {
+      return "Enter the verification code to finish creating your account.";
+    }
+
+    if (!/^\d{6}$/.test(otpCode.trim())) {
+      return "Verification code must be a 6-digit OTP.";
+    }
+  }
+
+  return "";
 }
 
 const highlights = [
@@ -46,38 +88,85 @@ export default function Signup() {
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
   const [error, setError] = useState("");
+  const [verificationNotice, setVerificationNotice] = useState("");
+  const [signupSessionId, setSignupSessionId] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [devOtp, setDevOtp] = useState("");
+  const [deliveryChannel, setDeliveryChannel] = useState("email");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const resetOtpState = (nextNotice = "") => {
+    setSignupSessionId("");
+    setOtpCode("");
+    setDevOtp("");
+    setDeliveryChannel("email");
+    setVerificationNotice(nextNotice);
+  };
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setForm((current) => ({
       ...current,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
     setError("");
+
+    if (["username", "email", "phone"].includes(name) && signupSessionId) {
+      resetOtpState("We cleared the previous code because your verification details changed.");
+    }
+  };
+
+  const handleRequestOtp = async () => {
+    const validationError = validateSignupForm(form, acceptedTerms);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+      setError("");
+      setVerificationNotice("");
+
+      const response = await API.post("signup/request-otp/", {
+        username: form.username.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim() || "",
+      });
+
+      const nextDeliveryStatus = response.data?.delivery_status || "generated";
+      setSignupSessionId(response.data?.signup_session_id || "");
+      setDeliveryChannel(response.data?.delivery_channel || "email");
+      setDevOtp(response.data?.dev_otp || "");
+      setVerificationNotice(
+        response.data?.dev_otp
+          ? `Verification code generated. Use ${response.data.dev_otp} to finish signup.`
+          : nextDeliveryStatus === "sent"
+            ? `Verification code sent to your ${response.data?.delivery_channel || "email"}. Enter it below to finish signup.`
+            : `Verification code generated for your ${response.data?.delivery_channel || "email"}. Enter it below to finish signup.`
+      );
+    } catch (err) {
+      console.error(err);
+      setError(getSignupError(err.response?.data));
+    } finally {
+      setOtpLoading(false);
+    }
   };
 
   const handleSignup = async (e) => {
     e.preventDefault();
 
-    if (!form.username.trim() || !form.email.trim() || !form.password) {
-      setError("Username, email, and password are required.");
+    const validationError = validateSignupForm(form, acceptedTerms, true, otpCode);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    if (form.password.length < 8) {
-      setError("Use at least 8 characters for your password.");
-      return;
-    }
-
-    if (form.password !== form.confirmPassword) {
-      setError("Password confirmation does not match.");
-      return;
-    }
-
-    if (!acceptedTerms) {
-      setError("Please accept the Terms & Conditions before creating your account.");
+    if (!signupSessionId) {
+      setError("Send a verification code before creating your account.");
       return;
     }
 
@@ -92,13 +181,15 @@ export default function Signup() {
         email: form.email.trim(),
         phone: form.phone.trim() || null,
         password: form.password,
+        signup_session_id: signupSessionId,
+        otp: otpCode.trim(),
       };
 
       await API.post("signup/", payload);
       navigate("/login", {
         replace: true,
         state: {
-          message: "Account created successfully. Sign in to start splitting costs or buying together.",
+          message: "Account created and verified successfully. Sign in to start splitting costs or buying together.",
         },
       });
     } catch (err) {
@@ -108,6 +199,8 @@ export default function Signup() {
       setLoading(false);
     }
   };
+
+  const hasVerificationSession = Boolean(signupSessionId);
 
   return (
     <div className="sv-page">
@@ -175,6 +268,12 @@ export default function Signup() {
                 {error ? (
                   <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
                     {error}
+                  </div>
+                ) : null}
+
+                {verificationNotice ? (
+                  <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                    {verificationNotice}
                   </div>
                 ) : null}
 
@@ -286,8 +385,8 @@ export default function Signup() {
                             placeholder="Create a password"
                             value={form.password}
                             onChange={handleChange}
-                          className="sv-input pr-20"
-                        />
+                            className="sv-input pr-20"
+                          />
                           <button
                             type="button"
                             onClick={() => setShowPassword((current) => !current)}
@@ -307,8 +406,8 @@ export default function Signup() {
                             placeholder="Confirm your password"
                             value={form.confirmPassword}
                             onChange={handleChange}
-                          className="sv-input pr-20"
-                        />
+                            className="sv-input pr-20"
+                          />
                           <button
                             type="button"
                             onClick={() => setShowConfirmPassword((current) => !current)}
@@ -372,16 +471,79 @@ export default function Signup() {
                     </label>
                   </section>
 
+                  <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_16px_28px_rgba(15,23,42,0.05)] md:rounded-[26px] md:p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                          Step 4
+                        </p>
+                        <h3 className="mt-2 text-xl font-semibold text-slate-950">
+                          Verify with OTP
+                        </h3>
+                      </div>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                        Real-time check
+                      </span>
+                    </div>
+
+                    <div className="mt-4 rounded-2xl bg-slate-950 px-4 py-4 text-sm leading-7 text-slate-200">
+                      {hasVerificationSession
+                        ? `Enter the 6-digit code generated for your ${deliveryChannel}. If you change your username, email, or phone, request a fresh code.`
+                        : "Send a verification code after you finish the form above. We will generate it for your signup email and use it to verify the account before creation."}
+                    </div>
+
+                    {devOtp ? (
+                      <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        Development OTP: <strong>{devOtp}</strong>
+                      </div>
+                    ) : null}
+
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                      <button
+                        type="button"
+                        onClick={handleRequestOtp}
+                        disabled={otpLoading}
+                        className="rounded-[22px] border border-slate-300 bg-white px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-slate-900 transition hover:border-teal-700 hover:text-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {otpLoading
+                          ? "Generating code..."
+                          : hasVerificationSession
+                            ? "Send new code"
+                            : "Send verification code"}
+                      </button>
+
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          name="otp"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="Enter 6-digit OTP"
+                          value={otpCode}
+                          onChange={(e) => {
+                            setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                            setError("");
+                          }}
+                          className="sv-input"
+                        />
+                      </div>
+                    </div>
+                  </section>
+
                   <button
                     type="submit"
-                    disabled={loading || !acceptedTerms}
+                    disabled={loading || !acceptedTerms || !hasVerificationSession}
                     className="w-full rounded-[24px] bg-slate-950 px-4 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
                   >
-                    {loading ? "Creating your account..." : "Create account"}
+                    {loading
+                      ? "Verifying and creating your account..."
+                      : hasVerificationSession
+                        ? "Verify code & create account"
+                        : "Send verification code to continue"}
                   </button>
 
                   <p className="text-center text-xs leading-6 text-slate-500">
-                    Review the platform terms above before creating your ShareVerse account.
+                    Review the platform terms above, request your OTP, then verify the code to activate your ShareVerse account.
                   </p>
                 </form>
               </div>

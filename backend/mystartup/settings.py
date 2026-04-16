@@ -66,6 +66,17 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() == 'true'
 EXPOSE_DEV_OTP = os.environ.get('DJANGO_EXPOSE_DEV_OTP', 'true').lower() == 'true'
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
 SERVE_MEDIA_FILES = DEBUG or os.environ.get('DJANGO_SERVE_MEDIA', 'false').lower() == 'true'
+EMAIL_BACKEND = os.environ.get(
+    'DJANGO_EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend',
+)
+EMAIL_HOST = os.environ.get('DJANGO_EMAIL_HOST', '').strip()
+EMAIL_PORT = int(os.environ.get('DJANGO_EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.environ.get('DJANGO_EMAIL_HOST_USER', '').strip()
+EMAIL_HOST_PASSWORD = os.environ.get('DJANGO_EMAIL_HOST_PASSWORD', '').strip()
+EMAIL_USE_TLS = os.environ.get('DJANGO_EMAIL_USE_TLS', 'true').lower() == 'true'
+EMAIL_USE_SSL = os.environ.get('DJANGO_EMAIL_USE_SSL', 'false').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_DEFAULT_FROM_EMAIL', 'ShareVerse <no-reply@shareverse.in>').strip()
 
 ALLOWED_HOSTS = []
 for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(','):

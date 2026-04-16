@@ -569,6 +569,37 @@ class PasswordResetOTP(models.Model):
         return not self.is_used and self.expires_at > timezone.now() and self.attempts_remaining > 0
 
 
+class SignupOTP(models.Model):
+    CHANNEL_CHOICES = (
+        ("email", "Email"),
+        ("phone", "Phone"),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    username = models.CharField(max_length=150)
+    email = models.EmailField()
+    phone = models.CharField(max_length=15, blank=True, default="")
+    channel = models.CharField(max_length=10, choices=CHANNEL_CHOICES, default="email")
+    otp_hash = models.CharField(max_length=64)
+    expires_at = models.DateTimeField()
+    attempts_remaining = models.PositiveIntegerField(default=5)
+    is_used = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    @staticmethod
+    def build_otp_hash(raw_otp):
+        return hashlib.sha256((raw_otp or "").encode("utf-8")).hexdigest()
+
+    def verify_otp(self, raw_otp):
+        return hmac.compare_digest(self.otp_hash, self.build_otp_hash(raw_otp))
+
+    def is_active(self):
+        return not self.is_used and self.expires_at > timezone.now() and self.attempts_remaining > 0
+
+
 @receiver(post_save, sender=User)
 def create_wallet(sender, instance, created, **kwargs):
     if created:

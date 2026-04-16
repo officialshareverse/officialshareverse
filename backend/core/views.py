@@ -9,6 +9,7 @@ import math
 
 from django.conf import settings
 from django.contrib.auth import authenticate
+from django.core.mail import send_mail
 from django.core.exceptions import ValidationError
 from django.db import DatabaseError, connections, transaction
 from django.db.models import Avg, Count, ExpressionWrapper, F, IntegerField, Q, Sum, Value
@@ -33,6 +34,7 @@ from .models import (
     PayoutAccount,
     RazorpayWebhookEvent,
     RazorpayXPayoutWebhookEvent,
+    SignupOTP,
     Review,
     Subscription,
     Transaction,
@@ -78,6 +80,8 @@ from .serializers import (
     ProfileUpdateSerializer,
     ReviewSerializer,
     SendGroupChatMessageSerializer,
+    SignupConfirmSerializer,
+    SignupRequestOTPSerializer,
     SignupSerializer,
     SubmitReviewSerializer,
     SubmitPurchaseProofSerializer,
@@ -102,6 +106,15 @@ PASSWORD_RESET_OTP_REQUEST_RATE_LIMIT = 10
 PASSWORD_RESET_OTP_REQUEST_RATE_WINDOW_SECONDS = 15 * 60
 PASSWORD_RESET_OTP_CONFIRM_RATE_LIMIT = 20
 PASSWORD_RESET_OTP_CONFIRM_RATE_WINDOW_SECONDS = 15 * 60
+SIGNUP_OTP_TTL_MINUTES = 10
+SIGNUP_OTP_MAX_ATTEMPTS = 5
+SIGNUP_OTP_COOLDOWN_SECONDS = 60
+SIGNUP_OTP_REQUEST_LIMIT = 5
+SIGNUP_OTP_REQUEST_WINDOW_MINUTES = 15
+SIGNUP_OTP_REQUEST_RATE_LIMIT = 10
+SIGNUP_OTP_REQUEST_RATE_WINDOW_SECONDS = 15 * 60
+SIGNUP_OTP_CONFIRM_RATE_LIMIT = 20
+SIGNUP_OTP_CONFIRM_RATE_WINDOW_SECONDS = 15 * 60
 BUY_TOGETHER_PURCHASE_DEADLINE_HOURS = 6
 BUY_TOGETHER_MEMBER_CONFIRMATION_WINDOW_HOURS = 12
 
@@ -1022,6 +1035,131 @@ def issue_password_reset_otp(user, channel):
     return otp_session, otp_code
 
 
+def deliver_otp_code(channel, destination, otp_code, purpose):
+    if channel != "email" or not destination:
+        return False
+
+    send_mail(
+        subject=f"Your ShareVerse {purpose} OTP",
+        message=(
+            f"Your ShareVerse {purpose.lower()} code is {otp_code}.\n\n"
+            f"It expires in 10 minutes."
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[destination],
+        fail_silently=False,
+    )
+    return True
+
+
+def issue_signup_otp(username, email, phone, channel):
+    filters = Q(username__iexact=username) | Q(email__iexact=email)
+    if phone:
+        filters |= Q(phone=phone)
+    SignupOTP.objects.filter(is_used=False).filter(filters).update(is_used=True)
+
+    otp_code = f"{secrets.randbelow(1_000_000):06d}"
+    otp_session = SignupOTP.objects.create(
+        username=username,
+        email=email,
+        phone=phone or "",
+        channel=channel,
+        otp_hash=SignupOTP.build_otp_hash(otp_code),
+        expires_at=timezone.now() + timedelta(minutes=SIGNUP_OTP_TTL_MINUTES),
+        attempts_remaining=SIGNUP_OTP_MAX_ATTEMPTS,
+    )
+    return otp_session, otp_code
+
+
+def get_signup_otp_request_queryset(username, email, phone=""):
+    filters = Q(username__iexact=username) | Q(email__iexact=email)
+    if phone:
+        filters |= Q(phone=phone)
+    return SignupOTP.objects.filter(filters)
+
+
+def get_signup_otp_request_limit_retry_after_seconds(username, email, phone=""):
+    now = timezone.now()
+    request_window_start = now - timedelta(minutes=SIGNUP_OTP_REQUEST_WINDOW_MINUTES)
+    oldest_in_window = (
+        get_signup_otp_request_queryset(username, email, phone)
+        .filter(created_at__gte=request_window_start)
+        .order_by("created_at")
+        .first()
+    )
+    if not oldest_in_window:
+        return SIGNUP_OTP_COOLDOWN_SECONDS
+
+    window_end = oldest_in_window.created_at + timedelta(minutes=SIGNUP_OTP_REQUEST_WINDOW_MINUTES)
+    return max(math.ceil((window_end - now).total_seconds()), 1)
+
+
+def validate_signup_request_guardrails(request, username, email, phone=""):
+    identity_seed = f"{username}:{email}:{phone}".strip(":")
+    request_identity = build_rate_limit_identity(request, identity_seed)
+    request_rate_result = check_and_increment_rate_limit(
+        scope="signup_otp_request",
+        identity=request_identity,
+        limit=SIGNUP_OTP_REQUEST_RATE_LIMIT,
+        window_seconds=SIGNUP_OTP_REQUEST_RATE_WINDOW_SECONDS,
+    )
+    if not request_rate_result["allowed"]:
+        return Response(
+            {
+                "error": "Too many verification code requests. Try again later.",
+                "retry_after_seconds": request_rate_result["retry_after_seconds"],
+            },
+            status=429,
+        )
+
+    recent_session = (
+        get_signup_otp_request_queryset(username, email, phone)
+        .filter(created_at__gte=timezone.now() - timedelta(seconds=SIGNUP_OTP_COOLDOWN_SECONDS))
+        .order_by("-created_at")
+        .first()
+    )
+    if recent_session:
+        retry_after = max(
+            math.ceil(
+                (
+                    recent_session.created_at
+                    + timedelta(seconds=SIGNUP_OTP_COOLDOWN_SECONDS)
+                    - timezone.now()
+                ).total_seconds()
+            ),
+            1,
+        )
+        return Response(
+            {
+                "error": "A verification code was just generated. Please wait before requesting another one.",
+                "retry_after_seconds": retry_after,
+            },
+            status=429,
+        )
+
+    requests_in_window = (
+        get_signup_otp_request_queryset(username, email, phone)
+        .filter(
+            created_at__gte=timezone.now() - timedelta(minutes=SIGNUP_OTP_REQUEST_WINDOW_MINUTES)
+        )
+        .count()
+    )
+    if requests_in_window >= SIGNUP_OTP_REQUEST_LIMIT:
+        return Response(
+            {
+                "error": "Too many verification code requests. Try again later.",
+                "retry_after_seconds": get_signup_otp_request_limit_retry_after_seconds(
+                    username,
+                    email,
+                    phone,
+                ),
+            },
+            status=429,
+        )
+
+    return None
+
+
 def get_recent_otp_failed_attempts(user):
     failed_window_start = timezone.now() - timedelta(
         minutes=PASSWORD_RESET_OTP_FAILED_ATTEMPT_WINDOW_MINUTES
@@ -1164,13 +1302,132 @@ def create_credential_reveal_token(user, group):
     return raw_token, expires_at
 
 
+class SignupRequestOTPView(APIView):
+    def post(self, request):
+        serializer = SignupRequestOTPSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        username = serializer.validated_data["username"]
+        email = serializer.validated_data["email"]
+        phone = serializer.validated_data.get("phone", "")
+        channel = serializer.validated_data["channel"]
+
+        guardrail_response = validate_signup_request_guardrails(request, username, email, phone)
+        if guardrail_response:
+            return guardrail_response
+
+        otp_session, otp_code = issue_signup_otp(username, email, phone, channel)
+        delivered = False
+        try:
+            delivered = deliver_otp_code(channel, email, otp_code, "Signup verification")
+        except Exception:
+            delivered = False
+
+        response = {
+            "message": "Verification code generated.",
+            "signup_session_id": str(otp_session.id),
+            "expires_in_seconds": SIGNUP_OTP_TTL_MINUTES * 60,
+            "delivery_channel": channel,
+            "delivery_status": "sent" if delivered else "generated",
+        }
+
+        if getattr(settings, "EXPOSE_DEV_OTP", False):
+            response["dev_otp"] = otp_code
+
+        return Response(response)
+
+
 class SignupView(APIView):
     def post(self, request):
-        serializer = SignupSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "User created"}, status=201)
-        return Response(serializer.errors, status=400)
+        serializer = SignupConfirmSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        username = serializer.validated_data["username"]
+        email = serializer.validated_data["email"]
+        phone = serializer.validated_data.get("phone", "")
+        signup_session_id = serializer.validated_data["signup_session_id"]
+        otp = serializer.validated_data["otp"]
+
+        confirm_identity = build_rate_limit_identity(request, f"{username}:{email}")
+        confirm_rate_result = check_and_increment_rate_limit(
+            scope="signup_otp_confirm",
+            identity=confirm_identity,
+            limit=SIGNUP_OTP_CONFIRM_RATE_LIMIT,
+            window_seconds=SIGNUP_OTP_CONFIRM_RATE_WINDOW_SECONDS,
+        )
+        if not confirm_rate_result["allowed"]:
+            return Response(
+                {
+                    "error": "Too many OTP verification attempts. Try again later.",
+                    "retry_after_seconds": confirm_rate_result["retry_after_seconds"],
+                },
+                status=429,
+            )
+
+        with transaction.atomic():
+            try:
+                otp_session = SignupOTP.objects.select_for_update().get(id=signup_session_id)
+            except SignupOTP.DoesNotExist:
+                return Response({"error": "Invalid verification session."}, status=400)
+
+            if otp_session.is_used:
+                return Response({"error": "This verification session has already been used."}, status=400)
+
+            if otp_session.expires_at <= timezone.now():
+                return Response({"error": "OTP expired. Request a new code."}, status=400)
+
+            if otp_session.attempts_remaining <= 0:
+                return Response({"error": "OTP attempts exceeded. Request a new code."}, status=400)
+
+            if otp_session.username.strip().lower() != username.lower():
+                return Response({"error": "Verification session does not match this username."}, status=400)
+
+            if otp_session.email.strip().lower() != email.lower():
+                return Response({"error": "Verification session does not match this email."}, status=400)
+
+            if (otp_session.phone or "").strip() != (phone or "").strip():
+                return Response({"error": "Verification session does not match this phone number."}, status=400)
+
+            if not otp_session.verify_otp(otp):
+                otp_session.attempts_remaining = max(otp_session.attempts_remaining - 1, 0)
+                otp_session.save(update_fields=["attempts_remaining"])
+                return Response(
+                    {
+                        "error": "Invalid OTP.",
+                        "attempts_remaining": otp_session.attempts_remaining,
+                    },
+                    status=400,
+                )
+
+            user_serializer = SignupSerializer(
+                data={
+                    "username": serializer.validated_data["username"],
+                    "first_name": serializer.validated_data.get("first_name", ""),
+                    "last_name": serializer.validated_data.get("last_name", ""),
+                    "email": serializer.validated_data["email"],
+                    "phone": serializer.validated_data.get("phone") or None,
+                    "password": serializer.validated_data["password"],
+                }
+            )
+            if not user_serializer.is_valid():
+                return Response(user_serializer.errors, status=400)
+
+            user = user_serializer.save(is_verified=True)
+
+            otp_session.is_used = True
+            otp_session.save(update_fields=["is_used"])
+
+            get_signup_otp_request_queryset(username, email, phone).exclude(id=otp_session.id).update(
+                is_used=True
+            )
+
+        Notification.objects.create(
+            user=user,
+            message="Your account was created and verified successfully.",
+        )
+        return Response({"message": "User created and verified."}, status=201)
 
 
 class LoginView(APIView):
@@ -1203,6 +1460,12 @@ class ForgotPasswordRequestOTPView(APIView):
             return guardrail_response
 
         otp_session, otp_code = issue_password_reset_otp(user, channel)
+        delivered = False
+        destination = user.email if channel == "email" else ""
+        try:
+            delivered = deliver_otp_code(channel, destination, otp_code, "Password reset")
+        except Exception:
+            delivered = False
 
         Notification.objects.create(
             user=user,
@@ -1213,6 +1476,7 @@ class ForgotPasswordRequestOTPView(APIView):
             "message": "OTP sent for password reset.",
             "reset_session_id": str(otp_session.id),
             "expires_in_seconds": PASSWORD_RESET_OTP_TTL_MINUTES * 60,
+            "delivery_status": "sent" if delivered else "generated",
         }
 
         if getattr(settings, "EXPOSE_DEV_OTP", False):
