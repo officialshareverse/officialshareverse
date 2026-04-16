@@ -85,8 +85,10 @@ def create_manual_wallet_payout(
         if wallet.balance < amount:
             raise ValidationError("Insufficient wallet balance for this manual payout.")
 
+        wallet_balance_before = wallet.balance
         wallet.balance -= amount
         wallet.save(update_fields=["balance"])
+        wallet_balance_after = wallet.balance
 
         payout_transaction = Transaction.objects.create(
             user=user,
@@ -98,6 +100,7 @@ def create_manual_wallet_payout(
         )
 
         payout = wallet_payout or WalletPayout()
+        existing_status_details = dict(payout.status_details or {})
         payout.user = user
         payout.payout_account = payout_account
         payout.transaction = payout_transaction
@@ -117,16 +120,22 @@ def create_manual_wallet_payout(
         payout.destination_label = normalized_destination
         payout.status = "processed"
         payout.status_details = {
+            **existing_status_details,
             "manual": True,
             "external_reference": normalized_reference,
             "admin_notes": normalized_notes,
             "created_by_user_id": created_by.id if created_by else None,
             "created_by_username": created_by.username if created_by else "",
             "recorded_at": now.isoformat(),
+            "wallet_balance_before": str(wallet_balance_before),
+            "wallet_balance_after": str(wallet_balance_after),
         }
         payout.failure_reason = ""
         payout.provider_status_source = "admin_manual"
         payout.utr = normalized_reference
+        payout.processed_by = created_by
+        payout.wallet_balance_before = wallet_balance_before
+        payout.wallet_balance_after = wallet_balance_after
         payout.fees = 0
         payout.tax = 0
         payout.processed_at = now
@@ -153,6 +162,8 @@ def create_manual_wallet_payout(
         mode=normalized_mode,
         external_reference=normalized_reference,
         created_by_user_id=created_by.id if created_by else None,
+        wallet_balance_before=wallet_balance_before,
+        wallet_balance_after=wallet_balance_after,
         provider="manual",
     )
 

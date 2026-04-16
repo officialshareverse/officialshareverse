@@ -375,6 +375,15 @@ class WalletPayout(models.Model):
     failure_reason = models.TextField(blank=True, default="")
     provider_status_source = models.CharField(max_length=80, blank=True, default="")
     utr = models.CharField(max_length=120, blank=True, default="")
+    processed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="processed_wallet_payouts",
+    )
+    wallet_balance_before = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    wallet_balance_after = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     fees = models.PositiveIntegerField(default=0)
     tax = models.PositiveIntegerField(default=0)
     processed_at = models.DateTimeField(null=True, blank=True)

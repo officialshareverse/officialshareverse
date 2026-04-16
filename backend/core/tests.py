@@ -1140,12 +1140,17 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(payout.status, "processed")
         self.assertEqual(payout.provider_status_source, "admin_manual")
         self.assertEqual(payout.utr, "UTR-MANUAL-123")
+        self.assertEqual(payout.processed_by, staff_user)
+        self.assertEqual(payout.wallet_balance_before, Decimal("1000.00"))
+        self.assertEqual(payout.wallet_balance_after, Decimal("750.00"))
         self.assertEqual(payout.transaction.status, "success")
         self.assertEqual(payout.transaction.payment_method, "wallet_payout")
         self.assertEqual(
             payout.status_details["created_by_username"],
             staff_user.username,
         )
+        self.assertEqual(payout.status_details["wallet_balance_before"], "1000.00")
+        self.assertEqual(payout.status_details["wallet_balance_after"], "750.00")
         self.assertTrue(
             Notification.objects.filter(
                 user=self.owner,
@@ -1206,6 +1211,13 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(wallet.balance, Decimal("750.00"))
         self.assertEqual(processed_payout.status, "processed")
         self.assertEqual(processed_payout.utr, "UTR-MANUAL-456")
+        self.assertEqual(processed_payout.processed_by, staff_user)
+        self.assertEqual(processed_payout.wallet_balance_before, Decimal("1000.00"))
+        self.assertEqual(processed_payout.wallet_balance_after, Decimal("750.00"))
+        self.assertEqual(processed_payout.status_details["requested_by_username"], self.owner.username)
+        self.assertEqual(processed_payout.status_details["created_by_username"], staff_user.username)
+        self.assertEqual(processed_payout.status_details["wallet_balance_before"], "1000.00")
+        self.assertEqual(processed_payout.status_details["wallet_balance_after"], "750.00")
         self.assertIsNotNone(processed_payout.transaction)
 
     def test_admin_can_open_pending_manual_wallet_payout_change_page(self):
