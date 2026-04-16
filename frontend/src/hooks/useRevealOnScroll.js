@@ -13,6 +13,11 @@ export default function useRevealOnScroll(selector = ".sv-reveal") {
       return undefined;
     }
 
+    const pendingNodes = nodes.filter((node) => !node.classList.contains("is-visible"));
+    if (pendingNodes.length === 0) {
+      return undefined;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -25,7 +30,7 @@ export default function useRevealOnScroll(selector = ".sv-reveal") {
       { threshold: 0.16, rootMargin: "0px 0px -48px 0px" }
     );
 
-    nodes.forEach((node) => observer.observe(node));
+    pendingNodes.forEach((node) => observer.observe(node));
     return () => observer.disconnect();
-  }, [selector]);
+  });
 }
