@@ -701,13 +701,13 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(group.status, "active")
         self.assertTrue(member.access_confirmed)
         self.assertEqual(member.escrow_status, "released")
-        self.assertEqual(owner_wallet.balance, Decimal("1200.00"))
+        self.assertEqual(owner_wallet.balance, Decimal("1190.00"))
         self.assertTrue(
             Transaction.objects.filter(
                 user=self.owner,
                 group=group,
                 payment_method="group_share_payout",
-                amount=Decimal("200.00"),
+                amount=Decimal("190.00"),
             ).exists()
         )
 
@@ -1750,7 +1750,7 @@ class GroupFlowTests(APITestCase):
         owner_wallet.refresh_from_db()
 
         self.assertEqual(group.status, "active")
-        self.assertEqual(owner_wallet.balance, Decimal("1400.00"))
+        self.assertEqual(owner_wallet.balance, Decimal("1380.00"))
         self.assertEqual(GroupMember.objects.filter(group=group, escrow_status="released").count(), 2)
         self.assertEqual(EscrowLedger.objects.filter(group=group, entry_type="release").count(), 2)
         self.assertEqual(
@@ -1758,7 +1758,7 @@ class GroupFlowTests(APITestCase):
                 user=self.owner,
                 group=group,
                 payment_method="group_buy_escrow_release",
-                amount=Decimal("400.00"),
+                amount=Decimal("380.00"),
             ).count(),
             1,
         )
@@ -1969,7 +1969,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(group.status, "active")
         self.assertEqual(member_one_wallet.balance, Decimal("800.00"))
         self.assertEqual(member_two_wallet.balance, Decimal("800.00"))
-        self.assertEqual(owner_wallet.balance, Decimal("1400.00"))
+        self.assertEqual(owner_wallet.balance, Decimal("1380.00"))
         self.assertEqual(EscrowLedger.objects.filter(group=group, entry_type="release").count(), 2)
 
     def test_disputed_group_does_not_auto_release_when_deadline_worker_runs(self):

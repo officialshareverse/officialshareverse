@@ -57,6 +57,8 @@ from .payments import (
 )
 from .manual_payouts import create_manual_wallet_payout_request, save_manual_payout_account
 from .pricing import (
+    get_group_earning_platform_fee_amount,
+    get_group_earning_payout_amount,
     get_group_join_pricing,
     get_member_charged_amount,
     get_member_contribution_amount,
@@ -216,7 +218,9 @@ def release_group_buy_held_funds(group_id, allow_timeout_release=False):
         group.save(update_fields=["status"])
 
         owner_wallet, _ = Wallet.objects.select_for_update().get_or_create(user=group.owner)
-        release_amount = sum_member_contribution_amounts(held_members)
+        gross_release_amount = sum_member_contribution_amounts(held_members)
+        creator_platform_fee_amount = get_group_earning_platform_fee_amount(gross_release_amount)
+        release_amount = get_group_earning_payout_amount(gross_release_amount)
         owner_wallet.balance += release_amount
         owner_wallet.save()
 
@@ -248,10 +252,15 @@ def release_group_buy_held_funds(group_id, allow_timeout_release=False):
         group.auto_refund_at = None
         group.save(update_fields=["status", "funds_released_at", "purchase_deadline_at", "auto_refund_at"])
 
+        fee_note = (
+            f" A 5% platform fee of Rs {creator_platform_fee_amount} was deducted from the payout."
+            if creator_platform_fee_amount > Decimal("0.00")
+            else ""
+        )
         owner_message = (
-            f"All members confirmed receiving {group.subscription.name}. Held funds were released to your wallet."
+            f"All members confirmed receiving {group.subscription.name}. Held funds were released to your wallet.{fee_note}"
             if not allow_timeout_release
-            else f"The confirmation window for {group.subscription.name} ended without disputes. Held funds were released automatically."
+            else f"The confirmation window for {group.subscription.name} ended without disputes. Held funds were released automatically.{fee_note}"
         )
         Notification.objects.create(user=group.owner, message=owner_message)
         for member in GroupMember.objects.filter(group=group).select_related("user"):
@@ -284,7 +293,9 @@ def release_sharing_member_funds(member_id):
             return released_amount, False
 
         owner_wallet, _ = Wallet.objects.select_for_update().get_or_create(user=member.group.owner)
-        released_amount = get_member_contribution_amount(member)
+        gross_release_amount = get_member_contribution_amount(member)
+        creator_platform_fee_amount = get_group_earning_platform_fee_amount(gross_release_amount)
+        released_amount = get_group_earning_payout_amount(gross_release_amount)
         owner_wallet.balance += released_amount
         owner_wallet.save()
 
@@ -316,7 +327,7 @@ def release_sharing_member_funds(member_id):
             user=member.group.owner,
             message=(
                 f"{member.user.username} confirmed receiving access for {member.group.subscription.name}. "
-                "Your payout was released to your wallet."
+                f"Your payout was released to your wallet after a 5% platform fee of Rs {creator_platform_fee_amount}."
             ),
         )
         Notification.objects.create(

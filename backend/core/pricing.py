@@ -8,6 +8,7 @@ from django.utils import timezone
 MONEY_QUANTIZER = Decimal("0.01")
 OPERATIONAL_TIMEZONE = ZoneInfo("Asia/Kolkata")
 GROUP_JOIN_PLATFORM_FEE_RATE = Decimal("0.05")
+GROUP_EARNING_PLATFORM_FEE_RATE = Decimal("0.05")
 
 
 def normalize_money(amount):
@@ -55,6 +56,19 @@ def get_group_join_platform_fee_amount(amount):
     if normalized_amount <= Decimal("0.00"):
         return Decimal("0.00")
     return normalize_money(normalized_amount * GROUP_JOIN_PLATFORM_FEE_RATE)
+
+
+def get_group_earning_platform_fee_amount(amount):
+    normalized_amount = normalize_money(amount)
+    if normalized_amount <= Decimal("0.00"):
+        return Decimal("0.00")
+    return normalize_money(normalized_amount * GROUP_EARNING_PLATFORM_FEE_RATE)
+
+
+def get_group_earning_payout_amount(amount):
+    normalized_amount = normalize_money(amount)
+    platform_fee_amount = get_group_earning_platform_fee_amount(normalized_amount)
+    return normalize_money(normalized_amount - platform_fee_amount)
 
 
 def get_group_total_cycle_days(group):
