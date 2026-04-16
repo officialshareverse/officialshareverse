@@ -227,11 +227,14 @@ export default function Login({ setIsAuth }) {
       navigate("/home", { replace: true });
     } catch (err) {
       console.error(err);
-      if (err.response?.status === 401) {
-        setError("That username and password combination does not match our records.");
-      } else {
-        setError("We could not sign you in right now. Please try again.");
-      }
+      setError(
+        extractApiError(
+          err.response?.data,
+          err.response?.status === 401
+            ? "That username and password combination does not match our records."
+            : "We could not sign you in right now. Please try again."
+        )
+      );
     } finally {
       setLoading(false);
     }

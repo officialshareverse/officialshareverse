@@ -18,6 +18,31 @@ def _build_cache_keys(scope, identity):
     return f"{base}:count", f"{base}:reset"
 
 
+def get_rate_limit_status(scope, identity):
+    now = int(time.time())
+    count_key, reset_key = _build_cache_keys(scope, identity)
+
+    reset_at = cache.get(reset_key)
+    if not reset_at or int(reset_at) <= now:
+        return {
+            "allowed": True,
+            "retry_after_seconds": 0,
+            "count": 0,
+        }
+
+    count = cache.get(count_key) or 0
+    return {
+        "allowed": True,
+        "retry_after_seconds": max(int(reset_at) - now, 0),
+        "count": int(count),
+    }
+
+
+def reset_rate_limit(scope, identity):
+    count_key, reset_key = _build_cache_keys(scope, identity)
+    cache.delete_many([count_key, reset_key])
+
+
 def check_and_increment_rate_limit(scope, identity, limit, window_seconds):
     now = int(time.time())
     window_seconds = max(int(window_seconds), 1)

@@ -67,7 +67,11 @@ from .pricing import (
     get_member_platform_fee_amount,
     sum_member_contribution_amounts,
 )
-from .rate_limit import check_and_increment_rate_limit
+from .rate_limit import (
+    check_and_increment_rate_limit,
+    get_rate_limit_status,
+    reset_rate_limit,
+)
 from .serializers import (
     CreateGroupSerializer,
     ForgotPasswordConfirmSerializer,
@@ -115,6 +119,8 @@ SIGNUP_OTP_REQUEST_RATE_LIMIT = 10
 SIGNUP_OTP_REQUEST_RATE_WINDOW_SECONDS = 15 * 60
 SIGNUP_OTP_CONFIRM_RATE_LIMIT = 20
 SIGNUP_OTP_CONFIRM_RATE_WINDOW_SECONDS = 15 * 60
+LOGIN_FAILED_ATTEMPT_LIMIT = 5
+LOGIN_FAILED_ATTEMPT_WINDOW_SECONDS = 15 * 60
 BUY_TOGETHER_PURCHASE_DEADLINE_HOURS = 6
 BUY_TOGETHER_MEMBER_CONFIRMATION_WINDOW_HOURS = 12
 
@@ -1432,14 +1438,40 @@ class SignupView(APIView):
 
 class LoginView(APIView):
     def post(self, request):
-        username = request.data.get("username")
+        username = (request.data.get("username") or "").strip()
         password = request.data.get("password")
+
+        login_identity = build_rate_limit_identity(request, username)
+        current_lockout = get_rate_limit_status("login_failed", login_identity)
+        if current_lockout["count"] >= LOGIN_FAILED_ATTEMPT_LIMIT:
+            return Response(
+                {
+                    "error": "Too many failed login attempts.",
+                    "retry_after_seconds": current_lockout["retry_after_seconds"],
+                },
+                status=429,
+            )
 
         user = authenticate(username=username, password=password)
 
         if user is None:
+            rate_result = check_and_increment_rate_limit(
+                scope="login_failed",
+                identity=login_identity,
+                limit=LOGIN_FAILED_ATTEMPT_LIMIT,
+                window_seconds=LOGIN_FAILED_ATTEMPT_WINDOW_SECONDS,
+            )
+            if not rate_result["allowed"]:
+                return Response(
+                    {
+                        "error": "Too many failed login attempts.",
+                        "retry_after_seconds": rate_result["retry_after_seconds"],
+                    },
+                    status=429,
+                )
             return Response({"error": "Invalid credentials"}, status=401)
 
+        reset_rate_limit("login_failed", login_identity)
         refresh = RefreshToken.for_user(user)
         return Response({
             "refresh": str(refresh),

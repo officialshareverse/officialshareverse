@@ -430,6 +430,82 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(login_response.status_code, status.HTTP_200_OK)
         self.assertIn("access", login_response.data)
 
+    def test_login_is_rate_limited_after_repeated_failures(self):
+        with patch("core.views.LOGIN_FAILED_ATTEMPT_LIMIT", 2), patch(
+            "core.views.LOGIN_FAILED_ATTEMPT_WINDOW_SECONDS", 120
+        ):
+            first_attempt = self.client.post(
+                "/api/login/",
+                {
+                    "username": self.owner.username,
+                    "password": "wrong-password",
+                },
+                format="json",
+            )
+            second_attempt = self.client.post(
+                "/api/login/",
+                {
+                    "username": self.owner.username,
+                    "password": "wrong-password",
+                },
+                format="json",
+            )
+            third_attempt = self.client.post(
+                "/api/login/",
+                {
+                    "username": self.owner.username,
+                    "password": "wrong-password",
+                },
+                format="json",
+            )
+
+        self.assertEqual(first_attempt.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(second_attempt.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(third_attempt.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertIn("retry_after_seconds", third_attempt.data)
+
+    def test_successful_login_clears_failed_login_rate_limit_state(self):
+        with patch("core.views.LOGIN_FAILED_ATTEMPT_LIMIT", 2), patch(
+            "core.views.LOGIN_FAILED_ATTEMPT_WINDOW_SECONDS", 120
+        ):
+            first_failed_attempt = self.client.post(
+                "/api/login/",
+                {
+                    "username": self.owner.username,
+                    "password": "wrong-password",
+                },
+                format="json",
+            )
+            successful_attempt = self.client.post(
+                "/api/login/",
+                {
+                    "username": self.owner.username,
+                    "password": "password123",
+                },
+                format="json",
+            )
+            second_failed_attempt = self.client.post(
+                "/api/login/",
+                {
+                    "username": self.owner.username,
+                    "password": "wrong-password",
+                },
+                format="json",
+            )
+            third_failed_attempt = self.client.post(
+                "/api/login/",
+                {
+                    "username": self.owner.username,
+                    "password": "wrong-password",
+                },
+                format="json",
+            )
+
+        self.assertEqual(first_failed_attempt.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(successful_attempt.status_code, status.HTTP_200_OK)
+        self.assertEqual(second_failed_attempt.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(third_failed_attempt.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_forgot_password_fails_with_wrong_verification_details(self):
         response = self.client.post(
             "/api/forgot-password/request-otp/",
