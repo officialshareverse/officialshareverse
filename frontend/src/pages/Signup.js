@@ -223,6 +223,7 @@ export default function Signup() {
         </div>
       }
       panelWidthClass="max-w-2xl"
+      compact
     >
       <div>
         <p className="sv-eyebrow">Signup</p>
