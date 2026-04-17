@@ -216,7 +216,8 @@
   }
 
   .sv-guide-modal {
-    @apply mx-auto mt-2 max-w-5xl border bg-[rgba(255,255,255,0.94)] shadow-[0_40px_120px_rgba(15,23,42,0.28)] backdrop-blur;
+    @apply mx-auto mt-2 w-full border bg-[rgba(255,255,255,0.94)] shadow-[0_40px_120px_rgba(15,23,42,0.28)] backdrop-blur;
+    max-width: 42rem;
     border-radius: var(--sv-radius-card);
     padding: 1rem;
     border-color: rgba(255, 255, 255, 0.4);
@@ -237,6 +238,7 @@
     background: rgba(255, 255, 255, 0.8);
     box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
     backdrop-filter: blur(8px);
+    min-height: 15rem;
   }
 
   @media (min-width: 640px) {
@@ -252,6 +254,8 @@
     padding: 0.875rem 1rem;
     transition: all 0.2s ease;
     box-shadow: 0 14px 32px rgba(15, 23, 42, 0.05);
+    min-height: 44px;
+    text-align: left;
   }
 
   @media (min-width: 640px) {
@@ -264,6 +268,38 @@
   .sv-guide-map-item:hover {
     transform: translateY(-1px);
     box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  }
+
+  .sv-guide-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0;
+  }
+
+  .sv-guide-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: #cbd5e1;
+    transition: all 0.25s ease;
+  }
+
+  .sv-guide-dot-active {
+    width: 0.625rem;
+    height: 0.625rem;
+    background: #0f172a;
+  }
+
+  .sv-guide-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
   }
 
   .sv-brand-shell {

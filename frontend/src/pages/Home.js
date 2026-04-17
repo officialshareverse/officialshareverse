@@ -65,6 +65,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showGuide, setShowGuide] = useState(false);
+  const [guideStep, setGuideStep] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -102,7 +103,8 @@ export default function Home() {
   }, []);
 
   const currentUserId = dashboard?.current_user?.id || null;
-  const onboardingStorageKey = currentUserId ? `sv-home-guide-seen-${currentUserId}` : "";
+  const onboardingGuideVersion = "v2";
+  const onboardingStorageKey = currentUserId ? `sv-home-guide-seen-${onboardingGuideVersion}-${currentUserId}` : "";
 
   useEffect(() => {
     if (!onboardingStorageKey) {
@@ -201,50 +203,41 @@ export default function Home() {
   const onboardingSteps = [
     {
       step: "01",
-      title: "Click `Create split` on this Home screen",
-      where: "Use the Create split button in the hero section.",
-      body: "Start there if you want to host a subscription, course, membership, or software plan for other users.",
-      tip: "If you only want to join an existing split, click Explore splits instead.",
+      title: "Create a new split",
+      body: "Tap 'Create split' on the home screen to set up a subscription, course, or software plan for others to join.",
       cta: "Create Split",
       onClick: () => navigate("/create"),
     },
     {
       step: "02",
-      title: "Choose the right group type",
-      where: "Inside the create flow, pick the mode that matches your plan.",
-      body: "Choose Sharing if you already manage the plan and want members to join it. Choose Buy together if you want people to join first and purchase later as a group.",
-      tip: "Sharing works best for subscriptions you already control. Buy together works best when the purchase should happen only after members join.",
+      title: "Pick sharing or buy-together",
+      body: "Choose 'Sharing' if you already own the plan, or 'Buy together' if the group buys it after members join.",
       cta: "Open Create Flow",
       onClick: () => navigate("/create"),
     },
     {
       step: "03",
-      title: "Fill the group details carefully",
-      where: "Stay on the create page and complete the form from top to bottom.",
-      body: "Add the subscription or plan, choose total slots, set the price per slot, and review the dates before publishing the group.",
-      tip: "Keep the title and pricing clear so members understand exactly what they are joining.",
+      title: "Set the details and publish",
+      body: "Name your split, choose slots, set the price per slot, review dates, and publish when ready.",
       cta: "Continue Setup",
       onClick: () => navigate("/create"),
     },
     {
       step: "04",
-      title: "Use `My splits` to manage everything",
-      where: "Come back and click My Splits after your group is live or after you join one.",
-      body: "That is where you review members, chat updates, confirmations, proof uploads, and the next action your group needs.",
-      tip: "If you see alerts or unread updates, start with My Splits first.",
+      title: "Manage everything in My Splits",
+      body: "Check members, chat, confirmations, and actions all in one place after creating or joining a split.",
       cta: "Open My Splits",
       onClick: () => navigate("/my-shared"),
     },
     {
       step: "05",
-      title: "Use `Wallet` for money actions",
-      where: "Open Wallet whenever you need to add money or request a withdrawal.",
-      body: "Top up your wallet with Razorpay before joining paid groups. If you ever need money out, save a destination and request a manual withdrawal review.",
-      tip: "Manual withdrawals are reviewed first and usually settled within 24 hours.",
+      title: "Add money or withdraw from Wallet",
+      body: "Top up via Razorpay before joining paid groups. Request withdrawals anytime; they're usually settled within 24 hours.",
       cta: "Open Wallet",
       onClick: () => navigate("/wallet"),
     },
   ];
+  const totalGuideSlides = onboardingSteps.length + 2;
 
   const dismissGuide = () => {
     if (onboardingStorageKey) {
@@ -254,6 +247,7 @@ export default function Home() {
   };
 
   const openGuide = () => {
+    setGuideStep(0);
     setShowGuide(true);
   };
 
@@ -288,92 +282,128 @@ export default function Home() {
       {showGuide ? (
         <div className="sv-modal-backdrop">
           <div className="sv-guide-modal">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="max-w-3xl">
-                <p className="sv-eyebrow">First-time guide</p>
-                <h2 className="mt-2 text-xl font-bold leading-tight text-slate-950 sm:mt-3 sm:text-2xl md:text-[2.4rem]">
-                  Here&apos;s exactly where to click first and how to create your first group.
-                </h2>
-                <p className="mt-3 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7 md:text-base md:leading-8">
-                  This walkthrough is shown once for each account on this device so new users can follow the real button names they see on ShareVerse.
-                </p>
-              </div>
+            <div className="flex items-center justify-between gap-3">
+              <p className="sv-eyebrow">Quick guide</p>
               <button
                 type="button"
                 onClick={dismissGuide}
-                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-100 sm:px-4 sm:py-2 sm:text-sm"
+                className="min-h-[44px] px-1 py-2 text-[13px] font-semibold text-slate-500 transition hover:text-slate-800 sm:text-sm"
               >
-                Close
+                Skip
               </button>
             </div>
 
-            <div className="mt-4 rounded-[18px] border border-slate-200 bg-slate-50/90 p-3 sm:mt-6 sm:rounded-[24px] sm:p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:text-xs">Quick click map</p>
-              <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:gap-3 md:grid-cols-4">
-                {[
-                  { label: "Create split", note: "Host a new plan", onClick: () => navigate("/create") },
-                  { label: "Explore splits", note: "Join something open", onClick: () => navigate("/groups") },
-                  { label: "My splits", note: "Manage updates", onClick: () => navigate("/my-shared") },
-                  { label: "Wallet", note: "Top up or withdraw", onClick: () => navigate("/wallet") },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => {
-                      dismissGuide();
-                      item.onClick();
-                    }}
-                    className="sv-guide-map-item text-left"
-                  >
-                    <span className="block text-[13px] font-semibold text-slate-950 sm:text-sm">{item.label}</span>
-                    <span className="mt-0.5 block text-[11px] leading-5 text-slate-500 sm:mt-1 sm:text-xs sm:leading-6">{item.note}</span>
-                  </button>
-                ))}
-              </div>
+            <div className="mt-3 text-center text-[12px] font-medium text-slate-500 sm:mt-4 sm:text-sm">
+              Step {guideStep + 1} of {totalGuideSlides}
             </div>
-
-            <div className="mt-4 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {onboardingSteps.map((item, index) => (
-                <article
-                  key={item.step}
-                  className={`sv-guide-step ${index % 2 === 0 ? "sv-animate-float-soft" : "sv-animate-float"}`}
-                >
-                  <div className="flex items-center gap-2.5 sm:gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-[12px] font-bold text-white sm:h-11 sm:w-11 sm:text-sm">
-                      {item.step}
-                    </span>
-                    <h3 className="text-[14px] font-semibold leading-snug text-slate-950 sm:text-lg">{item.title}</h3>
-                  </div>
-                  <p className="mt-3 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-2.5 text-[12px] font-medium text-slate-700 sm:mt-4 sm:rounded-[18px] sm:px-4 sm:py-3 sm:text-sm">
-                    {item.where}
-                  </p>
-                  <p className="mt-3 text-[13px] leading-6 text-slate-600 sm:mt-4 sm:text-sm sm:leading-7">{item.body}</p>
-                  <p className="mt-2 text-[11px] leading-5 text-slate-500 sm:mt-3 sm:text-xs sm:leading-6">{item.tip}</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      dismissGuide();
-                      item.onClick();
-                    }}
-                    className="sv-btn-secondary mt-4 w-full justify-center text-[13px] sm:mt-5 sm:w-auto sm:text-sm"
-                  >
-                    {item.cta}
-                  </button>
-                </article>
+            <div className="sv-guide-dots">
+              {Array.from({ length: totalGuideSlides }).map((_, index) => (
+                <span
+                  key={`guide-dot-${index}`}
+                  className={`sv-guide-dot ${index === guideStep ? "sv-guide-dot-active" : ""}`}
+                />
               ))}
             </div>
 
-            <div className="mt-4 flex flex-col gap-3 rounded-[18px] border border-emerald-200 bg-emerald-50 px-3.5 py-3.5 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:rounded-[24px] sm:px-4 sm:py-4">
-              <p className="text-[13px] leading-6 text-emerald-900 sm:text-sm sm:leading-7">
-                Need help after this? Open Support anytime and we&apos;ll help you with creating groups, joining groups, top-ups, or manual withdrawal review.
-              </p>
-              <button
-                type="button"
-                onClick={dismissGuide}
-                className="sv-btn-primary w-full justify-center sm:w-auto"
-              >
-                Got it
-              </button>
+            <div className="mt-4 sm:mt-6">
+              {guideStep === 0 ? (
+                <div className="sv-guide-step sv-animate-rise">
+                  <h2 className="text-xl font-bold leading-tight text-slate-950 sm:text-2xl">
+                    Welcome to ShareVerse 👋
+                  </h2>
+                  <p className="mt-3 max-w-xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
+                    Here&apos;s a quick tour of the main sections. Tap any shortcut to jump straight there, or hit Next for a step-by-step guide.
+                  </p>
+
+                  <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
+                    {[
+                      { label: "Create split", note: "Host a new plan", onClick: () => navigate("/create") },
+                      { label: "Explore splits", note: "Join something open", onClick: () => navigate("/groups") },
+                      { label: "My splits", note: "Manage updates", onClick: () => navigate("/my-shared") },
+                      { label: "Wallet", note: "Top up or withdraw", onClick: () => navigate("/wallet") },
+                    ].map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => {
+                          dismissGuide();
+                          item.onClick();
+                        }}
+                        className="sv-guide-map-item"
+                      >
+                        <span className="block text-[13px] font-semibold text-slate-950 sm:text-sm">{item.label}</span>
+                        <span className="mt-0.5 block text-[11px] leading-5 text-slate-500 sm:mt-1 sm:text-xs sm:leading-6">{item.note}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : guideStep <= onboardingSteps.length ? (
+                <article className="sv-guide-step sv-animate-rise">
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-[12px] font-bold text-white sm:h-11 sm:w-11 sm:text-sm">
+                      {onboardingSteps[guideStep - 1].step}
+                    </span>
+                    <h3 className="text-[14px] font-semibold leading-snug text-slate-950 sm:text-lg">
+                      {onboardingSteps[guideStep - 1].title}
+                    </h3>
+                  </div>
+                  <p className="mt-4 max-w-xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
+                    {onboardingSteps[guideStep - 1].body}
+                  </p>
+                  <div className="mt-5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dismissGuide();
+                        onboardingSteps[guideStep - 1].onClick();
+                      }}
+                      className="sv-btn-secondary w-full justify-center text-[13px] sm:w-auto sm:text-sm"
+                    >
+                      {onboardingSteps[guideStep - 1].cta}
+                    </button>
+                  </div>
+                </article>
+              ) : (
+                <div className="flex flex-col gap-3 rounded-[18px] border border-emerald-200 bg-emerald-50 px-3.5 py-3.5 sv-animate-rise sm:rounded-[24px] sm:px-4 sm:py-4">
+                  <h2 className="text-xl font-bold text-emerald-950 sm:text-2xl">You&apos;re ready to go</h2>
+                  <p className="max-w-xl text-[13px] leading-6 text-emerald-900 sm:text-sm sm:leading-7">
+                    Need help after this? Open Support anytime and we&apos;ll help you with creating splits, joining them, top-ups, or manual withdrawal review.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={dismissGuide}
+                    className="sv-btn-primary w-full justify-center sm:w-auto"
+                  >
+                    Got it
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="sv-guide-nav">
+              {guideStep === 0 ? (
+                <span aria-hidden="true" className="min-h-[44px] w-24 shrink-0" />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setGuideStep((current) => Math.max(0, current - 1))}
+                  className="sv-btn-secondary min-w-[96px]"
+                >
+                  Back
+                </button>
+              )}
+
+              {guideStep < totalGuideSlides - 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setGuideStep((current) => Math.min(totalGuideSlides - 1, current + 1))}
+                  className="sv-btn-primary min-w-[96px]"
+                >
+                  Next
+                </button>
+              ) : (
+                <span aria-hidden="true" className="min-h-[44px] w-24 shrink-0" />
+              )}
             </div>
           </div>
         </div>
