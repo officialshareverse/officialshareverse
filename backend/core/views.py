@@ -27,6 +27,7 @@ from .models import (
     EscrowLedger,
     Group,
     GroupChatMessage,
+    GroupChatPresence,
     GroupChatReadState,
     GroupMember,
     Notification,
@@ -77,6 +78,7 @@ from .serializers import (
     CreateGroupSerializer,
     ForgotPasswordConfirmSerializer,
     ForgotPasswordRequestSerializer,
+    GroupChatPresenceSerializer,
     GroupListSerializer,
     GroupChatMessageSerializer,
     GroupUpdateSerializer,
@@ -85,6 +87,7 @@ from .serializers import (
     ProfileUpdateSerializer,
     ReviewSerializer,
     SendGroupChatMessageSerializer,
+    SignupAvailabilitySerializer,
     SignupConfirmSerializer,
     SignupRequestOTPSerializer,
     SignupSerializer,
@@ -107,6 +110,9 @@ PASSWORD_RESET_OTP_REQUEST_LIMIT = 5
 PASSWORD_RESET_OTP_REQUEST_WINDOW_MINUTES = 15
 PASSWORD_RESET_OTP_FAILED_ATTEMPT_LIMIT = 8
 PASSWORD_RESET_OTP_FAILED_ATTEMPT_WINDOW_MINUTES = 30
+GROUP_CHAT_ONLINE_WINDOW_MINUTES = 6
+GROUP_CHAT_RECENT_WINDOW_MINUTES = 30
+GROUP_CHAT_TYPING_WINDOW_SECONDS = 12
 PASSWORD_RESET_OTP_REQUEST_RATE_LIMIT = 10
 PASSWORD_RESET_OTP_REQUEST_RATE_WINDOW_SECONDS = 15 * 60
 PASSWORD_RESET_OTP_CONFIRM_RATE_LIMIT = 20
@@ -569,12 +575,211 @@ def mark_group_chat_read(user, group):
     )
 
 
+def build_name_initials(value):
+    return "".join(part[0].upper() for part in str(value or "").split()[:2] if part) or "SV"
+
+
+def get_group_chat_presence_state(presence, now=None):
+    reference_time = now or timezone.now()
+    online_threshold = reference_time - timedelta(minutes=GROUP_CHAT_ONLINE_WINDOW_MINUTES)
+    recent_threshold = reference_time - timedelta(minutes=GROUP_CHAT_RECENT_WINDOW_MINUTES)
+    typing_threshold = reference_time - timedelta(seconds=GROUP_CHAT_TYPING_WINDOW_SECONDS)
+
+    last_seen_at = getattr(presence, "last_seen_at", None)
+    typing_updated_at = getattr(presence, "typing_updated_at", None)
+    is_typing = bool(
+        presence
+        and presence.is_typing
+        and typing_updated_at
+        and typing_updated_at >= typing_threshold
+    )
+
+    if last_seen_at and last_seen_at >= online_threshold:
+        status = "online"
+        label = "Online"
+    elif last_seen_at and last_seen_at >= recent_threshold:
+        status = "recent"
+        label = "Active recently"
+    else:
+        status = "offline"
+        label = "Offline"
+
+    return {
+        "status": status,
+        "label": label,
+        "is_online": status == "online",
+        "is_typing": is_typing,
+        "last_seen_at": last_seen_at,
+    }
+
+
+def touch_group_chat_presence(user, group, is_typing=None):
+    now = timezone.now()
+    defaults = {"last_seen_at": now}
+    if is_typing is not None:
+        defaults["is_typing"] = bool(is_typing)
+        defaults["typing_updated_at"] = now
+
+    return GroupChatPresence.objects.update_or_create(
+        group=group,
+        user=user,
+        defaults=defaults,
+    )[0]
+
+
+def serialize_group_chat_participant(user, role, presence, now=None, current_user=None):
+    presence_state = get_group_chat_presence_state(presence, now=now)
+    return {
+        "username": user.username,
+        "role": role,
+        "initials": build_name_initials(user.username),
+        "is_self": bool(current_user and user.id == current_user.id),
+        "presence": presence_state,
+    }
+
+
+def build_group_chat_activity_snapshot(group, current_user=None, presence_map=None, now=None):
+    reference_time = now or timezone.now()
+    participant_users = [group.owner]
+    participant_users.extend(
+        member.user
+        for member in GroupMember.objects.filter(group=group).select_related("user")
+    )
+
+    seen_user_ids = set()
+    serialized_participants = []
+    active_typing_users = []
+    online_participant_count = 0
+
+    for participant in participant_users:
+        if participant.id in seen_user_ids:
+            continue
+        seen_user_ids.add(participant.id)
+        presence = (presence_map or {}).get(participant.id)
+        serialized_participant = serialize_group_chat_participant(
+            participant,
+            "owner" if participant.id == group.owner_id else "member",
+            presence,
+            now=reference_time,
+            current_user=current_user,
+        )
+        serialized_participants.append(serialized_participant)
+
+        if serialized_participant["presence"]["is_online"]:
+            online_participant_count += 1
+
+        if (
+            serialized_participant["presence"]["is_typing"]
+            and current_user
+            and participant.id != current_user.id
+        ):
+            active_typing_users.append(participant.username)
+
+    return {
+        "participants": serialized_participants,
+        "participant_count": len(serialized_participants),
+        "online_participant_count": online_participant_count,
+        "active_typing_users": active_typing_users[:3],
+        "has_someone_typing": bool(active_typing_users),
+    }
+
+
+def extract_notification_context_title(message):
+    raw_message = (message or "").strip()
+    patterns = [
+        r"New group chat message in (?P<title>.+?) from ",
+        r"for (?P<title>.+?) group experience",
+        r"receiving access for (?P<title>.+?)\.",
+        r"for (?P<title>.+?)\.",
+        r"for your (?P<title>.+?)\.",
+        r"for (?P<title>.+?) was recorded",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, raw_message)
+        if match:
+            return (match.group("title") or "").strip()
+
+    return ""
+
+
+def classify_notification_message(message):
+    normalized = (message or "").strip().lower()
+    context_title = extract_notification_context_title(message)
+
+    if any(keyword in normalized for keyword in ["wallet", "withdraw", "payout", "top-up", "top up", "payment credited"]):
+        return {
+            "category": "wallet",
+            "category_label": "Wallet",
+            "kind": "wallet",
+            "icon": "wallet",
+            "tone": "wallet",
+            "context_title": context_title,
+        }
+
+    if any(keyword in normalized for keyword in ["password reset", "otp", "account", "verified successfully"]):
+        return {
+            "category": "system",
+            "category_label": "System",
+            "kind": "system",
+            "icon": "shield",
+            "tone": "system",
+            "context_title": context_title,
+        }
+
+    if "chat" in normalized:
+        return {
+            "category": "groups",
+            "category_label": "Groups",
+            "kind": "chat",
+            "icon": "chat",
+            "tone": "chat",
+            "context_title": context_title,
+        }
+
+    if any(keyword in normalized for keyword in ["rating", "review"]):
+        return {
+            "category": "groups",
+            "category_label": "Groups",
+            "kind": "review",
+            "icon": "star",
+            "tone": "review",
+            "context_title": context_title,
+        }
+
+    if any(keyword in normalized for keyword in ["refund", "purchase proof", "access", "group", "split", "member"]):
+        return {
+            "category": "groups",
+            "category_label": "Groups",
+            "kind": "group_update",
+            "icon": "bell",
+            "tone": "group",
+            "context_title": context_title,
+        }
+
+    return {
+        "category": "system",
+        "category_label": "System",
+        "kind": "system",
+        "icon": "bell",
+        "tone": "system",
+        "context_title": context_title,
+    }
+
+
 def build_notification_payload(notification):
+    metadata = classify_notification_message(notification.message)
     return {
         "id": notification.id,
         "message": notification.message,
         "is_read": notification.is_read,
         "created_at": notification.created_at,
+        "category": metadata["category"],
+        "category_label": metadata["category_label"],
+        "kind": metadata["kind"],
+        "icon": metadata["icon"],
+        "tone": metadata["tone"],
+        "context_title": metadata["context_title"],
     }
 
 
@@ -1430,6 +1635,25 @@ class SignupRequestOTPView(APIView):
             response["dev_otp"] = otp_code
 
         return Response(response)
+
+
+class SignupAvailabilityView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = SignupAvailabilitySerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        username = serializer.validated_data["username"]
+        available = not User.objects.filter(username__iexact=username).exists()
+        return Response(
+            {
+                "username": username,
+                "available": available,
+                "message": "Username is available." if available else "This username is already in use.",
+            }
+        )
 
 
 class SignupView(APIView):
@@ -2930,20 +3154,6 @@ class GroupChatView(APIView):
         if error_response:
             return error_response
 
-        participants = [
-            {
-                "username": group.owner.username,
-                "role": "owner",
-            }
-        ]
-        participants.extend(
-            {
-                "username": member.user.username,
-                "role": "member",
-            }
-            for member in GroupMember.objects.filter(group=group).select_related("user")
-        )
-
         messages = GroupChatMessage.objects.filter(group=group).select_related("sender")
         serialized_messages = GroupChatMessageSerializer(
             messages,
@@ -2952,6 +3162,16 @@ class GroupChatView(APIView):
         ).data
 
         mark_group_chat_read(request.user, group)
+        touch_group_chat_presence(request.user, group)
+        presence_map = {
+            presence.user_id: presence
+            for presence in GroupChatPresence.objects.filter(group=group).select_related("user")
+        }
+        activity_snapshot = build_group_chat_activity_snapshot(
+            group,
+            current_user=request.user,
+            presence_map=presence_map,
+        )
 
         return Response({
             "group": {
@@ -2963,9 +3183,12 @@ class GroupChatView(APIView):
                 "status_label": get_status_copy(group),
                 "owner_name": group.owner.username,
             },
-            "participants": participants,
+            "participants": activity_snapshot["participants"],
             "messages": serialized_messages,
             "unread_chat_count": 0,
+            "online_participant_count": activity_snapshot["online_participant_count"],
+            "active_typing_users": activity_snapshot["active_typing_users"],
+            "has_someone_typing": activity_snapshot["has_someone_typing"],
         })
 
     def post(self, request, group_id):
@@ -2984,6 +3207,7 @@ class GroupChatView(APIView):
         )
 
         mark_group_chat_read(request.user, group)
+        touch_group_chat_presence(request.user, group, is_typing=False)
 
         for participant_id in get_group_chat_participants(group):
             if participant_id == request.user.id:
@@ -3005,6 +3229,28 @@ class GroupChatView(APIView):
             "chat_message": serialized_message,
         }, status=201)
 
+    def patch(self, request, group_id):
+        group, error_response = self._get_group_for_user(request, group_id)
+        if error_response:
+            return error_response
+
+        serializer = GroupChatPresenceSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        presence = touch_group_chat_presence(
+            request.user,
+            group,
+            is_typing=serializer.validated_data["is_typing"],
+        )
+
+        return Response(
+            {
+                "presence": get_group_chat_presence_state(presence),
+                "username": request.user.username,
+            }
+        )
+
 
 class GroupChatInboxView(APIView):
     permission_classes = [IsAuthenticated]
@@ -3016,6 +3262,11 @@ class GroupChatInboxView(APIView):
             .select_related("subscription", "owner")
             .distinct()
         )
+        group_ids = [group.id for group in groups]
+        presence_rows = GroupChatPresence.objects.filter(group_id__in=group_ids).select_related("user")
+        presence_by_group = {}
+        for presence in presence_rows:
+            presence_by_group.setdefault(presence.group_id, {})[presence.user_id] = presence
 
         chat_items = []
         total_unread_count = 0
@@ -3029,6 +3280,11 @@ class GroupChatInboxView(APIView):
             )
             unread_count = get_group_chat_unread_count(user, group)
             total_unread_count += unread_count
+            activity_snapshot = build_group_chat_activity_snapshot(
+                group,
+                current_user=user,
+                presence_map=presence_by_group.get(group.id, {}),
+            )
 
             chat_items.append(
                 {
@@ -3042,8 +3298,13 @@ class GroupChatInboxView(APIView):
                         "owner_name": group.owner.username,
                         "created_at": group.created_at,
                     },
+                    "is_owner": group.owner_id == user.id,
                     "unread_chat_count": unread_count,
-                    "participant_count": len(get_group_chat_participants(group)),
+                    "participant_count": activity_snapshot["participant_count"],
+                    "participant_preview": activity_snapshot["participants"][:4],
+                    "online_participant_count": activity_snapshot["online_participant_count"],
+                    "active_typing_users": activity_snapshot["active_typing_users"],
+                    "has_someone_typing": activity_snapshot["has_someone_typing"],
                     "message_count": GroupChatMessage.objects.filter(group=group).count(),
                     "last_message": (
                         {

@@ -1,11 +1,81 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import API from "../api/axios";
+import { CheckCircleIcon, ClockIcon } from "../components/UiIcons";
+
+function formatRelativeTime(value) {
+  if (!value) {
+    return "Just now";
+  }
+
+  const timestamp = new Date(value).getTime();
+  if (Number.isNaN(timestamp)) {
+    return "Just now";
+  }
+
+  const deltaMinutes = Math.max(1, Math.round((Date.now() - timestamp) / 60000));
+  if (deltaMinutes < 60) {
+    return `${deltaMinutes}m ago`;
+  }
+
+  const deltaHours = Math.round(deltaMinutes / 60);
+  if (deltaHours < 24) {
+    return `${deltaHours}h ago`;
+  }
+
+  const deltaDays = Math.round(deltaHours / 24);
+  if (deltaDays < 7) {
+    return `${deltaDays}d ago`;
+  }
+
+  return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+function formatTypingLabel(usernames) {
+  if (!Array.isArray(usernames) || usernames.length === 0) {
+    return "";
+  }
+
+  if (usernames.length === 1) {
+    return `${usernames[0]} is typing...`;
+  }
+
+  if (usernames.length === 2) {
+    return `${usernames[0]} and ${usernames[1]} are typing...`;
+  }
+
+  return `${usernames[0]} and ${usernames.length - 1} others are typing...`;
+}
+
+function getPresenceMeta(presence) {
+  const status = presence?.status || "offline";
+  if (presence?.is_typing) {
+    return { className: "is-typing", label: "Typing now" };
+  }
+  if (status === "online") {
+    return { className: "is-online", label: "Online" };
+  }
+  if (status === "recent") {
+    return { className: "is-recent", label: "Active recently" };
+  }
+  return { className: "is-offline", label: "Offline" };
+}
+
+function getAvatarToken(name) {
+  return String(name || "ShareVerse")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
+}
 
 export default function GroupChat() {
   const navigate = useNavigate();
   const { groupId } = useParams();
+  const typingTimerRef = useRef(null);
+  const isTypingRef = useRef(false);
   const [chat, setChat] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -30,32 +100,90 @@ export default function GroupChat() {
     }
   }, [groupId]);
 
+  const syncPresence = useCallback(async (isTyping) => {
+    try {
+      await API.patch(`groups/${groupId}/chat/`, { is_typing: isTyping });
+      isTypingRef.current = isTyping;
+    } catch (err) {
+      console.error("Failed to sync group chat presence:", err);
+    }
+  }, [groupId]);
+
   useEffect(() => {
-    fetchChat(true);
+    void fetchChat(true);
 
     const intervalId = window.setInterval(() => {
-      fetchChat(false);
-    }, 7000);
+      void fetchChat(false);
+    }, 5000);
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      window.clearInterval(intervalId);
+    };
   }, [fetchChat]);
 
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(typingTimerRef.current);
+      if (isTypingRef.current) {
+        void API.patch(`groups/${groupId}/chat/`, { is_typing: false }).catch(() => {});
+      }
+    };
+  }, [groupId]);
+
+  const handleMessageChange = (nextValue) => {
+    setMessage(nextValue);
+    window.clearTimeout(typingTimerRef.current);
+
+    if (!nextValue.trim()) {
+      if (isTypingRef.current) {
+        void syncPresence(false);
+      }
+      return;
+    }
+
+    if (!isTypingRef.current) {
+      void syncPresence(true);
+    }
+
+    typingTimerRef.current = window.setTimeout(() => {
+      void syncPresence(false);
+    }, 2200);
+  };
+
   const sendMessage = async () => {
-    if (!message.trim()) {
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage) {
       return;
     }
 
     try {
       setSending(true);
+      window.clearTimeout(typingTimerRef.current);
+      if (isTypingRef.current) {
+        void syncPresence(false);
+      }
+
       const response = await API.post(`groups/${groupId}/chat/`, {
-        message: message.trim(),
+        message: trimmedMessage,
       });
-      setChat((current) => ({
-        ...(current || {}),
-        messages: [...(current?.messages || []), response.data.chat_message],
-      }));
+
+      setChat((current) => {
+        const existingMessages = current?.messages || [];
+        const nextMessage = response.data.chat_message;
+        const nextMessages = existingMessages.some((item) => item.id === nextMessage.id)
+          ? existingMessages
+          : [...existingMessages, nextMessage];
+
+        return {
+          ...(current || {}),
+          messages: nextMessages,
+          active_typing_users: [],
+          has_someone_typing: false,
+        };
+      });
       setMessage("");
       setError("");
+      void fetchChat(false);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || "Failed to send chat message.");
@@ -63,6 +191,20 @@ export default function GroupChat() {
       setSending(false);
     }
   };
+
+  const messages = useMemo(() => chat?.messages || [], [chat?.messages]);
+  const participants = useMemo(() => chat?.participants || [], [chat?.participants]);
+  const group = chat?.group || {};
+
+  const otherTypingUsers = useMemo(
+    () => participants.filter((participant) => participant.presence?.is_typing && !participant.is_self).map((participant) => participant.username),
+    [participants]
+  );
+  const typingLabel = formatTypingLabel(otherTypingUsers);
+  const onlineParticipants = useMemo(
+    () => participants.filter((participant) => participant.presence?.is_online && !participant.is_self),
+    [participants]
+  );
 
   if (loading) {
     return (
@@ -91,10 +233,6 @@ export default function GroupChat() {
     );
   }
 
-  const messages = chat?.messages || [];
-  const participants = chat?.participants || [];
-  const group = chat?.group || {};
-
   return (
     <div className="sv-page">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -102,26 +240,28 @@ export default function GroupChat() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="sv-eyebrow-on-dark">Group chat</p>
-              <h1 className="sv-display-on-dark mt-3 max-w-4xl">
-                {group.subscription_name}
-              </h1>
+              <h1 className="sv-display-on-dark mt-3 max-w-4xl">{group.subscription_name}</h1>
               <p className="mt-3 max-w-3xl text-slate-300">
-                Chat with the group owner and members in one shared space.
+                See who is active, catch live typing signals, and keep the group coordinated without refreshing the whole page manually.
               </p>
             </div>
-          <button
-            type="button"
-            onClick={() => navigate("/chats")}
-            className="sv-btn-ghost-dark"
-          >
-            Back to Chats
-          </button>
+            <button
+              type="button"
+              onClick={() => navigate("/chats")}
+              className="sv-btn-ghost-dark"
+            >
+              Back to Chats
+            </button>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-200">
             <span className="rounded-full bg-white/10 px-3 py-1">{group.mode_label}</span>
             <span className="rounded-full bg-white/10 px-3 py-1">{group.status_label}</span>
             <span className="rounded-full bg-white/10 px-3 py-1">Host: {group.owner_name}</span>
+            {typingLabel ? <span className="sv-chat-typing-pill">{typingLabel}</span> : null}
+            {!typingLabel && onlineParticipants.length > 0 ? (
+              <span className="sv-chat-live-pill">{onlineParticipants.length} active now</span>
+            ) : null}
           </div>
         </section>
 
@@ -141,6 +281,18 @@ export default function GroupChat() {
               </button>
             </div>
 
+            {typingLabel || onlineParticipants.length > 0 ? (
+              <div className="sv-group-chat-live-strip">
+                {typingLabel ? (
+                  <span className="sv-chat-typing-pill">{typingLabel}</span>
+                ) : (
+                  <span className="sv-chat-live-pill">
+                    {onlineParticipants.length} participant{onlineParticipants.length === 1 ? "" : "s"} active now
+                  </span>
+                )}
+              </div>
+            ) : null}
+
             <div className="mt-5 space-y-4">
               {messages.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
@@ -148,17 +300,8 @@ export default function GroupChat() {
                 </div>
               ) : (
                 messages.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`flex ${item.is_own ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
-                        item.is_own
-                          ? "bg-emerald-600 text-white"
-                          : "border border-slate-200 bg-slate-50 text-slate-800"
-                      }`}
-                    >
+                  <div key={item.id} className={`flex ${item.is_own ? "justify-end" : "justify-start"}`}>
+                    <div className={`sv-group-chat-message ${item.is_own ? "is-own" : ""}`}>
                       <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${item.is_own ? "text-emerald-100" : "text-slate-500"}`}>
                         {item.sender_username}
                       </p>
@@ -172,21 +315,34 @@ export default function GroupChat() {
               )}
             </div>
 
-            <div className="mt-6 border-t border-slate-200 pt-5">
+            <div className="sv-group-chat-composer">
               {error ? (
                 <p className="mb-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>
               ) : null}
+
               <label className="block">
                 <span className="text-sm font-semibold text-slate-700">Type a message</span>
                 <textarea
                   value={message}
-                  onChange={(event) => setMessage(event.target.value)}
+                  onChange={(event) => handleMessageChange(event.target.value)}
+                  onBlur={() => {
+                    window.clearTimeout(typingTimerRef.current);
+                    if (isTypingRef.current) {
+                      void syncPresence(false);
+                    }
+                  }}
                   rows={4}
-                  className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-slate-500"
+                  className="sv-group-chat-textarea"
                   placeholder="Write to your group here..."
                 />
               </label>
-              <div className="mt-4 flex justify-end">
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-slate-500">
+                  {message.trim()
+                    ? "Typing presence fades automatically after a short pause."
+                    : "Share join updates, renewal reminders, and access follow-ups here."}
+                </p>
                 <button
                   type="button"
                   onClick={sendMessage}
@@ -204,25 +360,67 @@ export default function GroupChat() {
               <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Members</p>
               <h2 className="mt-2 text-xl font-bold text-slate-900">Participants</h2>
               <div className="mt-4 space-y-3">
-                {participants.map((participant) => (
-                  <div
-                    key={`${participant.role}-${participant.username}`}
-                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3"
-                  >
-                    <p className="text-sm font-semibold text-slate-900">{participant.username}</p>
-                    <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-                      {participant.role}
-                    </span>
-                  </div>
-                ))}
+                {participants.map((participant) => {
+                  const presenceMeta = getPresenceMeta(participant.presence);
+
+                  return (
+                    <div
+                      key={`${participant.role}-${participant.username}`}
+                      className="sv-group-chat-participant"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`sv-group-chat-participant-avatar ${presenceMeta.className}`}>
+                          {participant.initials || getAvatarToken(participant.username)}
+                          <span className={`sv-chat-avatar-chip-dot ${presenceMeta.className}`} />
+                        </span>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {participant.username}
+                            {participant.is_self ? " (you)" : ""}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {presenceMeta.label}
+                            {participant.presence?.last_seen_at ? ` • seen ${formatRelativeTime(participant.presence.last_seen_at)}` : ""}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                          {participant.role}
+                        </span>
+                        {participant.presence?.is_typing ? (
+                          <span className="sv-chat-typing-pill">Typing</span>
+                        ) : participant.presence?.is_online ? (
+                          <span className="sv-chat-live-pill">Live</span>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </section>
 
             <section className="sv-card">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Tip</p>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                Use this chat to coordinate timing, join status, access follow-ups, and renewal planning with your group.
-              </p>
+              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Quick read</p>
+              <div className="mt-3 space-y-3">
+                <div className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                  <span className="mt-0.5 text-emerald-600">
+                    <CheckCircleIcon className="h-4.5 w-4.5" />
+                  </span>
+                  <p className="text-sm leading-6 text-slate-600">
+                    Use the live strip to spot when the host or members are active before sending a follow-up.
+                  </p>
+                </div>
+                <div className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                  <span className="mt-0.5 text-slate-500">
+                    <ClockIcon className="h-4.5 w-4.5" />
+                  </span>
+                  <p className="text-sm leading-6 text-slate-600">
+                    Typing indicators expire quickly, so they stay helpful without getting stuck on old activity.
+                  </p>
+                </div>
+              </div>
             </section>
           </aside>
         </section>

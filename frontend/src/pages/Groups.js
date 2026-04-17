@@ -1,27 +1,194 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 import API from "../api/axios";
-import { CheckCircleIcon, ClockIcon, CompassIcon, LoadingSpinner, SearchIcon, ShieldIcon, SparkIcon, WalletIcon } from "../components/UiIcons";
+import { useToast } from "../components/ToastProvider";
+import {
+  CheckCircleIcon,
+  ClockIcon,
+  CompassIcon,
+  LoadingSpinner,
+  SearchIcon,
+  ShieldIcon,
+  SparkIcon,
+  WalletIcon,
+} from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
+
+const SORT_OPTIONS = [
+  { value: "popular", label: "Most popular" },
+  { value: "newest", label: "Newest" },
+  { value: "cheapest", label: "Cheapest" },
+  { value: "almost_full", label: "Almost full" },
+];
 
 function getCardTone(mode) {
   if (mode === "group_buy") {
     return {
-      chip: "bg-amber-100 text-amber-800",
-      rail: "bg-amber-500",
-      soft: "border-amber-200 bg-amber-50/50",
+      key: "is-buy",
+      modeClass: "is-buy",
+      buttonClass: "is-buy",
+      progressClass: "is-buy",
     };
   }
 
   return {
-    chip: "bg-sky-100 text-sky-800",
-    rail: "bg-sky-700",
-    soft: "border-sky-200 bg-sky-50/50",
+    key: "is-sharing",
+    modeClass: "is-sharing",
+    buttonClass: "is-sharing",
+    progressClass: "is-sharing",
   };
+}
+
+function getPlanMeta(name) {
+  const normalized = String(name || "").toLowerCase();
+
+  if (
+    normalized.includes("netflix") ||
+    normalized.includes("spotify") ||
+    normalized.includes("prime") ||
+    normalized.includes("hotstar") ||
+    normalized.includes("youtube") ||
+    normalized.includes("stream")
+  ) {
+    return { badge: "TV", label: "Streaming", toneClass: "is-streaming" };
+  }
+
+  if (
+    normalized.includes("course") ||
+    normalized.includes("udemy") ||
+    normalized.includes("coursera") ||
+    normalized.includes("academy") ||
+    normalized.includes("class") ||
+    normalized.includes("learn")
+  ) {
+    return { badge: "EDU", label: "Learning", toneClass: "is-learning" };
+  }
+
+  if (
+    normalized.includes("figma") ||
+    normalized.includes("adobe") ||
+    normalized.includes("notion") ||
+    normalized.includes("canva") ||
+    normalized.includes("software") ||
+    normalized.includes("chatgpt") ||
+    normalized.includes("github")
+  ) {
+    return { badge: "APP", label: "Software", toneClass: "is-software" };
+  }
+
+  if (
+    normalized.includes("membership") ||
+    normalized.includes("club") ||
+    normalized.includes("gym") ||
+    normalized.includes("community")
+  ) {
+    return { badge: "VIP", label: "Membership", toneClass: "is-membership" };
+  }
+
+  return { badge: "SV", label: "Digital plan", toneClass: "is-default" };
+}
+
+function getStatusTone(status) {
+  if (status === "active") {
+    return { className: "is-active", dotClass: "is-active" };
+  }
+  if (status === "awaiting_purchase" || status === "proof_submitted") {
+    return { className: "is-pending", dotClass: "is-pending" };
+  }
+  if (status === "closed" || status === "refunded" || status === "refunding") {
+    return { className: "is-closed", dotClass: "is-closed" };
+  }
+  if (status === "disputed") {
+    return { className: "is-alert", dotClass: "is-alert" };
+  }
+
+  return { className: "is-neutral", dotClass: "is-neutral" };
 }
 
 function formatCurrency(value) {
   return `Rs ${Number(value || 0).toFixed(2)}`;
+}
+
+function formatRelativeTime(value) {
+  if (!value) {
+    return "Updated recently";
+  }
+
+  const timestamp = new Date(value).getTime();
+  if (Number.isNaN(timestamp)) {
+    return "Updated recently";
+  }
+
+  const deltaMs = Date.now() - timestamp;
+  const minutes = Math.max(1, Math.round(deltaMs / 60000));
+
+  if (minutes < 60) {
+    return `Updated ${minutes}m ago`;
+  }
+
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) {
+    return `Updated ${hours}h ago`;
+  }
+
+  const days = Math.round(hours / 24);
+  if (days < 7) {
+    return `Updated ${days}d ago`;
+  }
+
+  return `Updated ${new Date(value).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  })}`;
+}
+
+function formatDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+function getInitials(value) {
+  return String(value || "ShareVerse Host")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
+}
+
+function compareGroups(sortBy, left, right) {
+  if (sortBy === "newest") {
+    return new Date(right.created_at || 0).getTime() - new Date(left.created_at || 0).getTime();
+  }
+
+  if (sortBy === "cheapest") {
+    return Number(left.join_price || 0) - Number(right.join_price || 0);
+  }
+
+  if (sortBy === "almost_full") {
+    const leftRemaining = Math.max(Number(left.remaining_slots ?? left.total_slots - left.filled_slots) || 0, 0);
+    const rightRemaining = Math.max(Number(right.remaining_slots ?? right.total_slots - right.filled_slots) || 0, 0);
+
+    if (leftRemaining !== rightRemaining) {
+      return leftRemaining - rightRemaining;
+    }
+
+    return Number(right.progress_percent || 0) - Number(left.progress_percent || 0);
+  }
+
+  const popularityLeft = Number(left.progress_percent || 0) * 100 + Number(left.filled_slots || 0);
+  const popularityRight = Number(right.progress_percent || 0) * 100 + Number(right.filled_slots || 0);
+
+  return popularityRight - popularityLeft;
 }
 
 export default function Groups() {
@@ -29,9 +196,12 @@ export default function Groups() {
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("popular");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const [pendingJoinGroup, setPendingJoinGroup] = useState(null);
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const toast = useToast();
+  const fetchGroupsRef = useRef(null);
 
   useRevealOnScroll();
 
@@ -41,39 +211,39 @@ export default function Groups() {
       setGroups(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error(err);
-      setFeedback({ type: "error", message: "Failed to load groups." });
+      toast.error("Failed to load groups.", { title: "Couldn't load marketplace" });
     } finally {
       setLoading(false);
     }
   };
 
+  fetchGroupsRef.current = fetchGroups;
+
   useEffect(() => {
-    fetchGroups();
+    fetchGroupsRef.current?.();
   }, []);
 
   const joinGroup = async (group) => {
     try {
-      setFeedback({ type: "", message: "" });
       setJoiningId(group.id);
       const res = await API.post("join-group/", { group_id: group.id });
       if (group.mode === "sharing") {
-        const successNote = res.data?.pricing_note ? `\n${res.data.pricing_note}` : "";
+        const successNote = res.data?.pricing_note ? ` ${res.data.pricing_note}` : "";
         const successFeeNote =
           Number(res.data?.platform_fee_amount || 0) > 0
-            ? `\nThis included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
+            ? ` This included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
-        setFeedback({
-          type: "success",
-          message: `Joined successfully. ${formatCurrency(res.data?.charged_amount || group.join_price || group.price_per_slot)} was charged.${successFeeNote.replace("\n", " ")}${successNote.replace("\n", " ")}`.trim(),
-        });
+        toast.success(
+          `Joined successfully. ${formatCurrency(res.data?.charged_amount || group.join_price || group.price_per_slot)} was charged.${successFeeNote}${successNote}`.trim(),
+          { title: "Joined split" }
+        );
       } else {
         const successFeeNote =
           Number(res.data?.platform_fee_amount || 0) > 0
-            ? `\nThis included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
+            ? ` This included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
-        setFeedback({
-          type: "success",
-          message: `${res.data?.message || "Joined successfully."}${successFeeNote.replace("\n", " ")}`.trim(),
+        toast.success(`${res.data?.message || "Joined successfully."}${successFeeNote}`.trim(), {
+          title: "Joined group",
         });
       }
 
@@ -81,38 +251,11 @@ export default function Groups() {
       fetchGroups();
     } catch (err) {
       console.error(err);
-      setFeedback({ type: "error", message: err.response?.data?.error || "Join failed." });
+      toast.error(err.response?.data?.error || "Join failed.", { title: "Couldn't join group" });
     } finally {
       setJoiningId(null);
     }
   };
-
-  const filteredGroups = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-
-    return groups.filter((group) => {
-      const matchesFilter = filter === "all" ? true : group.mode === filter;
-      if (!matchesFilter) {
-        return false;
-      }
-
-      if (!normalizedSearch) {
-        return true;
-      }
-
-      const haystack = [
-        group.subscription_name,
-        group.owner_name,
-        group.mode_label,
-        group.status_label,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(normalizedSearch);
-    });
-  }, [filter, groups, searchTerm]);
 
   const stats = useMemo(() => {
     return groups.reduce(
@@ -132,6 +275,81 @@ export default function Groups() {
     );
   }, [groups]);
 
+  const filterOptions = useMemo(
+    () => [
+      { value: "all", label: "All groups", count: stats.total },
+      { value: "sharing", label: "Sharing", count: stats.sharing },
+      { value: "group_buy", label: "Buy together", count: stats.groupBuy },
+    ],
+    [stats]
+  );
+
+  const searchSuggestions = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    if (!normalizedSearch) {
+      return [];
+    }
+
+    const suggestionMap = new Map();
+
+    groups.forEach((group) => {
+      [
+        { label: group.subscription_name || group.subscription, helper: group.mode_label },
+        { label: group.owner_name, helper: "Host" },
+      ]
+        .filter((item) => item.label)
+        .forEach((item) => {
+          const key = item.label.trim();
+          if (!key || !key.toLowerCase().includes(normalizedSearch)) {
+            return;
+          }
+
+          if (!suggestionMap.has(key)) {
+            suggestionMap.set(key, item);
+          }
+        });
+    });
+
+    return Array.from(suggestionMap.values()).slice(0, 6);
+  }, [groups, searchTerm]);
+
+  const filteredGroups = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return [...groups]
+      .filter((group) => {
+        const matchesFilter = filter === "all" ? true : group.mode === filter;
+        if (!matchesFilter) {
+          return false;
+        }
+
+        if (!normalizedSearch) {
+          return true;
+        }
+
+        const haystack = [
+          group.subscription_name,
+          group.owner_name,
+          group.mode_label,
+          group.status_label,
+          group.mode_description,
+          group.next_action,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(normalizedSearch);
+      })
+      .sort((left, right) => compareGroups(sortBy, left, right));
+  }, [filter, groups, searchTerm, sortBy]);
+
+  const spotlightGroup = filteredGroups[0] || groups[0] || null;
+  const categoryChips = useMemo(() => {
+    const labels = new Set(groups.map((group) => getPlanMeta(group.subscription_name || group.subscription).label));
+    return Array.from(labels).slice(0, 4);
+  }, [groups]);
+
   const pendingJoinSummary = pendingJoinGroup
     ? {
         amount: pendingJoinGroup.join_price || pendingJoinGroup.price_per_slot,
@@ -143,60 +361,13 @@ export default function Groups() {
   return (
     <div className="sv-page">
       {pendingJoinGroup ? (
-        <div className="sv-modal-backdrop">
-          <div className="sv-confirm-modal">
-            <p className="sv-eyebrow">Join confirmation</p>
-            <h2 className="mt-2 text-lg font-bold text-slate-950 sm:mt-3 sm:text-2xl">
-              {pendingJoinGroup.mode === "sharing" ? "Review this split before you join" : "Review this buy-together join"}
-            </h2>
-            <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:mt-3 sm:text-sm sm:leading-7">
-              {pendingJoinGroup.mode === "sharing"
-                ? "Your wallet will be charged now, then the host coordinates access. The host is credited only after you confirm access inside ShareVerse."
-                : "Your contribution is held first. The group moves forward only after the buy-together flow is complete."}
-            </p>
-
-            <div className="mt-3 space-y-2 sm:mt-5 sm:space-y-3">
-              <InlineMetric label="Plan" value={pendingJoinGroup.subscription_name || pendingJoinGroup.subscription} />
-              <InlineMetric label="Pay now" value={formatCurrency(pendingJoinSummary.amount)} />
-              <InlineMetric label="Plan contribution" value={formatCurrency(pendingJoinSummary.subtotal)} />
-              <InlineMetric label="Platform fee" value={formatCurrency(pendingJoinSummary.platformFee)} />
-            </div>
-
-            {pendingJoinGroup.pricing_note ? (
-              <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[13px] text-emerald-900 sm:mt-4 sm:px-4 sm:py-3 sm:text-sm">
-                {pendingJoinGroup.pricing_note}
-              </div>
-            ) : null}
-
-            <div className="mt-4 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:justify-end sm:gap-3">
-              <button
-                type="button"
-                onClick={() => setPendingJoinGroup(null)}
-                className="sv-btn-secondary w-full justify-center text-[13px] sm:w-auto sm:text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => joinGroup(pendingJoinGroup)}
-                disabled={joiningId === pendingJoinGroup.id}
-                className="sv-btn-primary w-full justify-center text-[13px] sm:w-auto sm:text-sm"
-              >
-                {joiningId === pendingJoinGroup.id ? (
-                  <>
-                    <LoadingSpinner />
-                    Joining...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircleIcon className="h-4 w-4" />
-                    Confirm and join
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <JoinConfirmModal
+          group={pendingJoinGroup}
+          summary={pendingJoinSummary}
+          joiningId={joiningId}
+          onCancel={() => setPendingJoinGroup(null)}
+          onConfirm={joinGroup}
+        />
       ) : null}
 
       <div className="sv-container space-y-4 sm:space-y-6">
@@ -204,59 +375,141 @@ export default function Groups() {
           <div className="sv-dark-hero sv-reveal">
             <p className="sv-eyebrow-on-dark">Marketplace</p>
             <h1 className="sv-display-on-dark mt-3 max-w-4xl sm:mt-4">
-              Join the group flow that fits the way the plan is being organized.
+              Explore open groups with clearer status, cleaner pricing, and a faster path to join.
             </h1>
             <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-5 sm:text-base sm:leading-8">
-              Sharing groups give access to an existing plan. Buy-together groups collect member
-              commitments first and move forward only after the group is complete.
+              Browse live sharing and buy-together groups, compare what you pay now, and see which
+              plans are nearly full before you commit.
             </p>
 
             <div className="mt-4 flex flex-wrap gap-1.5 sm:mt-8 sm:gap-2">
-              <span className="sv-chip-dark"><SearchIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Search by plan</span>
-              <span className="sv-chip-dark"><ClockIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Late-join proration</span>
-              <span className="sv-chip-dark"><WalletIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Wallet-backed</span>
-              <span className="hidden sm:inline-flex sv-chip-dark"><ShieldIcon className="h-3.5 w-3.5" /> Confirmation-based flow</span>
+              <span className="sv-chip-dark">
+                <SearchIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                Search by plan or host
+              </span>
+              <span className="sv-chip-dark">
+                <ClockIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                Sort by urgency or price
+              </span>
+              <span className="sv-chip-dark">
+                <WalletIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                Wallet-backed joining
+              </span>
+              <span className="hidden sm:inline-flex sv-chip-dark">
+                <ShieldIcon className="h-3.5 w-3.5" />
+                Join review before payment
+              </span>
+            </div>
+
+            <div className="sv-groups-hero-stats mt-5">
+              <MarketHeroStat label="Open now" value={stats.open} note="ready to browse" />
+              <MarketHeroStat label="Sharing" value={stats.sharing} note="existing plan hosts" />
+              <MarketHeroStat label="Buy together" value={stats.groupBuy} note="group purchase flows" />
             </div>
           </div>
 
-          <div className="sv-card sv-reveal">
-            <p className="sv-eyebrow">Filter groups</p>
-            <h2 className="mt-2 text-lg font-bold leading-tight text-slate-950 sm:mt-3 sm:text-2xl md:text-[1.9rem]">
-              Search, narrow, and join
-            </h2>
+          <div className="sv-card sv-reveal sv-groups-panel">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="sv-eyebrow">Filter groups</p>
+                <h2 className="mt-2 text-lg font-bold leading-tight text-slate-950 sm:mt-3 sm:text-2xl md:text-[1.9rem]">
+                  Search, sort, and scan what matters
+                </h2>
+              </div>
+              <span className="sv-chip">
+                {filteredGroups.length} match{filteredGroups.length === 1 ? "" : "es"}
+              </span>
+            </div>
 
-            <label className="mt-3 block sm:mt-5">
+            <label className="mt-4 block sm:mt-5">
               <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs">
                 Search groups
               </span>
-              <div className="flex items-center gap-2 rounded-[16px] border border-slate-200 bg-white/70 px-3 py-2.5 sm:rounded-[22px] sm:px-4 sm:py-3">
+              <div className="sv-groups-search-shell">
                 <SearchIcon className="h-4 w-4 shrink-0 text-slate-400" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => {
+                    window.setTimeout(() => setSearchFocused(false), 120);
+                  }}
                   placeholder="Netflix, Spotify, host name..."
-                  className="w-full bg-transparent text-[13px] text-slate-900 outline-none placeholder:text-slate-400 sm:text-sm"
+                  className="sv-groups-search-input"
                 />
                 {searchTerm ? (
                   <button
                     type="button"
                     onClick={() => setSearchTerm("")}
-                    className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-200 sm:px-3 sm:py-1.5 sm:text-xs"
+                    className="sv-groups-clear-button"
                   >
                     Clear
                   </button>
                 ) : null}
               </div>
+
+              {searchFocused && searchSuggestions.length > 0 ? (
+                <div className="sv-groups-search-suggestions">
+                  {searchSuggestions.map((item) => (
+                    <button
+                      key={`${item.helper}-${item.label}`}
+                      type="button"
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        setSearchTerm(item.label);
+                        setSearchFocused(false);
+                      }}
+                      className="sv-groups-suggestion-item"
+                    >
+                      <span className="font-semibold text-slate-900">{item.label}</span>
+                      <span className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                        {item.helper}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </label>
 
-            <div className="mt-3 flex flex-wrap gap-1.5 sm:mt-5 sm:gap-2">
-              <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>All</FilterButton>
-              <FilterButton active={filter === "sharing"} onClick={() => setFilter("sharing")}>Sharing</FilterButton>
-              <FilterButton active={filter === "group_buy"} onClick={() => setFilter("group_buy")}>Buy together</FilterButton>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {filterOptions.map((option) => (
+                <FilterButton
+                  key={option.value}
+                  active={filter === option.value}
+                  count={option.count}
+                  onClick={() => setFilter(option.value)}
+                >
+                  {option.label}
+                </FilterButton>
+              ))}
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-3">
+            <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <label className="block">
+                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs">
+                  Sort by
+                </span>
+                <select
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value)}
+                  className="sv-groups-sort-select"
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="sv-groups-summary-strip">
+                <span>{stats.total} total listed</span>
+                <span>{stats.open} still open</span>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
               <StatCard label="Total groups" value={stats.total} />
               <StatCard label="Open now" value={stats.open} />
               <StatCard label="Sharing" value={stats.sharing} />
@@ -265,162 +518,398 @@ export default function Groups() {
           </div>
         </section>
 
-        {feedback.message ? (
-          <div
-            className={`rounded-2xl border px-4 py-3 text-sm ${
-              feedback.type === "error"
-                ? "border-rose-200 bg-rose-50 text-rose-800"
-                : "border-emerald-200 bg-emerald-50 text-emerald-900"
-            }`}
-          >
-            {feedback.message}
-          </div>
-        ) : null}
-
         {loading ? (
-          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <article key={index} className="sv-skeleton-card space-y-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-3">
-                    <div className="sv-skeleton h-3 w-20" />
-                    <div className="sv-skeleton h-9 w-56 rounded-[16px]" />
-                    <div className="sv-skeleton h-9 w-40 rounded-[16px]" />
+          <section className="grid gap-4 xl:gap-5">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <article key={index} className="sv-skeleton-card space-y-4 rounded-[30px]">
+                <div className="flex items-start gap-4">
+                  <div className="sv-skeleton h-20 w-20 rounded-[24px]" />
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <div className="sv-skeleton h-3 w-24" />
+                    <div className="sv-skeleton h-10 w-2/3 rounded-[16px]" />
+                    <div className="sv-skeleton h-4 w-full" />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="sv-skeleton h-20 w-full rounded-[18px]" />
+                      <div className="sv-skeleton h-20 w-full rounded-[18px]" />
+                    </div>
                   </div>
-                  <div className="sv-skeleton h-16 w-20 rounded-full" />
                 </div>
-                <div className="sv-skeleton h-4 w-full" />
-                <div className="sv-skeleton h-4 w-11/12" />
-                <div className="space-y-3">
-                  {Array.from({ length: 4 }).map((__, itemIndex) => (
-                    <div key={itemIndex} className="sv-skeleton h-14 w-full rounded-[18px]" />
-                  ))}
-                </div>
-                <div className="sv-skeleton h-2 w-full rounded-full" />
+                <div className="sv-skeleton h-2.5 w-full rounded-full" />
                 <div className="sv-skeleton h-12 w-full rounded-full" />
               </article>
             ))}
           </section>
         ) : filteredGroups.length === 0 ? (
-          <div className="sv-empty-state">
+          <div className="sv-empty-state sv-group-empty-state">
             <div className="sv-empty-icon">
               <CompassIcon className="h-6 w-6" />
             </div>
-            <p className="text-sm font-semibold text-slate-900">
-              {searchTerm ? "No groups match your search yet." : "No groups match this view yet."}
+            <p className="text-base font-semibold text-slate-900">
+              {searchTerm ? "No groups match that search yet." : "No groups match this view yet."}
             </p>
-            <p className="mt-2 text-sm leading-7 text-slate-500">
-              Try another search, switch the filter, or check back once more splits are live.
+            <p className="mt-2 max-w-xl text-sm leading-7 text-slate-500">
+              Try another filter, browse a different category, or open your own split if you do not
+              see the plan you want right now.
             </p>
+
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {(categoryChips.length > 0 ? categoryChips : ["Streaming", "Learning", "Software", "Membership"]).map(
+                (item) => (
+                  <span key={item} className="sv-group-empty-chip">
+                    {item}
+                  </span>
+                )
+              )}
+            </div>
+
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+              {(searchTerm || filter !== "all") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setFilter("all");
+                    setSortBy("popular");
+                  }}
+                  className="sv-btn-secondary justify-center text-[13px] sm:text-sm"
+                >
+                  Reset filters
+                </button>
+              )}
+              <Link to="/create" className="sv-btn-primary justify-center text-[13px] sm:text-sm">
+                Create your own split
+              </Link>
+            </div>
           </div>
         ) : (
-          <section className="sv-stagger grid gap-3 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {filteredGroups.map((group) => {
-              const isFull = group.filled_slots >= group.total_slots;
+          <section className="sv-group-grid">
+            {filteredGroups.map((group, index) => {
+              const filledSlots = Number(group.filled_slots || 0);
+              const totalSlots = Math.max(Number(group.total_slots || 1), 1);
+              const remainingSlots = Math.max(Number(group.remaining_slots ?? totalSlots - filledSlots) || 0, 0);
+              const isFull = filledSlots >= totalSlots;
+              const isHot = !isFull && remainingSlots <= 1;
               const tone = getCardTone(group.mode);
-              const progress = Math.min(
-                100,
-                Math.round((Number(group.filled_slots || 0) / Number(group.total_slots || 1)) * 100)
-              );
+              const statusTone = getStatusTone(group.status);
+              const planMeta = getPlanMeta(group.subscription_name || group.subscription);
+              const progress = Math.min(100, Number(group.progress_percent || Math.round((filledSlots / totalSlots) * 100)));
+              const activityLabel = formatRelativeTime(group.created_at);
+              const timelineLabel =
+                group.mode === "group_buy"
+                  ? formatDate(group.purchase_deadline_at)
+                    ? `Purchase target ${formatDate(group.purchase_deadline_at)}`
+                    : formatDate(group.auto_refund_at)
+                      ? `Auto refund ${formatDate(group.auto_refund_at)}`
+                      : activityLabel
+                  : formatDate(group.end_date)
+                    ? `Runs through ${formatDate(group.end_date)}`
+                    : activityLabel;
 
               return (
                 <article
                   key={group.id}
-                  className={`sv-reveal rounded-[20px] border p-3.5 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-5 ${tone.soft}`}
+                  className={`sv-group-card ${tone.key} ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">Open group</p>
-                      <h3 className="mt-1.5 truncate text-lg font-bold leading-tight text-slate-950 sm:mt-2 sm:text-2xl">
-                        {group.subscription_name || group.subscription}
-                      </h3>
+                  <div className="sv-group-card-shell">
+                    <div className={`sv-group-icon ${planMeta.toneClass}`}>
+                      <span>{planMeta.badge}</span>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] sm:px-3 sm:py-1 sm:text-xs sm:tracking-[0.18em] ${tone.chip}`}>
-                      {group.mode_label}
-                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-[11px]">
+                            {planMeta.label}
+                          </p>
+                          <h3 className="mt-1.5 truncate text-lg font-bold leading-tight text-slate-950 sm:text-2xl">
+                            {group.subscription_name || group.subscription}
+                          </h3>
+                          <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
+                            {group.mode_description}
+                          </p>
+                        </div>
+
+                        <div className="sv-group-badge-row">
+                          <span className={`sv-group-mode-pill ${tone.modeClass}`}>{group.mode_label}</span>
+                          <span className={`sv-group-status-pill ${statusTone.className}`}>
+                            <span className={`sv-group-status-dot ${statusTone.dotClass}`} />
+                            {group.status_label}
+                          </span>
+                          {isHot ? (
+                            <span className="sv-group-urgency-pill">
+                              <SparkIcon className="h-3.5 w-3.5" />
+                              1 slot left
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="sv-group-owner-row">
+                        <div className="flex items-center gap-3">
+                          <span className="sv-group-owner-avatar">{getInitials(group.owner_name)}</span>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-950">
+                              Hosted by {group.owner_name || "ShareVerse host"}
+                            </p>
+                            <p className="text-[12px] text-slate-500 sm:text-[13px]">{timelineLabel}</p>
+                          </div>
+                        </div>
+                        <span className="sv-group-activity-pill">
+                          {group.unread_chat_count > 0
+                            ? `${group.unread_chat_count} unread chat${group.unread_chat_count === 1 ? "" : "s"}`
+                            : activityLabel}
+                        </span>
+                      </div>
+
+                      <div className="sv-group-metric-grid">
+                        <MetricTile
+                          label={group.is_prorated ? "Pay now" : "Join price"}
+                          value={formatCurrency(group.join_price)}
+                        />
+                        <MetricTile
+                          label="Plan contribution"
+                          value={formatCurrency(group.join_subtotal || group.price_per_slot)}
+                        />
+                        <MetricTile label="Slots filled" value={`${filledSlots}/${totalSlots}`} />
+                        <MetricTile
+                          label={group.mode === "group_buy" ? "Remaining slots" : "Paid members"}
+                          value={group.mode === "group_buy" ? `${remainingSlots}` : `${group.paid_members || 0}`}
+                        />
+                      </div>
+
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 sm:text-xs">
+                            Group fill
+                          </p>
+                          <span className="sv-group-progress-value">{progress}%</span>
+                        </div>
+                        <div className="sv-group-progress-track">
+                          <span
+                            className={`sv-group-progress-fill ${tone.progressClass} ${progress >= 80 ? "is-hot" : ""}`}
+                            style={{ "--sv-progress": `${progress}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="sv-group-footer">
+                        <div className="min-w-0">
+                          <div className="mb-2 flex flex-wrap gap-2">
+                            {Number(group.platform_fee_amount || 0) > 0 ? (
+                              <span className="sv-group-inline-note">
+                                Includes 5% platform fee: {formatCurrency(group.platform_fee_amount)}
+                              </span>
+                            ) : null}
+                            {group.is_prorated ? (
+                              <span className="sv-group-inline-note sv-group-inline-note-success">
+                                Prorated pricing active
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="sv-group-next-action">{group.next_action}</p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setPendingJoinGroup(group)}
+                          disabled={isFull || joiningId === group.id}
+                          className={`sv-group-join-button ${isFull ? "is-disabled" : tone.buttonClass}`}
+                        >
+                          {joiningId === group.id ? (
+                            <>
+                              <LoadingSpinner />
+                              Joining...
+                            </>
+                          ) : isFull ? (
+                            "Group full"
+                          ) : (
+                            <>
+                              <SparkIcon className="h-4 w-4" />
+                              {group.join_cta}
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   </div>
-
-                  <p className="mt-2.5 text-[13px] leading-6 text-slate-600 sm:mt-4 sm:text-sm sm:leading-7">{group.mode_description}</p>
-
-                  <div className="mt-3 space-y-1.5 sm:mt-5 sm:space-y-2">
-                    <InlineMetric
-                      label={group.is_prorated ? "Pay now" : "Pay to join"}
-                      value={formatCurrency(group.join_price)}
-                    />
-                    <InlineMetric
-                      label="Plan contribution"
-                      value={formatCurrency(group.join_subtotal || group.price_per_slot)}
-                    />
-                    <InlineMetric label="Host" value={group.owner_name} />
-                    <InlineMetric label="Stage" value={group.status_label} />
-                    <InlineMetric label="Filled" value={`${group.filled_slots}/${group.total_slots}`} />
-                  </div>
-
-                  <div className="mt-3 space-y-0.5 sm:mt-4 sm:space-y-1">
-                    {Number(group.platform_fee_amount || 0) > 0 ? (
-                      <p className="text-[11px] leading-5 text-slate-600 sm:text-xs sm:leading-6">
-                        Includes a 5% platform fee of {formatCurrency(group.platform_fee_amount)}.
-                      </p>
-                    ) : null}
-                    {group.is_prorated ? (
-                      <p className="text-[11px] leading-5 text-emerald-700 sm:text-xs sm:leading-6">
-                        {group.pricing_note} Full cycle price before fee: {formatCurrency(group.price_per_slot)}.
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/90 sm:mt-5 sm:h-2">
-                    <div className={`sv-progress-animated h-full rounded-full ${tone.rail}`} style={{ width: `${progress}%`, backgroundImage: tone.rail.includes("amber") ? "linear-gradient(90deg,#f59e0b 0%,#fbbf24 35%,#d97706 100%)" : "linear-gradient(90deg,#0f766e 0%,#38bdf8 45%,#0f172a 100%)" }} />
-                  </div>
-
-                  <button
-                    onClick={() => setPendingJoinGroup(group)}
-                    disabled={isFull || joiningId === group.id}
-                    className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 text-[13px] font-semibold transition sm:mt-5 sm:px-4 sm:py-3 sm:text-sm ${
-                      isFull
-                        ? "cursor-not-allowed bg-slate-300 text-white"
-                        : "bg-slate-950 text-white hover:bg-slate-800"
-                    }`}
-                  >
-                    {isFull ? "Group full" : joiningId === group.id ? "Joining..." : <><SparkIcon className="h-4 w-4" />{group.join_cta}</>}
-                  </button>
                 </article>
               );
             })}
           </section>
         )}
+
+        {spotlightGroup ? (
+          <section className="sv-card-solid sv-reveal">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="sv-eyebrow">Browse by signal</p>
+                <h2 className="sv-title mt-2">Popular categories worth checking next</h2>
+              </div>
+              <span className="sv-chip">
+                Spotlight: {spotlightGroup.subscription_name || spotlightGroup.subscription}
+              </span>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(categoryChips.length > 0 ? categoryChips : ["Streaming", "Learning", "Software", "Membership"]).map(
+                (item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setSearchTerm(item)}
+                    className="sv-group-empty-chip"
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+            </div>
+          </section>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function FilterButton({ active, onClick, children }) {
+function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
+  const tone = getCardTone(group.mode);
+  const statusTone = getStatusTone(group.status);
+  const planMeta = getPlanMeta(group.subscription_name || group.subscription);
+
   return (
-    <button
-      onClick={onClick}
-      className={`rounded-full px-3 py-2 text-[13px] font-semibold transition sm:px-4 sm:py-2.5 sm:text-sm ${
-        active ? "bg-slate-950 text-white" : "border border-slate-200 bg-white/80 text-slate-700 hover:bg-white"
-      }`}
-    >
-      {children}
+    <div className="sv-modal-backdrop">
+      <div className="sv-confirm-modal sv-join-modal">
+        <div className="flex items-start gap-4">
+          <div className={`sv-group-icon ${planMeta.toneClass} shrink-0`}>
+            <span>{planMeta.badge}</span>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="sv-eyebrow">Join confirmation</p>
+            <h2 className="mt-2 text-lg font-bold text-slate-950 sm:mt-3 sm:text-2xl">
+              {group.mode === "sharing"
+                ? "Review this sharing split before you join"
+                : "Review this buy-together group before you join"}
+            </h2>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className={`sv-group-mode-pill ${tone.modeClass}`}>{group.mode_label}</span>
+              <span className={`sv-group-status-pill ${statusTone.className}`}>
+                <span className={`sv-group-status-dot ${statusTone.dotClass}`} />
+                {group.status_label}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-4 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
+          {group.mode === "sharing"
+            ? "Your wallet is charged now, then the host coordinates access. Funds are released after access confirmation inside ShareVerse."
+            : "Your contribution is held first. The group moves forward only after the buy-together flow is complete and confirmed."}
+        </p>
+
+        <div className="sv-join-host-row">
+          <span className="sv-group-owner-avatar">{getInitials(group.owner_name)}</span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-950">
+              {group.subscription_name || group.subscription}
+            </p>
+            <p className="text-[12px] text-slate-500 sm:text-[13px]">
+              Hosted by {group.owner_name || "ShareVerse host"} | {group.next_action}
+            </p>
+          </div>
+        </div>
+
+        <div className="sv-join-breakdown">
+          <BreakdownCard label="Pay now" value={formatCurrency(summary.amount)} />
+          <BreakdownCard label="Plan contribution" value={formatCurrency(summary.subtotal)} />
+          <BreakdownCard label="Platform fee" value={formatCurrency(summary.platformFee)} />
+          <BreakdownCard label="Slots filled" value={`${group.filled_slots}/${group.total_slots}`} />
+        </div>
+
+        {group.pricing_note ? (
+          <div className="sv-security-badge sv-security-badge-success">{group.pricing_note}</div>
+        ) : null}
+
+        <div className="sv-security-badge">
+          <ShieldIcon className="h-4 w-4 shrink-0" />
+          Wallet top-ups are processed securely through Razorpay before you use that balance here.
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:justify-end sm:gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="sv-btn-secondary w-full justify-center text-[13px] sm:w-auto sm:text-sm"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => onConfirm(group)}
+            disabled={joiningId === group.id}
+            className="sv-btn-primary w-full justify-center text-[13px] sm:w-auto sm:text-sm"
+          >
+            {joiningId === group.id ? (
+              <>
+                <LoadingSpinner />
+                Joining...
+              </>
+            ) : (
+              <>
+                <CheckCircleIcon className="h-4 w-4" />
+                Confirm and join
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FilterButton({ active, count, onClick, children }) {
+  return (
+    <button type="button" onClick={onClick} className={`sv-groups-filter-button ${active ? "is-active" : ""}`}>
+      <span>{children}</span>
+      <span className="sv-groups-filter-count">{count}</span>
     </button>
   );
 }
 
 function StatCard({ label, value }) {
   return (
-    <div className="sv-stat-card">
+    <div className="sv-groups-stat-card">
       <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">{label}</p>
       <p className="mt-1.5 text-xl font-bold text-slate-950 sm:mt-2 sm:text-2xl">{value}</p>
     </div>
   );
 }
 
-function InlineMetric({ label, value }) {
+function MetricTile({ label, value }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-white bg-white/70 px-3 py-2 sm:rounded-2xl sm:px-4 sm:py-3">
-      <span className="text-[12px] text-slate-500 sm:text-sm">{label}</span>
-      <span className="text-[12px] font-semibold text-slate-950 sm:text-sm">{value}</span>
+    <div className="sv-group-metric-tile">
+      <p className="text-[10px] uppercase tracking-[0.15em] text-slate-500">{label}</p>
+      <p className="mt-2 text-sm font-semibold leading-6 text-slate-950 sm:text-[15px]">{value}</p>
+    </div>
+  );
+}
+
+function BreakdownCard({ label, value }) {
+  return (
+    <div className="sv-group-metric-tile">
+      <p className="text-[10px] uppercase tracking-[0.15em] text-slate-500">{label}</p>
+      <p className="mt-2 text-sm font-semibold leading-6 text-slate-950 sm:text-[15px]">{value}</p>
+    </div>
+  );
+}
+
+function MarketHeroStat({ label, value, note }) {
+  return (
+    <div className="sv-counter-card">
+      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-400 sm:text-[11px]">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-white sm:text-3xl">{value}</p>
+      <p className="mt-2 text-[12px] leading-5 text-slate-300 sm:text-[13px] sm:leading-6">{note}</p>
     </div>
   );
 }

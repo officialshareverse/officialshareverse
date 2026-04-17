@@ -19,6 +19,7 @@ from .models import (
     EscrowLedger,
     Group,
     GroupChatMessage,
+    GroupChatPresence,
     GroupChatReadState,
     GroupMember,
     Notification,
@@ -157,6 +158,14 @@ class GroupFlowTests(APITestCase):
         self.authenticate(user)
         return self.client.get(f"/api/groups/{group.id}/chat/")
 
+    def update_group_chat_presence(self, group, user, is_typing):
+        self.authenticate(user)
+        return self.client.patch(
+            f"/api/groups/{group.id}/chat/",
+            {"is_typing": is_typing},
+            format="json",
+        )
+
     def get_chat_inbox(self, user):
         self.authenticate(user)
         return self.client.get("/api/group-chats/")
@@ -237,6 +246,28 @@ class GroupFlowTests(APITestCase):
         payout_account.set_bank_account_number("123456789012")
         payout_account.save()
         return payout_account
+
+    def test_signup_username_availability_endpoint_reports_existing_and_new_usernames(self):
+        self.create_user("takenuser", "9111111119")
+
+        taken_response = self.client.post(
+            "/api/signup/check-availability/",
+            {"username": "takenuser"},
+            format="json",
+        )
+        available_response = self.client.post(
+            "/api/signup/check-availability/",
+            {"username": "freshuser"},
+            format="json",
+        )
+
+        self.assertEqual(taken_response.status_code, status.HTTP_200_OK)
+        self.assertFalse(taken_response.data["available"])
+        self.assertEqual(taken_response.data["message"], "This username is already in use.")
+
+        self.assertEqual(available_response.status_code, status.HTTP_200_OK)
+        self.assertTrue(available_response.data["available"])
+        self.assertEqual(available_response.data["message"], "Username is available.")
 
     def test_user_can_save_local_payout_account_when_payout_provider_is_unconfigured(self):
         self.authenticate(self.owner)
@@ -954,6 +985,83 @@ class GroupFlowTests(APITestCase):
 
         send_response = self.send_group_chat(group, self.outsider, "Let me in")
         self.assertEqual(send_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_group_chat_presence_patch_updates_typing_state(self):
+        group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+
+        response = self.update_group_chat_presence(group, self.member_one, True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        presence = GroupChatPresence.objects.get(group=group, user=self.member_one)
+        self.assertTrue(presence.is_typing)
+        self.assertEqual(response.data["presence"]["status"], "online")
+        self.assertTrue(response.data["presence"]["is_typing"])
+
+    def test_group_chat_detail_includes_participant_presence_metadata(self):
+        group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        self.send_group_chat(group, self.owner, "Checking in.")
+
+        GroupChatPresence.objects.update_or_create(
+            group=group,
+            user=self.owner,
+            defaults={
+                "last_seen_at": timezone.now(),
+                "is_typing": True,
+                "typing_updated_at": timezone.now(),
+            },
+        )
+
+        response = self.get_group_chat(group, self.member_one)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        owner_participant = next(
+            participant for participant in response.data["participants"] if participant["username"] == self.owner.username
+        )
+        viewer_participant = next(
+            participant for participant in response.data["participants"] if participant["username"] == self.member_one.username
+        )
+        self.assertEqual(owner_participant["presence"]["status"], "online")
+        self.assertTrue(owner_participant["presence"]["is_typing"])
+        self.assertEqual(viewer_participant["presence"]["status"], "online")
+        self.assertFalse(viewer_participant["presence"]["is_typing"])
+        self.assertEqual(response.data["online_participant_count"], 2)
+        self.assertEqual(response.data["active_typing_users"], [self.owner.username])
+
+    def test_group_chat_inbox_includes_presence_and_typing_metadata(self):
+        group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        self.send_group_chat(group, self.owner, "Reply when you can.")
+
+        GroupChatPresence.objects.update_or_create(
+            group=group,
+            user=self.owner,
+            defaults={
+                "last_seen_at": timezone.now(),
+                "is_typing": True,
+                "typing_updated_at": timezone.now(),
+            },
+        )
+        GroupChatPresence.objects.update_or_create(
+            group=group,
+            user=self.member_one,
+            defaults={
+                "last_seen_at": timezone.now() - timedelta(minutes=12),
+                "is_typing": False,
+                "typing_updated_at": timezone.now() - timedelta(minutes=12),
+            },
+        )
+
+        response = self.get_chat_inbox(self.member_one)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        chat_item = response.data["chats"][0]
+        self.assertEqual(chat_item["online_participant_count"], 1)
+        self.assertEqual(chat_item["active_typing_users"], [self.owner.username])
+        owner_preview = next(item for item in chat_item["participant_preview"] if item["username"] == self.owner.username)
+        self.assertEqual(owner_preview["presence"]["status"], "online")
+        self.assertTrue(owner_preview["presence"]["is_typing"])
 
     @override_settings(
         RAZORPAYX_KEY_ID="rzp_test_x_123",
@@ -1703,6 +1811,9 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(joined_chat["unread_chat_count"], 1)
         self.assertEqual(owned_chat["last_message"]["message"], "Owner thread update")
         self.assertEqual(joined_chat["last_message"]["message"], "Joined thread update")
+        self.assertIn("participant_preview", owned_chat)
+        self.assertTrue(owned_chat["participant_preview"][0]["initials"])
+        self.assertFalse(owned_chat["is_owner"])
 
     def test_group_chat_inbox_orders_by_latest_activity(self):
         older_chat_group = self.create_group(mode="sharing", total_slots=2, status="active")
@@ -1759,6 +1870,38 @@ class GroupFlowTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual([item["id"] for item in response.data[:2]], [newer.id, older.id])
+
+    def test_notifications_payload_includes_category_metadata(self):
+        Notification.objects.create(
+            user=self.owner,
+            message="New group chat message in Netflix from member1.",
+        )
+        Notification.objects.create(
+            user=self.owner,
+            message="Your wallet top-up was credited successfully.",
+        )
+        Notification.objects.create(
+            user=self.owner,
+            message="Your account was created and verified successfully.",
+        )
+
+        response = self.get_notifications(self.owner)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        payload_by_message = {item["message"]: item for item in response.data}
+
+        chat_item = payload_by_message["New group chat message in Netflix from member1."]
+        self.assertEqual(chat_item["category"], "groups")
+        self.assertEqual(chat_item["kind"], "chat")
+        self.assertEqual(chat_item["context_title"], "Netflix")
+
+        wallet_item = payload_by_message["Your wallet top-up was credited successfully."]
+        self.assertEqual(wallet_item["category"], "wallet")
+        self.assertEqual(wallet_item["icon"], "wallet")
+
+        system_item = payload_by_message["Your account was created and verified successfully."]
+        self.assertEqual(system_item["category"], "system")
+        self.assertEqual(system_item["icon"], "shield")
 
     def test_my_groups_returns_latest_created_group_first(self):
         older_group = self.create_group(mode="sharing", total_slots=2, status="active")

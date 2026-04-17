@@ -2,8 +2,46 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
-import { ChatIcon, CheckCircleIcon, ClockIcon, LayersIcon } from "../components/UiIcons";
+import {
+  ChatIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  SearchIcon,
+  StarIcon,
+} from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
+
+const PINNED_CHATS_STORAGE_KEY = "sv-pinned-chats-v1";
+
+function getPresenceMeta(presence) {
+  const status = presence?.status || "offline";
+  if (presence?.is_typing) {
+    return { className: "is-typing", label: "Typing now" };
+  }
+  if (status === "online") {
+    return { className: "is-online", label: "Online" };
+  }
+  if (status === "recent") {
+    return { className: "is-recent", label: "Active recently" };
+  }
+  return { className: "is-offline", label: "Offline" };
+}
+
+function formatTypingLabel(usernames) {
+  if (!Array.isArray(usernames) || usernames.length === 0) {
+    return "";
+  }
+
+  if (usernames.length === 1) {
+    return `${usernames[0]} is typing...`;
+  }
+
+  if (usernames.length === 2) {
+    return `${usernames[0]} and ${usernames[1]} are typing...`;
+  }
+
+  return `${usernames[0]} and ${usernames.length - 1} others are typing...`;
+}
 
 function SummaryCard({ label, value, tone = "text-slate-900", className = "" }) {
   return (
@@ -14,14 +52,89 @@ function SummaryCard({ label, value, tone = "text-slate-900", className = "" }) 
   );
 }
 
+function formatRelativeTime(value) {
+  if (!value) {
+    return "Just now";
+  }
+
+  const timestamp = new Date(value).getTime();
+  if (Number.isNaN(timestamp)) {
+    return "Just now";
+  }
+
+  const deltaMinutes = Math.max(1, Math.round((Date.now() - timestamp) / 60000));
+  if (deltaMinutes < 60) {
+    return `${deltaMinutes}m ago`;
+  }
+
+  const deltaHours = Math.round(deltaMinutes / 60);
+  if (deltaHours < 24) {
+    return `${deltaHours}h ago`;
+  }
+
+  const deltaDays = Math.round(deltaHours / 24);
+  if (deltaDays < 7) {
+    return `${deltaDays}d ago`;
+  }
+
+  return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+function getStatusBucket(status) {
+  if (status === "active") {
+    return { className: "is-active", label: "Active" };
+  }
+  if (["proof_submitted", "awaiting_purchase", "forming", "collecting", "purchasing"].includes(status)) {
+    return { className: "is-pending", label: "In progress" };
+  }
+  if (["closed", "refunded", "refunding"].includes(status)) {
+    return { className: "is-closed", label: "Closed" };
+  }
+  if (status === "disputed") {
+    return { className: "is-alert", label: "Needs attention" };
+  }
+  return { className: "is-neutral", label: "Open" };
+}
+
+function getModeTone(mode) {
+  return mode === "group_buy" ? "is-buy" : "is-sharing";
+}
+
+function getAvatarToken(name) {
+  return String(name || "ShareVerse")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
+}
+
 export default function ChatsInbox() {
   const navigate = useNavigate();
   const [chatInbox, setChatInbox] = useState({ chats: [], total_chats: 0, total_unread_count: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [pinnedChatIds, setPinnedChatIds] = useState(() => {
+    if (typeof window === "undefined") {
+      return [];
+    }
+
+    try {
+      const storedValue = window.localStorage.getItem(PINNED_CHATS_STORAGE_KEY);
+      const parsed = storedValue ? JSON.parse(storedValue) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  });
 
   useRevealOnScroll();
+
+  useEffect(() => {
+    window.localStorage.setItem(PINNED_CHATS_STORAGE_KEY, JSON.stringify(pinnedChatIds));
+  }, [pinnedChatIds]);
 
   useEffect(() => {
     let isMounted = true;
@@ -49,8 +162,10 @@ export default function ChatsInbox() {
       }
     };
 
-    fetchInbox(true);
-    const intervalId = window.setInterval(() => fetchInbox(false), 10000);
+    void fetchInbox(true);
+    const intervalId = window.setInterval(() => {
+      void fetchInbox(false);
+    }, 10000);
 
     return () => {
       isMounted = false;
@@ -58,13 +173,69 @@ export default function ChatsInbox() {
     };
   }, []);
 
-  const visibleChats = useMemo(() => {
+  const stats = useMemo(() => {
     const chats = chatInbox.chats || [];
-    if (filter === "unread") {
-      return chats.filter((chat) => chat.unread_chat_count > 0);
-    }
-    return chats;
-  }, [chatInbox.chats, filter]);
+    return {
+      total: chatInbox.total_chats || 0,
+      unreadMessages: chatInbox.total_unread_count || 0,
+      unreadThreads: chats.filter((chat) => chat.unread_chat_count > 0).length,
+      pinned: chats.filter((chat) => pinnedChatIds.includes(chat.group.id)).length,
+      hosted: chats.filter((chat) => chat.is_owner).length,
+    };
+  }, [chatInbox, pinnedChatIds]);
+
+  const visibleChats = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return [...(chatInbox.chats || [])]
+      .filter((chat) => {
+        const matchesFilter =
+          filter === "all"
+            ? true
+            : filter === "unread"
+              ? chat.unread_chat_count > 0
+              : filter === "pinned"
+                ? pinnedChatIds.includes(chat.group.id)
+                : chat.is_owner;
+
+        if (!matchesFilter) {
+          return false;
+        }
+
+        if (!normalizedSearch) {
+          return true;
+        }
+
+        const haystack = [
+          chat.group.subscription_name,
+          chat.group.owner_name,
+          chat.group.mode_label,
+          chat.group.status_label,
+          chat.last_message?.message,
+          chat.last_message?.sender_username,
+          ...(chat.participant_preview || []).map((participant) => participant.username),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(normalizedSearch);
+      })
+      .sort((left, right) => {
+        const leftPinned = pinnedChatIds.includes(left.group.id) ? 1 : 0;
+        const rightPinned = pinnedChatIds.includes(right.group.id) ? 1 : 0;
+        if (leftPinned !== rightPinned) {
+          return rightPinned - leftPinned;
+        }
+        return new Date(right.last_activity_at).getTime() - new Date(left.last_activity_at).getTime();
+      });
+  }, [chatInbox.chats, filter, pinnedChatIds, searchTerm]);
+
+  const togglePinnedChat = (groupId) => {
+    setPinnedChatIds((current) =>
+      current.includes(groupId) ? current.filter((id) => id !== groupId) : [...current, groupId]
+    );
+  };
 
   if (loading) {
     return (
@@ -75,8 +246,8 @@ export default function ChatsInbox() {
             <div className="sv-skeleton h-14 w-80 rounded-[22px]" />
             <div className="sv-skeleton h-4 w-2/3" />
           </section>
-          <section className="grid gap-4 sm:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, index) => (
+          <section className="grid gap-4 sm:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="sv-skeleton-card space-y-4">
                 <div className="sv-skeleton h-3 w-24" />
                 <div className="sv-skeleton h-8 w-20 rounded-[16px]" />
@@ -100,62 +271,61 @@ export default function ChatsInbox() {
           <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
               <p className="sv-eyebrow-on-dark">Chats</p>
-              <h1 className="sv-display-on-dark mt-2 max-w-4xl sm:mt-3">
-                All group conversations in one place
-              </h1>
+              <h1 className="sv-display-on-dark mt-2 max-w-4xl sm:mt-3">Pinned threads, faster scans, and clearer group context</h1>
               <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-4 sm:text-base sm:leading-8">
-                See the latest message from every group, spot unread updates quickly, and jump straight into any conversation.
+                Separate hosted chats from joined ones, keep important threads pinned, and jump in with a clearer sense of status and who is inside the conversation.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => navigate("/my-shared")}
-              className="sv-btn-ghost-dark"
-            >
+            <button type="button" onClick={() => navigate("/my-shared")} className="sv-btn-ghost-dark">
               Back to My Splits
             </button>
           </div>
         </section>
 
-        <section className="sv-stagger grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
-          <SummaryCard label="Total chats" value={chatInbox.total_chats || 0} className="col-span-2 md:col-span-1" />
-          <SummaryCard
-            label="Unread messages"
-            value={chatInbox.total_unread_count || 0}
-            tone={(chatInbox.total_unread_count || 0) > 0 ? "text-emerald-700" : "text-slate-900"}
-          />
-          <SummaryCard
-            label="Unread threads"
-            value={(chatInbox.chats || []).filter((chat) => chat.unread_chat_count > 0).length}
-            tone="text-sky-700"
-          />
+        <section className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
+          <SummaryCard label="Total chats" value={stats.total} className="col-span-2 md:col-span-1" />
+          <SummaryCard label="Unread messages" value={stats.unreadMessages} tone={stats.unreadMessages > 0 ? "text-emerald-700" : "text-slate-900"} />
+          <SummaryCard label="Pinned" value={stats.pinned} tone="text-amber-700" />
+          <SummaryCard label="Hosted by you" value={stats.hosted} tone="text-violet-700" />
         </section>
 
         <section className="sv-card sv-reveal">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Inbox</p>
-              <h2 className="mt-2 text-2xl font-bold text-slate-900">Your conversations</h2>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Inbox</p>
+                <h2 className="mt-2 text-2xl font-bold text-slate-900">Your conversations</h2>
+              </div>
+
+              <label className="sv-chat-search">
+                <SearchIcon className="h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search groups, hosts, or messages"
+                  className="sv-chat-search-input"
+                />
+              </label>
             </div>
-            <div className="grid w-full grid-cols-2 gap-2 min-[420px]:w-auto sm:flex sm:flex-wrap">
-              <button
-                type="button"
-                onClick={() => setFilter("all")}
-                className={`rounded-full px-3 py-2 text-[13px] font-semibold transition sm:px-4 sm:text-sm ${
-                  filter === "all" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                All chats
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter("unread")}
-                className={`rounded-full px-3 py-2 text-[13px] font-semibold transition sm:px-4 sm:text-sm ${
-                  filter === "unread" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                Unread only
-              </button>
+
+            <div className="sv-inbox-tabs">
+              {[
+                { value: "all", label: "All chats", count: stats.total },
+                { value: "unread", label: "Unread", count: stats.unreadThreads },
+                { value: "pinned", label: "Pinned", count: stats.pinned },
+                { value: "hosted", label: "Hosted", count: stats.hosted },
+              ].map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => setFilter(tab.value)}
+                  className={`sv-inbox-tab ${filter === tab.value ? "is-active" : ""}`}
+                >
+                  <span>{tab.label}</span>
+                  <span className="sv-inbox-tab-count">{tab.count}</span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -171,90 +341,142 @@ export default function ChatsInbox() {
                 <div className="sv-empty-icon">
                   <ChatIcon className="h-6 w-6" />
                 </div>
-                <p className="text-sm font-semibold text-slate-900">
-                  {filter === "unread" ? "No unread chats right now." : "You do not have any group conversations yet."}
-                </p>
+                <p className="text-sm font-semibold text-slate-900">Nothing matches this chat view yet.</p>
                 <p className="mt-2 text-sm leading-7 text-slate-500">
-                  Once you join or host a split, chat threads will show up here with the latest activity.
+                  Try another filter or clear the search to bring back the rest of your conversations.
                 </p>
               </div>
             ) : (
-              visibleChats.map((chat) => {
-                const group = chat.group || {};
-                const lastMessage = chat.last_message;
-
-                return (
-                  <button
-                    key={group.id}
-                    type="button"
-                    onClick={() => navigate(`/groups/${group.id}/chat`)}
-                    className={`sv-reveal w-full rounded-3xl border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${
-                      chat.unread_chat_count > 0
-                        ? "border-emerald-200 bg-emerald-50/40"
-                        : "border-slate-200 bg-white"
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-                            <LayersIcon className="h-4.5 w-4.5" />
-                          </span>
-                          <h3 className="text-lg font-semibold text-slate-900">{group.subscription_name}</h3>
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
-                            {group.mode_label}
-                          </span>
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
-                            {group.status_label}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-sm text-slate-500">
-                          Host: {group.owner_name} | Participants: {chat.participant_count}
-                        </p>
-                      </div>
-
-                      {chat.unread_chat_count > 0 ? (
-                        <span className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white sv-status-pulse">
-                          {chat.unread_chat_count} new
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
-                          <CheckCircleIcon className="h-3.5 w-3.5" />
-                          Read
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mt-4 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4">
-                      {lastMessage ? (
-                        <>
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                            {lastMessage.is_own ? "You" : lastMessage.sender_username}
-                          </p>
-                          <p className="mt-2 line-clamp-2 text-sm leading-7 text-slate-700">{lastMessage.message}</p>
-                          <p className="mt-3 text-xs text-slate-400">
-                            {new Date(lastMessage.created_at).toLocaleString()}
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                            <ClockIcon className="h-3.5 w-3.5" />
-                            No messages yet
-                          </p>
-                          <p className="mt-2 text-sm leading-7 text-slate-600">
-                            Open this chat to start coordinating with the group.
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </button>
-                );
-              })
+              visibleChats.map((chat) => (
+                <ChatCard
+                  key={chat.group.id}
+                  chat={chat}
+                  pinned={pinnedChatIds.includes(chat.group.id)}
+                  onTogglePinned={() => togglePinnedChat(chat.group.id)}
+                  onOpen={() => navigate(`/groups/${chat.group.id}/chat`)}
+                />
+              ))
             )}
           </div>
         </section>
       </div>
     </div>
+  );
+}
+
+function ChatCard({ chat, pinned, onTogglePinned, onOpen }) {
+  const statusMeta = getStatusBucket(chat.group.status);
+  const tone = getModeTone(chat.group.mode);
+  const typingLabel = formatTypingLabel(chat.active_typing_users);
+  const hasTyping = Boolean(typingLabel);
+  const onlineCount = Math.max(0, Number(chat.online_participant_count) || 0);
+
+  return (
+    <article className={`sv-chat-card ${chat.unread_chat_count > 0 ? "is-unread" : ""}`}>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className={`sv-chat-group-avatar ${tone} ${onlineCount > 0 ? "has-online" : ""}`}>
+            <span>{getAvatarToken(chat.group.subscription_name)}</span>
+            <span className={`sv-chat-group-avatar-dot ${hasTyping || onlineCount > 0 ? "is-online" : ""}`} />
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-lg font-semibold text-slate-900">{chat.group.subscription_name}</h3>
+              <span className={`sv-chat-status-pill ${statusMeta.className}`}>{statusMeta.label}</span>
+              <span className="sv-chat-mode-pill">{chat.group.mode_label}</span>
+              {pinned ? <span className="sv-chat-pinned-pill">Pinned</span> : null}
+            </div>
+
+            <p className="mt-2 text-sm text-slate-500">
+              {chat.is_owner ? "Hosted by you" : `Hosted by ${chat.group.owner_name}`} | {chat.participant_count} participant{chat.participant_count === 1 ? "" : "s"}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {hasTyping ? <span className="sv-chat-typing-pill">{typingLabel}</span> : null}
+              {!hasTyping && onlineCount > 0 ? (
+                <span className="sv-chat-live-pill">
+                  {onlineCount} active now
+                </span>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="sv-chat-time">{formatRelativeTime(chat.last_activity_at)}</span>
+          <button
+            type="button"
+            onClick={onTogglePinned}
+            className={`sv-chat-pin ${pinned ? "is-active" : ""}`}
+            aria-label={pinned ? "Unpin chat" : "Pin chat"}
+          >
+            <StarIcon className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="sv-chat-avatar-stack">
+          {(chat.participant_preview || []).map((participant) => (
+            <span
+              key={`${chat.group.id}-${participant.username}`}
+              className={`sv-chat-avatar-chip ${getPresenceMeta(participant.presence).className}`}
+              title={`${participant.username} • ${getPresenceMeta(participant.presence).label}`}
+            >
+              {participant.initials || getAvatarToken(participant.username)}
+              <span className={`sv-chat-avatar-chip-dot ${getPresenceMeta(participant.presence).className}`} />
+            </span>
+          ))}
+        </div>
+        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+          {chat.message_count} message{chat.message_count === 1 ? "" : "s"}
+        </span>
+        {chat.unread_chat_count > 0 ? (
+          <span className="sv-chat-unread-badge">
+            {chat.unread_chat_count} unread
+          </span>
+        ) : (
+          <span className="sv-chat-read-badge">
+            <CheckCircleIcon className="h-3.5 w-3.5" />
+            Read
+          </span>
+        )}
+      </div>
+
+      <button type="button" onClick={onOpen} className="sv-chat-card-body">
+        {hasTyping ? (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                <span className="sv-chat-inline-dot is-online" />
+                Live right now
+              </p>
+              <span className="text-xs text-slate-400">{formatRelativeTime(chat.last_activity_at)}</span>
+            </div>
+            <p className="mt-2 text-sm font-semibold leading-7 text-emerald-700">{typingLabel}</p>
+          </>
+        ) : chat.last_message ? (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {chat.last_message.is_own ? "You" : chat.last_message.sender_username}
+              </p>
+              <span className="text-xs text-slate-400">{formatRelativeTime(chat.last_message.created_at)}</span>
+            </div>
+            <p className={`mt-2 text-sm leading-7 ${chat.unread_chat_count > 0 ? "font-semibold text-slate-900" : "text-slate-700"}`}>
+              {chat.last_message.message}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <ClockIcon className="h-3.5 w-3.5" />
+              No messages yet
+            </p>
+            <p className="mt-2 text-sm leading-7 text-slate-600">Open this chat to start coordinating with the group.</p>
+          </>
+        )}
+      </button>
+    </article>
   );
 }

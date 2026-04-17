@@ -17,6 +17,7 @@ API.interceptors.request.use((req) => {
 const AUTH_REDIRECT_EXEMPT_PATHS = [
   "login/",
   "signup/",
+  "signup/check-availability/",
   "signup/request-otp/",
   "forgot-password/request-otp/",
   "forgot-password/confirm-otp/",

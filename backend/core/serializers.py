@@ -8,6 +8,7 @@ from .models import (
     EscrowLedger,
     Group,
     GroupChatMessage,
+    GroupChatPresence,
     GroupChatReadState,
     GroupMember,
     PayoutAccount,
@@ -249,6 +250,16 @@ class SignupRequestOTPSerializer(serializers.Serializer):
     def validate(self, attrs):
         attrs["channel"] = "email"
         return attrs
+
+
+class SignupAvailabilitySerializer(serializers.Serializer):
+    username = serializers.CharField()
+
+    def validate_username(self, value):
+        normalized = (value or "").strip()
+        if not normalized:
+            raise serializers.ValidationError("Username is required.")
+        return normalized
 
 
 class SignupConfirmSerializer(serializers.Serializer):
@@ -587,6 +598,12 @@ class SendGroupChatMessageSerializer(serializers.Serializer):
         if not normalized:
             raise serializers.ValidationError("Message cannot be empty.")
         return normalized
+
+
+class GroupChatPresenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GroupChatPresence
+        fields = ["is_typing"]
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):

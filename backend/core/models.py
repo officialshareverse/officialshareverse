@@ -526,6 +526,25 @@ class GroupChatReadState(models.Model):
         return f"{self.user.username} read chat for group {self.group_id}"
 
 
+class GroupChatPresence(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="chat_presence_states")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    last_seen_at = models.DateTimeField(default=timezone.now)
+    is_typing = models.BooleanField(default=False)
+    typing_updated_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("group", "user")
+        indexes = [
+            models.Index(fields=["group", "last_seen_at"]),
+            models.Index(fields=["group", "is_typing", "typing_updated_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} presence in group {self.group_id}"
+
+
 class CredentialRevealToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     group = models.ForeignKey(Group, on_delete=models.CASCADE)

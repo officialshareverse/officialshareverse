@@ -31,6 +31,7 @@ from .views import (
     RequestCredentialRevealView,
     RevealCredentialView,
     SignupView,
+    SignupAvailabilityView,
     SignupRequestOTPView,
     SubmitPurchaseProofView,
     SubscriptionListView,
@@ -42,6 +43,7 @@ from .views import (
 
 urlpatterns = [
     path('health/', HealthCheckView.as_view()),
+    path('signup/check-availability/', SignupAvailabilityView.as_view()),
     path('signup/request-otp/', SignupRequestOTPView.as_view()),
     path('signup/', SignupView.as_view()),
     path('login/', LoginView.as_view()),
