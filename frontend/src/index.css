@@ -1981,11 +1981,13 @@
   }
 
   .sv-brand-shell {
-    @apply relative overflow-hidden border backdrop-blur;
+    @apply relative border backdrop-blur;
+    overflow: visible;
     border-radius: var(--sv-radius-card);
     border-color: color-mix(in srgb, var(--sv-border) 80%, rgba(255, 255, 255, 0.2));
     background: var(--sv-brand-shell-bg);
     box-shadow: 0 28px 80px rgba(15, 23, 42, 0.1);
+    isolation: isolate;
   }
 
   .sv-brand-shell::before {
@@ -2064,6 +2066,8 @@
     gap: 0.7rem;
     justify-self: end;
     flex-shrink: 0;
+    position: relative;
+    z-index: 3;
   }
 
   .sv-navbar-utility-group {
@@ -2965,6 +2969,7 @@
     position: absolute;
     top: calc(100% + 0.65rem);
     right: 0;
+    z-index: 30;
     width: 14rem;
     padding: 0.45rem;
     border-radius: 22px;
