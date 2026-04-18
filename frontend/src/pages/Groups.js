@@ -775,56 +775,122 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
   const tone = getCardTone(group.mode);
   const statusTone = getStatusTone(group.status);
   const planMeta = getPlanMeta(group.subscription_name || group.subscription);
+  const planName = group.subscription_name || group.subscription;
+  const ownerName = group.owner_name || "ShareVerse host";
+  const totalSlots = Number(group.total_slots || 0);
+  const filledSlots = Number(group.filled_slots || 0);
+  const remainingSlots = Math.max(Number(group.remaining_slots ?? (totalSlots - filledSlots)) || 0, 0);
+  const cycleLabel = [formatDate(group.start_date), formatDate(group.end_date)].filter(Boolean).join(" - ");
+  const payNowLabel =
+    group.mode === "group_buy"
+      ? "Contribute now"
+      : group.is_prorated
+        ? "Pay now for the remaining cycle"
+        : "Pay now";
 
   return (
     <div className="sv-modal-backdrop">
-      <div className="sv-confirm-modal sv-join-modal">
-        <div className="flex items-start gap-4">
-          <div className={`sv-group-icon ${planMeta.toneClass} shrink-0`}>
+      <div className="sv-confirm-modal sv-join-modal sv-animate-rise">
+        <div className="sv-join-topbar">
+          <p className="sv-eyebrow">Join confirmation</p>
+          <button type="button" onClick={onCancel} className="sv-join-close-button">
+            Close
+          </button>
+        </div>
+
+        <div className="sv-join-hero">
+          <div className={`sv-group-icon ${planMeta.toneClass} shrink-0 sv-join-hero-icon`}>
             <span>{planMeta.badge}</span>
           </div>
 
-          <div className="min-w-0 flex-1">
-            <p className="sv-eyebrow">Join confirmation</p>
-            <h2 className="mt-2 text-lg font-bold text-slate-950 sm:mt-3 sm:text-2xl">
-              {group.mode === "sharing"
-                ? "Review this sharing split before you join"
-                : "Review this buy-together group before you join"}
-            </h2>
-
-            <div className="mt-3 flex flex-wrap gap-2">
+          <div className="min-w-0 flex-1 sv-join-hero-copy">
+            <div className="flex flex-wrap gap-2">
               <span className={`sv-group-mode-pill ${tone.modeClass}`}>{group.mode_label}</span>
               <span className={`sv-group-status-pill ${statusTone.className}`}>
                 <span className={`sv-group-status-dot ${statusTone.dotClass}`} />
                 {group.status_label}
               </span>
+              <span className="sv-join-meta-pill">{planMeta.label}</span>
             </div>
-          </div>
-        </div>
 
-        <p className="mt-4 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
-          {group.mode === "sharing"
-            ? "Your wallet is charged now, then the host coordinates access. Funds are released after access confirmation inside ShareVerse."
-            : "Your contribution is held first. The group moves forward only after the buy-together flow is complete and confirmed."}
-        </p>
-
-        <div className="sv-join-host-row">
-          <span className="sv-group-owner-avatar">{getInitials(group.owner_name)}</span>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-950">
-              {group.subscription_name || group.subscription}
-            </p>
-            <p className="text-[12px] text-slate-500 sm:text-[13px]">
-              Hosted by {group.owner_name || "ShareVerse host"} | {group.next_action}
+            <h2 className="mt-3 text-xl font-bold leading-tight text-slate-950 sm:text-[2rem]">
+              Review before you join
+            </h2>
+            <p className="mt-2 text-sm font-semibold text-slate-900 sm:text-[15px]">{planName}</p>
+            <p className="sv-join-support-copy">
+              {group.mode === "sharing"
+                ? "Your wallet is charged now. The host shares access next, and funds are released after access confirmation inside ShareVerse."
+                : "Your contribution is reserved now. The purchase only moves forward after the buy-together flow is completed and confirmed."}
             </p>
           </div>
         </div>
 
         <div className="sv-join-breakdown">
-          <BreakdownCard label="Pay now" value={formatCurrency(summary.amount)} />
+          <BreakdownCard
+            featured
+            label={payNowLabel}
+            value={formatCurrency(summary.amount)}
+            note={
+              group.mode === "sharing"
+                ? "This amount is charged from your wallet when you confirm this join."
+                : "This contribution is reserved until the buy-together flow completes."
+            }
+          />
           <BreakdownCard label="Plan contribution" value={formatCurrency(summary.subtotal)} />
           <BreakdownCard label="Platform fee" value={formatCurrency(summary.platformFee)} />
-          <BreakdownCard label="Slots filled" value={`${group.filled_slots}/${group.total_slots}`} />
+          <BreakdownCard
+            label={group.mode === "group_buy" ? "Members still needed" : "Slots left"}
+            value={`${remainingSlots}`}
+            note={`${filledSlots}/${totalSlots} filled`}
+          />
+          <BreakdownCard
+            label="Current cycle"
+            value={cycleLabel || "Dates shared after join"}
+            note={group.pricing_note ? "Proration is already applied here." : "Matches the current plan cycle."}
+          />
+        </div>
+
+        <div className="sv-join-info-grid">
+          <div className="sv-join-host-row">
+            <span className="sv-group-owner-avatar">{getInitials(ownerName)}</span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">Hosted by</p>
+              <p className="mt-1 text-sm font-semibold text-slate-950 sm:text-[15px]">{ownerName}</p>
+              <p className="mt-2 text-[12px] leading-6 text-slate-600 sm:text-[13px]">
+                {group.next_action}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="sv-join-meta-pill">Plan: {planMeta.label}</span>
+                <span className="sv-join-meta-pill">{totalSlots} total slot{totalSlots === 1 ? "" : "s"}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="sv-join-flow-card">
+            <JoinFlowStep
+              icon={<WalletIcon className="h-4 w-4" />}
+              title={group.mode === "sharing" ? "Wallet charged now" : "Contribution held now"}
+              body={
+                group.mode === "sharing"
+                  ? "You pay the displayed amount from wallet balance when you confirm."
+                  : "Your wallet reserves the contribution while the group finishes setup."
+              }
+            />
+            <JoinFlowStep
+              icon={<CompassIcon className="h-4 w-4" />}
+              title={group.mode === "sharing" ? "Host coordinates access" : "Group completes the purchase"}
+              body={
+                group.mode === "sharing"
+                  ? "The host shares access after your join is accepted inside the split."
+                  : "The organizer proceeds only after enough members commit to the group."
+              }
+            />
+            <JoinFlowStep
+              icon={<ShieldIcon className="h-4 w-4" />}
+              title="ShareVerse records the confirmation"
+              body="Funds are protected by the platform flow and only settle after confirmation."
+            />
+          </div>
         </div>
 
         {group.pricing_note ? (
@@ -833,35 +899,45 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
 
         <div className="sv-security-badge">
           <ShieldIcon className="h-4 w-4 shrink-0" />
-          Wallet top-ups are processed securely through Razorpay before you use that balance here.
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-950">Wallet secured through Razorpay</p>
+            <p className="mt-1 text-[12px] leading-6 text-slate-600 sm:text-[13px]">
+              Top up before joining if needed. Your balance is used here only after you confirm this step.
+            </p>
+          </div>
         </div>
 
-        <div className="mt-4 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:justify-end sm:gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="sv-btn-secondary w-full justify-center text-[13px] sm:w-auto sm:text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => onConfirm(group)}
-            disabled={joiningId === group.id}
-            className="sv-btn-primary w-full justify-center text-[13px] sm:w-auto sm:text-sm"
-          >
-            {joiningId === group.id ? (
-              <>
-                <LoadingSpinner />
-                Joining...
-              </>
-            ) : (
-              <>
-                <CheckCircleIcon className="h-4 w-4" />
-                Confirm and join
-              </>
-            )}
-          </button>
+        <div className="sv-join-footer">
+          <div className="sv-join-footer-copy">
+            <p>You can still cancel here and go back to browsing without joining.</p>
+          </div>
+          <div className="sv-join-footer-actions">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="sv-btn-secondary sv-join-cancel-button w-full justify-center text-[13px] sm:w-auto sm:text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => onConfirm(group)}
+              disabled={joiningId === group.id}
+              className="sv-btn-primary sv-join-confirm-button w-full justify-center text-[13px] sm:w-auto sm:text-sm"
+            >
+              {joiningId === group.id ? (
+                <>
+                  <LoadingSpinner />
+                  Joining...
+                </>
+              ) : (
+                <>
+                  <CheckCircleIcon className="h-4 w-4" />
+                  Confirm and join
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -895,11 +971,24 @@ function MetricTile({ label, value }) {
   );
 }
 
-function BreakdownCard({ label, value }) {
+function BreakdownCard({ label, value, note, featured = false }) {
   return (
-    <div className="sv-group-metric-tile">
-      <p className="text-[10px] uppercase tracking-[0.15em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm font-semibold leading-6 text-slate-950 sm:text-[15px]">{value}</p>
+    <div className={`sv-join-breakdown-card ${featured ? "is-featured" : ""}`}>
+      <p className="sv-join-breakdown-label">{label}</p>
+      <p className="sv-join-breakdown-value">{value}</p>
+      {note ? <p className="sv-join-breakdown-note">{note}</p> : null}
+    </div>
+  );
+}
+
+function JoinFlowStep({ icon, title, body }) {
+  return (
+    <div className="sv-join-flow-step">
+      <span className="sv-join-flow-icon">{icon}</span>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-950">{title}</p>
+        <p className="mt-1 text-[12px] leading-6 text-slate-600 sm:text-[13px]">{body}</p>
+      </div>
     </div>
   );
 }
