@@ -223,6 +223,14 @@ export default function Groups() {
     fetchGroupsRef.current?.();
   }, []);
 
+  useEffect(() => {
+    if (!pendingJoinGroup) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pendingJoinGroup]);
+
   const joinGroup = async (group) => {
     try {
       setJoiningId(group.id);
