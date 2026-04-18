@@ -402,12 +402,12 @@ export default function Groups() {
             <h1 className="sv-display-on-dark mt-3 max-w-4xl sm:mt-4">
               Explore open groups with clearer status, cleaner pricing, and a faster path to join.
             </h1>
-            <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-5 sm:text-base sm:leading-8">
+            <p className="sv-groups-hero-body mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-5 sm:text-base sm:leading-8">
               Browse live sharing and buy-together groups, compare what you pay now, and see which
               plans are nearly full before you commit.
             </p>
 
-            <div className="mt-4 flex flex-wrap gap-1.5 sm:mt-8 sm:gap-2">
+            <div className="sv-groups-hero-chips mt-4 flex flex-wrap gap-1.5 sm:mt-8 sm:gap-2">
               <span className="sv-chip-dark">
                 <SearchIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 Search by plan or host
@@ -534,7 +534,7 @@ export default function Groups() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
+            <div className="sv-groups-stats-grid mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
               <StatCard label="Total groups" value={stats.total} />
               <StatCard label="Open now" value={stats.open} />
               <StatCard label="Sharing" value={stats.sharing} />
@@ -649,7 +649,7 @@ export default function Groups() {
                           <h3 className="mt-1.5 truncate text-lg font-bold leading-tight text-slate-950 sm:text-2xl">
                             {group.subscription_name || group.subscription}
                           </h3>
-                          <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
+                          <p className="sv-group-card-description mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
                             {group.mode_description}
                           </p>
                         </div>

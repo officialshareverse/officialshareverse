@@ -495,11 +495,11 @@ export default function Profile() {
                   </div>
 
                   <p className="mt-3 text-sm text-slate-200 md:text-base">@{profile.username}</p>
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300 md:text-base md:leading-8">
+                  <p className="sv-profile-tagline mt-3 max-w-2xl text-sm leading-7 text-slate-300 md:text-base md:leading-8">
                     {profileTagline}
                   </p>
 
-                  <div className="mt-5 flex flex-wrap gap-2">
+                  <div className="sv-profile-hero-chips mt-5 flex flex-wrap gap-2">
                     <span className="sv-chip-dark">Joined {formatDate(profile.date_joined)}</span>
                     <span className="sv-chip-dark">{profile.has_profile_picture ? "Photo added" : "Photo missing"}</span>
                     <span className="sv-chip-dark">{profile.profile_completion}% complete</span>
@@ -508,7 +508,7 @@ export default function Profile() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="sv-profile-hero-metrics grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
               <HeroMetricCard
                 label="Wallet balance"
                 value={formatCurrency(profile.wallet_balance)}
@@ -554,7 +554,7 @@ export default function Profile() {
           </div>
         ) : null}
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 sv-reveal">
+        <section className="sv-profile-stat-grid grid gap-4 md:grid-cols-2 xl:grid-cols-4 sv-reveal">
           <StatCard label="Groups joined" value={profile.groups_joined} icon={LayersIcon} tone="is-teal" note="Member history" />
           <StatCard label="Groups created" value={profile.groups_created} icon={SparkIcon} tone="is-violet" note="Host activity" />
           <StatCard label="Total spent" value={profile.total_spent} icon={CreditIcon} tone="is-rose" note="Across joined groups" format="currency" />
@@ -764,7 +764,7 @@ export default function Profile() {
               </div>
             </section>
 
-            <section className="sv-card sv-reveal">
+            <section className="sv-card sv-reveal sv-profile-activity-card">
               <p className="sv-eyebrow">Activity snapshot</p>
               <h2 className="sv-title mt-2">What your account is doing</h2>
 
@@ -841,7 +841,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="mt-5 space-y-4">
+              <div className="sv-profile-review-list mt-5 space-y-4">
                 {filteredReviews.length ? (
                   filteredReviews.map((review) => <ReviewCard key={review.id} review={review} />)
                 ) : (

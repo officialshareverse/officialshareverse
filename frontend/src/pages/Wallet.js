@@ -655,7 +655,7 @@ export default function Wallet() {
               ))}
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+            <div className="sv-wallet-overview-stats mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
               <WalletOverviewStat
                 label="Total credits"
                 value={formatShortCurrency(transactionSummary.credit)}
@@ -673,7 +673,7 @@ export default function Wallet() {
               />
             </div>
 
-            <div className="mt-5 space-y-3">
+            <div className="sv-wallet-support-cards mt-5 space-y-3">
               {topupConfig ? (
                 <div className="sv-wallet-helper-card">
                   <p className="sv-wallet-helper-title">Top-ups</p>
@@ -726,7 +726,7 @@ export default function Wallet() {
                   Use UPI, cards, or netbanking. The wallet updates only after the payment is verified successfully.
                 </p>
 
-                <div className="sv-wallet-inline-grid mt-4">
+                <div className="sv-wallet-inline-grid sv-wallet-mobile-secondary mt-4">
                   <WalletOverviewStat label="Current amount" value={`Rs ${topupAmount || "0"}`} note="ready for checkout" />
                   <WalletOverviewStat label="Gateway" value={topupConfig?.mode_label || "Razorpay"} note="secure payment rail" />
                 </div>
@@ -794,7 +794,7 @@ export default function Wallet() {
                   Keep contact details and bank or UPI information in one place so future payouts can move smoothly.
                 </p>
 
-                <div className="sv-wallet-step-list mt-4">
+                <div className="sv-wallet-step-list sv-wallet-mobile-secondary mt-4">
                   {payoutFormState.steps.map((step) => (
                     <div key={step.label} className={`sv-wallet-step ${step.ready ? "is-complete" : ""}`}>
                       <span className="sv-wallet-step-dot" />
@@ -803,7 +803,7 @@ export default function Wallet() {
                   ))}
                 </div>
 
-                <div className="sv-wallet-helper-card mt-4">
+                <div className="sv-wallet-helper-card sv-wallet-mobile-secondary mt-4">
                   <p className="sv-wallet-helper-title">Saved destination</p>
                   <p className="sv-wallet-helper-body">
                     {payoutAccount
@@ -961,7 +961,7 @@ export default function Wallet() {
                     : "Manual withdrawal requests do not deduct the wallet immediately. They are reviewed first, then settled manually."}
                 </p>
 
-                <div className="sv-wallet-helper-card mt-4">
+                <div className="sv-wallet-helper-card sv-wallet-mobile-secondary mt-4">
                   <p className="sv-wallet-helper-title">Destination</p>
                   <p className="sv-wallet-helper-body">
                     {payoutAccount ? payoutAccount.masked_destination : "Save a payout method before requesting money out."}
@@ -998,7 +998,7 @@ export default function Wallet() {
                   </select>
                 </label>
 
-                <div className="sv-wallet-inline-grid">
+                <div className="sv-wallet-inline-grid sv-wallet-mobile-secondary">
                   <WalletOverviewStat label="Available" value={formatCurrency(balance)} note="wallet balance now" />
                   <WalletOverviewStat
                     label="ETA"

@@ -514,7 +514,7 @@ export default function Home() {
               <h1 className="sv-display-on-dark mt-4 max-w-4xl sm:mt-5">
                 Your shared-cost dashboard is cleaner, faster, and ready to act on.
               </h1>
-              <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-300 sm:mt-4 sm:text-sm sm:leading-7 md:text-base md:leading-8">
+              <p className="sv-home-hero-body mt-3 max-w-3xl text-[13px] leading-6 text-slate-300 sm:mt-4 sm:text-sm sm:leading-7 md:text-base md:leading-8">
                 Jump into the next thing that matters, keep wallet and group activity visible at a glance, and scan recent splits without digging through dense cards.
               </p>
 
@@ -602,7 +602,7 @@ export default function Home() {
             </div>
           </section>
 
-          <aside ref={focusSectionRef} className="sv-card" id="sv-home-focus">
+          <aside ref={focusSectionRef} className="sv-card sv-home-focus-card" id="sv-home-focus">
             <p className="sv-eyebrow">Quick focus</p>
             <h2 className="sv-title mt-1.5 sm:mt-2">Where your dashboard stands</h2>
             <div className="mt-4 space-y-3 sm:mt-5">
@@ -627,7 +627,7 @@ export default function Home() {
           </div>
 
           {marketplaceGroups.length > 0 ? (
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div className="sv-home-recent-grid mt-4 grid gap-4 lg:grid-cols-2">
               {marketplaceGroups.map((group) => <RecentSplitCard key={group.id} group={group} onClick={() => navigate("/groups")} />)}
             </div>
           ) : (

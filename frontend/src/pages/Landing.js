@@ -202,7 +202,7 @@ export default function Landing() {
                 Shared-cost plans feel more trustworthy when the whole flow looks
                 <span className="sv-gradient-text"> organized from the start.</span>
               </h1>
-              <p className="mt-4 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-sm sm:leading-7 md:text-base md:leading-8">
+              <p className="sv-landing-hero-body mt-4 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-sm sm:leading-7 md:text-base md:leading-8">
                 ShareVerse gives subscriptions, courses, software, and memberships a calmer system:
                 create a split, let people join clearly, keep updates visible, and manage shared payments
                 in one premium-feeling workspace.
@@ -231,7 +231,7 @@ export default function Landing() {
                 ))}
               </div>
 
-              <div className="mt-5 flex flex-wrap gap-2">
+              <div className="sv-landing-feature-notes mt-5 flex flex-wrap gap-2">
                 {featureNotes.map((item) => (
                   <button
                     key={item.label}
@@ -276,7 +276,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 md:grid-cols-3">
+          <div className="sv-landing-highlight-grid mt-6 grid gap-3 md:grid-cols-3">
             {heroHighlights.map((item, index) => (
               <button
                 key={item.label}
@@ -334,7 +334,7 @@ export default function Landing() {
                 ))}
               </div>
 
-              <div className="mt-5 grid gap-2 sm:grid-cols-3">
+              <div className="sv-mode-metrics mt-5 grid gap-2 sm:grid-cols-3">
                 {activeModeContent.metrics.map((item) => (
                   <div key={item.label} className="sv-mode-metric">
                     <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
@@ -426,7 +426,7 @@ export default function Landing() {
               <span className="sv-chip">Rated 4.9/5 by repeat users</span>
             </div>
 
-            <div className="mt-5 grid gap-3 sm:gap-4">
+            <div className="sv-testimonial-list mt-5 grid gap-3 sm:gap-4">
               {testimonials.map((item, index) => (
                 <article
                   key={item.name}

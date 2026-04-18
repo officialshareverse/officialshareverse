@@ -415,31 +415,6 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
                     <ThemeToggle themeMode={themeMode} onToggle={toggleTheme} compact />
                   </div>
 
-                  <div className="sv-mobile-shortcuts">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        navigate("/create");
-                      }}
-                      className="sv-mobile-shortcut"
-                    >
-                      <PlusIcon className="h-4.5 w-4.5" />
-                      New split
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        navigate("/wallet");
-                      }}
-                      className="sv-mobile-shortcut"
-                    >
-                      <WalletIcon className="h-4.5 w-4.5" />
-                      Top up wallet
-                    </button>
-                  </div>
-
                   <nav className="mt-3 grid gap-2">
                     {mobileMenuItems.map((item, index) => {
                       const Icon = item.icon;

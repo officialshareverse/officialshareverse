@@ -7437,6 +7437,206 @@
   }
 
   @media (max-width: 767px) {
+    .sv-card,
+    .sv-card-solid,
+    .sv-dark-hero,
+    .sv-group-card,
+    .sv-confirm-modal {
+      border-radius: 24px;
+    }
+
+    .sv-card,
+    .sv-card-solid,
+    .sv-dark-hero {
+      padding: 1rem;
+    }
+
+    .sv-mobile-appbar {
+      padding: 0.7rem 0.8rem;
+      border-radius: 18px;
+    }
+
+    .sv-mobile-menu-surface {
+      padding: 0.75rem;
+      border-radius: 20px;
+    }
+
+    .sv-mobile-tabbar {
+      padding-inline: 0.6rem;
+    }
+
+    .sv-mobile-tabbar-inner {
+      gap: 0.25rem;
+      padding: 0.35rem;
+      border-radius: 22px;
+    }
+
+    .sv-mobile-tab {
+      min-height: 56px;
+      border-radius: 16px;
+      padding-inline: 0.2rem;
+    }
+
+    .sv-live-badge,
+    .sv-counter-grid,
+    .sv-landing-highlight-grid,
+    .sv-mode-mock,
+    .sv-join-ticker,
+    .sv-home-hero-body,
+    .sv-home-personal-note,
+    .sv-home-logo-cloud,
+    .sv-groups-hero-body,
+    .sv-groups-hero-chips,
+    .sv-groups-hero-stats,
+    .sv-groups-summary-strip,
+    .sv-groups-stats-grid,
+    .sv-group-card-description,
+    .sv-group-activity-pill,
+    .sv-join-support-copy,
+    .sv-join-flow-card,
+    .sv-wallet-balance-backdrop,
+    .sv-wallet-trend,
+    .sv-wallet-overview-stats,
+    .sv-wallet-support-cards,
+    .sv-wallet-mobile-secondary,
+    .sv-wallet-mini-chart,
+    .sv-profile-tagline,
+    .sv-profile-hero-chips,
+    .sv-profile-activity-card {
+      display: none;
+    }
+
+    .sv-landing-feature-notes {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+
+    .sv-landing-feature-notes .sv-feature-note:nth-child(n + 3) {
+      display: none;
+    }
+
+    .sv-feature-note {
+      justify-content: center;
+      padding-inline: 0.75rem;
+      font-size: 12px;
+    }
+
+    .sv-mode-metrics {
+      display: none;
+    }
+
+    .sv-testimonial-list > :nth-child(n + 2) {
+      display: none;
+    }
+
+    .sv-home-quick-actions {
+      grid-template-columns: 1fr;
+      gap: 0.65rem;
+    }
+
+    .sv-home-action-button {
+      padding: 0.8rem 0.9rem;
+      border-radius: 18px;
+    }
+
+    .sv-home-sparkline,
+    .sv-home-avatar-stack {
+      display: none;
+    }
+
+    .sv-home-recent-grid > :nth-child(n + 3),
+    .sv-profile-review-list > :nth-child(n + 3) {
+      display: none;
+    }
+
+    .sv-home-recent-card {
+      padding: 1rem;
+    }
+
+    .sv-group-card-shell {
+      gap: 0.9rem;
+      padding: 1rem;
+    }
+
+    .sv-group-icon {
+      width: 3.3rem;
+      height: 3.3rem;
+      border-radius: 18px;
+      font-size: 0.75rem;
+      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.1);
+    }
+
+    .sv-group-owner-row {
+      gap: 0.75rem;
+    }
+
+    .sv-group-metric-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+    }
+
+    .sv-group-metric-grid > :nth-child(n + 3) {
+      display: none;
+    }
+
+    .sv-join-hero {
+      align-items: center;
+    }
+
+    .sv-join-breakdown,
+    .sv-join-info-grid {
+      gap: 0.75rem;
+    }
+
+    .sv-join-footer {
+      padding-inline: 0.9rem;
+      gap: 0.75rem;
+    }
+
+    .sv-wallet-overview {
+      gap: 0.5rem;
+    }
+
+    .sv-wallet-quick-amounts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+
+    .sv-wallet-amount-chip {
+      min-height: 52px;
+      padding: 0.75rem 0.85rem;
+      border-radius: 18px;
+    }
+
+    .sv-wallet-amount-note {
+      display: none;
+    }
+
+    .sv-wallet-tab-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+
+    .sv-wallet-tab {
+      justify-content: center;
+      padding-inline: 0.55rem;
+    }
+
+    .sv-wallet-action-panel {
+      gap: 1rem;
+    }
+
+    .sv-profile-hero {
+      padding: 1rem;
+    }
+
+    .sv-profile-hero-metrics > :nth-child(n + 2),
+    .sv-profile-stat-grid > :nth-child(n + 3) {
+      display: none;
+    }
+
     .sv-profile-hero {
       border-radius: 26px;
     }
