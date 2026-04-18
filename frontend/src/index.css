@@ -4075,7 +4075,8 @@
 
   .sv-join-modal {
     max-width: 44rem;
-    padding: 1rem;
+    --sv-join-modal-pad: 1rem;
+    padding: var(--sv-join-modal-pad);
   }
 
   .sv-join-topbar {
@@ -4297,14 +4298,20 @@
   }
 
   .sv-join-footer {
-    position: relative;
-    z-index: 1;
+    position: sticky;
+    bottom: calc(var(--sv-join-modal-pad) * -1);
+    z-index: 3;
     display: flex;
     flex-direction: column;
     gap: 0.9rem;
     margin-top: 1rem;
-    padding-top: 1rem;
+    margin-inline: calc(var(--sv-join-modal-pad) * -1);
+    padding: 1rem var(--sv-join-modal-pad) calc(max(0.75rem, env(safe-area-inset-bottom)));
     border-top: 1px solid color-mix(in srgb, var(--sv-border) 85%, transparent);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, color-mix(in srgb, var(--sv-elevated-surface) 86%, transparent) 16%, color-mix(in srgb, var(--sv-elevated-surface) 98%, transparent) 100%);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 -14px 34px rgba(15, 23, 42, 0.08);
   }
 
   .sv-join-footer-copy {
@@ -4344,7 +4351,8 @@
     }
 
     .sv-join-modal {
-      padding: 1.35rem;
+      --sv-join-modal-pad: 1.35rem;
+      padding: var(--sv-join-modal-pad);
     }
 
     .sv-join-hero {
@@ -6492,6 +6500,12 @@
 
   body.sv-dark .sv-join-breakdown-card.is-featured {
     background: linear-gradient(135deg, rgba(8, 60, 58, 0.96) 0%, rgba(15, 118, 110, 0.88) 58%, rgba(45, 212, 191, 0.76) 100%);
+  }
+
+  body.sv-dark .sv-join-footer {
+    background:
+      linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, 0.84) 16%, rgba(15, 23, 42, 0.98) 100%);
+    box-shadow: 0 -14px 34px rgba(2, 6, 23, 0.26);
   }
 
   body.sv-dark .sv-join-breakdown-value,
