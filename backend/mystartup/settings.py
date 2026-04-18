@@ -77,6 +77,14 @@ EMAIL_HOST_PASSWORD = os.environ.get('DJANGO_EMAIL_HOST_PASSWORD', '').strip()
 EMAIL_USE_TLS = os.environ.get('DJANGO_EMAIL_USE_TLS', 'true').lower() == 'true'
 EMAIL_USE_SSL = os.environ.get('DJANGO_EMAIL_USE_SSL', 'false').lower() == 'true'
 DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_DEFAULT_FROM_EMAIL', 'ShareVerse <no-reply@shareverse.in>').strip()
+GOOGLE_OAUTH_CLIENT_IDS = [
+    value.strip()
+    for value in os.environ.get(
+        'DJANGO_GOOGLE_CLIENT_IDS',
+        os.environ.get('DJANGO_GOOGLE_CLIENT_ID', ''),
+    ).split(',')
+    if value.strip()
+]
 
 ALLOWED_HOSTS = []
 for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(','):

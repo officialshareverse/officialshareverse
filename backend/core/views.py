@@ -10,7 +10,7 @@ import math
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import DatabaseError, connections, transaction
 from django.db.models import Avg, Count, ExpressionWrapper, F, IntegerField, Q, Sum, Value
 from django.utils import timezone
@@ -78,6 +78,7 @@ from .serializers import (
     CreateGroupSerializer,
     ForgotPasswordConfirmSerializer,
     ForgotPasswordRequestSerializer,
+    GoogleAuthSerializer,
     GroupChatPresenceSerializer,
     GroupListSerializer,
     GroupChatMessageSerializer,
@@ -130,6 +131,7 @@ LOGIN_FAILED_ATTEMPT_LIMIT = 5
 LOGIN_FAILED_ATTEMPT_WINDOW_SECONDS = 15 * 60
 BUY_TOGETHER_PURCHASE_DEADLINE_HOURS = 6
 BUY_TOGETHER_MEMBER_CONFIRMATION_WINDOW_HOURS = 12
+GOOGLE_TOKEN_ISSUERS = {"accounts.google.com", "https://accounts.google.com"}
 
 
 def can_close_group(group):
@@ -158,6 +160,117 @@ def build_rate_limit_identity(request, username=None):
     ip_part = get_client_ip(request)
     user_part = (username or "").strip().lower()
     return f"{ip_part}:{user_part}"
+
+
+def normalize_google_username_candidate(value):
+    normalized = re.sub(r"[^A-Za-z0-9@.+_-]+", "", (value or "").strip().lower())
+    normalized = normalized[:150]
+    return normalized.strip("._-+") or ""
+
+
+def build_unique_google_username(email, claims):
+    email_local_part = (email or "").split("@", 1)[0]
+    full_name = " ".join(
+        part for part in [(claims.get("given_name") or "").strip(), (claims.get("family_name") or "").strip()] if part
+    )
+
+    candidates = [
+        email_local_part,
+        full_name.replace(" ", "."),
+        (claims.get("name") or "").strip().replace(" ", "."),
+        "shareverseuser",
+    ]
+
+    for raw_candidate in candidates:
+        candidate = normalize_google_username_candidate(raw_candidate)
+        if candidate and not User.objects.filter(username__iexact=candidate).exists():
+            return candidate
+
+    base = normalize_google_username_candidate(email_local_part) or "shareverseuser"
+    for index in range(1, 1000):
+        suffix = f"-{index}"
+        trimmed_base = base[: max(1, 150 - len(suffix))].rstrip("._-+") or "shareverseuser"
+        candidate = f"{trimmed_base}{suffix}"
+        if not User.objects.filter(username__iexact=candidate).exists():
+            return candidate
+
+    random_suffix = secrets.token_hex(4)
+    fallback_base = "shareverseuser"
+    return f"{fallback_base[: max(1, 150 - len(random_suffix) - 1)]}-{random_suffix}"
+
+
+def verify_google_id_token(credential):
+    client_ids = getattr(settings, "GOOGLE_OAUTH_CLIENT_IDS", [])
+    if not client_ids:
+        raise ImproperlyConfigured("Google OAuth client ID is not configured.")
+
+    try:
+        from google.auth.transport import requests as google_requests
+        from google.oauth2 import id_token as google_id_token
+    except ImportError as exc:
+        raise ImproperlyConfigured("google-auth dependency is not installed.") from exc
+
+    request_adapter = google_requests.Request()
+    last_error = None
+
+    for client_id in client_ids:
+        try:
+            claims = google_id_token.verify_oauth2_token(credential, request_adapter, client_id)
+        except ValueError as exc:
+            last_error = exc
+            continue
+
+        issuer = (claims.get("iss") or "").strip()
+        if issuer not in GOOGLE_TOKEN_ISSUERS:
+            last_error = ValueError("Unexpected Google token issuer.")
+            continue
+
+        return claims
+
+    raise ValueError("Google sign-in could not be verified.") from last_error
+
+
+def get_or_create_google_user(claims):
+    email = (claims.get("email") or "").strip().lower()
+    given_name = (claims.get("given_name") or "").strip()
+    family_name = (claims.get("family_name") or "").strip()
+    full_name = (claims.get("name") or "").strip()
+
+    if not given_name and full_name:
+        name_parts = full_name.split()
+        given_name = name_parts[0] if name_parts else ""
+        family_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else family_name
+
+    existing_user = User.objects.filter(email__iexact=email).order_by("id").first()
+    if existing_user:
+        updated_fields = []
+
+        if given_name and not (existing_user.first_name or "").strip():
+            existing_user.first_name = given_name
+            updated_fields.append("first_name")
+        if family_name and not (existing_user.last_name or "").strip():
+            existing_user.last_name = family_name
+            updated_fields.append("last_name")
+        if not existing_user.is_verified:
+            existing_user.is_verified = True
+            updated_fields.append("is_verified")
+
+        if updated_fields:
+            existing_user.save(update_fields=updated_fields)
+
+        return existing_user, False
+
+    username = build_unique_google_username(email, claims)
+    user = User(
+        username=username,
+        email=email,
+        first_name=given_name,
+        last_name=family_name,
+        is_verified=True,
+    )
+    user.set_unusable_password()
+    user.save()
+    return user, True
 
 
 def get_group_buy_held_members(group):
@@ -1789,6 +1902,46 @@ class LoginView(APIView):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         })
+
+
+class GoogleAuthView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = GoogleAuthSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        try:
+            claims = verify_google_id_token(serializer.validated_data["credential"])
+        except ImproperlyConfigured:
+            return Response({"error": "Google sign-in is not configured right now."}, status=503)
+        except ValueError:
+            return Response({"error": "Google sign-in could not be verified."}, status=400)
+
+        email = (claims.get("email") or "").strip().lower()
+        if not email:
+            return Response({"error": "Google account email is missing."}, status=400)
+
+        if not claims.get("email_verified"):
+            return Response({"error": "Please use a Google account with a verified email."}, status=400)
+
+        user, created = get_or_create_google_user(claims)
+        refresh = RefreshToken.for_user(user)
+
+        return Response(
+            {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "created": created,
+                "user": {
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                },
+            }
+        )
 
 
 class ForgotPasswordRequestOTPView(APIView):

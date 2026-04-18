@@ -362,6 +362,83 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.data["attempts_remaining"], 4)
         self.assertFalse(User.objects.filter(username="otpuser").exists())
 
+    @patch("core.views.verify_google_id_token")
+    def test_google_auth_creates_verified_user_and_returns_tokens(self, verify_google_id_token_mock):
+        verify_google_id_token_mock.return_value = {
+            "iss": "accounts.google.com",
+            "sub": "google-sub-1",
+            "email": "google-user@example.com",
+            "email_verified": True,
+            "given_name": "Google",
+            "family_name": "Member",
+            "name": "Google Member",
+        }
+
+        response = self.client.post(
+            "/api/auth/google/",
+            {"credential": "google-id-token"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["created"])
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+        self.assertEqual(response.data["user"]["email"], "google-user@example.com")
+
+        created_user = User.objects.get(email="google-user@example.com")
+        self.assertTrue(created_user.is_verified)
+        self.assertEqual(created_user.first_name, "Google")
+        self.assertEqual(created_user.last_name, "Member")
+        self.assertFalse(created_user.has_usable_password())
+
+    @patch("core.views.verify_google_id_token")
+    def test_google_auth_logs_in_existing_user_with_same_email(self, verify_google_id_token_mock):
+        existing_user = User.objects.create_user(
+            username="existinggoogle",
+            password="password123",
+            email="google-existing@example.com",
+            first_name="",
+            last_name="",
+            is_verified=False,
+        )
+
+        verify_google_id_token_mock.return_value = {
+            "iss": "accounts.google.com",
+            "sub": "google-sub-2",
+            "email": "google-existing@example.com",
+            "email_verified": True,
+            "given_name": "Existing",
+            "family_name": "Member",
+            "name": "Existing Member",
+        }
+
+        response = self.client.post(
+            "/api/auth/google/",
+            {"credential": "google-id-token"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data["created"])
+        existing_user.refresh_from_db()
+        self.assertEqual(existing_user.first_name, "Existing")
+        self.assertEqual(existing_user.last_name, "Member")
+        self.assertTrue(existing_user.is_verified)
+        self.assertEqual(response.data["user"]["username"], existing_user.username)
+
+    @patch("core.views.verify_google_id_token", side_effect=ValueError("bad token"))
+    def test_google_auth_rejects_invalid_credentials(self, verify_google_id_token_mock):
+        response = self.client.post(
+            "/api/auth/google/",
+            {"credential": "invalid-token"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["error"], "Google sign-in could not be verified.")
+        verify_google_id_token_mock.assert_called_once()
+
     def test_create_group_rejects_end_date_before_start_date(self):
         self.authenticate(self.owner)
         response = self.client.post(

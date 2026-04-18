@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import { setAuthToken } from "../auth/session";
 import AuthShell from "../components/AuthShell";
+import GoogleAuthButton from "../components/GoogleAuthButton";
 import { useToast } from "../components/ToastProvider";
 import {
   CheckCircleIcon,
@@ -153,7 +155,7 @@ function getNextButtonLabel(stepIndex) {
   return stepIndex === SIGNUP_STEPS.length - 1 ? "Verify code & create account" : "Next step";
 }
 
-export default function Signup({ themeMode, toggleTheme }) {
+export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
   const navigate = useNavigate();
   const toast = useToast();
   const [form, setForm] = useState({
@@ -491,6 +493,31 @@ export default function Signup({ themeMode, toggleTheme }) {
     });
   };
 
+  const handleGoogleSuccess = (payload) => {
+    const accessToken = payload?.access || "";
+
+    if (!accessToken) {
+      setError("We could not finish Google sign-in right now. Please try again.");
+      return;
+    }
+
+    try {
+      setAuthToken(accessToken);
+    } catch {
+      // ignore localStorage write issues
+    }
+
+    setError("");
+    setIsAuth(true);
+    toast.success(
+      payload?.created
+        ? "Your ShareVerse account is ready and you are already signed in."
+        : "Signed in with your Google account.",
+      { title: payload?.created ? "Welcome to ShareVerse" : "Welcome back" }
+    );
+    navigate("/home", { replace: true });
+  };
+
   return (
     <AuthShell
       eyebrow="Create account"
@@ -565,6 +592,22 @@ export default function Signup({ themeMode, toggleTheme }) {
             <span>{verificationNotice}</span>
           </div>
         ) : null}
+
+        <GoogleAuthButton
+          mode="signup"
+          themeMode={themeMode}
+          disabled={loading || otpLoading}
+          title="Sign up with Google"
+          description="Create your ShareVerse account with one verified Google email and skip the manual OTP steps."
+          note="If you already have a ShareVerse account with the same email, we will sign you in instead."
+          className="mt-5"
+          onSuccess={handleGoogleSuccess}
+          onError={setError}
+        />
+
+        <div className="sv-google-auth-divider">
+          <span>Or continue with email</span>
+        </div>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           {currentStep === 0 ? <IdentityStep form={form} handleChange={handleChange} usernameStatus={usernameStatus} usernameStatusCopy={usernameStatusCopy} /> : null}

@@ -205,7 +205,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
             path="/signup"
             element={
               <PublicRoute>
-                <Signup themeMode={themeMode} toggleTheme={toggleTheme} />
+                <Signup setIsAuth={setIsAuth} themeMode={themeMode} toggleTheme={toggleTheme} />
               </PublicRoute>
             }
           />

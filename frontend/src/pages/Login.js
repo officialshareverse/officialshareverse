@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import { setAuthToken } from "../auth/session";
 import AuthShell from "../components/AuthShell";
 import BrandMark from "../components/BrandMark";
+import GoogleAuthButton from "../components/GoogleAuthButton";
 import { ClockIcon, ShieldIcon, SparkIcon } from "../components/UiIcons";
 
 const REMEMBER_KEY = "sv-login-remembered-username";
@@ -300,26 +302,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
         password: form.password,
       });
 
-      const nextLastLogin = {
-        username,
-        time: new Date().toISOString(),
-      };
-
-      try {
-        if (rememberMe) {
-          window.localStorage.setItem(REMEMBER_KEY, username);
-        } else {
-          window.localStorage.removeItem(REMEMBER_KEY);
-        }
-        window.localStorage.setItem(LAST_LOGIN_KEY, JSON.stringify(nextLastLogin));
-        window.localStorage.setItem("token", response.data.access);
-      } catch {
-        // ignore localStorage write issues
-      }
-
-      setLastLoginMeta(nextLastLogin);
-      setIsAuth(true);
-      navigate("/home", { replace: true });
+      completeSignIn(response.data, username);
     } catch (err) {
       console.error(err);
       setError(
@@ -333,6 +316,42 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const completeSignIn = (payload, fallbackUsername = "") => {
+    const accessToken = payload?.access || "";
+    const resolvedUsername = (payload?.user?.username || fallbackUsername || "").trim();
+
+    if (!accessToken) {
+      setError("We could not finish signing you in right now. Please try again.");
+      return;
+    }
+
+    const nextLastLogin = {
+      username: resolvedUsername,
+      time: new Date().toISOString(),
+    };
+
+    try {
+      if (rememberMe && resolvedUsername) {
+        window.localStorage.setItem(REMEMBER_KEY, resolvedUsername);
+      } else if (!rememberMe) {
+        window.localStorage.removeItem(REMEMBER_KEY);
+      }
+      window.localStorage.setItem(LAST_LOGIN_KEY, JSON.stringify(nextLastLogin));
+      setAuthToken(accessToken);
+    } catch {
+      // ignore localStorage write issues
+    }
+
+    setLastLoginMeta(nextLastLogin);
+    setIsAuth(true);
+    navigate("/home", { replace: true });
+  };
+
+  const handleGoogleSuccess = (payload) => {
+    setError("");
+    completeSignIn(payload, payload?.user?.username || "");
   };
 
   return (
@@ -403,6 +422,22 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
             <SparkIcon className="h-4 w-4" />
             Wallet and splits in one place
           </span>
+        </div>
+
+        <GoogleAuthButton
+          mode="signin"
+          themeMode={themeMode}
+          disabled={loading || resetLoading}
+          title="Continue with Google"
+          description="Use your verified Google email to sign in instantly or match an existing ShareVerse account."
+          note="We only use your verified Google email to sign you in safely."
+          className="mt-5"
+          onSuccess={handleGoogleSuccess}
+          onError={setError}
+        />
+
+        <div className="sv-google-auth-divider">
+          <span>Or sign in with username</span>
         </div>
 
         {notice ? (

@@ -6450,6 +6450,149 @@
     position: relative;
   }
 
+  .sv-google-auth-shell {
+    display: grid;
+    gap: 0.85rem;
+    padding: 1rem;
+    border-radius: 24px;
+    border: 1px solid color-mix(in srgb, var(--sv-border) 88%, transparent);
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--sv-paper-solid) 92%, transparent) 0%, color-mix(in srgb, var(--sv-soft-surface) 88%, transparent) 100%);
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+  }
+
+  .sv-google-auth-copy {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .sv-google-auth-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.35;
+    color: var(--sv-ink);
+  }
+
+  .sv-google-auth-description {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--sv-muted);
+  }
+
+  .sv-google-auth-render {
+    position: relative;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 22px;
+    border: 1px solid color-mix(in srgb, var(--sv-border) 82%, transparent);
+    background: var(--sv-input-surface);
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .sv-google-auth-render:hover {
+    border-color: color-mix(in srgb, var(--sv-accent) 26%, var(--sv-border));
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .sv-google-auth-render.is-disabled {
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  .sv-google-auth-slot {
+    width: 100%;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+  }
+
+  .sv-google-auth-slot > div {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .sv-google-auth-fallback {
+    width: 100%;
+    min-height: 56px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.8rem 1rem;
+    border: 0;
+    background: transparent;
+    color: var(--sv-ink);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .sv-google-auth-placeholder,
+  .sv-google-auth-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.8rem 1rem;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .sv-google-auth-placeholder {
+    color: var(--sv-muted);
+    background:
+      linear-gradient(90deg, rgba(148, 163, 184, 0.08) 0%, rgba(148, 163, 184, 0.16) 50%, rgba(148, 163, 184, 0.08) 100%);
+    background-size: 200% 100%;
+    animation: sv-shimmer 1.2s linear infinite;
+  }
+
+  .sv-google-auth-overlay {
+    color: var(--sv-ink);
+    background: color-mix(in srgb, var(--sv-paper-solid) 82%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  .sv-google-auth-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--sv-muted);
+  }
+
+  .sv-google-auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .sv-google-auth-divider::before,
+  .sv-google-auth-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: color-mix(in srgb, var(--sv-border) 82%, transparent);
+  }
+
+  .sv-google-auth-divider span {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sv-muted);
+    white-space: nowrap;
+  }
+
   .sv-login-brand-row {
     display: flex;
     align-items: center;
@@ -6583,6 +6726,7 @@
   body.sv-dark .sv-auth-testimonial,
   body.sv-dark .sv-auth-card,
   body.sv-dark .sv-auth-mobile-chip,
+  body.sv-dark .sv-google-auth-shell,
   body.sv-dark .sv-login-reset-modal {
     border-color: rgba(148, 163, 184, 0.14);
     background: rgba(15, 23, 42, 0.82);
@@ -6591,12 +6735,23 @@
   body.sv-dark .sv-auth-floating-badge small,
   body.sv-dark .sv-auth-mobile-chip small,
   body.sv-dark .sv-login-check,
-  body.sv-dark .sv-login-password-toggle {
+  body.sv-dark .sv-login-password-toggle,
+  body.sv-dark .sv-google-auth-note,
+  body.sv-dark .sv-google-auth-description,
+  body.sv-dark .sv-google-auth-divider span {
     color: var(--sv-muted-dark);
   }
 
   body.sv-dark .sv-login-submit {
     background: linear-gradient(135deg, #0f172a 0%, #0f766e 100%);
+  }
+
+  body.sv-dark .sv-google-auth-render {
+    background: rgba(15, 23, 42, 0.92);
+  }
+
+  body.sv-dark .sv-google-auth-overlay {
+    background: rgba(15, 23, 42, 0.84);
   }
 }
 

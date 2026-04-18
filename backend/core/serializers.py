@@ -290,6 +290,16 @@ class SignupConfirmSerializer(serializers.Serializer):
         return attrs
 
 
+class GoogleAuthSerializer(serializers.Serializer):
+    credential = serializers.CharField()
+
+    def validate_credential(self, value):
+        normalized = (value or "").strip()
+        if not normalized:
+            raise serializers.ValidationError("Google credential is required.")
+        return normalized
+
+
 class ForgotPasswordRequestSerializer(serializers.Serializer):
     username = serializers.CharField()
     phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
