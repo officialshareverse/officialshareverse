@@ -275,87 +275,84 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme, openSpotligh
       <header className="sticky top-0 z-40" style={{ padding: "var(--sv-page-px)", paddingBottom: 0 }}>
         <div className="sv-container">
           <div className="hidden items-center justify-between gap-4 px-3 py-2.5 sm:px-4 sm:py-3 md:px-5 lg:flex sv-brand-shell">
-            <div className="min-w-0 flex items-center gap-3">
-              <BrandMark glow sizeClass="h-10 w-10" />
-              <div className="min-w-0">
-                <h1 className="truncate text-sm font-bold leading-none text-slate-950 sm:text-lg md:text-xl">
-                  ShareVerse
-                </h1>
-                <p className="mt-0.5 hidden text-[9px] uppercase tracking-[0.16em] text-slate-500 sm:block sm:text-[10px]">
-                  Split more. Pay less.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex min-w-0 flex-1 items-center justify-center gap-3">
-              {desktopNavGroups.map((group) => (
-                <div
-                  key={group.id}
-                  ref={(node) => {
-                    groupRefs.current[group.id] = node;
-                  }}
-                  className="sv-desktop-nav-group"
-                >
-                  <span className="sv-desktop-nav-indicator" style={indicatorStyles[group.id] || { opacity: 0 }} />
-                  {group.items.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = currentPath === item.to;
-
-                    return (
-                      <NavLink
-                        key={item.to}
-                        ref={(node) => {
-                          itemRefs.current[item.to] = node;
-                        }}
-                        to={item.to}
-                        className={`sv-desktop-nav-link ${isActive ? "is-active" : ""}`}
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          {renderNavLabel(item)}
-                        </span>
-                      </NavLink>
-                    );
-                  })}
+            <div className="sv-navbar-desktop">
+              <div className="sv-navbar-brand">
+                <BrandMark glow sizeClass="h-10 w-10" />
+                <div className="sv-navbar-brand-copy">
+                  <h1 className="sv-navbar-brand-title">ShareVerse</h1>
+                  <p className="sv-navbar-brand-subtitle">Split more. Pay less.</p>
                 </div>
-              ))}
-            </div>
+              </div>
 
-            <div className="flex items-center gap-2.5">
-              <Tooltip content={`Open search (${spotlightModifier} K)`}>
-                <button
-                  type="button"
-                  onClick={openSpotlight}
-                  className="sv-spotlight-trigger sv-focus-ring"
-                  aria-label={`Open search (${spotlightModifier} K)`}
-                >
-                  <SearchIcon className="h-4.5 w-4.5" />
-                  <span className="sv-spotlight-trigger-label">Search</span>
-                  <span className="sv-spotlight-trigger-keys" aria-hidden="true">
-                    <span className="sv-spotlight-kbd">{spotlightModifier}</span>
-                    <span className="sv-spotlight-kbd">K</span>
-                  </span>
-                </button>
-              </Tooltip>
+              <div className="sv-navbar-center">
+                <div className="sv-navbar-scroll">
+                  {desktopNavGroups.map((group) => (
+                    <div
+                      key={group.id}
+                      ref={(node) => {
+                        groupRefs.current[group.id] = node;
+                      }}
+                      className="sv-desktop-nav-group"
+                    >
+                      <span className="sv-desktop-nav-indicator" style={indicatorStyles[group.id] || { opacity: 0 }} />
+                      {group.items.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = currentPath === item.to;
 
-              <ThemeToggle themeMode={themeMode} onToggle={toggleTheme} />
+                        return (
+                          <NavLink
+                            key={item.to}
+                            ref={(node) => {
+                              itemRefs.current[item.to] = node;
+                            }}
+                            to={item.to}
+                            className={`sv-desktop-nav-link ${isActive ? "is-active" : ""} ${item.to === "/create" ? "is-create" : ""}`}
+                          >
+                            <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                              <Icon className="h-4 w-4" />
+                              {renderNavLabel(item)}
+                            </span>
+                          </NavLink>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-              <div ref={profileMenuRef} className="relative">
+              <div className="sv-navbar-actions">
+                <div className="sv-navbar-utility-group">
+                  <Tooltip content={`Open search (${spotlightModifier} K)`}>
+                    <button
+                      type="button"
+                      onClick={openSpotlight}
+                      className="sv-spotlight-trigger sv-focus-ring sv-navbar-search"
+                      aria-label={`Open search (${spotlightModifier} K)`}
+                    >
+                      <SearchIcon className="h-4.5 w-4.5" />
+                      <span className="sv-spotlight-trigger-label">Search</span>
+                      <span className="sv-spotlight-trigger-keys" aria-hidden="true">
+                        <span className="sv-spotlight-kbd">{spotlightModifier}</span>
+                        <span className="sv-spotlight-kbd">K</span>
+                      </span>
+                    </button>
+                  </Tooltip>
+
+                  <ThemeToggle themeMode={themeMode} onToggle={toggleTheme} compact className="sv-navbar-theme-toggle" />
+                </div>
+
+                <div ref={profileMenuRef} className="relative">
                 <button
                   type="button"
                   onClick={() => setIsProfileMenuOpen((current) => !current)}
-                  className={`sv-user-trigger ${currentPath === "/profile" || isProfileMenuOpen ? "is-active" : ""}`}
+                  className={`sv-user-trigger sv-navbar-profile ${currentPath === "/profile" || isProfileMenuOpen ? "is-active" : ""}`}
                   aria-haspopup="menu"
                   aria-expanded={isProfileMenuOpen}
                 >
-                  <UserAvatar profile={profile} initials={profileInitials} />
-                  <span className="min-w-0 text-left">
-                    <span className="block truncate text-sm font-semibold text-slate-950">
-                      {profileFirstName}
-                    </span>
-                    <span className="block truncate text-[11px] text-slate-500">
-                      Account
-                    </span>
+                  <UserAvatar profile={profile} initials={profileInitials} className="sv-navbar-profile-avatar" />
+                  <span className="sv-navbar-profile-copy">
+                    <span className="sv-navbar-profile-name">{profileFirstName}</span>
+                    <span className="sv-navbar-profile-caption">Personal space</span>
                   </span>
                   <span className={`sv-user-trigger-caret ${isProfileMenuOpen ? "is-open" : ""}`} aria-hidden="true" />
                 </button>
@@ -388,6 +385,7 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme, openSpotligh
                   </div>
                 ) : null}
               </div>
+            </div>
             </div>
           </div>
 
