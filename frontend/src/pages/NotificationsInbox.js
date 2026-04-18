@@ -1,27 +1,43 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import CountUp from "../components/CountUp";
+import Drawer from "../components/Drawer";
+import EmptyState from "../components/EmptyState";
+import PullToRefreshIndicator from "../components/PullToRefreshIndicator";
+import {
+  SkeletonCard,
+  SkeletonList,
+  SkeletonMetricGrid,
+  SkeletonTextGroup,
+} from "../components/SkeletonFactory";
+import Tabs from "../components/Tabs";
 import { useToast } from "../components/ToastProvider";
 import {
   BellIcon,
   ChatIcon,
   CheckCircleIcon,
   ClockIcon,
+  HomeIcon,
   LoadingSpinner,
   ShieldIcon,
   StarIcon,
   WalletIcon,
 } from "../components/UiIcons";
+import usePullToRefresh from "../hooks/usePullToRefresh";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 const SOUND_TOGGLE_STORAGE_KEY = "sv-notification-sound-enabled";
+const HAPTICS_TOGGLE_STORAGE_KEY = "sv-notification-haptics-enabled";
 
 function SummaryCard({ label, value, tone = "text-slate-900", className = "" }) {
   return (
     <div className={`sv-stat-card ${className}`}>
       <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">{label}</p>
-      <p className={`mt-2 text-xl font-bold sm:mt-3 sm:text-2xl ${tone}`}>{value}</p>
+      <p className={`mt-2 text-xl font-bold sm:mt-3 sm:text-2xl ${tone}`}>
+        <CountUp value={value} />
+      </p>
     </div>
   );
 }
@@ -92,6 +108,20 @@ function playNotificationChime() {
   oscillator.onended = () => {
     void context.close();
   };
+}
+
+function pulseDevice() {
+  if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+    navigator.vibrate(16);
+  }
+}
+
+function isEditableTarget(target) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
 }
 
 function bundleNotifications(notifications) {
@@ -171,6 +201,7 @@ export default function NotificationsInbox() {
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [workingId, setWorkingId] = useState(null);
   const [markingAll, setMarkingAll] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === "undefined") {
       return true;
@@ -178,62 +209,81 @@ export default function NotificationsInbox() {
     const storedValue = window.localStorage.getItem(SOUND_TOGGLE_STORAGE_KEY);
     return storedValue !== "0";
   });
+  const [hapticsEnabled, setHapticsEnabled] = useState(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+    const storedValue = window.localStorage.getItem(HAPTICS_TOGGLE_STORAGE_KEY);
+    return storedValue !== "0";
+  });
   const previousUnreadCountRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   useRevealOnScroll();
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(SOUND_TOGGLE_STORAGE_KEY, soundEnabled ? "1" : "0");
   }, [soundEnabled]);
 
   useEffect(() => {
-    let isMounted = true;
+    window.localStorage.setItem(HAPTICS_TOGGLE_STORAGE_KEY, hapticsEnabled ? "1" : "0");
+  }, [hapticsEnabled]);
 
-    const fetchNotifications = async (showLoader = false) => {
-      try {
-        if (showLoader && isMounted) {
-          setLoading(true);
-        }
-        const response = await API.get("notifications/");
-        if (!isMounted) {
-          return;
-        }
+  const fetchNotifications = useCallback(async (showLoader = false) => {
+    try {
+      if (showLoader && isMountedRef.current) {
+        setLoading(true);
+      }
 
-        const nextNotifications = Array.isArray(response.data) ? response.data : [];
-        const nextUnreadCount = nextNotifications.filter((notification) => !notification.is_read).length;
-        if (
-          previousUnreadCountRef.current !== null &&
-          nextUnreadCount > previousUnreadCountRef.current &&
-          soundEnabled
-        ) {
+      const response = await API.get("notifications/");
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      const nextNotifications = Array.isArray(response.data) ? response.data : [];
+      const nextUnreadCount = nextNotifications.filter((notification) => !notification.is_read).length;
+      const previousUnreadCount = previousUnreadCountRef.current;
+
+      if (previousUnreadCount !== null && nextUnreadCount > previousUnreadCount) {
+        if (soundEnabled) {
           playNotificationChime();
         }
-        previousUnreadCountRef.current = nextUnreadCount;
-
-        setNotifications(nextNotifications);
-        setError("");
-      } catch (err) {
-        console.error(err);
-        if (isMounted) {
-          setError(err.response?.data?.error || "We could not load notifications right now.");
-        }
-      } finally {
-        if (showLoader && isMounted) {
-          setLoading(false);
+        if (hapticsEnabled) {
+          pulseDevice();
         }
       }
-    };
 
+      previousUnreadCountRef.current = nextUnreadCount;
+      setNotifications(nextNotifications);
+      setError("");
+    } catch (err) {
+      console.error(err);
+      if (isMountedRef.current) {
+        setError(err.response?.data?.error || "We could not load notifications right now.");
+      }
+    } finally {
+      if (showLoader && isMountedRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [hapticsEnabled, soundEnabled]);
+
+  useEffect(() => {
     void fetchNotifications(true);
     const intervalId = window.setInterval(() => {
       void fetchNotifications(false);
     }, 10000);
 
     return () => {
-      isMounted = false;
       window.clearInterval(intervalId);
     };
-  }, [soundEnabled]);
+  }, [fetchNotifications]);
 
   const counts = useMemo(() => {
     return notifications.reduce(
@@ -265,6 +315,14 @@ export default function NotificationsInbox() {
 
   const bundledItems = useMemo(() => bundleNotifications(filteredNotifications), [filteredNotifications]);
   const sections = useMemo(() => buildSections(bundledItems), [bundledItems]);
+  const categoryTabs = [
+    { value: "all", label: "All", count: counts.all },
+    { value: "groups", label: "Groups", count: counts.groups },
+    { value: "wallet", label: "Wallet", count: counts.wallet },
+    { value: "system", label: "System", count: counts.system },
+  ];
+  const activeFilterLabel =
+    filter === "all" ? "All updates" : filter.charAt(0).toUpperCase() + filter.slice(1);
 
   const markAsRead = async (notificationId) => {
     try {
@@ -276,6 +334,7 @@ export default function NotificationsInbox() {
           item.id === notificationId ? nextNotification || { ...item, is_read: true } : item
         )
       );
+      previousUnreadCountRef.current = Math.max(0, (previousUnreadCountRef.current ?? 1) - 1);
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.error || "Failed to mark this notification as read.", {
@@ -295,6 +354,10 @@ export default function NotificationsInbox() {
           notificationIds.includes(item.id) ? { ...item, is_read: true } : item
         )
       );
+      previousUnreadCountRef.current = Math.max(
+        0,
+        (previousUnreadCountRef.current ?? notificationIds.length) - notificationIds.length
+      );
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.error || "Failed to mark this bundle as read.", {
@@ -305,11 +368,12 @@ export default function NotificationsInbox() {
     }
   };
 
-  const markAllRead = async () => {
+  const markAllRead = useCallback(async () => {
     try {
       setMarkingAll(true);
       await API.post("notifications/mark-all-read/");
       setNotifications((current) => current.map((item) => ({ ...item, is_read: true })));
+      previousUnreadCountRef.current = 0;
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.error || "Failed to mark all notifications as read.", {
@@ -318,38 +382,58 @@ export default function NotificationsInbox() {
     } finally {
       setMarkingAll(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (!(event.altKey && event.shiftKey && event.key.toLowerCase() === "r")) {
+        return;
+      }
+
+      if (isEditableTarget(event.target) || markingAll || counts.unread === 0) {
+        return;
+      }
+
+      event.preventDefault();
+      void markAllRead();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [counts.unread, markAllRead, markingAll]);
+
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: () => fetchNotifications(false),
+    disabled: loading,
+  });
 
   if (loading) {
     return (
       <div className="sv-page">
         <div className="mx-auto max-w-6xl space-y-6">
-          <section className="sv-skeleton-card space-y-4">
-            <div className="sv-skeleton h-4 w-28" />
-            <div className="sv-skeleton h-14 w-96 rounded-[22px]" />
-            <div className="sv-skeleton h-4 w-2/3" />
-          </section>
-          <section className="grid gap-2 grid-cols-2 sm:grid-cols-4 sm:gap-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="sv-skeleton-card space-y-4">
-                <div className="sv-skeleton h-3 w-24" />
-                <div className="sv-skeleton h-8 w-20 rounded-[16px]" />
-              </div>
-            ))}
-          </section>
-          <section className="sv-skeleton-card space-y-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="sv-skeleton h-24 w-full rounded-[22px]" />
-            ))}
-          </section>
+          <SkeletonCard>
+            <SkeletonTextGroup eyebrowWidth="w-28" titleWidth="w-96" />
+          </SkeletonCard>
+          <SkeletonMetricGrid count={4} className="grid gap-2 grid-cols-2 sm:grid-cols-4 sm:gap-4" />
+          <SkeletonCard>
+            <SkeletonList count={4} itemClassName="h-24 rounded-[22px]" />
+          </SkeletonCard>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="sv-page">
+    <div className="sv-page" {...pullToRefresh.bind}>
       <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
+        <PullToRefreshIndicator
+          progress={pullToRefresh.progress}
+          isRefreshing={pullToRefresh.isRefreshing}
+          loadingLabel="Refreshing notifications..."
+        />
+
         <section className="sv-dark-hero">
           <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
@@ -387,7 +471,27 @@ export default function NotificationsInbox() {
                 <h2 className="mt-2 text-2xl font-bold text-slate-900">Categorized updates</h2>
               </div>
 
-              <div className="sv-inbox-toolbar">
+              <button
+                type="button"
+                onClick={() => setIsMobileDrawerOpen(true)}
+                className="sv-notification-mobile-trigger sm:hidden"
+              >
+                <span className="sv-notification-mobile-trigger-copy">
+                  <span>Filters &amp; actions</span>
+                  <strong>{showUnreadOnly ? `${activeFilterLabel} - Unread` : activeFilterLabel}</strong>
+                </span>
+                <BellIcon className="h-4 w-4" />
+              </button>
+
+              <div className="hidden sm:flex sv-inbox-toolbar">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileDrawerOpen(true)}
+                  className="sv-notification-toggle"
+                >
+                  <BellIcon className="h-4 w-4" />
+                  Preferences
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowUnreadOnly((current) => !current)}
@@ -407,23 +511,8 @@ export default function NotificationsInbox() {
               </div>
             </div>
 
-            <div className="sv-inbox-tabs">
-              {[
-                { value: "all", label: "All", count: counts.all },
-                { value: "groups", label: "Groups", count: counts.groups },
-                { value: "wallet", label: "Wallet", count: counts.wallet },
-                { value: "system", label: "System", count: counts.system },
-              ].map((tab) => (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => setFilter(tab.value)}
-                  className={`sv-inbox-tab ${filter === tab.value ? "is-active" : ""}`}
-                >
-                  <span>{tab.label}</span>
-                  <span className="sv-inbox-tab-count">{tab.count}</span>
-                </button>
-              ))}
+            <div className="hidden sm:block">
+              <Tabs tabs={categoryTabs} value={filter} onChange={setFilter} />
             </div>
           </div>
 
@@ -435,15 +524,11 @@ export default function NotificationsInbox() {
 
           <div className="mt-5 space-y-5">
             {sections.length === 0 ? (
-              <div className="sv-empty-state">
-                <div className="sv-empty-icon">
-                  <BellIcon className="h-6 w-6" />
-                </div>
-                <p className="text-sm font-semibold text-slate-900">Nothing matches this inbox view right now.</p>
-                <p className="mt-2 text-sm leading-7 text-slate-500">
-                  Try another category or turn off the unread-only filter to see older updates.
-                </p>
-              </div>
+              <EmptyState
+                icon={BellIcon}
+                title="Nothing matches this inbox view right now."
+                description="Try another category or turn off the unread-only filter to see older updates."
+              />
             ) : (
               sections.map((section) => (
                 <div key={section.label}>
@@ -473,6 +558,76 @@ export default function NotificationsInbox() {
           </div>
         </section>
       </div>
+
+      <Drawer
+        open={isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        eyebrow="Inbox controls"
+        title="Tune this notification view"
+        description="Switch categories, focus on unread updates, and manage your inbox without leaving the page."
+        footer={(
+          <div className="space-y-3">
+            <p className="sv-drawer-footnote">Desktop shortcut: <strong>Alt + Shift + R</strong> marks everything read.</p>
+            <button
+              type="button"
+              onClick={() => setIsMobileDrawerOpen(false)}
+              className="sv-btn-secondary w-full justify-center"
+            >
+              Done
+            </button>
+          </div>
+        )}
+      >
+        <Tabs tabs={categoryTabs} value={filter} onChange={setFilter} className="sv-drawer-tabs" />
+
+        <div className="sv-drawer-stack">
+          <MobileDrawerAction
+            icon={ClockIcon}
+            label={showUnreadOnly ? "Showing unread only" : "Show unread only"}
+            description="Focus on the items that still need your attention."
+            meta={showUnreadOnly ? "Active" : "Off"}
+            active={showUnreadOnly}
+            onClick={() => setShowUnreadOnly((current) => !current)}
+          />
+
+          <MobileDrawerAction
+            icon={BellIcon}
+            label={soundEnabled ? "Notification sound is on" : "Notification sound is off"}
+            description="Play a quick chime when fresh unread updates arrive."
+            meta={soundEnabled ? "Enabled" : "Muted"}
+            active={soundEnabled}
+            onClick={() => setSoundEnabled((current) => !current)}
+          />
+
+          <MobileDrawerAction
+            icon={StarIcon}
+            label={hapticsEnabled ? "Haptics are on" : "Haptics are off"}
+            description="Use a subtle device vibration for new unread alerts on supported devices."
+            meta={hapticsEnabled ? "Enabled" : "Muted"}
+            active={hapticsEnabled}
+            onClick={() => setHapticsEnabled((current) => !current)}
+          />
+
+          <MobileDrawerAction
+            icon={CheckCircleIcon}
+            label="Mark all as read"
+            description="Clear the unread queue once you are caught up."
+            meta={counts.unread > 0 ? `${counts.unread} unread` : "All caught up"}
+            disabled={markingAll || counts.unread === 0}
+            onClick={markAllRead}
+          />
+
+          <MobileDrawerAction
+            icon={HomeIcon}
+            label="Back to Home"
+            description="Jump out of the inbox and return to your dashboard."
+            onClick={() => {
+              setIsMobileDrawerOpen(false);
+              navigate("/home");
+            }}
+          />
+        </div>
+      </Drawer>
     </div>
   );
 }
@@ -536,5 +691,35 @@ function NotificationBundleCard({ item, working, onMarkRead }) {
         {working ? <><LoadingSpinner />Saving...</> : <><CheckCircleIcon className="h-4 w-4" />Mark bundle read</>}
       </button>
     </article>
+  );
+}
+
+function MobileDrawerAction({
+  icon: Icon,
+  label,
+  description,
+  meta,
+  onClick,
+  disabled = false,
+  active = false,
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`sv-drawer-action ${active ? "is-active" : ""}`.trim()}
+    >
+      <span className="sv-drawer-action-icon">
+        <Icon className="h-4.5 w-4.5" />
+      </span>
+
+      <span className="sv-drawer-action-copy">
+        <strong>{label}</strong>
+        {description ? <span>{description}</span> : null}
+      </span>
+
+      {meta ? <span className="sv-drawer-action-meta">{meta}</span> : null}
+    </button>
   );
 }

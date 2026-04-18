@@ -1,7 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import AvatarStack from "../components/AvatarStack";
+import CountUp from "../components/CountUp";
+import EmptyState from "../components/EmptyState";
+import PullToRefreshIndicator from "../components/PullToRefreshIndicator";
+import {
+  SkeletonCard,
+  SkeletonList,
+  SkeletonMetricGrid,
+  SkeletonTextGroup,
+} from "../components/SkeletonFactory";
+import Tabs from "../components/Tabs";
+import Tooltip from "../components/Tooltip";
 import {
   ChatIcon,
   CheckCircleIcon,
@@ -9,9 +21,16 @@ import {
   SearchIcon,
   StarIcon,
 } from "../components/UiIcons";
+import usePullToRefresh from "../hooks/usePullToRefresh";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 const PINNED_CHATS_STORAGE_KEY = "sv-pinned-chats-v1";
+
+function pulseDevice() {
+  if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+    navigator.vibrate(12);
+  }
+}
 
 function getPresenceMeta(presence) {
   const status = presence?.status || "offline";
@@ -47,7 +66,9 @@ function SummaryCard({ label, value, tone = "text-slate-900", className = "" }) 
   return (
     <div className={`sv-stat-card ${className}`}>
       <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className={`mt-3 text-2xl font-bold ${tone}`}>{value}</p>
+      <p className={`mt-3 text-2xl font-bold ${tone}`}>
+        <CountUp value={value} />
+      </p>
     </div>
   );
 }
@@ -116,6 +137,8 @@ export default function ChatsInbox() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const previousUnreadCountRef = useRef(null);
+  const isMountedRef = useRef(true);
   const [pinnedChatIds, setPinnedChatIds] = useState(() => {
     if (typeof window === "undefined") {
       return [];
@@ -125,7 +148,7 @@ export default function ChatsInbox() {
       const storedValue = window.localStorage.getItem(PINNED_CHATS_STORAGE_KEY);
       const parsed = storedValue ? JSON.parse(storedValue) : [];
       return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
+    } catch {
       return [];
     }
   });
@@ -133,45 +156,59 @@ export default function ChatsInbox() {
   useRevealOnScroll();
 
   useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     window.localStorage.setItem(PINNED_CHATS_STORAGE_KEY, JSON.stringify(pinnedChatIds));
   }, [pinnedChatIds]);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchInbox = async (showLoader = false) => {
-      try {
-        if (showLoader && isMounted) {
-          setLoading(true);
-        }
-        const response = await API.get("group-chats/");
-        if (!isMounted) {
-          return;
-        }
-        setChatInbox(response.data || { chats: [], total_chats: 0, total_unread_count: 0 });
-        setError("");
-      } catch (err) {
-        console.error(err);
-        if (isMounted) {
-          setError(err.response?.data?.error || "We could not load your chats right now.");
-        }
-      } finally {
-        if (showLoader && isMounted) {
-          setLoading(false);
-        }
+  const fetchInbox = useCallback(async (showLoader = false) => {
+    try {
+      if (showLoader && isMountedRef.current) {
+        setLoading(true);
       }
-    };
 
+      const response = await API.get("group-chats/");
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      const nextInbox = response.data || { chats: [], total_chats: 0, total_unread_count: 0 };
+      const nextUnreadCount = Number(nextInbox.total_unread_count) || 0;
+      const previousUnreadCount = previousUnreadCountRef.current;
+
+      if (previousUnreadCount !== null && nextUnreadCount > previousUnreadCount) {
+        pulseDevice();
+      }
+
+      previousUnreadCountRef.current = nextUnreadCount;
+      setChatInbox(nextInbox);
+      setError("");
+    } catch (err) {
+      console.error(err);
+      if (isMountedRef.current) {
+        setError(err.response?.data?.error || "We could not load your chats right now.");
+      }
+    } finally {
+      if (showLoader && isMountedRef.current) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     void fetchInbox(true);
     const intervalId = window.setInterval(() => {
       void fetchInbox(false);
     }, 10000);
 
     return () => {
-      isMounted = false;
       window.clearInterval(intervalId);
     };
-  }, []);
+  }, [fetchInbox]);
 
   const stats = useMemo(() => {
     const chats = chatInbox.chats || [];
@@ -237,36 +274,36 @@ export default function ChatsInbox() {
     );
   };
 
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: () => fetchInbox(false),
+    disabled: loading,
+  });
+
   if (loading) {
     return (
       <div className="sv-page">
         <div className="mx-auto max-w-6xl space-y-6">
-          <section className="sv-skeleton-card space-y-4">
-            <div className="sv-skeleton h-4 w-16" />
-            <div className="sv-skeleton h-14 w-80 rounded-[22px]" />
-            <div className="sv-skeleton h-4 w-2/3" />
-          </section>
-          <section className="grid gap-4 sm:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="sv-skeleton-card space-y-4">
-                <div className="sv-skeleton h-3 w-24" />
-                <div className="sv-skeleton h-8 w-20 rounded-[16px]" />
-              </div>
-            ))}
-          </section>
-          <section className="sv-skeleton-card space-y-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="sv-skeleton h-32 w-full rounded-[22px]" />
-            ))}
-          </section>
+          <SkeletonCard>
+            <SkeletonTextGroup eyebrowWidth="w-16" titleWidth="w-80" />
+          </SkeletonCard>
+          <SkeletonMetricGrid count={4} />
+          <SkeletonCard>
+            <SkeletonList count={4} itemClassName="h-32 rounded-[22px]" />
+          </SkeletonCard>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="sv-page">
+    <div className="sv-page" {...pullToRefresh.bind}>
       <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
+        <PullToRefreshIndicator
+          progress={pullToRefresh.progress}
+          isRefreshing={pullToRefresh.isRefreshing}
+          loadingLabel="Refreshing chats..."
+        />
+
         <section className="sv-dark-hero sv-reveal">
           <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
@@ -274,6 +311,9 @@ export default function ChatsInbox() {
               <h1 className="sv-display-on-dark mt-2 max-w-4xl sm:mt-3">Pinned threads, faster scans, and clearer group context</h1>
               <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-4 sm:text-base sm:leading-8">
                 Separate hosted chats from joined ones, keep important threads pinned, and jump in with a clearer sense of status and who is inside the conversation.
+              </p>
+              <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+                Pull down on mobile to refresh this inbox quickly.
               </p>
             </div>
             <button type="button" onClick={() => navigate("/my-shared")} className="sv-btn-ghost-dark">
@@ -309,24 +349,16 @@ export default function ChatsInbox() {
               </label>
             </div>
 
-            <div className="sv-inbox-tabs">
-              {[
+            <Tabs
+              tabs={[
                 { value: "all", label: "All chats", count: stats.total },
                 { value: "unread", label: "Unread", count: stats.unreadThreads },
                 { value: "pinned", label: "Pinned", count: stats.pinned },
                 { value: "hosted", label: "Hosted", count: stats.hosted },
-              ].map((tab) => (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => setFilter(tab.value)}
-                  className={`sv-inbox-tab ${filter === tab.value ? "is-active" : ""}`}
-                >
-                  <span>{tab.label}</span>
-                  <span className="sv-inbox-tab-count">{tab.count}</span>
-                </button>
-              ))}
-            </div>
+              ]}
+              value={filter}
+              onChange={setFilter}
+            />
           </div>
 
           {error ? (
@@ -337,15 +369,11 @@ export default function ChatsInbox() {
 
           <div className="mt-5 space-y-4">
             {visibleChats.length === 0 ? (
-              <div className="sv-empty-state">
-                <div className="sv-empty-icon">
-                  <ChatIcon className="h-6 w-6" />
-                </div>
-                <p className="text-sm font-semibold text-slate-900">Nothing matches this chat view yet.</p>
-                <p className="mt-2 text-sm leading-7 text-slate-500">
-                  Try another filter or clear the search to bring back the rest of your conversations.
-                </p>
-              </div>
+              <EmptyState
+                icon={ChatIcon}
+                title="Nothing matches this chat view yet."
+                description="Try another filter or clear the search to bring back the rest of your conversations."
+              />
             ) : (
               visibleChats.map((chat) => (
                 <ChatCard
@@ -404,30 +432,35 @@ function ChatCard({ chat, pinned, onTogglePinned, onOpen }) {
 
         <div className="flex items-center gap-2">
           <span className="sv-chat-time">{formatRelativeTime(chat.last_activity_at)}</span>
-          <button
-            type="button"
-            onClick={onTogglePinned}
-            className={`sv-chat-pin ${pinned ? "is-active" : ""}`}
-            aria-label={pinned ? "Unpin chat" : "Pin chat"}
-          >
-            <StarIcon className="h-4 w-4" />
-          </button>
+          <Tooltip content={pinned ? "Unpin chat" : "Pin chat"}>
+            <button
+              type="button"
+              onClick={onTogglePinned}
+              className={`sv-chat-pin ${pinned ? "is-active" : ""}`}
+              aria-label={pinned ? "Unpin chat" : "Pin chat"}
+            >
+              <StarIcon className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <div className="sv-chat-avatar-stack">
-          {(chat.participant_preview || []).map((participant) => (
-            <span
-              key={`${chat.group.id}-${participant.username}`}
-              className={`sv-chat-avatar-chip ${getPresenceMeta(participant.presence).className}`}
-              title={`${participant.username} • ${getPresenceMeta(participant.presence).label}`}
-            >
-              {participant.initials || getAvatarToken(participant.username)}
-              <span className={`sv-chat-avatar-chip-dot ${getPresenceMeta(participant.presence).className}`} />
-            </span>
-          ))}
-        </div>
+        <AvatarStack
+          className="sv-chat-avatar-stack"
+          chipClassName="sv-chat-avatar-chip"
+          items={(chat.participant_preview || []).map((participant) => {
+            const presenceMeta = getPresenceMeta(participant.presence);
+            return {
+              id: `${chat.group.id}-${participant.username}`,
+              initials: participant.initials || getAvatarToken(participant.username),
+              label: participant.username,
+              title: `${participant.username} - ${presenceMeta.label}`,
+              className: presenceMeta.className,
+              indicatorClassName: presenceMeta.className,
+            };
+          })}
+        />
         <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
           {chat.message_count} message{chat.message_count === 1 ? "" : "s"}
         </span>

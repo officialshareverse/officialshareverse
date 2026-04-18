@@ -153,7 +153,7 @@ function getNextButtonLabel(stepIndex) {
   return stepIndex === SIGNUP_STEPS.length - 1 ? "Verify code & create account" : "Next step";
 }
 
-export default function Signup() {
+export default function Signup({ themeMode, toggleTheme }) {
   const navigate = useNavigate();
   const toast = useToast();
   const [form, setForm] = useState({
@@ -496,6 +496,8 @@ export default function Signup() {
       eyebrow="Create account"
       title="Set up your ShareVerse account."
       subtitle="Move through four quick steps: choose your login details, add verification info, secure the account, and confirm the OTP."
+      themeMode={themeMode}
+      toggleTheme={toggleTheme}
       footer={<SignupFooter />}
       panelWidthClass="max-w-3xl"
       compact

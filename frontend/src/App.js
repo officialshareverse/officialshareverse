@@ -4,6 +4,11 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-route
 import { getAuthToken } from "./auth/session";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/Navbar";
+import {
+  SkeletonBlock,
+  SkeletonCard,
+  SkeletonTextGroup,
+} from "./components/SkeletonFactory";
 import SpotlightSearch from "./components/SpotlightSearch";
 import { ToastProvider } from "./components/ToastProvider";
 import AboutPage from "./pages/AboutPage";
@@ -111,6 +116,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
   const location = useLocation();
   const [isRouteLoading, setIsRouteLoading] = useState(true);
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
+  const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
   const openSpotlight = useCallback(() => setIsSpotlightOpen(true), []);
   const closeSpotlight = useCallback(() => setIsSpotlightOpen(false), []);
 
@@ -124,6 +130,42 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
       window.clearTimeout(timeoutId);
     };
   }, [location.pathname]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.documentElement.style.setProperty("--sv-parallax-offset", "0px");
+  }, [location.pathname]);
+
+  useEffect(() => {
+    let animationFrameId = 0;
+
+    const syncScrollUi = () => {
+      const scrollY = window.scrollY || window.pageYOffset || 0;
+      setIsScrollTopVisible(scrollY > 360);
+      document.documentElement.style.setProperty(
+        "--sv-parallax-offset",
+        `${Math.min(scrollY * 0.08, 42)}px`
+      );
+      animationFrameId = 0;
+    };
+
+    const handleScroll = () => {
+      if (animationFrameId) {
+        return;
+      }
+      animationFrameId = window.requestAnimationFrame(syncScrollUi);
+    };
+
+    syncScrollUi();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, []);
 
   return (
     <>
@@ -155,7 +197,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
             path="/login"
             element={
               <PublicRoute>
-                <Login setIsAuth={setIsAuth} />
+                <Login setIsAuth={setIsAuth} themeMode={themeMode} toggleTheme={toggleTheme} />
               </PublicRoute>
             }
           />
@@ -164,7 +206,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
             path="/signup"
             element={
               <PublicRoute>
-                <Signup />
+                <Signup themeMode={themeMode} toggleTheme={toggleTheme} />
               </PublicRoute>
             }
           />
@@ -279,6 +321,11 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
         themeMode={themeMode}
         toggleTheme={toggleTheme}
       />
+
+      <ScrollTopButton
+        isVisible={isScrollTopVisible}
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      />
     </>
   );
 }
@@ -288,22 +335,32 @@ function AuthBootstrapScreen() {
     <div className="sv-page">
       <div className="sv-auth-bootstrap">
         <div className="sv-auth-bootstrap-shell">
-          <div className="sv-skeleton h-10 w-40 rounded-full" />
-          <div className="sv-skeleton-card space-y-4">
-            <div className="sv-skeleton h-4 w-24" />
-            <div className="sv-skeleton h-10 w-3/4 rounded-[18px]" />
-            <div className="sv-skeleton h-4 w-full" />
-            <div className="sv-skeleton h-4 w-5/6" />
-          </div>
-          <div className="sv-skeleton-card space-y-4">
-            <div className="sv-skeleton h-12 w-full rounded-[18px]" />
-            <div className="sv-skeleton h-12 w-full rounded-[18px]" />
-            <div className="sv-skeleton h-12 w-full rounded-[18px]" />
-            <div className="sv-skeleton h-12 w-full rounded-[18px]" />
-          </div>
+          <SkeletonBlock className="h-10 w-40 rounded-full" />
+          <SkeletonCard>
+            <SkeletonTextGroup eyebrowWidth="w-24" titleWidth="w-3/4" />
+          </SkeletonCard>
+          <SkeletonCard className="space-y-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <SkeletonBlock key={index} className="h-12 w-full rounded-[18px]" />
+            ))}
+          </SkeletonCard>
         </div>
       </div>
     </div>
+  );
+}
+
+function ScrollTopButton({ isVisible, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`sv-scroll-top ${isVisible ? "is-visible" : ""}`}
+      aria-label="Scroll back to top"
+    >
+      <span className="sv-scroll-top-icon" aria-hidden="true">^</span>
+      <span>Top</span>
+    </button>
   );
 }
 
