@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 
 import API from "../api/axios";
@@ -231,6 +232,19 @@ export default function Groups() {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pendingJoinGroup]);
 
+  useEffect(() => {
+    if (!pendingJoinGroup) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [pendingJoinGroup]);
+
   const joinGroup = async (group) => {
     try {
       setJoiningId(group.id);
@@ -368,15 +382,18 @@ export default function Groups() {
 
   return (
     <div className="sv-page">
-      {pendingJoinGroup ? (
-        <JoinConfirmModal
-          group={pendingJoinGroup}
-          summary={pendingJoinSummary}
-          joiningId={joiningId}
-          onCancel={() => setPendingJoinGroup(null)}
-          onConfirm={joinGroup}
-        />
-      ) : null}
+      {pendingJoinGroup && typeof document !== "undefined"
+        ? createPortal(
+            <JoinConfirmModal
+              group={pendingJoinGroup}
+              summary={pendingJoinSummary}
+              joiningId={joiningId}
+              onCancel={() => setPendingJoinGroup(null)}
+              onConfirm={joinGroup}
+            />,
+            document.body
+          )
+        : null}
 
       <div className="sv-container space-y-4 sm:space-y-6">
         <section className="grid gap-4 sm:gap-6 xl:grid-cols-[1.08fr_0.92fr]">
