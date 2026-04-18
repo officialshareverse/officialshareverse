@@ -64,6 +64,8 @@ services:
         sync: false
       - key: RAZORPAYX_SOURCE_ACCOUNT_NUMBER
         sync: false
+      - key: DJANGO_GOOGLE_CLIENT_ID
+        sync: false
 
   - type: web
     name: shareverse-web
@@ -78,7 +80,9 @@ services:
       - key: NODE_VERSION
         value: 22.15.0
       - key: REACT_APP_API_BASE_URL
-        value: https://shareverse-api.onrender.com/api/
+        value: https://api.shareverse.in/api/
+      - key: REACT_APP_GOOGLE_CLIENT_ID
+        sync: false
     routes:
       - type: rewrite
         source: /*
