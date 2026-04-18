@@ -629,13 +629,12 @@
   .sv-modal-backdrop {
     @apply fixed inset-0 overflow-y-auto;
     z-index: 170;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem 0.75rem;
+    display: block;
+    padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem max(0.75rem, env(safe-area-inset-bottom));
     background: rgba(15, 23, 42, 0.52);
     backdrop-filter: blur(8px);
     overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .sv-drawer-backdrop {
@@ -896,7 +895,7 @@
 
   @media (min-width: 640px) {
     .sv-modal-backdrop {
-      padding: max(1rem, env(safe-area-inset-top)) 1.25rem 1rem;
+      padding: max(1rem, env(safe-area-inset-top)) 1.25rem max(1rem, env(safe-area-inset-bottom));
     }
   }
 
@@ -4049,7 +4048,7 @@
   .sv-confirm-modal {
     position: relative;
     width: min(100%, 44rem);
-    margin: 0;
+    margin: 0 auto;
     overflow: hidden;
     border-radius: 30px;
     border: 1px solid color-mix(in srgb, var(--sv-border) 88%, transparent);
