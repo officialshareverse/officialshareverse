@@ -4049,12 +4049,17 @@
     position: relative;
     width: min(100%, 44rem);
     margin: 0 auto;
-    overflow: hidden;
+    max-height: calc(100dvh - max(1.5rem, env(safe-area-inset-top)) - max(1.5rem, env(safe-area-inset-bottom)));
+    overflow-x: hidden;
+    overflow-y: auto;
     border-radius: 30px;
     border: 1px solid color-mix(in srgb, var(--sv-border) 88%, transparent);
     background: color-mix(in srgb, var(--sv-elevated-surface) 98%, transparent);
     box-shadow: 0 36px 90px rgba(15, 23, 42, 0.28);
     backdrop-filter: blur(24px);
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
   }
 
   .sv-confirm-modal::before {
@@ -4080,6 +4085,11 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    top: 0;
+    position: sticky;
+    padding-bottom: 0.25rem;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--sv-elevated-surface) 98%, transparent) 0%, color-mix(in srgb, var(--sv-elevated-surface) 92%, transparent) 78%, transparent 100%);
+    backdrop-filter: blur(18px);
   }
 
   .sv-join-close-button {
