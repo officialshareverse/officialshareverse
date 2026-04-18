@@ -13,7 +13,6 @@ import {
   HomeIcon,
   LayersIcon,
   PlusIcon,
-  SearchIcon,
   UserIcon,
   WalletIcon,
 } from "./UiIcons";
@@ -88,7 +87,7 @@ function UserAvatar({ profile, initials, className = "" }) {
   );
 }
 
-export default function Navbar({ setIsAuth, themeMode, toggleTheme, openSpotlight }) {
+export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -261,15 +260,6 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme, openSpotligh
     );
   }, [profile]);
 
-  const spotlightModifier = useMemo(() => {
-    if (typeof window === "undefined") {
-      return "Ctrl";
-    }
-
-    const platform = window.navigator.platform || window.navigator.userAgent || "";
-    return /Mac|iPhone|iPad/i.test(platform) ? "Cmd" : "Ctrl";
-  }, []);
-
   return (
     <>
       <header className="sticky top-0 z-40" style={{ padding: "var(--sv-page-px)", paddingBottom: 0 }}>
@@ -321,25 +311,7 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme, openSpotligh
               </div>
 
               <div className="sv-navbar-actions">
-                <div className="sv-navbar-utility-group">
-                  <Tooltip content={`Open search (${spotlightModifier} K)`}>
-                    <button
-                      type="button"
-                      onClick={openSpotlight}
-                      className="sv-spotlight-trigger sv-focus-ring sv-navbar-search"
-                      aria-label={`Open search (${spotlightModifier} K)`}
-                    >
-                      <SearchIcon className="h-4.5 w-4.5" />
-                      <span className="sv-spotlight-trigger-label">Search</span>
-                      <span className="sv-spotlight-trigger-keys" aria-hidden="true">
-                        <span className="sv-spotlight-kbd">{spotlightModifier}</span>
-                        <span className="sv-spotlight-kbd">K</span>
-                      </span>
-                    </button>
-                  </Tooltip>
-
-                  <ThemeToggle themeMode={themeMode} onToggle={toggleTheme} compact className="sv-navbar-theme-toggle" />
-                </div>
+                <ThemeToggle themeMode={themeMode} onToggle={toggleTheme} compact className="sv-navbar-theme-toggle" />
 
                 <div ref={profileMenuRef} className="relative">
                 <button
@@ -399,16 +371,6 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme, openSpotligh
             </div>
 
             <div className="flex items-center gap-2">
-              <Tooltip content="Search">
-                <button
-                  type="button"
-                  onClick={openSpotlight}
-                  className="sv-mobile-icon-button"
-                  aria-label="Open search"
-                >
-                  <SearchIcon className="h-4.5 w-4.5" />
-                </button>
-              </Tooltip>
               <Tooltip content="Notifications">
                 <button
                   type="button"
