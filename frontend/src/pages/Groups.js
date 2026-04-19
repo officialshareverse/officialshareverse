@@ -474,24 +474,33 @@ export default function Groups() {
             )}
           </div>
 
-          <div className="sv-card sv-reveal sv-groups-panel">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
+          <div className={`sv-card sv-reveal sv-groups-panel ${isMobile ? "is-mobile" : ""}`}>
+            <div className={`sv-groups-panel-header ${isMobile ? "is-mobile" : ""}`}>
+              <div className="sv-groups-panel-copy">
                 <p className="sv-eyebrow">Filter groups</p>
-                <h2 className="mt-2 text-lg font-bold leading-tight text-slate-950 sm:mt-3 sm:text-2xl md:text-[1.9rem]">
-                  {isMobile ? "Search and filter groups" : "Search, sort, and scan what matters"}
+                <h2 className="sv-groups-panel-title mt-2 text-lg font-bold leading-tight text-slate-950 sm:mt-3 sm:text-2xl md:text-[1.9rem]">
+                  {isMobile ? "Find a group" : "Search, sort, and scan what matters"}
                 </h2>
+                {isMobile ? (
+                  <p className="sv-groups-panel-subtitle">
+                    Search by plan or host, then pick the type you want.
+                  </p>
+                ) : null}
               </div>
               {!isMobile ? (
                 <span className="sv-chip">
                   {filteredGroups.length} match{filteredGroups.length === 1 ? "" : "es"}
                 </span>
-              ) : null}
+              ) : (
+                <span className="sv-groups-mobile-count">
+                  {filteredGroups.length} live
+                </span>
+              )}
             </div>
 
-            <label className="mt-4 block sm:mt-5">
+            <label className={`mt-4 block sm:mt-5 ${isMobile ? "sv-groups-panel-search" : ""}`}>
               <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs">
-                {isMobile ? "Search" : "Search groups"}
+                {isMobile ? "Plan or host" : "Search groups"}
               </span>
               <div className="sv-groups-search-shell">
                 <SearchIcon className="h-4 w-4 shrink-0 text-slate-400" />
@@ -540,7 +549,7 @@ export default function Groups() {
               ) : null}
             </label>
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className={`mt-4 flex flex-wrap gap-2 ${isMobile ? "sv-groups-filter-row" : ""}`}>
               {filterOptions.map((option) => (
                 <FilterButton
                   key={option.value}
@@ -552,7 +561,9 @@ export default function Groups() {
                   {isMobile
                     ? option.value === "all"
                       ? "All"
-                      : option.label
+                      : option.value === "group_buy"
+                        ? "Group buy"
+                        : option.label
                     : option.label}
                 </FilterButton>
               ))}
@@ -592,9 +603,12 @@ export default function Groups() {
                 </div>
               </>
             ) : (
-              <p className="mt-4 text-sm leading-6 text-slate-500">
-                Showing {filteredGroups.length} group{filteredGroups.length === 1 ? "" : "s"}, ordered by popularity.
-              </p>
+              <div className="sv-groups-mobile-note">
+                <span className="sv-groups-mobile-note-dot" aria-hidden="true" />
+                <span>
+                  {filteredGroups.length} group{filteredGroups.length === 1 ? "" : "s"} showing, popular first.
+                </span>
+              </div>
             )}
           </div>
         </section>
