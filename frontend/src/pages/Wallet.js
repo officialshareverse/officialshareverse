@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import API from "../api/axios";
+import Drawer from "../components/Drawer";
 import { useToast } from "../components/ToastProvider";
 import {
   BankIcon,
@@ -22,6 +23,23 @@ const ACTION_TABS = [
   { id: "payout", label: "Payout Setup" },
   { id: "withdraw", label: "Withdraw" },
 ];
+const ACTION_TAB_META = {
+  topup: {
+    summary: "Add money with Razorpay in a few taps.",
+    drawerDescription: "Use UPI, cards, or netbanking, then come back with balance ready to join groups.",
+    icon: CreditIcon,
+  },
+  payout: {
+    summary: "Save your bank account or UPI destination.",
+    drawerDescription: "Keep one payout destination ready so withdrawals do not need setup every time.",
+    icon: BankIcon,
+  },
+  withdraw: {
+    summary: "Move wallet money back out when you need it.",
+    drawerDescription: "Request a withdrawal to your saved destination with the same wallet balance and status controls.",
+    icon: DebitIcon,
+  },
+};
 let razorpayLoaderPromise;
 
 function loadRazorpayCheckout() {
@@ -266,6 +284,10 @@ export default function Wallet() {
   const [workingAction, setWorkingAction] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("topup");
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
+  const [isMobileActionDrawerOpen, setIsMobileActionDrawerOpen] = useState(false);
   const [transactionSearch, setTransactionSearch] = useState("");
   const [transactionFilter, setTransactionFilter] = useState("all");
   const payoutsLive = Boolean(payoutConfig?.payout_enabled);
@@ -277,6 +299,30 @@ export default function Wallet() {
   useEffect(() => {
     fetchDataRef.current?.();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileActionDrawerOpen(false);
+    }
+  }, [isMobile]);
 
   const payoutModes = useMemo(
     () => (payoutForm.account_type === "vpa" ? ["UPI"] : ["IMPS", "NEFT", "RTGS"]),
@@ -392,10 +438,358 @@ export default function Wallet() {
 
   const focusActionTab = (tabId) => {
     setActiveTab(tabId);
+    if (isMobile) {
+      setIsMobileActionDrawerOpen(true);
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
     window.requestAnimationFrame(() => {
       document.getElementById("wallet-actions")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   };
+
+  const renderActionTabs = (className = "") => (
+    <div className={`sv-wallet-tab-row ${className}`.trim()}>
+      {ACTION_TABS.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => setActiveTab(tab.id)}
+          className={`sv-wallet-tab ${activeTab === tab.id ? "is-active" : ""}`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const activeActionPanel =
+    activeTab === "topup" ? (
+      <div className="sv-wallet-action-panel mt-5">
+        <div className="sv-wallet-action-copy">
+          <p className="sv-eyebrow">Top Up</p>
+          <h3 className="sv-title mt-2">Add money with Razorpay and credit the wallet after verification</h3>
+          <p className="mt-3 text-sm leading-7 text-slate-600">
+            Use UPI, cards, or netbanking. The wallet updates only after the payment is verified successfully.
+          </p>
+
+          <div className="sv-wallet-inline-grid sv-wallet-mobile-secondary mt-4">
+            <WalletOverviewStat label="Current amount" value={`Rs ${topupAmount || "0"}`} note="ready for checkout" />
+            <WalletOverviewStat label="Gateway" value={topupConfig?.mode_label || "Razorpay"} note="secure payment rail" />
+          </div>
+        </div>
+
+        <form className="sv-wallet-form-panel" onSubmit={startWalletTopup}>
+          <div className="sv-wallet-quick-amounts">
+            {QUICK_AMOUNTS.map((amount, index) => (
+              <button
+                key={amount}
+                type="button"
+                onClick={() => setTopupAmount(amount)}
+                className={`sv-wallet-amount-chip ${topupAmount === amount ? "is-active" : ""} ${index === 2 ? "is-popular" : ""}`}
+              >
+                <span className="sv-wallet-amount-main">Rs {amount}</span>
+                <span className="sv-wallet-amount-note">
+                  {index === 2 ? "Popular" : index === 0 ? "Starter" : index === 3 ? "Fast refill" : "Quick pick"}
+                </span>
+                {topupAmount === amount ? <CheckCircleIcon className="h-4 w-4" /> : null}
+              </button>
+            ))}
+          </div>
+
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Amount
+            <input
+              className="sv-input"
+              type="number"
+              min="1"
+              step="0.01"
+              value={topupAmount}
+              onChange={(event) => setTopupAmount(event.target.value)}
+            />
+          </label>
+
+          <button
+            className="sv-btn-primary w-full justify-center"
+            type="submit"
+            disabled={workingAction !== "" || !topupConfig?.topup_enabled}
+          >
+            {workingAction === "topup" ? (
+              <>
+                <LoadingSpinner />
+                Opening checkout...
+              </>
+            ) : (
+              <>
+                <CreditIcon className="h-4 w-4" />
+                Add money securely
+              </>
+            )}
+          </button>
+        </form>
+      </div>
+    ) : activeTab === "payout" ? (
+      <div className="sv-wallet-action-panel mt-5">
+        <div className="sv-wallet-action-copy">
+          <p className="sv-eyebrow">Payout Setup</p>
+          <h3 className="sv-title mt-2">
+            {payoutsLive ? "Save where live withdrawals should go" : "Save the destination for manual withdrawals"}
+          </h3>
+          <p className="mt-3 text-sm leading-7 text-slate-600">
+            Keep contact details and bank or UPI information in one place so future payouts can move smoothly.
+          </p>
+
+          <div className="sv-wallet-step-list sv-wallet-mobile-secondary mt-4">
+            {payoutFormState.steps.map((step) => (
+              <div key={step.label} className={`sv-wallet-step ${step.ready ? "is-complete" : ""}`}>
+                <span className="sv-wallet-step-dot" />
+                <span>{step.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="sv-wallet-helper-card sv-wallet-mobile-secondary mt-4">
+            <p className="sv-wallet-helper-title">Saved destination</p>
+            <p className="sv-wallet-helper-body">
+              {payoutAccount
+                ? payoutAccount.masked_destination || "Ready to use"
+                : payoutsLive
+                  ? "No payout method saved yet."
+                  : "No withdrawal destination saved yet."}
+            </p>
+          </div>
+        </div>
+
+        <form className="sv-wallet-form-panel" onSubmit={savePayoutAccount}>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Destination type
+            <select
+              className="sv-input"
+              value={payoutForm.account_type}
+              onChange={(event) => {
+                const accountType = event.target.value;
+                setPayoutForm((current) => ({
+                  ...current,
+                  account_type: accountType,
+                  bank_account_number: "",
+                  confirm_bank_account_number: "",
+                  vpa_address: "",
+                }));
+                setWithdrawMode(accountType === "vpa" ? "UPI" : "IMPS");
+              }}
+            >
+              <option value="bank_account">Bank account</option>
+              <option value="vpa">UPI ID</option>
+            </select>
+          </label>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Contact name
+              <input
+                className="sv-input"
+                value={payoutForm.contact_name}
+                onChange={(event) => setPayoutForm((current) => ({ ...current, contact_name: event.target.value }))}
+              />
+            </label>
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Contact phone
+              <input
+                className="sv-input"
+                value={payoutForm.contact_phone}
+                onChange={(event) => setPayoutForm((current) => ({ ...current, contact_phone: event.target.value }))}
+              />
+            </label>
+          </div>
+
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Contact email
+            <input
+              className="sv-input"
+              type="email"
+              value={payoutForm.contact_email}
+              onChange={(event) => setPayoutForm((current) => ({ ...current, contact_email: event.target.value }))}
+            />
+          </label>
+
+          {payoutForm.account_type === "bank_account" ? (
+            <>
+              <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                Account holder name
+                <input
+                  className="sv-input"
+                  value={payoutForm.bank_account_holder_name}
+                  onChange={(event) => setPayoutForm((current) => ({ ...current, bank_account_holder_name: event.target.value }))}
+                />
+              </label>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                  Account number
+                  <input
+                    className="sv-input"
+                    type="password"
+                    value={payoutForm.bank_account_number}
+                    onChange={(event) => setPayoutForm((current) => ({ ...current, bank_account_number: event.target.value }))}
+                    placeholder={payoutAccount?.bank_account_last4 ? "Re-enter to update" : "Account number"}
+                  />
+                </label>
+                <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                  Confirm account number
+                  <input
+                    className="sv-input"
+                    type="password"
+                    value={payoutForm.confirm_bank_account_number}
+                    onChange={(event) =>
+                      setPayoutForm((current) => ({ ...current, confirm_bank_account_number: event.target.value }))
+                    }
+                  />
+                </label>
+              </div>
+              <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                IFSC
+                <input
+                  className="sv-input"
+                  value={payoutForm.bank_account_ifsc}
+                  onChange={(event) =>
+                    setPayoutForm((current) => ({ ...current, bank_account_ifsc: event.target.value.toUpperCase() }))
+                  }
+                />
+              </label>
+            </>
+          ) : (
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              UPI ID
+              <input
+                className="sv-input"
+                value={payoutForm.vpa_address}
+                onChange={(event) => setPayoutForm((current) => ({ ...current, vpa_address: event.target.value }))}
+                placeholder={payoutAccount?.account_type === "vpa" ? "Re-enter to update" : "name@bank"}
+              />
+            </label>
+          )}
+
+          {!payoutFormState.bankNumbersMatch ? (
+            <div className="sv-feedback-banner is-error">Account numbers do not match yet.</div>
+          ) : null}
+
+          <button
+            className="sv-btn-secondary w-full justify-center"
+            type="submit"
+            disabled={workingAction !== "" || !payoutFormState.bankNumbersMatch}
+          >
+            {workingAction === "save-payout" ? (
+              <>
+                <LoadingSpinner />
+                Saving payout method...
+              </>
+            ) : (
+              <>
+                <BankIcon className="h-4 w-4" />
+                {payoutsLive ? "Save payout method" : "Save withdrawal destination"}
+              </>
+            )}
+          </button>
+        </form>
+      </div>
+    ) : (
+      <div className="sv-wallet-action-panel mt-5">
+        <div className="sv-wallet-action-copy">
+          <p className="sv-eyebrow">Withdraw</p>
+          <h3 className="sv-title mt-2">
+            {payoutsLive ? "Send wallet money to your saved payout method" : "Request a manual wallet withdrawal"}
+          </h3>
+          <p className="mt-3 text-sm leading-7 text-slate-600">
+            {payoutsLive
+              ? "Live payouts reserve balance immediately. Failed or reversed transfers are returned automatically."
+              : "Manual withdrawal requests do not deduct the wallet immediately. They are reviewed first, then settled manually."}
+          </p>
+
+          <div className="sv-wallet-helper-card sv-wallet-mobile-secondary mt-4">
+            <p className="sv-wallet-helper-title">Destination</p>
+            <p className="sv-wallet-helper-body">
+              {payoutAccount ? payoutAccount.masked_destination : "Save a payout method before requesting money out."}
+            </p>
+          </div>
+        </div>
+
+        <form className="sv-wallet-form-panel" onSubmit={withdrawMoney}>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Amount
+            <input
+              className="sv-input"
+              type="number"
+              min="1"
+              step="0.01"
+              value={withdrawAmount}
+              onChange={(event) => setWithdrawAmount(event.target.value)}
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Transfer mode
+            <select
+              className="sv-input"
+              value={payoutAccount?.account_type === "vpa" ? "UPI" : withdrawMode}
+              onChange={(event) => setWithdrawMode(event.target.value)}
+              disabled={payoutAccount?.account_type === "vpa"}
+            >
+              {payoutModes.map((mode) => (
+                <option key={mode} value={mode}>
+                  {mode}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="sv-wallet-inline-grid sv-wallet-mobile-secondary">
+            <WalletOverviewStat label="Available" value={formatCurrency(balance)} note="wallet balance now" />
+            <WalletOverviewStat
+              label="ETA"
+              value={payoutsLive ? "Fast" : "24h"}
+              note={payoutsLive ? "provider processing time" : "manual review window"}
+            />
+          </div>
+
+          {withdrawExceedsBalance ? (
+            <div className="sv-feedback-banner is-error">The withdrawal amount is above your available balance.</div>
+          ) : null}
+
+          <button
+            className="sv-btn-primary w-full justify-center"
+            type="submit"
+            disabled={!payoutAccount || workingAction !== "" || withdrawExceedsBalance}
+          >
+            {workingAction === "withdraw" ? (
+              payoutsLive ? (
+                <>
+                  <LoadingSpinner />
+                  Creating payout...
+                </>
+              ) : (
+                <>
+                  <LoadingSpinner />
+                  Submitting request...
+                </>
+              )
+            ) : payoutsLive ? (
+              <>
+                <DebitIcon className="h-4 w-4" />
+                Withdraw to payout method
+              </>
+            ) : (
+              <>
+                <ClockIcon className="h-4 w-4" />
+                Request manual withdrawal
+              </>
+            )}
+          </button>
+        </form>
+      </div>
+    );
 
   async function fetchData() {
     try {
@@ -556,6 +950,25 @@ export default function Wallet() {
 
   return (
     <div className="sv-page">
+      {isMobile ? (
+        <Drawer
+          open={isMobileActionDrawerOpen}
+          onClose={() => setIsMobileActionDrawerOpen(false)}
+          eyebrow="Wallet actions"
+          title={ACTION_TABS.find((tab) => tab.id === activeTab)?.label}
+          description={ACTION_TAB_META[activeTab]?.drawerDescription}
+          className="sv-wallet-mobile-drawer"
+          footer={(
+            <p className="sv-drawer-footnote">
+              <strong>Tip:</strong> choose the action you need, finish it here, then come back to the wallet summary.
+            </p>
+          )}
+        >
+          {renderActionTabs("sv-wallet-tab-row-drawer")}
+          {activeActionPanel}
+        </Drawer>
+      ) : null}
+
       <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
         <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.08fr_0.92fr]">
           <div className="sv-card-solid sv-wallet-balance-card sv-reveal">
@@ -630,7 +1043,7 @@ export default function Wallet() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="sv-eyebrow">Quick setup</p>
-                <h2 className="sv-title mt-2">Tap an amount, then manage the rest in one place</h2>
+                <h2 className="sv-title mt-2">{isMobile ? "Pick an amount, then open one simple action sheet" : "Tap an amount, then manage the rest in one place"}</h2>
               </div>
               <span className="sv-chip">{sortedTransactions.length} wallet records</span>
             </div>
@@ -693,6 +1106,45 @@ export default function Wallet() {
           </aside>
         </section>
 
+        {isMobile ? (
+          <section className="sv-card sv-reveal sv-wallet-mobile-actions-card">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="sv-eyebrow">Wallet actions</p>
+                <h2 className="sv-title mt-2">Open only the action you need</h2>
+                <p className="mt-2 text-sm leading-7 text-slate-600">
+                  Keep this screen focused, then handle top-up, payout setup, or withdrawals in a bottom sheet.
+                </p>
+              </div>
+              <span className="sv-chip">3 actions</span>
+            </div>
+
+            <div className="sv-wallet-mobile-action-list mt-5">
+              {ACTION_TABS.map((tab) => {
+                const meta = ACTION_TAB_META[tab.id];
+                const Icon = meta.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => focusActionTab(tab.id)}
+                    className={`sv-wallet-mobile-action ${activeTab === tab.id ? "is-active" : ""}`}
+                  >
+                    <span className="sv-wallet-mobile-action-icon">
+                      <Icon className="h-4.5 w-4.5" />
+                    </span>
+                    <span className="sv-wallet-mobile-action-copy">
+                      <strong>{tab.label}</strong>
+                      <span>{meta.summary}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
+        {!isMobile ? (
         <section id="wallet-actions" className="sv-card sv-reveal">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -704,346 +1156,10 @@ export default function Wallet() {
             </span>
           </div>
 
-          <div className="sv-wallet-tab-row mt-5">
-            {ACTION_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`sv-wallet-tab ${activeTab === tab.id ? "is-active" : ""}`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {activeTab === "topup" ? (
-            <div className="sv-wallet-action-panel mt-5">
-              <div className="sv-wallet-action-copy">
-                <p className="sv-eyebrow">Top Up</p>
-                <h3 className="sv-title mt-2">Add money with Razorpay and credit the wallet after verification</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Use UPI, cards, or netbanking. The wallet updates only after the payment is verified successfully.
-                </p>
-
-                <div className="sv-wallet-inline-grid sv-wallet-mobile-secondary mt-4">
-                  <WalletOverviewStat label="Current amount" value={`Rs ${topupAmount || "0"}`} note="ready for checkout" />
-                  <WalletOverviewStat label="Gateway" value={topupConfig?.mode_label || "Razorpay"} note="secure payment rail" />
-                </div>
-              </div>
-
-              <form className="sv-wallet-form-panel" onSubmit={startWalletTopup}>
-                <div className="sv-wallet-quick-amounts">
-                  {QUICK_AMOUNTS.map((amount, index) => (
-                    <button
-                      key={amount}
-                      type="button"
-                      onClick={() => setTopupAmount(amount)}
-                      className={`sv-wallet-amount-chip ${topupAmount === amount ? "is-active" : ""} ${index === 2 ? "is-popular" : ""}`}
-                    >
-                      <span className="sv-wallet-amount-main">Rs {amount}</span>
-                      <span className="sv-wallet-amount-note">
-                        {index === 2 ? "Popular" : index === 0 ? "Starter" : index === 3 ? "Fast refill" : "Quick pick"}
-                      </span>
-                      {topupAmount === amount ? <CheckCircleIcon className="h-4 w-4" /> : null}
-                    </button>
-                  ))}
-                </div>
-
-                <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                  Amount
-                  <input
-                    className="sv-input"
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    value={topupAmount}
-                    onChange={(event) => setTopupAmount(event.target.value)}
-                  />
-                </label>
-
-                <button
-                  className="sv-btn-primary w-full justify-center"
-                  type="submit"
-                  disabled={workingAction !== "" || !topupConfig?.topup_enabled}
-                >
-                  {workingAction === "topup" ? (
-                    <>
-                      <LoadingSpinner />
-                      Opening checkout...
-                    </>
-                  ) : (
-                    <>
-                      <CreditIcon className="h-4 w-4" />
-                      Add money securely
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-          ) : null}
-
-          {activeTab === "payout" ? (
-            <div className="sv-wallet-action-panel mt-5">
-              <div className="sv-wallet-action-copy">
-                <p className="sv-eyebrow">Payout Setup</p>
-                <h3 className="sv-title mt-2">
-                  {payoutsLive ? "Save where live withdrawals should go" : "Save the destination for manual withdrawals"}
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Keep contact details and bank or UPI information in one place so future payouts can move smoothly.
-                </p>
-
-                <div className="sv-wallet-step-list sv-wallet-mobile-secondary mt-4">
-                  {payoutFormState.steps.map((step) => (
-                    <div key={step.label} className={`sv-wallet-step ${step.ready ? "is-complete" : ""}`}>
-                      <span className="sv-wallet-step-dot" />
-                      <span>{step.label}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="sv-wallet-helper-card sv-wallet-mobile-secondary mt-4">
-                  <p className="sv-wallet-helper-title">Saved destination</p>
-                  <p className="sv-wallet-helper-body">
-                    {payoutAccount
-                      ? payoutAccount.masked_destination || "Ready to use"
-                      : payoutsLive
-                        ? "No payout method saved yet."
-                        : "No withdrawal destination saved yet."}
-                  </p>
-                </div>
-              </div>
-
-              <form className="sv-wallet-form-panel" onSubmit={savePayoutAccount}>
-                <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                  Destination type
-                  <select
-                    className="sv-input"
-                    value={payoutForm.account_type}
-                    onChange={(event) => {
-                      const accountType = event.target.value;
-                      setPayoutForm((current) => ({
-                        ...current,
-                        account_type: accountType,
-                        bank_account_number: "",
-                        confirm_bank_account_number: "",
-                        vpa_address: "",
-                      }));
-                      setWithdrawMode(accountType === "vpa" ? "UPI" : "IMPS");
-                    }}
-                  >
-                    <option value="bank_account">Bank account</option>
-                    <option value="vpa">UPI ID</option>
-                  </select>
-                </label>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                    Contact name
-                    <input
-                      className="sv-input"
-                      value={payoutForm.contact_name}
-                      onChange={(event) => setPayoutForm((current) => ({ ...current, contact_name: event.target.value }))}
-                    />
-                  </label>
-                  <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                    Contact phone
-                    <input
-                      className="sv-input"
-                      value={payoutForm.contact_phone}
-                      onChange={(event) => setPayoutForm((current) => ({ ...current, contact_phone: event.target.value }))}
-                    />
-                  </label>
-                </div>
-
-                <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                  Contact email
-                  <input
-                    className="sv-input"
-                    type="email"
-                    value={payoutForm.contact_email}
-                    onChange={(event) => setPayoutForm((current) => ({ ...current, contact_email: event.target.value }))}
-                  />
-                </label>
-
-                {payoutForm.account_type === "bank_account" ? (
-                  <>
-                    <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                      Account holder name
-                      <input
-                        className="sv-input"
-                        value={payoutForm.bank_account_holder_name}
-                        onChange={(event) => setPayoutForm((current) => ({ ...current, bank_account_holder_name: event.target.value }))}
-                      />
-                    </label>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                        Account number
-                        <input
-                          className="sv-input"
-                          type="password"
-                          value={payoutForm.bank_account_number}
-                          onChange={(event) => setPayoutForm((current) => ({ ...current, bank_account_number: event.target.value }))}
-                          placeholder={payoutAccount?.bank_account_last4 ? "Re-enter to update" : "Account number"}
-                        />
-                      </label>
-                      <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                        Confirm account number
-                        <input
-                          className="sv-input"
-                          type="password"
-                          value={payoutForm.confirm_bank_account_number}
-                          onChange={(event) =>
-                            setPayoutForm((current) => ({ ...current, confirm_bank_account_number: event.target.value }))
-                          }
-                        />
-                      </label>
-                    </div>
-                    <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                      IFSC
-                      <input
-                        className="sv-input"
-                        value={payoutForm.bank_account_ifsc}
-                        onChange={(event) =>
-                          setPayoutForm((current) => ({ ...current, bank_account_ifsc: event.target.value.toUpperCase() }))
-                        }
-                      />
-                    </label>
-                  </>
-                ) : (
-                  <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                    UPI ID
-                    <input
-                      className="sv-input"
-                      value={payoutForm.vpa_address}
-                      onChange={(event) => setPayoutForm((current) => ({ ...current, vpa_address: event.target.value }))}
-                      placeholder={payoutAccount?.account_type === "vpa" ? "Re-enter to update" : "name@bank"}
-                    />
-                  </label>
-                )}
-
-                {!payoutFormState.bankNumbersMatch ? (
-                  <div className="sv-feedback-banner is-error">Account numbers do not match yet.</div>
-                ) : null}
-
-                <button
-                  className="sv-btn-secondary w-full justify-center"
-                  type="submit"
-                  disabled={workingAction !== "" || !payoutFormState.bankNumbersMatch}
-                >
-                  {workingAction === "save-payout" ? (
-                    <>
-                      <LoadingSpinner />
-                      Saving payout method...
-                    </>
-                  ) : (
-                    <>
-                      <BankIcon className="h-4 w-4" />
-                      {payoutsLive ? "Save payout method" : "Save withdrawal destination"}
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-          ) : null}
-
-          {activeTab === "withdraw" ? (
-            <div className="sv-wallet-action-panel mt-5">
-              <div className="sv-wallet-action-copy">
-                <p className="sv-eyebrow">Withdraw</p>
-                <h3 className="sv-title mt-2">
-                  {payoutsLive ? "Send wallet money to your saved payout method" : "Request a manual wallet withdrawal"}
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  {payoutsLive
-                    ? "Live payouts reserve balance immediately. Failed or reversed transfers are returned automatically."
-                    : "Manual withdrawal requests do not deduct the wallet immediately. They are reviewed first, then settled manually."}
-                </p>
-
-                <div className="sv-wallet-helper-card sv-wallet-mobile-secondary mt-4">
-                  <p className="sv-wallet-helper-title">Destination</p>
-                  <p className="sv-wallet-helper-body">
-                    {payoutAccount ? payoutAccount.masked_destination : "Save a payout method before requesting money out."}
-                  </p>
-                </div>
-              </div>
-
-              <form className="sv-wallet-form-panel" onSubmit={withdrawMoney}>
-                <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                  Amount
-                  <input
-                    className="sv-input"
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    value={withdrawAmount}
-                    onChange={(event) => setWithdrawAmount(event.target.value)}
-                  />
-                </label>
-
-                <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                  Transfer mode
-                  <select
-                    className="sv-input"
-                    value={payoutAccount?.account_type === "vpa" ? "UPI" : withdrawMode}
-                    onChange={(event) => setWithdrawMode(event.target.value)}
-                    disabled={payoutAccount?.account_type === "vpa"}
-                  >
-                    {payoutModes.map((mode) => (
-                      <option key={mode} value={mode}>
-                        {mode}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <div className="sv-wallet-inline-grid sv-wallet-mobile-secondary">
-                  <WalletOverviewStat label="Available" value={formatCurrency(balance)} note="wallet balance now" />
-                  <WalletOverviewStat
-                    label="ETA"
-                    value={payoutsLive ? "Fast" : "24h"}
-                    note={payoutsLive ? "provider processing time" : "manual review window"}
-                  />
-                </div>
-
-                {withdrawExceedsBalance ? (
-                  <div className="sv-feedback-banner is-error">The withdrawal amount is above your available balance.</div>
-                ) : null}
-
-                <button
-                  className="sv-btn-primary w-full justify-center"
-                  type="submit"
-                  disabled={!payoutAccount || workingAction !== "" || withdrawExceedsBalance}
-                >
-                  {workingAction === "withdraw" ? (
-                    payoutsLive ? (
-                      <>
-                        <LoadingSpinner />
-                        Creating payout...
-                      </>
-                    ) : (
-                      <>
-                        <LoadingSpinner />
-                        Submitting request...
-                      </>
-                    )
-                  ) : payoutsLive ? (
-                    <>
-                      <DebitIcon className="h-4 w-4" />
-                      Withdraw to payout method
-                    </>
-                  ) : (
-                    <>
-                      <ClockIcon className="h-4 w-4" />
-                      Request manual withdrawal
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-          ) : null}
+          {renderActionTabs("mt-5")}
+          {activeActionPanel}
         </section>
+        ) : null}
 
         <section className="grid gap-4 xl:grid-cols-[0.94fr_1.06fr]">
           <section className="sv-card sv-reveal">
