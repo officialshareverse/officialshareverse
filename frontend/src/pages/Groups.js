@@ -483,7 +483,7 @@ export default function Groups() {
                 </h2>
                 {isMobile ? (
                   <p className="sv-groups-panel-subtitle">
-                    Search by plan or host, then pick the type you want.
+                    Search a plan or host.
                   </p>
                 ) : null}
               </div>
@@ -499,7 +499,7 @@ export default function Groups() {
             </div>
 
             <label className={`mt-4 block sm:mt-5 ${isMobile ? "sv-groups-panel-search" : ""}`}>
-              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs">
+              <span className={`mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs ${isMobile ? "sv-groups-search-label" : ""}`}>
                 {isMobile ? "Plan or host" : "Search groups"}
               </span>
               <div className="sv-groups-search-shell">
@@ -549,7 +549,7 @@ export default function Groups() {
               ) : null}
             </label>
 
-            <div className={`mt-4 flex flex-wrap gap-2 ${isMobile ? "sv-groups-filter-row" : ""}`}>
+            <div className={isMobile ? "mt-3 sv-groups-filter-row" : "mt-4 flex flex-wrap gap-2"}>
               {filterOptions.map((option) => (
                 <FilterButton
                   key={option.value}
