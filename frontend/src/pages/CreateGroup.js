@@ -581,7 +581,7 @@ export default function CreateGroup() {
               <h1 className="sv-display-on-dark mt-4 max-w-4xl">
                 Build the split in steps, preview it live, and publish only when the whole flow feels clear.
               </h1>
-              <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-200 sm:text-base sm:leading-8">
+              <p className="sv-create-hero-body mt-4 max-w-3xl text-sm leading-7 text-slate-200 sm:text-base sm:leading-8">
                 Step {currentStep + 1} of {WIZARD_STEPS.length}: {currentStepConfig.label}. Choose the mode,
                 set the details, confirm the timing, and review the listing before it goes live.
               </p>
@@ -609,15 +609,32 @@ export default function CreateGroup() {
 
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <form onSubmit={handleWizardSubmit} className="sv-card-solid sv-create-wizard">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="sv-create-form-head flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="sv-eyebrow">Wizard flow</p>
                 <h2 className="sv-title mt-2">{currentStepConfig.label}</h2>
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">{currentStepConfig.helper}</p>
+                <p className="sv-create-step-helper mt-3 max-w-3xl text-sm leading-7 text-slate-600">{currentStepConfig.helper}</p>
               </div>
-              <button type="button" onClick={resetWizard} className="sv-btn-secondary">
+              <button type="button" onClick={resetWizard} className="sv-btn-secondary sv-create-reset-button">
                 Reset form
               </button>
+            </div>
+
+            <div className="sv-create-mobile-summary mt-5">
+              <div className="sv-create-mobile-summary-item">
+                <span className="sv-create-mobile-summary-label">Mode</span>
+                <span className="sv-create-mobile-summary-value">{modeConfig.eyebrow}</span>
+              </div>
+              <div className="sv-create-mobile-summary-item">
+                <span className="sv-create-mobile-summary-label">Price</span>
+                <span className="sv-create-mobile-summary-value">
+                  {amountPerMember > 0 ? `Rs ${amountPerMember.toFixed(0)}` : "Add"}
+                </span>
+              </div>
+              <div className="sv-create-mobile-summary-item">
+                <span className="sv-create-mobile-summary-label">Slots</span>
+                <span className="sv-create-mobile-summary-value">{memberCount > 0 ? memberCount : "Add"}</span>
+              </div>
             </div>
 
             <div className="mt-6">
@@ -1020,7 +1037,7 @@ export default function CreateGroup() {
             </div>
           </form>
 
-          <aside className="space-y-6">
+          <aside className="space-y-6 sv-create-sidepanel">
             <section className="sv-card-solid sv-create-sidebar">
               <div className="flex items-start justify-between gap-3">
                 <div>

@@ -5444,6 +5444,170 @@
     padding: 0.95rem 1rem;
   }
 
+  .sv-create-mobile-summary {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .sv-create-hero {
+      padding: 1rem !important;
+      border-radius: 24px;
+    }
+
+    .sv-create-hero h1 {
+      font-size: clamp(1.45rem, 7vw, 2rem);
+      line-height: 1.12;
+      max-width: 16rem;
+    }
+
+    .sv-create-hero-body,
+    .sv-create-hero-stats,
+    .sv-create-step-helper,
+    .sv-create-reset-button,
+    .sv-create-stepbar .sv-create-step:not(.is-active),
+    .sv-create-comparison,
+    .sv-create-flow-preview,
+    .sv-create-calculator,
+    .sv-create-checklist,
+    .sv-create-sidepanel {
+      display: none;
+    }
+
+    .sv-create-stepbar {
+      gap: 0;
+      margin-top: 1rem;
+    }
+
+    .sv-create-stepbar .sv-create-step.is-active {
+      padding: 0.7rem 0.85rem;
+      border-radius: 18px;
+    }
+
+    .sv-create-stepbar .sv-create-step.is-active .sv-create-step-index {
+      width: 2rem;
+      height: 2rem;
+      font-size: 11px;
+    }
+
+    .sv-create-form-head {
+      gap: 0.75rem;
+    }
+
+    .sv-create-wizard {
+      border-radius: 24px;
+      padding: 1rem;
+    }
+
+    .sv-create-stage {
+      min-height: 0;
+    }
+
+    .sv-create-section-card,
+    .sv-create-mode-card,
+    .sv-create-window-card,
+    .sv-create-preview-card {
+      border-radius: 22px;
+    }
+
+    .sv-create-section-card {
+      padding: 0.95rem;
+    }
+
+    .sv-create-mobile-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .sv-create-mobile-summary-item {
+      display: grid;
+      gap: 0.2rem;
+      padding: 0.7rem 0.75rem;
+      border-radius: 16px;
+      border: 1px solid var(--sv-border);
+      background: color-mix(in srgb, var(--sv-paper) 94%, transparent);
+    }
+
+    .sv-create-mobile-summary-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--sv-muted);
+    }
+
+    .sv-create-mobile-summary-value {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--sv-ink);
+    }
+
+    .sv-create-mode-card {
+      padding: 0.95rem;
+    }
+
+    .sv-create-mode-card h3 {
+      margin-top: 0.75rem;
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+
+    .sv-create-mode-card > p {
+      margin-top: 0.55rem;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .sv-create-mode-bullet:nth-child(n + 3) {
+      display: none;
+    }
+
+    .sv-create-quickpick-groups {
+      gap: 0.75rem;
+    }
+
+    .sv-create-quickpick-group:nth-child(n + 3) {
+      display: none;
+    }
+
+    .sv-create-quickpick-title {
+      margin-bottom: 0.45rem;
+      font-size: 10px;
+    }
+
+    .sv-create-quickpick-chip {
+      min-height: 40px;
+      padding: 0.55rem 0.75rem;
+      font-size: 11px;
+      gap: 0.45rem;
+    }
+
+    .sv-create-quickpick-badge {
+      min-width: 1.7rem;
+      min-height: 1.7rem;
+      font-size: 9px;
+    }
+
+    .sv-create-nav {
+      gap: 0.7rem;
+      padding-top: 1rem;
+    }
+
+    .sv-create-nav > div {
+      order: -1;
+    }
+
+    .sv-create-nav > div p:last-child {
+      display: none;
+    }
+
+    .sv-create-nav .sv-btn-secondary,
+    .sv-create-nav .sv-btn-primary {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
   @media (min-width: 640px) {
     .sv-create-stepbar {
       grid-template-columns: repeat(2, minmax(0, 1fr));
