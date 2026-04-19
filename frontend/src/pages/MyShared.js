@@ -2,6 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { revealGroupCredentials } from "../api/credentials";
+import Drawer from "../components/Drawer";
+import {
+  ChatIcon,
+  ClockIcon,
+  LayersIcon,
+  ShieldIcon,
+  SparkIcon,
+  WalletIcon,
+} from "../components/UiIcons";
 
 function getInitialEditForm(group, detail = null) {
   return {
@@ -108,6 +117,7 @@ export default function MyShared() {
   const [reviewForms, setReviewForms] = useState({});
   const [submittingReviewKey, setSubmittingReviewKey] = useState("");
   const [expandedJoinedGroupId, setExpandedJoinedGroupId] = useState(null);
+  const [mobileOwnerActionGroupId, setMobileOwnerActionGroupId] = useState(null);
 
   const storeDetail = (groupId, detail, resetProofForm = false) => {
     setDetails((current) => ({
@@ -172,6 +182,12 @@ export default function MyShared() {
     return () => mediaQuery.removeListener(handleChange);
   }, []);
 
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileOwnerActionGroupId(null);
+    }
+  }, [isMobile]);
+
   const filteredGroups = useMemo(() => {
     if (filter === "all") {
       return groups;
@@ -234,6 +250,15 @@ export default function MyShared() {
       { label: "Active memberships", value: joinedSummary.active },
     ];
   }, [isMobile, joinedSummary.active, joinedSummary.joined, totals.buyWaiting, totals.created, totals.held, totals.revenue]);
+
+  const activeMobileOwnerGroup = useMemo(
+    () => groups.find((group) => group.id === mobileOwnerActionGroupId) || null,
+    [groups, mobileOwnerActionGroupId]
+  );
+
+  const activeMobileOwnerDetail = activeMobileOwnerGroup
+    ? details[activeMobileOwnerGroup.id]
+    : null;
 
   const toggleDetails = async (groupId) => {
     if (details[groupId]) {
@@ -630,7 +655,115 @@ export default function MyShared() {
     }
   };
 
+  const closeMobileOwnerActions = () => {
+    setMobileOwnerActionGroupId(null);
+  };
+
+  const activeMobileOwnerLifecycleNote = activeMobileOwnerGroup
+    ? getLifecycleNote(activeMobileOwnerGroup)
+    : null;
+
   return (
+    <>
+    {isMobile && activeMobileOwnerGroup ? (
+      <Drawer
+        open={Boolean(activeMobileOwnerGroup)}
+        onClose={closeMobileOwnerActions}
+        eyebrow="Split actions"
+        title={activeMobileOwnerGroup.subscription_name}
+        description="Take owner actions without expanding every control inside the card."
+        footer={(
+          <p className="sv-drawer-footnote">
+            {activeMobileOwnerLifecycleNote || (activeMobileOwnerDetail
+              ? "Open Manage on the card if you want the full member list, proof panel, and inline forms."
+              : "Open Manage on the card first if you need member details or refund controls before acting.")}
+          </p>
+        )}
+      >
+        <div className="sv-drawer-stack">
+          {activeMobileOwnerGroup.filled_slots > 0 ? (
+            <MobileDrawerAction
+              icon={ChatIcon}
+              label="Open group chat"
+              description="Reply to members and keep coordination in one place."
+              meta={activeMobileOwnerGroup.unread_chat_count ? `${activeMobileOwnerGroup.unread_chat_count} new` : "Messages"}
+              onClick={() => {
+                closeMobileOwnerActions();
+                navigate(`/groups/${activeMobileOwnerGroup.id}/chat`);
+              }}
+            />
+          ) : null}
+
+          {activeMobileOwnerGroup.mode === "group_buy" && activeMobileOwnerGroup.can_submit_proof ? (
+            <MobileDrawerAction
+              icon={SparkIcon}
+              label={activeMobileOwnerGroup.has_purchase_proof ? "Manage purchase proof" : "Upload purchase proof"}
+              description="Keep the buy-together proof flow moving from one place."
+              meta={activeMobileOwnerGroup.has_purchase_proof ? "Ready" : "Needed"}
+              onClick={() => {
+                closeMobileOwnerActions();
+                openProofPanel(activeMobileOwnerGroup.id);
+              }}
+            />
+          ) : null}
+
+          {activeMobileOwnerGroup.status !== "closed" ? (
+            <MobileDrawerAction
+              icon={LayersIcon}
+              label="Edit split"
+              description="Update the listing and adjust what is still allowed."
+              onClick={() => {
+                closeMobileOwnerActions();
+                startEditing(activeMobileOwnerGroup);
+              }}
+            />
+          ) : null}
+
+          {activeMobileOwnerDetail?.can_refund ? (
+            <MobileDrawerAction
+              icon={WalletIcon}
+              label="Refund members"
+              description="Return held funds if the buy-together flow needs to stop."
+              meta={refundingId === activeMobileOwnerGroup.id ? "Refunding" : "Available"}
+              disabled={refundingId === activeMobileOwnerGroup.id}
+              onClick={() => {
+                closeMobileOwnerActions();
+                refundGroup(activeMobileOwnerGroup);
+              }}
+            />
+          ) : null}
+
+          {canCloseGroup(activeMobileOwnerGroup) ? (
+            <MobileDrawerAction
+              icon={ClockIcon}
+              label="Close split"
+              description="Stop new joins but keep the split in your workspace."
+              meta={closingId === activeMobileOwnerGroup.id ? "Closing" : "Available"}
+              disabled={closingId === activeMobileOwnerGroup.id}
+              onClick={() => {
+                closeMobileOwnerActions();
+                closeGroup(activeMobileOwnerGroup);
+              }}
+            />
+          ) : null}
+
+          {canDeleteGroup(activeMobileOwnerGroup) ? (
+            <MobileDrawerAction
+              icon={ShieldIcon}
+              label="Delete empty split"
+              description="Remove the split completely before anyone joins."
+              meta={deletingId === activeMobileOwnerGroup.id ? "Deleting" : "Available"}
+              disabled={deletingId === activeMobileOwnerGroup.id}
+              onClick={() => {
+                closeMobileOwnerActions();
+                deleteGroup(activeMobileOwnerGroup);
+              }}
+            />
+          ) : null}
+        </div>
+      </Drawer>
+    ) : null}
+
     <div style={{ ...container, ...(isMobile ? containerMobile : {}) }}>
       <div style={{ ...pageShell, ...(isMobile ? pageShellMobile : {}) }}>
       <div style={{ ...hero, ...(isMobile ? heroMobile : {}) }}>
@@ -737,83 +870,113 @@ export default function MyShared() {
                   {loadingDetailId === group.id ? "Loading..." : detail ? (isMobile ? "Hide details" : "Hide members") : (isMobile ? "Manage" : "View members")}
                 </button>
 
-                {hasMembers ? (
-                  <button
-                    style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }}
-                    onClick={() => navigate(`/groups/${group.id}/chat`)}
-                  >
-                    {group.unread_chat_count ? (isMobile ? `Chat (${group.unread_chat_count})` : `Open group chat (${group.unread_chat_count} new)`) : isMobile ? "Chat" : "Open group chat"}
-                  </button>
-                ) : null}
-
-                {!isEditing && group.mode === "group_buy" && group.can_submit_proof ? (
-                  <button
-                    style={{ ...primaryButton, ...(isMobile ? actionButtonMobile : {}) }}
-                    onClick={() => openProofPanel(group.id)}
-                    disabled={loadingDetailId === group.id}
-                  >
-                    {loadingDetailId === group.id
-                      ? "Opening..."
-                      : group.has_purchase_proof
-                        ? isMobile ? "Proof" : "Manage proof"
-                        : isMobile ? "Upload proof" : "Upload purchase proof"}
-                  </button>
-                ) : null}
-
-                {isEditing ? (
-                  <>
-                    <button
-                      style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }}
-                      onClick={cancelEditing}
-                      disabled={savingId === group.id}
-                    >
-                      Cancel edit
-                    </button>
+                {isMobile ? (
+                  isEditing ? (
+                    <>
+                      <button
+                        style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }}
+                        onClick={cancelEditing}
+                        disabled={savingId === group.id}
+                      >
+                        Cancel edit
+                      </button>
+                      <button
+                        style={{ ...primaryButton, ...(isMobile ? actionButtonMobile : {}) }}
+                        onClick={() => saveGroup(group)}
+                        disabled={savingId === group.id}
+                      >
+                        {savingId === group.id ? "Saving..." : "Save changes"}
+                      </button>
+                    </>
+                  ) : (
                     <button
                       style={{ ...primaryButton, ...(isMobile ? actionButtonMobile : {}) }}
-                      onClick={() => saveGroup(group)}
-                      disabled={savingId === group.id}
+                      onClick={() => setMobileOwnerActionGroupId(group.id)}
                     >
-                      {savingId === group.id ? "Saving..." : "Save changes"}
+                      Actions
                     </button>
-                  </>
+                  )
                 ) : (
-                  showAdvancedOwnerActions && group.status !== "closed" ? (
-                    <button style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }} onClick={() => startEditing(group)}>
-                      Edit group
-                    </button>
-                  ) : null
+                  <>
+                    {hasMembers ? (
+                      <button
+                        style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }}
+                        onClick={() => navigate(`/groups/${group.id}/chat`)}
+                      >
+                        {group.unread_chat_count ? (isMobile ? `Chat (${group.unread_chat_count})` : `Open group chat (${group.unread_chat_count} new)`) : isMobile ? "Chat" : "Open group chat"}
+                      </button>
+                    ) : null}
+
+                    {!isEditing && group.mode === "group_buy" && group.can_submit_proof ? (
+                      <button
+                        style={{ ...primaryButton, ...(isMobile ? actionButtonMobile : {}) }}
+                        onClick={() => openProofPanel(group.id)}
+                        disabled={loadingDetailId === group.id}
+                      >
+                        {loadingDetailId === group.id
+                          ? "Opening..."
+                          : group.has_purchase_proof
+                            ? isMobile ? "Proof" : "Manage proof"
+                            : isMobile ? "Upload proof" : "Upload purchase proof"}
+                      </button>
+                    ) : null}
+
+                    {isEditing ? (
+                      <>
+                        <button
+                          style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }}
+                          onClick={cancelEditing}
+                          disabled={savingId === group.id}
+                        >
+                          Cancel edit
+                        </button>
+                        <button
+                          style={{ ...primaryButton, ...(isMobile ? actionButtonMobile : {}) }}
+                          onClick={() => saveGroup(group)}
+                          disabled={savingId === group.id}
+                        >
+                          {savingId === group.id ? "Saving..." : "Save changes"}
+                        </button>
+                      </>
+                    ) : (
+                      showAdvancedOwnerActions && group.status !== "closed" ? (
+                        <button style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }} onClick={() => startEditing(group)}>
+                          Edit group
+                        </button>
+                      ) : null
+                    )}
+
+                    {showAdvancedOwnerActions && !isEditing && detail?.can_refund ? (
+                      <button
+                        style={{ ...dangerButton, ...(isMobile ? actionButtonMobile : {}) }}
+                        onClick={() => refundGroup(group)}
+                        disabled={refundingId === group.id}
+                      >
+                        {refundingId === group.id ? "Refunding..." : "Refund members"}
+                      </button>
+                    ) : null}
+
+                    {showAdvancedOwnerActions && !isEditing && canCloseGroup(group) ? (
+                      <button
+                        style={{ ...warningButton, ...(isMobile ? actionButtonMobile : {}) }}
+                        onClick={() => closeGroup(group)}
+                        disabled={closingId === group.id}
+                      >
+                        {closingId === group.id ? "Closing..." : "Close group"}
+                      </button>
+                    ) : null}
+
+                    {showAdvancedOwnerActions && !isEditing && canDeleteGroup(group) ? (
+                      <button
+                        style={{ ...dangerButton, ...(isMobile ? actionButtonMobile : {}) }}
+                        onClick={() => deleteGroup(group)}
+                        disabled={deletingId === group.id}
+                      >
+                        {deletingId === group.id ? "Deleting..." : "Delete empty group"}
+                      </button>
+                    ) : null}
+                  </>
                 )}
-
-                {showAdvancedOwnerActions && !isEditing && detail?.can_refund ? (
-                  <button
-                    style={{ ...dangerButton, ...(isMobile ? actionButtonMobile : {}) }}
-                    onClick={() => refundGroup(group)}
-                    disabled={refundingId === group.id}
-                  >
-                    {refundingId === group.id ? "Refunding..." : "Refund members"}
-                  </button>
-                ) : null}
-
-                {showAdvancedOwnerActions && !isEditing && canCloseGroup(group) ? (
-                  <button
-                    style={{ ...warningButton, ...(isMobile ? actionButtonMobile : {}) }}
-                    onClick={() => closeGroup(group)}
-                    disabled={closingId === group.id}
-                  >
-                    {closingId === group.id ? "Closing..." : "Close group"}
-                  </button>
-                ) : null}
-
-                {showAdvancedOwnerActions && !isEditing && canDeleteGroup(group) ? (
-                  <button
-                    style={{ ...dangerButton, ...(isMobile ? actionButtonMobile : {}) }}
-                    onClick={() => deleteGroup(group)}
-                    disabled={deletingId === group.id}
-                  >
-                    {deletingId === group.id ? "Deleting..." : "Delete empty group"}
-                  </button>
-                ) : null}
               </div>
 
               {isEditing ? (
@@ -1486,6 +1649,7 @@ export default function MyShared() {
       )}
       </div>
     </div>
+    </>
   );
 }
 
@@ -1495,6 +1659,35 @@ function SummaryCard({ label, value, highlight = false, compact = false }) {
       <p style={{ ...summaryLabel, ...(compact ? summaryLabelMobile : {}) }}>{label}</p>
       <p style={{ ...summaryValue, ...(compact ? summaryValueMobile : {}), color: highlight ? "#047857" : "#0f172a" }}>{value}</p>
     </div>
+  );
+}
+
+function MobileDrawerAction({
+  icon: Icon,
+  label,
+  description,
+  meta,
+  onClick,
+  disabled = false,
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="sv-drawer-action"
+    >
+      <span className="sv-drawer-action-icon">
+        <Icon className="h-4.5 w-4.5" />
+      </span>
+
+      <span className="sv-drawer-action-copy">
+        <strong>{label}</strong>
+        {description ? <span>{description}</span> : null}
+      </span>
+
+      {meta ? <span className="sv-drawer-action-meta">{meta}</span> : null}
+    </button>
   );
 }
 
