@@ -201,6 +201,7 @@ export default function Groups() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [pendingJoinGroup, setPendingJoinGroup] = useState(null);
+  const [expandedMobileCardId, setExpandedMobileCardId] = useState(null);
   const toast = useToast();
   const fetchGroupsRef = useRef(null);
 
@@ -629,11 +630,12 @@ export default function Groups() {
                   : formatDate(group.end_date)
                     ? `Runs through ${formatDate(group.end_date)}`
                     : activityLabel;
+              const isMobileExpanded = expandedMobileCardId === group.id;
 
               return (
                 <article
                   key={group.id}
-                  className={`sv-group-card ${tone.key} ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
+                  className={`sv-group-card ${tone.key} ${isMobileExpanded ? "is-mobile-open" : ""} ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
                 >
                   <div className="sv-group-card-shell">
                     <div className={`sv-group-icon ${planMeta.toneClass}`}>
@@ -666,6 +668,23 @@ export default function Groups() {
                               1 slot left
                             </span>
                           ) : null}
+                        </div>
+                      </div>
+
+                      <div className="sv-group-mobile-summary">
+                        <div className="sv-group-mobile-summary-item">
+                          <span className="sv-group-mobile-summary-label">
+                            {group.is_prorated ? "Pay now" : "Join price"}
+                          </span>
+                          <span className="sv-group-mobile-summary-value">{formatCurrency(group.join_price)}</span>
+                        </div>
+                        <div className="sv-group-mobile-summary-item">
+                          <span className="sv-group-mobile-summary-label">Slots left</span>
+                          <span className="sv-group-mobile-summary-value">{remainingSlots}</span>
+                        </div>
+                        <div className="sv-group-mobile-summary-item">
+                          <span className="sv-group-mobile-summary-label">Filled</span>
+                          <span className="sv-group-mobile-summary-value">{progress}%</span>
                         </div>
                       </div>
 
@@ -702,7 +721,7 @@ export default function Groups() {
                         />
                       </div>
 
-                      <div className="mt-4">
+                      <div className="sv-group-progress-section mt-4">
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 sm:text-xs">
                             Group fill
@@ -718,7 +737,7 @@ export default function Groups() {
                       </div>
 
                       <div className="sv-group-footer">
-                        <div className="min-w-0">
+                        <div className="min-w-0 sv-group-footer-copy">
                           <div className="mb-2 flex flex-wrap gap-2">
                             {Number(group.platform_fee_amount || 0) > 0 ? (
                               <span className="sv-group-inline-note">
@@ -734,26 +753,42 @@ export default function Groups() {
                           <p className="sv-group-next-action">{group.next_action}</p>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => setPendingJoinGroup(group)}
-                          disabled={isFull || joiningId === group.id}
-                          className={`sv-group-join-button ${isFull ? "is-disabled" : tone.buttonClass}`}
-                        >
-                          {joiningId === group.id ? (
-                            <>
-                              <LoadingSpinner />
-                              Joining...
-                            </>
-                          ) : isFull ? (
-                            "Group full"
-                          ) : (
-                            <>
-                              <SparkIcon className="h-4 w-4" />
-                              {group.join_cta}
-                            </>
-                          )}
-                        </button>
+                        <div className="sv-group-footer-actions">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedMobileCardId((current) => (current === group.id ? null : group.id))
+                            }
+                            className="sv-group-mobile-toggle"
+                            aria-expanded={isMobileExpanded}
+                          >
+                            <span>{isMobileExpanded ? "Hide details" : "Show details"}</span>
+                            <span className={`sv-group-mobile-chevron ${isMobileExpanded ? "is-open" : ""}`} aria-hidden="true">
+                              ▾
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setPendingJoinGroup(group)}
+                            disabled={isFull || joiningId === group.id}
+                            className={`sv-group-join-button ${isFull ? "is-disabled" : tone.buttonClass}`}
+                          >
+                            {joiningId === group.id ? (
+                              <>
+                                <LoadingSpinner />
+                                Joining...
+                              </>
+                            ) : isFull ? (
+                              "Group full"
+                            ) : (
+                              <>
+                                <SparkIcon className="h-4 w-4" />
+                                {group.join_cta}
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
