@@ -116,8 +116,8 @@ export default function MyShared() {
   const [revealingGroupId, setRevealingGroupId] = useState(null);
   const [reviewForms, setReviewForms] = useState({});
   const [submittingReviewKey, setSubmittingReviewKey] = useState("");
-  const [expandedJoinedGroupId, setExpandedJoinedGroupId] = useState(null);
   const [mobileOwnerActionGroupId, setMobileOwnerActionGroupId] = useState(null);
+  const [mobileJoinedActionGroupId, setMobileJoinedActionGroupId] = useState(null);
 
   const storeDetail = (groupId, detail, resetProofForm = false) => {
     setDetails((current) => ({
@@ -185,6 +185,7 @@ export default function MyShared() {
   useEffect(() => {
     if (!isMobile) {
       setMobileOwnerActionGroupId(null);
+      setMobileJoinedActionGroupId(null);
     }
   }, [isMobile]);
 
@@ -259,6 +260,19 @@ export default function MyShared() {
   const activeMobileOwnerDetail = activeMobileOwnerGroup
     ? details[activeMobileOwnerGroup.id]
     : null;
+
+  const activeMobileJoinedGroup = useMemo(
+    () => joinedGroups.find((group) => group.id === mobileJoinedActionGroupId) || null,
+    [joinedGroups, mobileJoinedActionGroupId]
+  );
+
+  const activeMobileJoinedReviewTarget = activeMobileJoinedGroup?.owner_rating;
+  const activeMobileJoinedReviewKey = activeMobileJoinedGroup
+    ? getReviewKey(activeMobileJoinedGroup.id, activeMobileJoinedGroup.owner_id)
+    : "";
+  const activeMobileJoinedReviewForm =
+    (activeMobileJoinedReviewKey && reviewForms[activeMobileJoinedReviewKey]) ||
+    getInitialReviewForm(activeMobileJoinedReviewTarget?.my_review);
 
   const toggleDetails = async (groupId) => {
     if (details[groupId]) {
@@ -659,6 +673,10 @@ export default function MyShared() {
     setMobileOwnerActionGroupId(null);
   };
 
+  const closeMobileJoinedActions = () => {
+    setMobileJoinedActionGroupId(null);
+  };
+
   const activeMobileOwnerLifecycleNote = activeMobileOwnerGroup
     ? getLifecycleNote(activeMobileOwnerGroup)
     : null;
@@ -760,6 +778,187 @@ export default function MyShared() {
               }}
             />
           ) : null}
+        </div>
+      </Drawer>
+    ) : null}
+
+    {isMobile && activeMobileJoinedGroup ? (
+      <Drawer
+        open={Boolean(activeMobileJoinedGroup)}
+        onClose={closeMobileJoinedActions}
+        eyebrow="Member actions"
+        title={activeMobileJoinedGroup.subscription_name}
+        description="Handle access, creator rating, and follow-up actions without expanding the whole card."
+        footer={(
+          <p className="sv-drawer-footnote">
+            Use chat for member coordination, then come back here when you need to confirm access or rate the creator.
+          </p>
+        )}
+      >
+        <div className="sv-drawer-stack">
+          <MobileDrawerAction
+            icon={ChatIcon}
+            label="Open group chat"
+            description="Message the creator or other members."
+            meta={activeMobileJoinedGroup.unread_chat_count ? `${activeMobileJoinedGroup.unread_chat_count} new` : "Messages"}
+            onClick={() => {
+              closeMobileJoinedActions();
+              navigate(`/groups/${activeMobileJoinedGroup.id}/chat`);
+            }}
+          />
+        </div>
+
+        <div style={{ ...reviewCard, marginTop: 0 }}>
+          <p style={reviewTitle}>Rate the creator</p>
+          <p style={subtleText}>
+            {activeMobileJoinedGroup.owner_name}
+            {activeMobileJoinedReviewTarget?.average_rating
+              ? ` | ${activeMobileJoinedReviewTarget.average_rating.toFixed(1)} / 5 from ${activeMobileJoinedReviewTarget.review_count} review${activeMobileJoinedReviewTarget.review_count === 1 ? "" : "s"}`
+              : " | No ratings yet"}
+          </p>
+          {activeMobileJoinedReviewTarget?.can_review ? (
+            <>
+              <StarPicker
+                value={Number(activeMobileJoinedReviewForm.rating)}
+                onChange={(value) =>
+                  handleReviewChange(
+                    activeMobileJoinedGroup.id,
+                    activeMobileJoinedGroup.owner_id,
+                    "rating",
+                    value,
+                    activeMobileJoinedReviewTarget?.my_review
+                  )
+                }
+              />
+              <textarea
+                style={reviewTextarea}
+                value={activeMobileJoinedReviewForm.comment}
+                onChange={(event) =>
+                  handleReviewChange(
+                    activeMobileJoinedGroup.id,
+                    activeMobileJoinedGroup.owner_id,
+                    "comment",
+                    event.target.value,
+                    activeMobileJoinedReviewTarget?.my_review
+                  )
+                }
+                placeholder="How was the creator to coordinate with?"
+              />
+              <button
+                style={secondaryButton}
+                onClick={() =>
+                  submitReview({
+                    groupId: activeMobileJoinedGroup.id,
+                    reviewedUserId: activeMobileJoinedGroup.owner_id,
+                    existingReview: activeMobileJoinedReviewTarget?.my_review,
+                  })
+                }
+                disabled={submittingReviewKey === activeMobileJoinedReviewKey}
+              >
+                {submittingReviewKey === activeMobileJoinedReviewKey
+                  ? "Saving..."
+                  : activeMobileJoinedReviewTarget?.my_review
+                    ? "Update rating"
+                    : "Save rating"}
+              </button>
+            </>
+          ) : activeMobileJoinedGroup.status === "active" || activeMobileJoinedGroup.status === "closed" ? (
+            <p style={proofApproved}>Your rating is already saved for this group experience.</p>
+          ) : (
+            <p style={subtleText}>Ratings open after the group becomes active.</p>
+          )}
+        </div>
+
+        <div style={{ ...memberAccessCard(false), marginTop: 0 }}>
+          <p style={ownerCredentialEyebrow}>
+            {activeMobileJoinedGroup.mode === "group_buy" ? "Buy-together access" : "Access coordination"}
+          </p>
+          {activeMobileJoinedGroup.mode === "group_buy" ? (
+            <>
+              <p style={{ ...subtleText, ...subtleTextCompact }}>
+                {activeMobileJoinedGroup.status === "awaiting_purchase"
+                  ? "The creator still needs to buy the subscription and coordinate access."
+                  : activeMobileJoinedGroup.status === "proof_submitted"
+                    ? "The creator says access has been coordinated off-platform. Confirm when you receive it."
+                    : activeMobileJoinedGroup.status === "disputed"
+                      ? "An access issue was reported. Payout is paused while the creator resolves it or refunds the group."
+                      : activeMobileJoinedGroup.status === "active"
+                        ? "Your confirmation was collected and the buy-together group is active."
+                        : "Access is being coordinated by the group creator."}
+              </p>
+              <p style={subtleText}>
+                Confirmed members: {activeMobileJoinedGroup.confirmed_members || 0}
+                {activeMobileJoinedGroup.remaining_confirmations !== undefined
+                  ? ` | Remaining: ${activeMobileJoinedGroup.remaining_confirmations}`
+                  : ""}
+              </p>
+              {activeMobileJoinedGroup.reported_issues ? (
+                <p style={subtleText}>Reported issues: {activeMobileJoinedGroup.reported_issues}</p>
+              ) : null}
+              {activeMobileJoinedGroup.has_reported_access_issue && !activeMobileJoinedGroup.has_confirmed_access ? (
+                <p style={proofWarning}>
+                  You reported an access issue. Confirm once it is fixed, or wait for the creator to refund the group.
+                </p>
+              ) : null}
+              {activeMobileJoinedGroup.status === "disputed" && !activeMobileJoinedGroup.has_reported_access_issue ? (
+                <p style={proofWarning}>
+                  Payout is paused because a member reported an access issue.
+                </p>
+              ) : null}
+              {activeMobileJoinedGroup.access_confirmation_required ? (
+                activeMobileJoinedGroup.has_confirmed_access ? (
+                  <p style={proofApproved}>You already confirmed that you received access.</p>
+                ) : (
+                  <div style={{ ...actionRow, ...actionRowMobile }}>
+                    <button
+                      style={{ ...primaryButton, ...actionButtonMobile }}
+                      onClick={() => confirmMemberAccess(activeMobileJoinedGroup.id)}
+                      disabled={confirmingId === activeMobileJoinedGroup.id}
+                    >
+                      {confirmingId === activeMobileJoinedGroup.id
+                        ? "Confirming..."
+                        : activeMobileJoinedGroup.has_reported_access_issue
+                          ? "Issue fixed, confirm access"
+                          : "I received access"}
+                    </button>
+                    {activeMobileJoinedGroup.can_report_access_issue ? (
+                      <button
+                        style={{ ...dangerButton, ...actionButtonMobile }}
+                        onClick={() => reportAccessIssue(activeMobileJoinedGroup.id)}
+                        disabled={reportingIssueId === activeMobileJoinedGroup.id}
+                      >
+                        {reportingIssueId === activeMobileJoinedGroup.id ? "Reporting..." : "Report issue"}
+                      </button>
+                    ) : null}
+                  </div>
+                )
+              ) : null}
+            </>
+          ) : (
+            <>
+              <p style={{ ...subtleText, ...subtleTextCompact }}>
+                Access is coordinated privately by the host after you join.
+              </p>
+              <p style={subtleText}>
+                Confirm access once the host has set you up. The host payout is released only after your confirmation.
+              </p>
+              {activeMobileJoinedGroup.access_confirmation_required ? (
+                activeMobileJoinedGroup.has_confirmed_access ? (
+                  <p style={proofApproved}>You already confirmed that you received access.</p>
+                ) : (
+                  <div style={{ ...actionRow, ...actionRowMobile }}>
+                    <button
+                      style={{ ...primaryButton, ...actionButtonMobile }}
+                      onClick={() => confirmMemberAccess(activeMobileJoinedGroup.id)}
+                      disabled={confirmingId === activeMobileJoinedGroup.id}
+                    >
+                      {confirmingId === activeMobileJoinedGroup.id ? "Confirming..." : "I received access"}
+                    </button>
+                  </div>
+                )
+              ) : null}
+            </>
+          )}
         </div>
       </Drawer>
     ) : null}
@@ -1440,7 +1639,6 @@ export default function MyShared() {
             const reviewKey = getReviewKey(group.id, group.owner_id);
             const reviewForm =
               reviewForms[reviewKey] || getInitialReviewForm(reviewTarget?.my_review);
-            const isJoinedExpanded = expandedJoinedGroupId === group.id;
 
             return (
               <div key={group.id} style={{ ...joinedCard, ...(isMobile ? joinedCardMobile : {}) }}>
@@ -1478,15 +1676,15 @@ export default function MyShared() {
                   </button>
                   {isMobile ? (
                     <button
-                      style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }}
-                      onClick={() => setExpandedJoinedGroupId((current) => (current === group.id ? null : group.id))}
+                      style={{ ...primaryButton, ...(isMobile ? actionButtonMobile : {}) }}
+                      onClick={() => setMobileJoinedActionGroupId(group.id)}
                     >
-                      {isJoinedExpanded ? "Less details" : "More details"}
+                      Actions
                     </button>
                   ) : null}
                 </div>
 
-                {!isMobile || isJoinedExpanded ? (
+                {!isMobile ? (
                 <div style={{ ...reviewCard, ...(isMobile ? reviewCardMobile : {}) }}>
                   <p style={reviewTitle}>Rate the creator</p>
                   <p style={subtleText}>
@@ -1549,6 +1747,7 @@ export default function MyShared() {
                 </div>
                 ) : null}
 
+                {!isMobile ? (
                 <div style={{ ...memberAccessCard(false), ...(isMobile ? memberAccessCardMobile : {}) }}>
                   <p style={ownerCredentialEyebrow}>
                     {group.mode === "group_buy" ? "Buy-together access" : "Access coordination"}
@@ -1566,13 +1765,11 @@ export default function MyShared() {
                               ? "Your confirmation was collected and the buy-together group is active."
                               : "Access is being coordinated by the group creator."}
                       </p>
-                      {!isMobile || isJoinedExpanded ? (
                       <p style={subtleText}>
                         Confirmed members: {group.confirmed_members || 0}
                         {group.remaining_confirmations !== undefined ? ` | Remaining: ${group.remaining_confirmations}` : ""}
                       </p>
-                      ) : null}
-                      {(!isMobile || isJoinedExpanded) && group.reported_issues ? (
+                      {group.reported_issues ? (
                         <p style={subtleText}>Reported issues: {group.reported_issues}</p>
                       ) : null}
                       {group.has_reported_access_issue && !group.has_confirmed_access ? (
@@ -1619,11 +1816,9 @@ export default function MyShared() {
                       <p style={{ ...subtleText, ...(isMobile ? subtleTextCompact : {}) }}>
                         Access is coordinated privately by the host after you join.
                       </p>
-                      {!isMobile || isJoinedExpanded ? (
                       <p style={subtleText}>
                         Confirm access once the host has set you up. The host payout is released only after your confirmation.
                       </p>
-                      ) : null}
                       {group.access_confirmation_required ? (
                         group.has_confirmed_access ? (
                           <p style={proofApproved}>You already confirmed that you received access.</p>
@@ -1642,6 +1837,7 @@ export default function MyShared() {
                     </>
                   )}
                 </div>
+                ) : null}
               </div>
             );
           })}
