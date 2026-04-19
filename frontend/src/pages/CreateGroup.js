@@ -350,6 +350,9 @@ export default function CreateGroup() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [showPreview, setShowPreview] = useState(true);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
 
   const isSharing = form.mode === "sharing";
   const modeConfig = getModeConfig(form.mode);
@@ -381,6 +384,24 @@ export default function CreateGroup() {
       isMounted = false;
     };
   }, [toast]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
 
   const quickPickGroups = useMemo(() => {
     const grouped = new Map();
@@ -423,6 +444,11 @@ export default function CreateGroup() {
   const estimatedTotal = memberCount * amountPerMember;
   const finalStepIndex = WIZARD_STEPS.length - 1;
   const currentStepConfig = WIZARD_STEPS[currentStep];
+  const isSinglePageMobile = isMobile;
+  const formHeadTitle = isSinglePageMobile ? "Create your split" : currentStepConfig.label;
+  const formHeadHelper = isSinglePageMobile
+    ? "Everything is on one page here. Choose the mode, fill the details, set the dates, and publish when it looks right."
+    : currentStepConfig.helper;
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -502,7 +528,7 @@ export default function CreateGroup() {
   };
 
   const moveToPreviousStep = () => {
-    if (currentStep === 0) {
+    if (isSinglePageMobile || currentStep === 0) {
       navigate("/my-shared");
       return;
     }
@@ -527,7 +553,7 @@ export default function CreateGroup() {
   const handleWizardSubmit = async (event) => {
     event.preventDefault();
 
-    if (currentStep < finalStepIndex) {
+    if (!isSinglePageMobile && currentStep < finalStepIndex) {
       moveToNextStep();
       return;
     }
@@ -536,7 +562,9 @@ export default function CreateGroup() {
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) {
-      jumpToFirstInvalidStep(validationErrors);
+      if (!isSinglePageMobile) {
+        jumpToFirstInvalidStep(validationErrors);
+      }
       return;
     }
 
@@ -579,11 +607,14 @@ export default function CreateGroup() {
             <div className="max-w-4xl">
               <p className="sv-eyebrow-on-dark">Create Split</p>
               <h1 className="sv-display-on-dark mt-4 max-w-4xl">
-                Build the split in steps, preview it live, and publish only when the whole flow feels clear.
+                {isSinglePageMobile
+                  ? "Set up the split on one page and publish when it looks right."
+                  : "Build the split in steps, preview it live, and publish only when the whole flow feels clear."}
               </h1>
               <p className="sv-create-hero-body mt-4 max-w-3xl text-sm leading-7 text-slate-200 sm:text-base sm:leading-8">
-                Step {currentStep + 1} of {WIZARD_STEPS.length}: {currentStepConfig.label}. Choose the mode,
-                set the details, confirm the timing, and review the listing before it goes live.
+                {isSinglePageMobile
+                  ? "Choose the mode, fill the basics, set the timing, and review the card before you publish."
+                  : `Step ${currentStep + 1} of ${WIZARD_STEPS.length}: ${currentStepConfig.label}. Choose the mode, set the details, confirm the timing, and review the listing before it goes live.`}
               </p>
             </div>
 
@@ -594,26 +625,31 @@ export default function CreateGroup() {
             </div>
           </div>
 
-          <div className="sv-create-stepbar mt-6">
-            {WIZARD_STEPS.map((step, index) => (
-              <StepBadge
-                key={step.id}
-                index={index}
-                label={step.label}
-                active={index === currentStep}
-                complete={index < currentStep}
-              />
-            ))}
-          </div>
+          {!isSinglePageMobile ? (
+            <div className="sv-create-stepbar mt-6">
+              {WIZARD_STEPS.map((step, index) => (
+                <StepBadge
+                  key={step.id}
+                  index={index}
+                  label={step.label}
+                  active={index === currentStep}
+                  complete={index < currentStep}
+                />
+              ))}
+            </div>
+          ) : null}
         </section>
 
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <form onSubmit={handleWizardSubmit} className="sv-card-solid sv-create-wizard">
+          <form
+            onSubmit={handleWizardSubmit}
+            className={`sv-card-solid sv-create-wizard ${isSinglePageMobile ? "is-mobile-single" : ""}`}
+          >
             <div className="sv-create-form-head flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="sv-eyebrow">Wizard flow</p>
-                <h2 className="sv-title mt-2">{currentStepConfig.label}</h2>
-                <p className="sv-create-step-helper mt-3 max-w-3xl text-sm leading-7 text-slate-600">{currentStepConfig.helper}</p>
+                <p className="sv-eyebrow">{isSinglePageMobile ? "One-page flow" : "Wizard flow"}</p>
+                <h2 className="sv-title mt-2">{formHeadTitle}</h2>
+                <p className="sv-create-step-helper mt-3 max-w-3xl text-sm leading-7 text-slate-600">{formHeadHelper}</p>
               </div>
               <button type="button" onClick={resetWizard} className="sv-btn-secondary sv-create-reset-button">
                 Reset form
@@ -638,7 +674,7 @@ export default function CreateGroup() {
             </div>
 
             <div className="mt-6">
-              {currentStep === 0 ? (
+              {isSinglePageMobile || currentStep === 0 ? (
                 <div className="sv-create-stage sv-animate-rise">
                   <div className="grid gap-4 lg:grid-cols-2">
                     <ModeCard
@@ -703,7 +739,7 @@ export default function CreateGroup() {
                 </div>
               ) : null}
 
-              {currentStep === 1 ? (
+              {isSinglePageMobile || currentStep === 1 ? (
                 <div className="sv-create-stage sv-animate-rise">
                   <section className="sv-create-section-card">
                     <div className="flex flex-wrap items-end justify-between gap-4">
@@ -830,7 +866,7 @@ export default function CreateGroup() {
                 </div>
               ) : null}
 
-              {currentStep === 2 ? (
+              {isSinglePageMobile || currentStep === 2 ? (
                 <div className="sv-create-stage sv-animate-rise">
                   <section className="sv-create-section-card">
                     <div className="flex flex-wrap items-end justify-between gap-4">
@@ -925,7 +961,7 @@ export default function CreateGroup() {
                 </div>
               ) : null}
 
-              {currentStep === 3 ? (
+              {isSinglePageMobile || currentStep === 3 ? (
                 <div className="sv-create-stage sv-animate-rise">
                   <section className="sv-create-section-card">
                     <div className="flex flex-wrap items-end justify-between gap-4">
@@ -1008,13 +1044,15 @@ export default function CreateGroup() {
 
             <div className="sv-create-nav mt-6">
               <button type="button" onClick={moveToPreviousStep} className="sv-btn-secondary">
-                {currentStep === 0 ? "Cancel" : "Back"}
+                {isSinglePageMobile || currentStep === 0 ? "Cancel" : "Back"}
               </button>
               <div className="text-center">
                 <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
-                  Step {currentStep + 1} of {WIZARD_STEPS.length}
+                  {isSinglePageMobile ? "Mobile create flow" : `Step ${currentStep + 1} of ${WIZARD_STEPS.length}`}
                 </p>
-                <p className="mt-1 text-sm text-slate-600">{currentStepConfig.helper}</p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {isSinglePageMobile ? "Review the card below, then publish when the basics look right." : currentStepConfig.helper}
+                </p>
               </div>
               <button type="submit" disabled={loading} className="sv-btn-primary">
                 {loading ? (
@@ -1022,7 +1060,7 @@ export default function CreateGroup() {
                     <LoadingSpinner />
                     Creating...
                   </>
-                ) : currentStep === finalStepIndex ? (
+                ) : isSinglePageMobile || currentStep === finalStepIndex ? (
                   <>
                     <SparkIcon className="h-4 w-4" />
                     {isSharing ? "Create sharing group" : "Create buy-together group"}
