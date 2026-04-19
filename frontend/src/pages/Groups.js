@@ -197,6 +197,9 @@ export default function Groups() {
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
   const [sortBy, setSortBy] = useState("popular");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -223,6 +226,24 @@ export default function Groups() {
 
   useEffect(() => {
     fetchGroupsRef.current?.();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
   }, []);
 
   useEffect(() => {
@@ -336,6 +357,8 @@ export default function Groups() {
     return Array.from(suggestionMap.values()).slice(0, 6);
   }, [groups, searchTerm]);
 
+  const effectiveSortBy = isMobile ? "popular" : sortBy;
+
   const filteredGroups = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
@@ -364,8 +387,8 @@ export default function Groups() {
 
         return haystack.includes(normalizedSearch);
       })
-      .sort((left, right) => compareGroups(sortBy, left, right));
-  }, [filter, groups, searchTerm, sortBy]);
+      .sort((left, right) => compareGroups(effectiveSortBy, left, right));
+  }, [effectiveSortBy, filter, groups, searchTerm]);
 
   const spotlightGroup = filteredGroups[0] || groups[0] || null;
   const categoryChips = useMemo(() => {
@@ -401,37 +424,54 @@ export default function Groups() {
           <div className="sv-dark-hero sv-reveal">
             <p className="sv-eyebrow-on-dark">Marketplace</p>
             <h1 className="sv-display-on-dark mt-3 max-w-4xl sm:mt-4">
-              Explore open groups with clearer status, cleaner pricing, and a faster path to join.
+              {isMobile
+                ? "Explore open groups and join faster."
+                : "Explore open groups with clearer status, cleaner pricing, and a faster path to join."}
             </h1>
-            <p className="sv-groups-hero-body mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-5 sm:text-base sm:leading-8">
-              Browse live sharing and buy-together groups, compare what you pay now, and see which
-              plans are nearly full before you commit.
-            </p>
+            {!isMobile ? (
+              <>
+                <p className="sv-groups-hero-body mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-5 sm:text-base sm:leading-8">
+                  Browse live sharing and buy-together groups, compare what you pay now, and see which
+                  plans are nearly full before you commit.
+                </p>
 
-            <div className="sv-groups-hero-chips mt-4 flex flex-wrap gap-1.5 sm:mt-8 sm:gap-2">
-              <span className="sv-chip-dark">
-                <SearchIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                Search by plan or host
-              </span>
-              <span className="sv-chip-dark">
-                <ClockIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                Sort by urgency or price
-              </span>
-              <span className="sv-chip-dark">
-                <WalletIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                Wallet-backed joining
-              </span>
-              <span className="hidden sm:inline-flex sv-chip-dark">
-                <ShieldIcon className="h-3.5 w-3.5" />
-                Join review before payment
-              </span>
-            </div>
+                <div className="sv-groups-hero-chips mt-4 flex flex-wrap gap-1.5 sm:mt-8 sm:gap-2">
+                  <span className="sv-chip-dark">
+                    <SearchIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    Search by plan or host
+                  </span>
+                  <span className="sv-chip-dark">
+                    <ClockIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    Sort by urgency or price
+                  </span>
+                  <span className="sv-chip-dark">
+                    <WalletIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    Wallet-backed joining
+                  </span>
+                  <span className="hidden sm:inline-flex sv-chip-dark">
+                    <ShieldIcon className="h-3.5 w-3.5" />
+                    Join review before payment
+                  </span>
+                </div>
 
-            <div className="sv-groups-hero-stats mt-5">
-              <MarketHeroStat label="Open now" value={stats.open} note="ready to browse" />
-              <MarketHeroStat label="Sharing" value={stats.sharing} note="existing plan hosts" />
-              <MarketHeroStat label="Buy together" value={stats.groupBuy} note="group purchase flows" />
-            </div>
+                <div className="sv-groups-hero-stats mt-5">
+                  <MarketHeroStat label="Open now" value={stats.open} note="ready to browse" />
+                  <MarketHeroStat label="Sharing" value={stats.sharing} note="existing plan hosts" />
+                  <MarketHeroStat label="Buy together" value={stats.groupBuy} note="group purchase flows" />
+                </div>
+              </>
+            ) : (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="sv-chip-dark">
+                  <CompassIcon className="h-3.5 w-3.5" />
+                  {stats.open} open now
+                </span>
+                <span className="sv-chip-dark">
+                  <WalletIcon className="h-3.5 w-3.5" />
+                  Wallet-backed join
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="sv-card sv-reveal sv-groups-panel">
@@ -439,17 +479,19 @@ export default function Groups() {
               <div>
                 <p className="sv-eyebrow">Filter groups</p>
                 <h2 className="mt-2 text-lg font-bold leading-tight text-slate-950 sm:mt-3 sm:text-2xl md:text-[1.9rem]">
-                  Search, sort, and scan what matters
+                  {isMobile ? "Search and filter groups" : "Search, sort, and scan what matters"}
                 </h2>
               </div>
-              <span className="sv-chip">
-                {filteredGroups.length} match{filteredGroups.length === 1 ? "" : "es"}
-              </span>
+              {!isMobile ? (
+                <span className="sv-chip">
+                  {filteredGroups.length} match{filteredGroups.length === 1 ? "" : "es"}
+                </span>
+              ) : null}
             </div>
 
             <label className="mt-4 block sm:mt-5">
               <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs">
-                Search groups
+                {isMobile ? "Search" : "Search groups"}
               </span>
               <div className="sv-groups-search-shell">
                 <SearchIcon className="h-4 w-4 shrink-0 text-slate-400" />
@@ -461,7 +503,7 @@ export default function Groups() {
                   onBlur={() => {
                     window.setTimeout(() => setSearchFocused(false), 120);
                   }}
-                  placeholder="Netflix, Spotify, host name..."
+                  placeholder={isMobile ? "Search plan or host..." : "Netflix, Spotify, host name..."}
                   className="sv-groups-search-input"
                 />
                 {searchTerm ? (
@@ -504,43 +546,56 @@ export default function Groups() {
                   key={option.value}
                   active={filter === option.value}
                   count={option.count}
+                  showCount={!isMobile}
                   onClick={() => setFilter(option.value)}
                 >
-                  {option.label}
+                  {isMobile
+                    ? option.value === "all"
+                      ? "All"
+                      : option.label
+                    : option.label}
                 </FilterButton>
               ))}
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-              <label className="block">
-                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs">
-                  Sort by
-                </span>
-                <select
-                  value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value)}
-                  className="sv-groups-sort-select"
-                >
-                  {SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            {!isMobile ? (
+              <>
+                <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                  <label className="block">
+                    <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs">
+                      Sort by
+                    </span>
+                    <select
+                      value={sortBy}
+                      onChange={(event) => setSortBy(event.target.value)}
+                      className="sv-groups-sort-select"
+                    >
+                      {SORT_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-              <div className="sv-groups-summary-strip">
-                <span>{stats.total} total listed</span>
-                <span>{stats.open} still open</span>
-              </div>
-            </div>
+                  <div className="sv-groups-summary-strip">
+                    <span>{stats.total} total listed</span>
+                    <span>{stats.open} still open</span>
+                  </div>
+                </div>
 
-            <div className="sv-groups-stats-grid mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
-              <StatCard label="Total groups" value={stats.total} />
-              <StatCard label="Open now" value={stats.open} />
-              <StatCard label="Sharing" value={stats.sharing} />
-              <StatCard label="Buy together" value={stats.groupBuy} />
-            </div>
+                <div className="sv-groups-stats-grid mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
+                  <StatCard label="Total groups" value={stats.total} />
+                  <StatCard label="Open now" value={stats.open} />
+                  <StatCard label="Sharing" value={stats.sharing} />
+                  <StatCard label="Buy together" value={stats.groupBuy} />
+                </div>
+              </>
+            ) : (
+              <p className="mt-4 text-sm leading-6 text-slate-500">
+                Showing {filteredGroups.length} group{filteredGroups.length === 1 ? "" : "s"}, ordered by popularity.
+              </p>
+            )}
           </div>
         </section>
 
@@ -682,10 +737,12 @@ export default function Groups() {
                           <span className="sv-group-mobile-summary-label">Slots left</span>
                           <span className="sv-group-mobile-summary-value">{remainingSlots}</span>
                         </div>
-                        <div className="sv-group-mobile-summary-item">
-                          <span className="sv-group-mobile-summary-label">Filled</span>
-                          <span className="sv-group-mobile-summary-value">{progress}%</span>
-                        </div>
+                        {!isMobile ? (
+                          <div className="sv-group-mobile-summary-item">
+                            <span className="sv-group-mobile-summary-label">Filled</span>
+                            <span className="sv-group-mobile-summary-value">{progress}%</span>
+                          </div>
+                        ) : null}
                       </div>
 
                       <div className="sv-group-owner-row">
@@ -762,7 +819,7 @@ export default function Groups() {
                             className="sv-group-mobile-toggle"
                             aria-expanded={isMobileExpanded}
                           >
-                            <span>{isMobileExpanded ? "Hide details" : "Show details"}</span>
+                            <span>{isMobileExpanded ? "Hide details" : "Details"}</span>
                             <span className={`sv-group-mobile-chevron ${isMobileExpanded ? "is-open" : ""}`} aria-hidden="true">
                               ▾
                             </span>
@@ -798,7 +855,7 @@ export default function Groups() {
           </section>
         )}
 
-        {spotlightGroup ? (
+        {spotlightGroup && !isMobile ? (
           <section className="sv-card-solid sv-reveal">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -1004,11 +1061,11 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
   );
 }
 
-function FilterButton({ active, count, onClick, children }) {
+function FilterButton({ active, count, onClick, children, showCount = true }) {
   return (
     <button type="button" onClick={onClick} className={`sv-groups-filter-button ${active ? "is-active" : ""}`}>
       <span>{children}</span>
-      <span className="sv-groups-filter-count">{count}</span>
+      {showCount ? <span className="sv-groups-filter-count">{count}</span> : null}
     </button>
   );
 }
