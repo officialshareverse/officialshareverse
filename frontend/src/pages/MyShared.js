@@ -85,6 +85,9 @@ function getLifecycleNote(group) {
 
 export default function MyShared() {
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
   const [groups, setGroups] = useState([]);
   const [joinedGroups, setJoinedGroups] = useState([]);
   const [filter, setFilter] = useState("all");
@@ -104,6 +107,7 @@ export default function MyShared() {
   const [revealingGroupId, setRevealingGroupId] = useState(null);
   const [reviewForms, setReviewForms] = useState({});
   const [submittingReviewKey, setSubmittingReviewKey] = useState("");
+  const [expandedJoinedGroupId, setExpandedJoinedGroupId] = useState(null);
 
   const storeDetail = (groupId, detail, resetProofForm = false) => {
     setDetails((current) => ({
@@ -150,6 +154,24 @@ export default function MyShared() {
     fetchJoinedGroups();
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
+
   const filteredGroups = useMemo(() => {
     if (filter === "all") {
       return groups;
@@ -193,6 +215,25 @@ export default function MyShared() {
       { joined: 0, active: 0, readyAccess: 0 }
     );
   }, [joinedGroups]);
+
+  const summaryCards = useMemo(() => {
+    if (isMobile) {
+      return [
+        { label: "Created", value: totals.created },
+        { label: "Joined", value: joinedSummary.joined },
+        { label: "Revenue", value: `Rs ${totals.revenue.toFixed(2)}`, highlight: true },
+      ];
+    }
+
+    return [
+      { label: "Groups created", value: totals.created },
+      { label: "Groups joined", value: joinedSummary.joined },
+      { label: "Sharing revenue", value: `Rs ${totals.revenue.toFixed(2)}`, highlight: true },
+      { label: "Held in escrow", value: `Rs ${totals.held.toFixed(2)}` },
+      { label: "Buy-together waiting", value: totals.buyWaiting },
+      { label: "Active memberships", value: joinedSummary.active },
+    ];
+  }, [isMobile, joinedSummary.active, joinedSummary.joined, totals.buyWaiting, totals.created, totals.held, totals.revenue]);
 
   const toggleDetails = async (groupId) => {
     if (details[groupId]) {
@@ -590,37 +631,38 @@ export default function MyShared() {
   };
 
   return (
-    <div style={container}>
-      <div style={pageShell}>
-      <div style={hero}>
+    <div style={{ ...container, ...(isMobile ? containerMobile : {}) }}>
+      <div style={{ ...pageShell, ...(isMobile ? pageShellMobile : {}) }}>
+      <div style={{ ...hero, ...(isMobile ? heroMobile : {}) }}>
         <p style={eyebrow}>My splits</p>
-        <h2 style={heroTitle}>See the splits you created and the splits you joined</h2>
+        <h2 style={{ ...heroTitle, ...(isMobile ? heroTitleMobile : {}) }}>See the splits you created and the splits you joined</h2>
+        {!isMobile ? (
         <p style={heroText}>
           Manage the splits you host, keep track of your memberships, and follow access status from one place.
         </p>
+        ) : null}
       </div>
 
-      <div style={statsGrid}>
-        <SummaryCard label="Groups created" value={totals.created} />
-        <SummaryCard label="Groups joined" value={joinedSummary.joined} />
-        <SummaryCard label="Sharing revenue" value={`Rs ${totals.revenue.toFixed(2)}`} highlight />
-        <SummaryCard label="Held in escrow" value={`Rs ${totals.held.toFixed(2)}`} />
-        <SummaryCard label="Buy-together waiting" value={totals.buyWaiting} />
-        <SummaryCard label="Active memberships" value={joinedSummary.active} />
+      <div style={{ ...statsGrid, ...(isMobile ? statsGridMobile : {}) }}>
+        {summaryCards.map((item) => (
+          <SummaryCard key={item.label} label={item.label} value={item.value} highlight={item.highlight} compact={isMobile} />
+        ))}
       </div>
 
-      <div style={sectionHeader}>
+      <div style={{ ...sectionHeader, ...(isMobile ? sectionHeaderMobile : {}) }}>
         <div>
           <p style={sectionEyebrow}>Created splits</p>
-          <h3 style={sectionTitle}>Splits you host</h3>
+          <h3 style={{ ...sectionTitle, ...(isMobile ? sectionTitleMobile : {}) }}>Splits you host</h3>
         </div>
-        <p style={sectionText}>Your owner tools stay here, including proof upload, member-confirmation tracking, refunds, edits, closure, and cleanup.</p>
+        {!isMobile ? (
+          <p style={sectionText}>Your owner tools stay here, including proof upload, member-confirmation tracking, refunds, edits, closure, and cleanup.</p>
+        ) : null}
       </div>
 
-      <div style={filterRow}>
-        <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>All</FilterButton>
-        <FilterButton active={filter === "sharing"} onClick={() => setFilter("sharing")}>Share existing plan</FilterButton>
-        <FilterButton active={filter === "group_buy"} onClick={() => setFilter("group_buy")}>Buy together</FilterButton>
+      <div style={{ ...filterRow, ...(isMobile ? filterRowMobile : {}) }}>
+        <FilterButton active={filter === "all"} onClick={() => setFilter("all")} compact={isMobile}>All</FilterButton>
+        <FilterButton active={filter === "sharing"} onClick={() => setFilter("sharing")} compact={isMobile}>{isMobile ? "Sharing" : "Share existing plan"}</FilterButton>
+        <FilterButton active={filter === "group_buy"} onClick={() => setFilter("group_buy")} compact={isMobile}>Buy together</FilterButton>
       </div>
 
       {filteredGroups.length === 0 ? (
@@ -632,10 +674,11 @@ export default function MyShared() {
           const hasMembers = group.filled_slots > 0;
           const lifecycleNote = getLifecycleNote(group);
           const proofForm = proofForms[group.id] || getInitialProofForm(detail);
+          const showAdvancedOwnerActions = !isMobile || Boolean(detail) || isEditing;
 
           return (
-            <div key={group.id} style={card}>
-              <div style={cardHeader}>
+            <div key={group.id} style={{ ...card, ...(isMobile ? cardMobile : {}) }}>
+              <div style={{ ...cardHeader, ...(isMobile ? cardHeaderMobile : {}) }}>
                 <div>
                   <h3 style={{ margin: 0 }}>{group.subscription_name}</h3>
                   <p style={cardSubheading}>{group.mode_label}</p>
@@ -643,30 +686,36 @@ export default function MyShared() {
                 <span style={badge}>{group.status_label}</span>
               </div>
 
-              <div style={factsRow}>
+              <div style={{ ...factsRow, ...(isMobile ? factsRowMobile : {}) }}>
                 <FactPill label="Per member" value={`Rs ${group.price_per_slot}`} />
                 <FactPill label="Filled" value={`${group.filled_slots} / ${group.total_slots}`} />
+                {!isMobile ? (
                 <FactPill
                   label={group.mode === "group_buy" ? "Paid" : "Revenue"}
                   value={group.mode === "group_buy" ? `${group.paid_members} / ${group.total_slots}` : `Rs ${group.owner_revenue}`}
                 />
+                ) : null}
+                {!isMobile ? (
                 <FactPill
                   label={group.mode === "group_buy" ? "Held" : "Window"}
                   value={group.mode === "group_buy" ? `Rs ${group.held_amount || "0.00"}` : `${group.start_date} to ${group.end_date}`}
                   tone={group.mode === "group_buy" ? "warning" : "default"}
                 />
+                ) : null}
                 {group.unread_chat_count ? (
                   <FactPill label="Chat" value={`${group.unread_chat_count} new`} tone="accent" />
                 ) : null}
               </div>
 
               <p style={descriptionText}>{group.next_action}</p>
+              {!isMobile ? (
               <p style={metaLine}>
                 Created {new Date(group.created_at).toLocaleDateString()}
                 {group.mode === "group_buy" ? " | Buy-together timeline" : " | Sharing timeline"}
               </p>
-              {lifecycleNote ? <p style={managementNote(group.status === "closed")}>{lifecycleNote}</p> : null}
-              {group.mode === "group_buy" && group.can_submit_proof ? (
+              ) : null}
+              {!isMobile && lifecycleNote ? <p style={managementNote(group.status === "closed")}>{lifecycleNote}</p> : null}
+              {!isMobile && group.mode === "group_buy" && group.can_submit_proof ? (
                 <p style={proofReadyNotice}>
                   {group.has_purchase_proof
                     ? "Purchase proof is ready to manage below."
@@ -683,45 +732,45 @@ export default function MyShared() {
                 />
               </div>
 
-              <div style={actionRow}>
-                <button style={secondaryButton} onClick={() => toggleDetails(group.id)}>
-                  {loadingDetailId === group.id ? "Loading..." : detail ? "Hide members" : "View members"}
+              <div style={{ ...actionRow, ...(isMobile ? actionRowMobile : {}) }}>
+                <button style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }} onClick={() => toggleDetails(group.id)}>
+                  {loadingDetailId === group.id ? "Loading..." : detail ? (isMobile ? "Hide details" : "Hide members") : (isMobile ? "Manage" : "View members")}
                 </button>
 
                 {hasMembers ? (
                   <button
-                    style={secondaryButton}
+                    style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }}
                     onClick={() => navigate(`/groups/${group.id}/chat`)}
                   >
-                    {group.unread_chat_count ? `Open group chat (${group.unread_chat_count} new)` : "Open group chat"}
+                    {group.unread_chat_count ? (isMobile ? `Chat (${group.unread_chat_count})` : `Open group chat (${group.unread_chat_count} new)`) : isMobile ? "Chat" : "Open group chat"}
                   </button>
                 ) : null}
 
                 {!isEditing && group.mode === "group_buy" && group.can_submit_proof ? (
                   <button
-                    style={primaryButton}
+                    style={{ ...primaryButton, ...(isMobile ? actionButtonMobile : {}) }}
                     onClick={() => openProofPanel(group.id)}
                     disabled={loadingDetailId === group.id}
                   >
                     {loadingDetailId === group.id
                       ? "Opening..."
                       : group.has_purchase_proof
-                        ? "Manage proof"
-                        : "Upload purchase proof"}
+                        ? isMobile ? "Proof" : "Manage proof"
+                        : isMobile ? "Upload proof" : "Upload purchase proof"}
                   </button>
                 ) : null}
 
                 {isEditing ? (
                   <>
                     <button
-                      style={secondaryButton}
+                      style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }}
                       onClick={cancelEditing}
                       disabled={savingId === group.id}
                     >
                       Cancel edit
                     </button>
                     <button
-                      style={primaryButton}
+                      style={{ ...primaryButton, ...(isMobile ? actionButtonMobile : {}) }}
                       onClick={() => saveGroup(group)}
                       disabled={savingId === group.id}
                     >
@@ -729,16 +778,16 @@ export default function MyShared() {
                     </button>
                   </>
                 ) : (
-                  group.status !== "closed" ? (
-                    <button style={secondaryButton} onClick={() => startEditing(group)}>
+                  showAdvancedOwnerActions && group.status !== "closed" ? (
+                    <button style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }} onClick={() => startEditing(group)}>
                       Edit group
                     </button>
                   ) : null
                 )}
 
-                {!isEditing && detail?.can_refund ? (
+                {showAdvancedOwnerActions && !isEditing && detail?.can_refund ? (
                   <button
-                    style={dangerButton}
+                    style={{ ...dangerButton, ...(isMobile ? actionButtonMobile : {}) }}
                     onClick={() => refundGroup(group)}
                     disabled={refundingId === group.id}
                   >
@@ -746,9 +795,9 @@ export default function MyShared() {
                   </button>
                 ) : null}
 
-                {!isEditing && canCloseGroup(group) ? (
+                {showAdvancedOwnerActions && !isEditing && canCloseGroup(group) ? (
                   <button
-                    style={warningButton}
+                    style={{ ...warningButton, ...(isMobile ? actionButtonMobile : {}) }}
                     onClick={() => closeGroup(group)}
                     disabled={closingId === group.id}
                   >
@@ -756,9 +805,9 @@ export default function MyShared() {
                   </button>
                 ) : null}
 
-                {!isEditing && canDeleteGroup(group) ? (
+                {showAdvancedOwnerActions && !isEditing && canDeleteGroup(group) ? (
                   <button
-                    style={dangerButton}
+                    style={{ ...dangerButton, ...(isMobile ? actionButtonMobile : {}) }}
                     onClick={() => deleteGroup(group)}
                     disabled={deletingId === group.id}
                   >
@@ -894,26 +943,35 @@ export default function MyShared() {
               ) : null}
 
               {detail ? (
-                <div style={detailPanel}>
-                  <div style={detailGridLayout}>
-                    <div style={detailSectionCard}>
+                <div style={{ ...detailPanel, ...(isMobile ? detailPanelMobile : {}) }}>
+                  <div style={{ ...detailGridLayout, ...(isMobile ? detailGridLayoutMobile : {}) }}>
+                    <div style={{ ...detailSectionCard, ...(isMobile ? detailSectionCardMobile : {}) }}>
                       <div style={detailSectionHeader}>
                         <div>
                           <p style={detailEyebrow}>Overview</p>
-                          <h4 style={detailSectionTitle}>Group snapshot</h4>
+                          <h4 style={{ ...detailSectionTitle, ...(isMobile ? detailSectionTitleMobile : {}) }}>Group snapshot</h4>
                         </div>
                       </div>
 
-                      <div style={detailStats}>
-                        <MetricBlock label="Filled members" value={`${detail.filled_slots} / ${detail.total_slots}`} />
-                        <MetricBlock label="Paid members" value={`${detail.paid_members} / ${detail.total_slots}`} />
-                        <MetricBlock label="Current stage" value={detail.status_label} />
-                        <MetricBlock label="Released amount" value={detail.mode === "group_buy" ? `Rs ${detail.released_amount}` : `Rs ${detail.owner_revenue}`} />
+                      <div style={{ ...detailStats, ...(isMobile ? detailStatsMobile : {}) }}>
+                        <MetricBlock label={isMobile ? "Filled" : "Filled members"} value={`${detail.filled_slots} / ${detail.total_slots}`} />
+                        {!isMobile ? (
+                          <MetricBlock label="Paid members" value={`${detail.paid_members} / ${detail.total_slots}`} />
+                        ) : null}
+                        <MetricBlock label={isMobile ? "Stage" : "Current stage"} value={detail.status_label} />
+                        <MetricBlock
+                          label={detail.mode === "group_buy" ? (isMobile ? "Released" : "Released amount") : (isMobile ? "Revenue" : "Released amount")}
+                          value={detail.mode === "group_buy" ? `Rs ${detail.released_amount}` : `Rs ${detail.owner_revenue}`}
+                        />
                         {detail.mode === "group_buy" ? (
                           <>
-                            <MetricBlock label="Confirmed access" value={`${detail.confirmed_members} / ${detail.paid_members}`} />
-                            <MetricBlock label="Reported issues" value={detail.reported_issues} />
-                            <MetricBlock label="Held amount" value={`Rs ${detail.held_amount}`} />
+                            <MetricBlock label={isMobile ? "Confirmed" : "Confirmed access"} value={`${detail.confirmed_members} / ${detail.paid_members}`} />
+                            {!isMobile ? (
+                              <>
+                                <MetricBlock label="Reported issues" value={detail.reported_issues} />
+                                <MetricBlock label="Held amount" value={`Rs ${detail.held_amount}`} />
+                              </>
+                            ) : null}
                           </>
                         ) : null}
                       </div>
@@ -921,34 +979,44 @@ export default function MyShared() {
                       {detail.mode === "group_buy" ? (
                         <div style={{ ...buyTogetherNotice, marginBottom: 0 }}>
                           <p style={buyTogetherNoticeTitle}>Buy-together escrow</p>
-                          <p style={subtleText}>
-                            Holds stay protected until purchase proof is uploaded and members either confirm access or raise an issue.
+                          <p style={{ ...subtleText, ...(isMobile ? subtleTextCompact : {}) }}>
+                            Holds stay protected until proof is uploaded and members confirm access or raise an issue.
                           </p>
-                          <p style={subtleText}>
-                            Confirmation deadline: {detail.purchase_deadline_at ? new Date(detail.purchase_deadline_at).toLocaleString() : "Not set yet"}
-                          </p>
-                          <p style={subtleText}>
-                            Remaining confirmations: {detail.remaining_confirmations}
-                          </p>
+                          {!isMobile ? (
+                            <>
+                              <p style={subtleText}>
+                                Confirmation deadline: {detail.purchase_deadline_at ? new Date(detail.purchase_deadline_at).toLocaleString() : "Not set yet"}
+                              </p>
+                              <p style={subtleText}>
+                                Remaining confirmations: {detail.remaining_confirmations}
+                              </p>
+                            </>
+                          ) : detail.purchase_deadline_at ? (
+                            <p style={{ ...subtleText, ...(isMobile ? subtleTextCompact : {}) }}>
+                              Deadline: {new Date(detail.purchase_deadline_at).toLocaleDateString()}
+                            </p>
+                          ) : null}
                         </div>
                       ) : (
-                        <p style={subtleText}>
+                        <p style={{ ...subtleText, ...(isMobile ? subtleTextCompact : {}) }}>
                           Use this space to manage your group, keep access coordination clear, and watch for member confirmations before payouts reach your wallet.
                         </p>
                       )}
                     </div>
 
                     {detail.mode === "group_buy" ? (
-                      <div style={detailSectionCard}>
+                      <div style={{ ...detailSectionCard, ...(isMobile ? detailSectionCardMobile : {}) }}>
                         <div style={detailSectionHeader}>
                           <div>
                             <p style={detailEyebrow}>Proof</p>
-                            <h4 style={detailSectionTitle}>Purchase details</h4>
+                            <h4 style={{ ...detailSectionTitle, ...(isMobile ? detailSectionTitleMobile : {}) }}>Purchase details</h4>
                           </div>
                         </div>
 
-                        <p style={subtleText}>
-                          Upload an invoice, receipt, or screenshot after you buy the subscription. Payout stays protected until confirmations are complete.
+                        <p style={{ ...subtleText, ...(isMobile ? subtleTextCompact : {}) }}>
+                          {isMobile
+                            ? "Upload proof after purchase so member confirmations can begin."
+                            : "Upload an invoice, receipt, or screenshot after you buy the subscription. Payout stays protected until confirmations are complete."}
                         </p>
 
                         {detail.purchase_proof?.available ? (
@@ -959,7 +1027,7 @@ export default function MyShared() {
                             {detail.purchase_proof.purchase_reference ? (
                               <p style={proofMeta}>Reference: {detail.purchase_proof.purchase_reference}</p>
                             ) : null}
-                            {detail.purchase_proof.purchase_notes ? (
+                            {!isMobile && detail.purchase_proof.purchase_notes ? (
                               <p style={proofMeta}>Notes: {detail.purchase_proof.purchase_notes}</p>
                             ) : null}
                             {detail.purchase_proof.file_url ? (
@@ -1030,9 +1098,9 @@ export default function MyShared() {
                               </label>
                             </div>
 
-                            <div style={actionRow}>
+                            <div style={{ ...actionRow, ...(isMobile ? actionRowMobile : {}) }}>
                               <button
-                                style={primaryButton}
+                                style={{ ...primaryButton, ...(isMobile ? actionButtonMobile : {}) }}
                                 onClick={() => submitPurchaseProof(group.id)}
                                 disabled={submittingProofId === group.id}
                               >
@@ -1043,11 +1111,11 @@ export default function MyShared() {
                         ) : null}
                       </div>
                     ) : detail.credentials ? (
-                      <div style={detailSectionCard}>
+                      <div style={{ ...detailSectionCard, ...(isMobile ? detailSectionCardMobile : {}) }}>
                         <div style={detailSectionHeader}>
                           <div>
                             <p style={detailEyebrow}>Access</p>
-                            <h4 style={detailSectionTitle}>Owner credential panel</h4>
+                            <h4 style={{ ...detailSectionTitle, ...(isMobile ? detailSectionTitleMobile : {}) }}>Owner credential panel</h4>
                           </div>
                         </div>
 
@@ -1085,11 +1153,11 @@ export default function MyShared() {
                       </div>
                     ) : null}
 
-                    <div style={{ ...detailSectionCard, gridColumn: "1 / -1" }}>
+                    <div style={{ ...detailSectionCard, ...(isMobile ? detailSectionCardMobile : {}), gridColumn: "1 / -1" }}>
                       <div style={detailSectionHeader}>
                         <div>
                           <p style={detailEyebrow}>Members</p>
-                          <h4 style={detailSectionTitle}>People in this group</h4>
+                          <h4 style={{ ...detailSectionTitle, ...(isMobile ? detailSectionTitleMobile : {}) }}>People in this group</h4>
                         </div>
                       </div>
 
@@ -1104,16 +1172,20 @@ export default function MyShared() {
                               reviewForms[reviewKey] || getInitialReviewForm(member.rating?.my_review);
 
                             return (
-                              <div key={member.id} style={memberRow}>
+                              <div key={member.id} style={{ ...memberRow, ...(isMobile ? memberRowMobile : {}) }}>
                                 <div style={{ flex: 1 }}>
                                   <p style={memberName}>{member.username}</p>
-                                  <p style={memberMeta}>Joined {new Date(member.joined_at).toLocaleDateString()}</p>
+                                  {!isMobile ? (
+                                    <p style={memberMeta}>Joined {new Date(member.joined_at).toLocaleDateString()}</p>
+                                  ) : null}
                                   <p style={memberMeta}>Charged Rs {member.charged_amount || group.price_per_slot}</p>
-                                  <p style={memberMeta}>
-                                    {member.rating?.average_rating
-                                      ? `${member.rating.average_rating.toFixed(1)} / 5 from ${member.rating.review_count} review${member.rating.review_count === 1 ? "" : "s"}`
-                                      : "No ratings yet"}
-                                  </p>
+                                  {!isMobile ? (
+                                    <p style={memberMeta}>
+                                      {member.rating?.average_rating
+                                        ? `${member.rating.average_rating.toFixed(1)} / 5 from ${member.rating.review_count} review${member.rating.review_count === 1 ? "" : "s"}`
+                                        : "No ratings yet"}
+                                    </p>
+                                  ) : null}
                                   {member.access_issue_reported && member.access_issue_notes ? (
                                     <p style={memberIssueText}>Reported issue: {member.access_issue_notes}</p>
                                   ) : null}
@@ -1167,7 +1239,7 @@ export default function MyShared() {
                                     </div>
                                   ) : null}
                                 </div>
-                                <div style={{ textAlign: "right" }}>
+                                <div style={{ textAlign: isMobile ? "left" : "right", width: isMobile ? "100%" : "auto" }}>
                                   <span style={memberStatus(memberLabel)}>
                                     {memberLabel}
                                   </span>
@@ -1186,27 +1258,30 @@ export default function MyShared() {
         })
       )}
 
-      <div style={joinedSectionHeader}>
+      <div style={{ ...joinedSectionHeader, ...(isMobile ? sectionHeaderMobile : {}) }}>
         <div>
           <p style={sectionEyebrow}>Joined groups</p>
-          <h3 style={sectionTitle}>Subscriptions you are part of</h3>
+          <h3 style={{ ...sectionTitle, ...(isMobile ? sectionTitleMobile : {}) }}>Subscriptions you are part of</h3>
         </div>
-        <p style={sectionText}>This section shows the groups you joined as a member, including join status, confirmations, and owner coordination updates.</p>
+        {!isMobile ? (
+          <p style={sectionText}>This section shows the groups you joined as a member, including join status, confirmations, and owner coordination updates.</p>
+        ) : null}
       </div>
 
       {joinedGroups.length === 0 ? (
         <p>You have not joined any groups yet.</p>
       ) : (
-        <div style={joinedGrid}>
+        <div style={{ ...joinedGrid, ...(isMobile ? joinedGridMobile : {}) }}>
           {joinedGroups.map((group) => {
             const reviewTarget = group.owner_rating;
             const reviewKey = getReviewKey(group.id, group.owner_id);
             const reviewForm =
               reviewForms[reviewKey] || getInitialReviewForm(reviewTarget?.my_review);
+            const isJoinedExpanded = expandedJoinedGroupId === group.id;
 
             return (
-              <div key={group.id} style={joinedCard}>
-                <div style={cardHeader}>
+              <div key={group.id} style={{ ...joinedCard, ...(isMobile ? joinedCardMobile : {}) }}>
+                <div style={{ ...cardHeader, ...(isMobile ? cardHeaderMobile : {}) }}>
                   <div>
                     <h3 style={{ margin: 0 }}>{group.subscription_name}</h3>
                     <p style={cardSubheading}>{group.mode_label}</p>
@@ -1214,8 +1289,8 @@ export default function MyShared() {
                   <span style={badge}>{group.status_label}</span>
                 </div>
 
-                <div style={factsRow}>
-                  <FactPill label="Role" value="Member" />
+                <div style={{ ...factsRow, ...(isMobile ? factsRowMobile : {}) }}>
+                  {!isMobile ? <FactPill label="Role" value="Member" /> : null}
                   <FactPill
                     label={group.is_prorated ? "You paid" : "Per member"}
                     value={`Rs ${group.charged_amount || group.price_per_slot}`}
@@ -1226,21 +1301,30 @@ export default function MyShared() {
                 </div>
 
                 {group.is_prorated && group.pricing_note ? (
-                  <p style={{ ...subtleText, marginTop: "12px" }}>
+                  <p style={{ ...subtleText, ...(isMobile ? subtleTextCompact : {}), marginTop: "12px" }}>
                     {group.pricing_note} Full cycle price: Rs {group.price_per_slot}.
                   </p>
                 ) : null}
 
-                <div style={{ ...actionRow, marginTop: "16px" }}>
+                <div style={{ ...actionRow, ...(isMobile ? actionRowMobile : {}), marginTop: "16px" }}>
                   <button
-                    style={secondaryButton}
+                    style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }}
                     onClick={() => navigate(`/groups/${group.id}/chat`)}
                   >
-                    {group.unread_chat_count ? `Open group chat (${group.unread_chat_count} new)` : "Open group chat"}
+                    {group.unread_chat_count ? (isMobile ? `Chat (${group.unread_chat_count})` : `Open group chat (${group.unread_chat_count} new)`) : isMobile ? "Open chat" : "Open group chat"}
                   </button>
+                  {isMobile ? (
+                    <button
+                      style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }}
+                      onClick={() => setExpandedJoinedGroupId((current) => (current === group.id ? null : group.id))}
+                    >
+                      {isJoinedExpanded ? "Less details" : "More details"}
+                    </button>
+                  ) : null}
                 </div>
 
-                <div style={reviewCard}>
+                {!isMobile || isJoinedExpanded ? (
+                <div style={{ ...reviewCard, ...(isMobile ? reviewCardMobile : {}) }}>
                   <p style={reviewTitle}>Rate the creator</p>
                   <p style={subtleText}>
                     {group.owner_name}
@@ -1300,14 +1384,15 @@ export default function MyShared() {
                     <p style={subtleText}>Ratings open after the group becomes active.</p>
                   )}
                 </div>
+                ) : null}
 
-                <div style={memberAccessCard(false)}>
+                <div style={{ ...memberAccessCard(false), ...(isMobile ? memberAccessCardMobile : {}) }}>
                   <p style={ownerCredentialEyebrow}>
                     {group.mode === "group_buy" ? "Buy-together access" : "Access coordination"}
                   </p>
                   {group.mode === "group_buy" ? (
                     <>
-                      <p style={subtleText}>
+                      <p style={{ ...subtleText, ...(isMobile ? subtleTextCompact : {}) }}>
                         {group.status === "awaiting_purchase"
                           ? "The creator still needs to buy the subscription and coordinate access."
                           : group.status === "proof_submitted"
@@ -1318,11 +1403,13 @@ export default function MyShared() {
                               ? "Your confirmation was collected and the buy-together group is active."
                               : "Access is being coordinated by the group creator."}
                       </p>
+                      {!isMobile || isJoinedExpanded ? (
                       <p style={subtleText}>
                         Confirmed members: {group.confirmed_members || 0}
                         {group.remaining_confirmations !== undefined ? ` | Remaining: ${group.remaining_confirmations}` : ""}
                       </p>
-                      {group.reported_issues ? (
+                      ) : null}
+                      {(!isMobile || isJoinedExpanded) && group.reported_issues ? (
                         <p style={subtleText}>Reported issues: {group.reported_issues}</p>
                       ) : null}
                       {group.has_reported_access_issue && !group.has_confirmed_access ? (
@@ -1339,9 +1426,9 @@ export default function MyShared() {
                         group.has_confirmed_access ? (
                           <p style={proofApproved}>You already confirmed that you received access.</p>
                         ) : (
-                          <div style={actionRow}>
+                          <div style={{ ...actionRow, ...(isMobile ? actionRowMobile : {}) }}>
                             <button
-                              style={primaryButton}
+                              style={{ ...primaryButton, ...(isMobile ? actionButtonMobile : {}) }}
                               onClick={() => confirmMemberAccess(group.id)}
                               disabled={confirmingId === group.id}
                             >
@@ -1353,7 +1440,7 @@ export default function MyShared() {
                             </button>
                             {group.can_report_access_issue ? (
                               <button
-                                style={dangerButton}
+                                style={{ ...dangerButton, ...(isMobile ? actionButtonMobile : {}) }}
                                 onClick={() => reportAccessIssue(group.id)}
                                 disabled={reportingIssueId === group.id}
                               >
@@ -1366,19 +1453,21 @@ export default function MyShared() {
                     </>
                   ) : (
                     <>
-                      <p style={subtleText}>
+                      <p style={{ ...subtleText, ...(isMobile ? subtleTextCompact : {}) }}>
                         Access is coordinated privately by the host after you join.
                       </p>
+                      {!isMobile || isJoinedExpanded ? (
                       <p style={subtleText}>
                         Confirm access once the host has set you up. The host payout is released only after your confirmation.
                       </p>
+                      ) : null}
                       {group.access_confirmation_required ? (
                         group.has_confirmed_access ? (
                           <p style={proofApproved}>You already confirmed that you received access.</p>
                         ) : (
-                          <div style={actionRow}>
+                          <div style={{ ...actionRow, ...(isMobile ? actionRowMobile : {}) }}>
                             <button
-                              style={primaryButton}
+                              style={{ ...primaryButton, ...(isMobile ? actionButtonMobile : {}) }}
                               onClick={() => confirmMemberAccess(group.id)}
                               disabled={confirmingId === group.id}
                             >
@@ -1400,21 +1489,22 @@ export default function MyShared() {
   );
 }
 
-function SummaryCard({ label, value, highlight = false }) {
+function SummaryCard({ label, value, highlight = false, compact = false }) {
   return (
-    <div style={summaryCard}>
-      <p style={summaryLabel}>{label}</p>
-      <p style={{ ...summaryValue, color: highlight ? "#047857" : "#0f172a" }}>{value}</p>
+    <div style={{ ...summaryCard, ...(compact ? summaryCardMobile : {}) }}>
+      <p style={{ ...summaryLabel, ...(compact ? summaryLabelMobile : {}) }}>{label}</p>
+      <p style={{ ...summaryValue, ...(compact ? summaryValueMobile : {}), color: highlight ? "#047857" : "#0f172a" }}>{value}</p>
     </div>
   );
 }
 
-function FilterButton({ active, onClick, children }) {
+function FilterButton({ active, onClick, children, compact = false }) {
   return (
     <button
       onClick={onClick}
       style={{
         ...filterButton,
+        ...(compact ? filterButtonCompact : {}),
         background: active ? "#0f172a" : "#e2e8f0",
         color: active ? "#fff" : "#0f172a",
       }}
@@ -1508,6 +1598,14 @@ const pageShell = {
   margin: "0 auto",
 };
 
+const containerMobile = {
+  padding: "16px 14px 34px",
+};
+
+const pageShellMobile = {
+  maxWidth: "100%",
+};
+
 const hero = {
   background: "linear-gradient(145deg, #0f172a 0%, #162033 50%, #0f766e 100%)",
   color: "#fff",
@@ -1515,6 +1613,12 @@ const hero = {
   padding: "28px",
   marginBottom: "24px",
   boxShadow: "0 34px 90px rgba(15, 23, 42, 0.20)",
+};
+
+const heroMobile = {
+  borderRadius: "24px",
+  padding: "18px 16px",
+  marginBottom: "18px",
 };
 
 const eyebrow = {
@@ -1537,11 +1641,22 @@ const heroTitle = {
   fontWeight: 800,
 };
 
+const heroTitleMobile = {
+  fontSize: "28px",
+  lineHeight: 1.05,
+};
+
 const statsGrid = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
   gap: "14px",
   marginBottom: "26px",
+};
+
+const statsGridMobile = {
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: "10px",
+  marginBottom: "18px",
 };
 
 const summaryCard = {
@@ -1553,16 +1668,31 @@ const summaryCard = {
   backdropFilter: "blur(12px)",
 };
 
+const summaryCardMobile = {
+  borderRadius: "18px",
+  padding: "12px 12px 11px",
+};
+
 const summaryLabel = {
   margin: 0,
   color: "#64748b",
   fontSize: "13px",
 };
 
+const summaryLabelMobile = {
+  fontSize: "10px",
+  lineHeight: 1.4,
+};
+
 const summaryValue = {
   margin: "8px 0 0",
   fontSize: "30px",
   fontWeight: 700,
+};
+
+const summaryValueMobile = {
+  marginTop: "6px",
+  fontSize: "18px",
 };
 
 const filterRow = {
@@ -1572,6 +1702,11 @@ const filterRow = {
   marginBottom: "22px",
 };
 
+const filterRowMobile = {
+  gap: "8px",
+  marginBottom: "18px",
+};
+
 const sectionHeader = {
   display: "flex",
   justifyContent: "space-between",
@@ -1579,6 +1714,10 @@ const sectionHeader = {
   gap: "14px",
   flexWrap: "wrap",
   marginBottom: "16px",
+};
+
+const sectionHeaderMobile = {
+  marginBottom: "12px",
 };
 
 const joinedSectionHeader = {
@@ -1602,6 +1741,10 @@ const sectionTitle = {
   fontWeight: 800,
 };
 
+const sectionTitleMobile = {
+  fontSize: "22px",
+};
+
 const sectionText = {
   margin: 0,
   color: "#64748b",
@@ -1617,6 +1760,11 @@ const filterButton = {
   boxShadow: "0 10px 22px rgba(15, 23, 42, 0.06)",
 };
 
+const filterButtonCompact = {
+  padding: "9px 12px",
+  fontSize: "12px",
+};
+
 const card = {
   padding: "20px",
   marginBottom: "16px",
@@ -1627,12 +1775,22 @@ const card = {
   backdropFilter: "blur(12px)",
 };
 
+const cardMobile = {
+  padding: "16px",
+  marginBottom: "12px",
+  borderRadius: "22px",
+};
+
 const cardHeader = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
   gap: "12px",
   marginBottom: "8px",
+};
+
+const cardHeaderMobile = {
+  alignItems: "flex-start",
 };
 
 const badge = {
@@ -1647,6 +1805,11 @@ const badge = {
 const subtleText = {
   margin: "4px 0",
   color: "#64748b",
+};
+
+const subtleTextCompact = {
+  fontSize: "13px",
+  lineHeight: 1.55,
 };
 
 const cardSubheading = {
@@ -1674,6 +1837,11 @@ const factsRow = {
   flexWrap: "wrap",
   gap: "10px",
   marginTop: "14px",
+};
+
+const factsRowMobile = {
+  gap: "8px",
+  marginTop: "12px",
 };
 
 const factPill = {
@@ -1745,6 +1913,16 @@ const actionRow = {
   gap: "10px",
   flexWrap: "wrap",
   marginTop: "14px",
+};
+
+const actionRowMobile = {
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: "8px",
+};
+
+const actionButtonMobile = {
+  width: "100%",
 };
 
 const secondaryButton = {
@@ -1871,10 +2049,20 @@ const detailPanel = {
   paddingTop: "18px",
 };
 
+const detailPanelMobile = {
+  marginTop: "14px",
+  paddingTop: "14px",
+};
+
 const joinedGrid = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
   gap: "16px",
+};
+
+const joinedGridMobile = {
+  gridTemplateColumns: "1fr",
+  gap: "12px",
 };
 
 const joinedCard = {
@@ -1883,6 +2071,11 @@ const joinedCard = {
   background: "#fff",
   boxShadow: "0 14px 28px rgba(15, 23, 42, 0.06)",
   border: "1px solid #e2e8f0",
+};
+
+const joinedCardMobile = {
+  padding: "16px",
+  borderRadius: "22px",
 };
 
 const ownerCredentialCard = {
@@ -1915,12 +2108,23 @@ const memberAccessCard = (available) => ({
   border: `1px solid ${available ? "#a7f3d0" : "#fed7aa"}`,
 });
 
+const memberAccessCardMobile = {
+  marginTop: "14px",
+  padding: "12px",
+  borderRadius: "14px",
+};
+
 const reviewCard = {
   marginTop: "16px",
   padding: "14px",
   borderRadius: "14px",
   background: "#f8fafc",
   border: "1px solid #e2e8f0",
+};
+
+const reviewCardMobile = {
+  marginTop: "14px",
+  padding: "12px",
 };
 
 const reviewTitle = {
@@ -1968,10 +2172,20 @@ const detailStats = {
   marginTop: "14px",
 };
 
+const detailStatsMobile = {
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "10px",
+};
+
 const detailGridLayout = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
   gap: "16px",
+};
+
+const detailGridLayoutMobile = {
+  gridTemplateColumns: "1fr",
+  gap: "12px",
 };
 
 const detailSectionCard = {
@@ -1980,6 +2194,11 @@ const detailSectionCard = {
   background: "rgba(255,255,255,0.78)",
   padding: "18px",
   backdropFilter: "blur(10px)",
+};
+
+const detailSectionCardMobile = {
+  borderRadius: "18px",
+  padding: "14px",
 };
 
 const detailSectionHeader = {
@@ -2003,6 +2222,10 @@ const detailSectionTitle = {
   fontSize: "22px",
   lineHeight: 1.08,
   fontWeight: 800,
+};
+
+const detailSectionTitleMobile = {
+  fontSize: "18px",
 };
 
 const buyTogetherNotice = {
@@ -2094,6 +2317,12 @@ const memberRow = {
   gap: "12px",
   padding: "14px 0",
   borderBottom: "1px solid #e2e8f0",
+};
+
+const memberRowMobile = {
+  flexDirection: "column",
+  alignItems: "flex-start",
+  gap: "10px",
 };
 
 const membersList = {
