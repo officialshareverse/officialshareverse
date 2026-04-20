@@ -1177,6 +1177,17 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.data["online_participant_count"], 0)
         self.assertEqual(response.data["active_typing_users"], [])
 
+    @patch("core.views.get_status_copy", side_effect=RuntimeError("status unavailable"))
+    def test_group_chat_detail_handles_group_label_failures(self, _status_mock):
+        group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+
+        response = self.get_group_chat(group, self.member_one)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["group"]["id"], group.id)
+        self.assertTrue(response.data["group"]["status_label"])
+
     @patch("core.views.GroupChatPresence.objects.filter", side_effect=DatabaseError("presence unavailable"))
     def test_group_chat_inbox_handles_presence_table_failures(self, _presence_filter_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
@@ -1213,6 +1224,17 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.data["total_chats"], 1)
         self.assertEqual(response.data["chats"][0]["online_participant_count"], 0)
         self.assertEqual(response.data["chats"][0]["active_typing_users"], [])
+
+    @patch("core.views.get_status_copy", side_effect=RuntimeError("status unavailable"))
+    def test_group_chat_inbox_handles_group_label_failures(self, _status_mock):
+        group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+
+        response = self.get_chat_inbox(self.member_one)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total_chats"], 1)
+        self.assertTrue(response.data["chats"][0]["group"]["status_label"])
 
     @override_settings(
         RAZORPAYX_KEY_ID="rzp_test_x_123",
