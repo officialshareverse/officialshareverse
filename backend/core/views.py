@@ -3391,7 +3391,7 @@ class GroupChatView(APIView):
                 many=True,
                 context={"request": request},
             ).data
-        except DatabaseError:
+        except Exception:
             serialized_messages = []
 
         mark_group_chat_read(request.user, group)
@@ -3406,7 +3406,7 @@ class GroupChatView(APIView):
                 current_user=request.user,
                 presence_map=presence_map,
             )
-        except DatabaseError:
+        except Exception:
             activity_snapshot = build_group_chat_fallback_snapshot(
                 group,
                 current_user=request.user,
@@ -3517,19 +3517,28 @@ class GroupChatInboxView(APIView):
                 )
                 .distinct()
             )
-        except DatabaseError:
-            groups = list(
-                Group.objects.filter(Q(owner=user) | Q(groupmember__user=user))
-                .select_related("subscription", "owner")
-                .prefetch_related(
-                    Prefetch(
-                        "groupmember_set",
-                        queryset=GroupMember.objects.select_related("user"),
-                        to_attr="prefetched_group_members",
+        except Exception:
+            try:
+                groups = list(
+                    Group.objects.filter(Q(owner=user) | Q(groupmember__user=user))
+                    .select_related("subscription", "owner")
+                    .prefetch_related(
+                        Prefetch(
+                            "groupmember_set",
+                            queryset=GroupMember.objects.select_related("user"),
+                            to_attr="prefetched_group_members",
+                        )
                     )
+                    .distinct()
                 )
-                .distinct()
-            )
+            except Exception:
+                return Response(
+                    {
+                        "total_unread_count": 0,
+                        "total_chats": 0,
+                        "chats": [],
+                    }
+                )
         group_ids = [group.id for group in groups]
         if not group_ids:
             return Response(
@@ -3546,7 +3555,7 @@ class GroupChatInboxView(APIView):
                 .select_related("user")
                 .order_by("group_id", "user_id", "-updated_at", "-id")
             )
-        except DatabaseError:
+        except Exception:
             presence_rows = []
         presence_by_group = {}
         for presence in presence_rows:
@@ -3563,7 +3572,7 @@ class GroupChatInboxView(APIView):
                     .annotate(last_read_at=Max("last_read_at"))
                 )
             }
-        except DatabaseError:
+        except Exception:
             read_state_by_group = {}
         try:
             message_count_by_group = {
@@ -3590,7 +3599,7 @@ class GroupChatInboxView(APIView):
                 message.id: message
                 for message in GroupChatMessage.objects.filter(id__in=last_message_ids).select_related("sender")
             }
-        except DatabaseError:
+        except Exception:
             message_count_by_group = {group_id: 0 for group_id in group_ids}
             unread_count_by_group = {group_id: 0 for group_id in group_ids}
             last_message_by_id = {}
@@ -3609,7 +3618,7 @@ class GroupChatInboxView(APIView):
                     presence_map=presence_by_group.get(group.id, {}),
                     members=getattr(group, "prefetched_group_members", None),
                 )
-            except DatabaseError:
+            except Exception:
                 activity_snapshot = build_group_chat_fallback_snapshot(
                     group,
                     current_user=user,
