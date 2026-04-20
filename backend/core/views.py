@@ -679,12 +679,13 @@ def get_group_chat_unread_count(user, group):
             .order_by("-last_read_at", "-id")
             .first()
         )
+        unread_messages = GroupChatMessage.objects.filter(group=group).exclude(sender=user)
+        if read_state:
+            unread_messages = unread_messages.filter(created_at__gt=read_state.last_read_at)
+        return unread_messages.count()
     except DatabaseError:
         read_state = None
-    unread_messages = GroupChatMessage.objects.filter(group=group).exclude(sender=user)
-    if read_state:
-        unread_messages = unread_messages.filter(created_at__gt=read_state.last_read_at)
-    return unread_messages.count()
+    return 0
 
 
 def mark_group_chat_read(user, group):
@@ -693,24 +694,23 @@ def mark_group_chat_read(user, group):
         existing_states = list(
             GroupChatReadState.objects.filter(group=group, user=user).order_by("-last_read_at", "-id")
         )
+        if existing_states:
+            primary_state = existing_states[0]
+            duplicate_ids = [state.id for state in existing_states[1:]]
+            if duplicate_ids:
+                GroupChatReadState.objects.filter(id__in=duplicate_ids).delete()
+
+            GroupChatReadState.objects.filter(id=primary_state.id).update(last_read_at=now)
+            primary_state.last_read_at = now
+            return primary_state
+
+        return GroupChatReadState.objects.create(
+            group=group,
+            user=user,
+            last_read_at=now,
+        )
     except DatabaseError:
         return None
-
-    if existing_states:
-        primary_state = existing_states[0]
-        duplicate_ids = [state.id for state in existing_states[1:]]
-        if duplicate_ids:
-            GroupChatReadState.objects.filter(id__in=duplicate_ids).delete()
-
-        GroupChatReadState.objects.filter(id=primary_state.id).update(last_read_at=now)
-        primary_state.last_read_at = now
-        return primary_state
-
-    return GroupChatReadState.objects.create(
-        group=group,
-        user=user,
-        last_read_at=now,
-    )
 
 
 def build_name_initials(value):
@@ -757,35 +757,34 @@ def touch_group_chat_presence(user, group, is_typing=None):
         existing_rows = list(
             GroupChatPresence.objects.filter(group=group, user=user).order_by("-updated_at", "-id")
         )
+        if existing_rows:
+            primary_presence = existing_rows[0]
+            duplicate_ids = [presence.id for presence in existing_rows[1:]]
+            if duplicate_ids:
+                GroupChatPresence.objects.filter(id__in=duplicate_ids).delete()
+
+            update_kwargs = {"last_seen_at": now}
+            primary_presence.last_seen_at = now
+            if is_typing is not None:
+                update_kwargs["is_typing"] = bool(is_typing)
+                update_kwargs["typing_updated_at"] = now
+                primary_presence.is_typing = bool(is_typing)
+                primary_presence.typing_updated_at = now
+
+            GroupChatPresence.objects.filter(id=primary_presence.id).update(**update_kwargs)
+            return primary_presence
+
+        create_kwargs = {
+            "group": group,
+            "user": user,
+            "last_seen_at": now,
+        }
+        if is_typing is not None:
+            create_kwargs["is_typing"] = bool(is_typing)
+            create_kwargs["typing_updated_at"] = now
+        return GroupChatPresence.objects.create(**create_kwargs)
     except DatabaseError:
         return None
-
-    if existing_rows:
-        primary_presence = existing_rows[0]
-        duplicate_ids = [presence.id for presence in existing_rows[1:]]
-        if duplicate_ids:
-            GroupChatPresence.objects.filter(id__in=duplicate_ids).delete()
-
-        update_kwargs = {"last_seen_at": now}
-        primary_presence.last_seen_at = now
-        if is_typing is not None:
-            update_kwargs["is_typing"] = bool(is_typing)
-            update_kwargs["typing_updated_at"] = now
-            primary_presence.is_typing = bool(is_typing)
-            primary_presence.typing_updated_at = now
-
-        GroupChatPresence.objects.filter(id=primary_presence.id).update(**update_kwargs)
-        return primary_presence
-
-    create_kwargs = {
-        "group": group,
-        "user": user,
-        "last_seen_at": now,
-    }
-    if is_typing is not None:
-        create_kwargs["is_typing"] = bool(is_typing)
-        create_kwargs["typing_updated_at"] = now
-    return GroupChatPresence.objects.create(**create_kwargs)
 
 
 def serialize_group_chat_participant(user, role, presence, now=None, current_user=None):
@@ -841,6 +840,37 @@ def build_group_chat_activity_snapshot(group, current_user=None, presence_map=No
         "online_participant_count": online_participant_count,
         "active_typing_users": active_typing_users[:3],
         "has_someone_typing": bool(active_typing_users),
+    }
+
+
+def build_group_chat_fallback_snapshot(group, current_user=None, members=None):
+    participant_users = [group.owner]
+    if members is not None:
+        participant_users.extend(member.user for member in members)
+    elif current_user and current_user.id != group.owner_id:
+        participant_users.append(current_user)
+
+    serialized_participants = []
+    seen_user_ids = set()
+    for participant in participant_users:
+        if participant.id in seen_user_ids:
+            continue
+        seen_user_ids.add(participant.id)
+        serialized_participants.append(
+            serialize_group_chat_participant(
+                participant,
+                "owner" if participant.id == group.owner_id else "member",
+                None,
+                current_user=current_user,
+            )
+        )
+
+    return {
+        "participants": serialized_participants,
+        "participant_count": len(serialized_participants),
+        "online_participant_count": 0,
+        "active_typing_users": [],
+        "has_someone_typing": False,
     }
 
 
@@ -3354,12 +3384,15 @@ class GroupChatView(APIView):
         if error_response:
             return error_response
 
-        messages = GroupChatMessage.objects.filter(group=group).select_related("sender")
-        serialized_messages = GroupChatMessageSerializer(
-            messages,
-            many=True,
-            context={"request": request},
-        ).data
+        try:
+            messages = GroupChatMessage.objects.filter(group=group).select_related("sender")
+            serialized_messages = GroupChatMessageSerializer(
+                messages,
+                many=True,
+                context={"request": request},
+            ).data
+        except DatabaseError:
+            serialized_messages = []
 
         mark_group_chat_read(request.user, group)
         touch_group_chat_presence(request.user, group)
@@ -3368,13 +3401,16 @@ class GroupChatView(APIView):
                 presence.user_id: presence
                 for presence in GroupChatPresence.objects.filter(group=group).select_related("user")
             }
+            activity_snapshot = build_group_chat_activity_snapshot(
+                group,
+                current_user=request.user,
+                presence_map=presence_map,
+            )
         except DatabaseError:
-            presence_map = {}
-        activity_snapshot = build_group_chat_activity_snapshot(
-            group,
-            current_user=request.user,
-            presence_map=presence_map,
-        )
+            activity_snapshot = build_group_chat_fallback_snapshot(
+                group,
+                current_user=request.user,
+            )
 
         return Response({
             "group": {
@@ -3460,26 +3496,40 @@ class GroupChatInboxView(APIView):
 
     def get(self, request):
         user = request.user
-        last_message_subquery = (
-            GroupChatMessage.objects.filter(group_id=OuterRef("pk"))
-            .order_by("-created_at", "-id")
-        )
-        groups = list(
-            Group.objects.filter(Q(owner=user) | Q(groupmember__user=user))
-            .select_related("subscription", "owner")
-            .prefetch_related(
-                Prefetch(
-                    "groupmember_set",
-                    queryset=GroupMember.objects.select_related("user"),
-                    to_attr="prefetched_group_members",
+        try:
+            last_message_subquery = (
+                GroupChatMessage.objects.filter(group_id=OuterRef("pk"))
+                .order_by("-created_at", "-id")
+            )
+            groups = list(
+                Group.objects.filter(Q(owner=user) | Q(groupmember__user=user))
+                .select_related("subscription", "owner")
+                .prefetch_related(
+                    Prefetch(
+                        "groupmember_set",
+                        queryset=GroupMember.objects.select_related("user"),
+                        to_attr="prefetched_group_members",
+                    )
                 )
+                .annotate(
+                    last_message_id=Subquery(last_message_subquery.values("id")[:1]),
+                    last_activity_at=Subquery(last_message_subquery.values("created_at")[:1]),
+                )
+                .distinct()
             )
-            .annotate(
-                last_message_id=Subquery(last_message_subquery.values("id")[:1]),
-                last_activity_at=Subquery(last_message_subquery.values("created_at")[:1]),
+        except DatabaseError:
+            groups = list(
+                Group.objects.filter(Q(owner=user) | Q(groupmember__user=user))
+                .select_related("subscription", "owner")
+                .prefetch_related(
+                    Prefetch(
+                        "groupmember_set",
+                        queryset=GroupMember.objects.select_related("user"),
+                        to_attr="prefetched_group_members",
+                    )
+                )
+                .distinct()
             )
-            .distinct()
-        )
         group_ids = [group.id for group in groups]
         if not group_ids:
             return Response(
@@ -3515,44 +3565,56 @@ class GroupChatInboxView(APIView):
             }
         except DatabaseError:
             read_state_by_group = {}
-        message_count_by_group = {
-            row["group_id"]: row["message_count"]
-            for row in (
+        try:
+            message_count_by_group = {
+                row["group_id"]: row["message_count"]
+                for row in (
+                    GroupChatMessage.objects.filter(group_id__in=group_ids)
+                    .values("group_id")
+                    .annotate(message_count=Count("id"))
+                )
+            }
+            unread_count_by_group = {group_id: 0 for group_id in group_ids}
+            unread_rows = (
                 GroupChatMessage.objects.filter(group_id__in=group_ids)
-                .values("group_id")
-                .annotate(message_count=Count("id"))
+                .exclude(sender=user)
+                .values_list("group_id", "created_at")
             )
-        }
-        unread_count_by_group = {group_id: 0 for group_id in group_ids}
-        unread_rows = (
-            GroupChatMessage.objects.filter(group_id__in=group_ids)
-            .exclude(sender=user)
-            .values_list("group_id", "created_at")
-        )
-        for group_id, created_at in unread_rows:
-            last_read_at = read_state_by_group.get(group_id)
-            if last_read_at is None or created_at > last_read_at:
-                unread_count_by_group[group_id] += 1
+            for group_id, created_at in unread_rows:
+                last_read_at = read_state_by_group.get(group_id)
+                if last_read_at is None or created_at > last_read_at:
+                    unread_count_by_group[group_id] += 1
 
-        last_message_ids = [group.last_message_id for group in groups if group.last_message_id]
-        last_message_by_id = {
-            message.id: message
-            for message in GroupChatMessage.objects.filter(id__in=last_message_ids).select_related("sender")
-        }
+            last_message_ids = [group.last_message_id for group in groups if getattr(group, "last_message_id", None)]
+            last_message_by_id = {
+                message.id: message
+                for message in GroupChatMessage.objects.filter(id__in=last_message_ids).select_related("sender")
+            }
+        except DatabaseError:
+            message_count_by_group = {group_id: 0 for group_id in group_ids}
+            unread_count_by_group = {group_id: 0 for group_id in group_ids}
+            last_message_by_id = {}
 
         chat_items = []
         total_unread_count = 0
 
         for group in groups:
-            last_message = last_message_by_id.get(group.last_message_id)
+            last_message = last_message_by_id.get(getattr(group, "last_message_id", None))
             unread_count = unread_count_by_group.get(group.id, 0)
             total_unread_count += unread_count
-            activity_snapshot = build_group_chat_activity_snapshot(
-                group,
-                current_user=user,
-                presence_map=presence_by_group.get(group.id, {}),
-                members=getattr(group, "prefetched_group_members", None),
-            )
+            try:
+                activity_snapshot = build_group_chat_activity_snapshot(
+                    group,
+                    current_user=user,
+                    presence_map=presence_by_group.get(group.id, {}),
+                    members=getattr(group, "prefetched_group_members", None),
+                )
+            except DatabaseError:
+                activity_snapshot = build_group_chat_fallback_snapshot(
+                    group,
+                    current_user=user,
+                    members=getattr(group, "prefetched_group_members", None),
+                )
 
             chat_items.append(
                 {
@@ -3573,21 +3635,21 @@ class GroupChatInboxView(APIView):
                     "online_participant_count": activity_snapshot["online_participant_count"],
                     "active_typing_users": activity_snapshot["active_typing_users"],
                     "has_someone_typing": activity_snapshot["has_someone_typing"],
-                    "message_count": message_count_by_group.get(group.id, 0),
-                    "last_message": (
-                        {
-                            "id": last_message.id,
-                            "sender_username": last_message.sender.username,
+                      "message_count": message_count_by_group.get(group.id, 0),
+                      "last_message": (
+                          {
+                              "id": last_message.id,
+                              "sender_username": last_message.sender.username,
                             "message": last_message.message,
                             "created_at": last_message.created_at,
                             "is_own": last_message.sender_id == user.id,
-                        }
-                        if last_message
-                        else None
-                    ),
-                    "last_activity_at": group.last_activity_at or group.created_at,
-                }
-            )
+                          }
+                          if last_message
+                          else None
+                      ),
+                      "last_activity_at": getattr(group, "last_activity_at", None) or group.created_at,
+                  }
+              )
 
         chat_items.sort(
             key=lambda item: (item["last_activity_at"], item["group"]["id"]),
