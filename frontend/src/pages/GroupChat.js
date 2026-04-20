@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import API from "../api/axios";
+import Drawer from "../components/Drawer";
 import { CheckCircleIcon, ClockIcon } from "../components/UiIcons";
 
 function formatRelativeTime(value) {
@@ -71,6 +72,80 @@ function getAvatarToken(name) {
     .join("");
 }
 
+function ParticipantsSection({ participants }) {
+  return (
+    <section className="sv-card">
+      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Members</p>
+      <h2 className="mt-2 text-xl font-bold text-slate-900">Participants</h2>
+      <div className="mt-4 space-y-3">
+        {participants.map((participant) => {
+          const presenceMeta = getPresenceMeta(participant.presence);
+
+          return (
+            <div key={`${participant.role}-${participant.username}`} className="sv-group-chat-participant">
+              <div className="flex items-center gap-3">
+                <span className={`sv-group-chat-participant-avatar ${presenceMeta.className}`}>
+                  {participant.initials || getAvatarToken(participant.username)}
+                  <span className={`sv-chat-avatar-chip-dot ${presenceMeta.className}`} />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {participant.username}
+                    {participant.is_self ? " (you)" : ""}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {presenceMeta.label}
+                    {participant.presence?.last_seen_at
+                      ? ` - seen ${formatRelativeTime(participant.presence.last_seen_at)}`
+                      : ""}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end gap-2">
+                <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                  {participant.role}
+                </span>
+                {participant.presence?.is_typing ? (
+                  <span className="sv-chat-typing-pill">Typing</span>
+                ) : participant.presence?.is_online ? (
+                  <span className="sv-chat-live-pill">Live</span>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function QuickReadSection() {
+  return (
+    <section className="sv-card">
+      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Quick read</p>
+      <div className="mt-3 space-y-3">
+        <div className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+          <span className="mt-0.5 text-emerald-600">
+            <CheckCircleIcon className="h-4.5 w-4.5" />
+          </span>
+          <p className="text-sm leading-6 text-slate-600">
+            Use the live strip to spot when the host or members are active before sending a follow-up.
+          </p>
+        </div>
+        <div className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+          <span className="mt-0.5 text-slate-500">
+            <ClockIcon className="h-4.5 w-4.5" />
+          </span>
+          <p className="text-sm leading-6 text-slate-600">
+            Typing indicators expire quickly, so they stay helpful without getting stuck on old activity.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function GroupChat() {
   const navigate = useNavigate();
   const { groupId } = useParams();
@@ -81,6 +156,10 @@ export default function GroupChat() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   const fetchChat = useCallback(async (showLoader = false) => {
     try {
@@ -129,6 +208,30 @@ export default function GroupChat() {
       }
     };
   }, [groupId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileDrawerOpen(false);
+    }
+  }, [isMobile]);
 
   const handleMessageChange = (nextValue) => {
     setMessage(nextValue);
@@ -197,7 +300,9 @@ export default function GroupChat() {
   const group = chat?.group || {};
 
   const otherTypingUsers = useMemo(
-    () => participants.filter((participant) => participant.presence?.is_typing && !participant.is_self).map((participant) => participant.username),
+    () => participants
+      .filter((participant) => participant.presence?.is_typing && !participant.is_self)
+      .map((participant) => participant.username),
     [participants]
   );
   const typingLabel = formatTypingLabel(otherTypingUsers);
@@ -205,6 +310,10 @@ export default function GroupChat() {
     () => participants.filter((participant) => participant.presence?.is_online && !participant.is_self),
     [participants]
   );
+  const mobileDrawerSummary = typingLabel
+    || (onlineParticipants.length > 0
+      ? `${onlineParticipants.length} active right now`
+      : `${participants.length} participant${participants.length === 1 ? "" : "s"} in this chat`);
 
   if (loading) {
     return (
@@ -235,14 +344,31 @@ export default function GroupChat() {
 
   return (
     <div className="sv-page">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <section className="sv-dark-hero">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
+      {isMobile ? (
+        <Drawer
+          open={isMobileDrawerOpen}
+          onClose={() => setIsMobileDrawerOpen(false)}
+          eyebrow="Chat details"
+          title="People in this split"
+          description="Open the participant list when you need context, then jump back to the conversation."
+        >
+          <div className="sv-group-chat-drawer-stack">
+            <ParticipantsSection participants={participants} />
+            <QuickReadSection />
+          </div>
+        </Drawer>
+      ) : null}
+
+      <div className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
+        <section className="sv-dark-hero sv-group-chat-hero">
+          <div className="sv-group-chat-hero-top flex flex-wrap items-start justify-between gap-4">
+            <div className="sv-group-chat-hero-copy">
               <p className="sv-eyebrow-on-dark">Group chat</p>
               <h1 className="sv-display-on-dark mt-3 max-w-4xl">{group.subscription_name}</h1>
               <p className="mt-3 max-w-3xl text-slate-300">
-                See who is active, catch live typing signals, and keep the group coordinated without refreshing the whole page manually.
+                {isMobile
+                  ? "Send a quick update, check who is live, and keep the split moving."
+                  : "See who is active, catch live typing signals, and keep the group coordinated without refreshing the whole page manually."}
               </p>
             </div>
             <button
@@ -254,10 +380,10 @@ export default function GroupChat() {
             </button>
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-3 text-sm text-slate-200">
-            <span className="rounded-full bg-white/10 px-3 py-1">{group.mode_label}</span>
-            <span className="rounded-full bg-white/10 px-3 py-1">{group.status_label}</span>
-            <span className="rounded-full bg-white/10 px-3 py-1">Host: {group.owner_name}</span>
+          <div className="sv-group-chat-meta mt-5 text-sm text-slate-200">
+            <span className="sv-group-chat-meta-chip">{group.mode_label}</span>
+            <span className="sv-group-chat-meta-chip">{group.status_label}</span>
+            <span className="sv-group-chat-meta-chip">Host: {group.owner_name}</span>
             {typingLabel ? <span className="sv-chat-typing-pill">{typingLabel}</span> : null}
             {!typingLabel && onlineParticipants.length > 0 ? (
               <span className="sv-chat-live-pill">{onlineParticipants.length} active now</span>
@@ -265,19 +391,35 @@ export default function GroupChat() {
           </div>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[0.7fr_0.3fr]">
-          <div className="sv-card">
-            <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
+        {isMobile ? (
+          <button
+            type="button"
+            onClick={() => setIsMobileDrawerOpen(true)}
+            className="sv-group-chat-mobile-trigger"
+          >
+            <span className="sv-chat-mobile-trigger-copy">
+              <strong>{participants.length} people in this split</strong>
+              <span>{mobileDrawerSummary}</span>
+            </span>
+            <span className="sv-group-chat-mobile-trigger-badge">Open</span>
+          </button>
+        ) : null}
+
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[0.7fr_0.3fr]">
+          <div className="sv-card sv-group-chat-thread-card">
+            <div className="sv-group-chat-thread-header flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Conversation</p>
-                <h2 className="mt-2 text-xl font-bold text-slate-900">Messages</h2>
+                <h2 className="mt-2 text-xl font-bold text-slate-900">{isMobile ? "Chat" : "Messages"}</h2>
               </div>
               <button
                 type="button"
                 onClick={() => fetchChat(false)}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className={`rounded-xl border border-slate-300 bg-white font-semibold text-slate-700 transition hover:bg-slate-50 ${
+                  isMobile ? "px-3 py-2 text-xs" : "px-4 py-2 text-sm"
+                }`}
               >
-                Refresh
+                {isMobile ? "Reload" : "Refresh"}
               </button>
             </div>
 
@@ -293,7 +435,7 @@ export default function GroupChat() {
               </div>
             ) : null}
 
-            <div className="mt-5 space-y-4">
+            <div className="sv-group-chat-thread mt-5 space-y-4">
               {messages.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
                   No messages yet. Start the conversation with your group.
@@ -321,7 +463,7 @@ export default function GroupChat() {
               ) : null}
 
               <label className="block">
-                <span className="text-sm font-semibold text-slate-700">Type a message</span>
+                <span className="text-sm font-semibold text-slate-700">{isMobile ? "Message" : "Type a message"}</span>
                 <textarea
                   value={message}
                   onChange={(event) => handleMessageChange(event.target.value)}
@@ -331,17 +473,19 @@ export default function GroupChat() {
                       void syncPresence(false);
                     }
                   }}
-                  rows={4}
+                  rows={isMobile ? 3 : 4}
                   className="sv-group-chat-textarea"
                   placeholder="Write to your group here..."
                 />
               </label>
 
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="sv-group-chat-composer-footer mt-4 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-slate-500">
                   {message.trim()
                     ? "Typing presence fades automatically after a short pause."
-                    : "Share join updates, renewal reminders, and access follow-ups here."}
+                    : isMobile
+                      ? "Share the next step, reminder, or access update."
+                      : "Share join updates, renewal reminders, and access follow-ups here."}
                 </p>
                 <button
                   type="button"
@@ -355,73 +499,9 @@ export default function GroupChat() {
             </div>
           </div>
 
-          <aside className="space-y-6">
-            <section className="sv-card">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Members</p>
-              <h2 className="mt-2 text-xl font-bold text-slate-900">Participants</h2>
-              <div className="mt-4 space-y-3">
-                {participants.map((participant) => {
-                  const presenceMeta = getPresenceMeta(participant.presence);
-
-                  return (
-                    <div
-                      key={`${participant.role}-${participant.username}`}
-                      className="sv-group-chat-participant"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className={`sv-group-chat-participant-avatar ${presenceMeta.className}`}>
-                          {participant.initials || getAvatarToken(participant.username)}
-                          <span className={`sv-chat-avatar-chip-dot ${presenceMeta.className}`} />
-                        </span>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">
-                            {participant.username}
-                            {participant.is_self ? " (you)" : ""}
-                          </p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            {presenceMeta.label}
-                            {participant.presence?.last_seen_at ? ` • seen ${formatRelativeTime(participant.presence.last_seen_at)}` : ""}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col items-end gap-2">
-                        <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-                          {participant.role}
-                        </span>
-                        {participant.presence?.is_typing ? (
-                          <span className="sv-chat-typing-pill">Typing</span>
-                        ) : participant.presence?.is_online ? (
-                          <span className="sv-chat-live-pill">Live</span>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className="sv-card">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Quick read</p>
-              <div className="mt-3 space-y-3">
-                <div className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
-                  <span className="mt-0.5 text-emerald-600">
-                    <CheckCircleIcon className="h-4.5 w-4.5" />
-                  </span>
-                  <p className="text-sm leading-6 text-slate-600">
-                    Use the live strip to spot when the host or members are active before sending a follow-up.
-                  </p>
-                </div>
-                <div className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
-                  <span className="mt-0.5 text-slate-500">
-                    <ClockIcon className="h-4.5 w-4.5" />
-                  </span>
-                  <p className="text-sm leading-6 text-slate-600">
-                    Typing indicators expire quickly, so they stay helpful without getting stuck on old activity.
-                  </p>
-                </div>
-              </div>
-            </section>
+          <aside className="hidden space-y-6 lg:block">
+            <ParticipantsSection participants={participants} />
+            <QuickReadSection />
           </aside>
         </section>
       </div>
