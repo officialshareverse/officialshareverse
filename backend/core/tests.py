@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
+from django.db import DatabaseError
 from pathlib import Path
 from django.utils import timezone
 from django.test import override_settings
@@ -1139,6 +1140,32 @@ class GroupFlowTests(APITestCase):
         owner_preview = next(item for item in chat_item["participant_preview"] if item["username"] == self.owner.username)
         self.assertEqual(owner_preview["presence"]["status"], "online")
         self.assertTrue(owner_preview["presence"]["is_typing"])
+
+    @patch("core.views.GroupChatPresence.objects.filter", side_effect=DatabaseError("presence unavailable"))
+    def test_group_chat_detail_handles_presence_table_failures(self, _presence_filter_mock):
+        group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        self.send_group_chat(group, self.owner, "Still available.")
+
+        response = self.get_group_chat(group, self.member_one)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["group"]["id"], group.id)
+        self.assertEqual(response.data["online_participant_count"], 0)
+        self.assertEqual(response.data["active_typing_users"], [])
+
+    @patch("core.views.GroupChatPresence.objects.filter", side_effect=DatabaseError("presence unavailable"))
+    def test_group_chat_inbox_handles_presence_table_failures(self, _presence_filter_mock):
+        group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        self.send_group_chat(group, self.owner, "Inbox should still load.")
+
+        response = self.get_chat_inbox(self.member_one)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total_chats"], 1)
+        self.assertEqual(response.data["chats"][0]["online_participant_count"], 0)
+        self.assertEqual(response.data["chats"][0]["active_typing_users"], [])
 
     @override_settings(
         RAZORPAYX_KEY_ID="rzp_test_x_123",

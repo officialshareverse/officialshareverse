@@ -673,11 +673,14 @@ def get_group_chat_participants(group):
 
 
 def get_group_chat_unread_count(user, group):
-    read_state = (
-        GroupChatReadState.objects.filter(group=group, user=user)
-        .order_by("-last_read_at", "-id")
-        .first()
-    )
+    try:
+        read_state = (
+            GroupChatReadState.objects.filter(group=group, user=user)
+            .order_by("-last_read_at", "-id")
+            .first()
+        )
+    except DatabaseError:
+        read_state = None
     unread_messages = GroupChatMessage.objects.filter(group=group).exclude(sender=user)
     if read_state:
         unread_messages = unread_messages.filter(created_at__gt=read_state.last_read_at)
@@ -686,9 +689,12 @@ def get_group_chat_unread_count(user, group):
 
 def mark_group_chat_read(user, group):
     now = timezone.now()
-    existing_states = list(
-        GroupChatReadState.objects.filter(group=group, user=user).order_by("-last_read_at", "-id")
-    )
+    try:
+        existing_states = list(
+            GroupChatReadState.objects.filter(group=group, user=user).order_by("-last_read_at", "-id")
+        )
+    except DatabaseError:
+        return None
 
     if existing_states:
         primary_state = existing_states[0]
@@ -747,9 +753,12 @@ def get_group_chat_presence_state(presence, now=None):
 
 def touch_group_chat_presence(user, group, is_typing=None):
     now = timezone.now()
-    existing_rows = list(
-        GroupChatPresence.objects.filter(group=group, user=user).order_by("-updated_at", "-id")
-    )
+    try:
+        existing_rows = list(
+            GroupChatPresence.objects.filter(group=group, user=user).order_by("-updated_at", "-id")
+        )
+    except DatabaseError:
+        return None
 
     if existing_rows:
         primary_presence = existing_rows[0]
@@ -3354,10 +3363,13 @@ class GroupChatView(APIView):
 
         mark_group_chat_read(request.user, group)
         touch_group_chat_presence(request.user, group)
-        presence_map = {
-            presence.user_id: presence
-            for presence in GroupChatPresence.objects.filter(group=group).select_related("user")
-        }
+        try:
+            presence_map = {
+                presence.user_id: presence
+                for presence in GroupChatPresence.objects.filter(group=group).select_related("user")
+            }
+        except DatabaseError:
+            presence_map = {}
         activity_snapshot = build_group_chat_activity_snapshot(
             group,
             current_user=request.user,
@@ -3478,25 +3490,31 @@ class GroupChatInboxView(APIView):
                 }
             )
 
-        presence_rows = (
-            GroupChatPresence.objects.filter(group_id__in=group_ids)
-            .select_related("user")
-            .order_by("group_id", "user_id", "-updated_at", "-id")
-        )
+        try:
+            presence_rows = (
+                GroupChatPresence.objects.filter(group_id__in=group_ids)
+                .select_related("user")
+                .order_by("group_id", "user_id", "-updated_at", "-id")
+            )
+        except DatabaseError:
+            presence_rows = []
         presence_by_group = {}
         for presence in presence_rows:
             group_presence = presence_by_group.setdefault(presence.group_id, {})
             if presence.user_id not in group_presence:
                 group_presence[presence.user_id] = presence
 
-        read_state_by_group = {
-            row["group_id"]: row["last_read_at"]
-            for row in (
-                GroupChatReadState.objects.filter(group_id__in=group_ids, user=user)
-                .values("group_id")
-                .annotate(last_read_at=Max("last_read_at"))
-            )
-        }
+        try:
+            read_state_by_group = {
+                row["group_id"]: row["last_read_at"]
+                for row in (
+                    GroupChatReadState.objects.filter(group_id__in=group_ids, user=user)
+                    .values("group_id")
+                    .annotate(last_read_at=Max("last_read_at"))
+                )
+            }
+        except DatabaseError:
+            read_state_by_group = {}
         message_count_by_group = {
             row["group_id"]: row["message_count"]
             for row in (
