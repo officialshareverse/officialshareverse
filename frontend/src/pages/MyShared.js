@@ -1853,7 +1853,15 @@ function SummaryCard({ label, value, highlight = false, compact = false }) {
   return (
     <div style={{ ...summaryCard, ...(compact ? summaryCardMobile : {}) }}>
       <p style={{ ...summaryLabel, ...(compact ? summaryLabelMobile : {}) }}>{label}</p>
-      <p style={{ ...summaryValue, ...(compact ? summaryValueMobile : {}), color: highlight ? "#047857" : "#0f172a" }}>{value}</p>
+      <p
+        style={{
+          ...summaryValue,
+          ...(compact ? summaryValueMobile : {}),
+          color: highlight ? "color-mix(in srgb, var(--sv-accent) 80%, #10b981 20%)" : svInk,
+        }}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -1894,8 +1902,8 @@ function FilterButton({ active, onClick, children, compact = false }) {
       style={{
         ...filterButton,
         ...(compact ? filterButtonCompact : {}),
-        background: active ? "#0f172a" : "#e2e8f0",
-        color: active ? "#fff" : "#0f172a",
+        background: active ? "var(--sv-primary-gradient)" : svPaperSoft,
+        color: active ? "#fff" : svInk,
       }}
     >
       {children}
@@ -1976,9 +1984,20 @@ function getEscrowLabel(member, groupStatus = "") {
   return "Awaiting payment";
 }
 
+const svPageBackground = "radial-gradient(circle at top left, var(--sv-page-radial-a), transparent 28%), radial-gradient(circle at bottom right, var(--sv-page-radial-b), transparent 24%), linear-gradient(180deg, color-mix(in srgb, var(--sv-bg) 92%, var(--sv-paper-solid) 8%) 0%, var(--sv-bg-soft) 100%)";
+const svPaperGlass = "color-mix(in srgb, var(--sv-paper) 94%, transparent)";
+const svPaperStrong = "color-mix(in srgb, var(--sv-paper-solid) 96%, transparent)";
+const svPaperSoft = "color-mix(in srgb, var(--sv-paper-solid) 90%, transparent)";
+const svAccentSoftSurface = "color-mix(in srgb, var(--sv-accent-soft) 78%, var(--sv-paper-solid) 22%)";
+const svBorder = "var(--sv-border)";
+const svInk = "var(--sv-ink)";
+const svMuted = "var(--sv-muted)";
+const svAccent = "var(--sv-accent)";
+const svShadow = "var(--sv-shadow)";
+
 const container = {
   padding: "28px 22px 56px",
-  background: "radial-gradient(circle at top left, rgba(15,118,110,0.10), transparent 28%), radial-gradient(circle at bottom right, rgba(187,122,20,0.10), transparent 24%), linear-gradient(180deg, #f7f2e9 0%, #eef3f6 100%)",
+  background: svPageBackground,
   minHeight: "100vh",
 };
 
@@ -2049,11 +2068,11 @@ const statsGridMobile = {
 };
 
 const summaryCard = {
-  background: "rgba(255,255,255,0.82)",
+  background: svPaperGlass,
   borderRadius: "24px",
   padding: "18px 18px 16px",
-  boxShadow: "0 22px 60px rgba(15, 23, 42, 0.08)",
-  border: "1px solid rgba(255,255,255,0.72)",
+  boxShadow: svShadow,
+  border: `1px solid ${svBorder}`,
   backdropFilter: "blur(12px)",
 };
 
@@ -2064,7 +2083,7 @@ const summaryCardMobile = {
 
 const summaryLabel = {
   margin: 0,
-  color: "#64748b",
+  color: svMuted,
   fontSize: "13px",
 };
 
@@ -2116,7 +2135,7 @@ const joinedSectionHeader = {
 
 const sectionEyebrow = {
   margin: 0,
-  color: "#64748b",
+  color: svMuted,
   fontSize: "12px",
   letterSpacing: "0.2em",
   textTransform: "uppercase",
@@ -2124,7 +2143,7 @@ const sectionEyebrow = {
 
 const sectionTitle = {
   margin: "6px 0 0",
-  color: "#0f172a",
+  color: svInk,
   fontSize: "26px",
   lineHeight: 1.05,
   fontWeight: 800,
@@ -2136,7 +2155,7 @@ const sectionTitleMobile = {
 
 const sectionText = {
   margin: 0,
-  color: "#64748b",
+  color: svMuted,
   maxWidth: "540px",
 };
 
@@ -2158,9 +2177,9 @@ const card = {
   padding: "20px",
   marginBottom: "16px",
   borderRadius: "28px",
-  background: "rgba(255,255,255,0.82)",
-  boxShadow: "0 24px 68px rgba(15, 23, 42, 0.08)",
-  border: "1px solid rgba(255,255,255,0.74)",
+  background: svPaperGlass,
+  boxShadow: svShadow,
+  border: `1px solid ${svBorder}`,
   backdropFilter: "blur(12px)",
 };
 
@@ -2183,8 +2202,8 @@ const cardHeaderMobile = {
 };
 
 const badge = {
-  background: "rgba(15, 23, 42, 0.06)",
-  color: "#0f172a",
+  background: svPaperSoft,
+  color: svInk,
   borderRadius: "999px",
   padding: "6px 12px",
   fontSize: "12px",
@@ -2193,7 +2212,7 @@ const badge = {
 
 const subtleText = {
   margin: "4px 0",
-  color: "#64748b",
+  color: svMuted,
 };
 
 const subtleTextCompact = {
@@ -2203,20 +2222,22 @@ const subtleTextCompact = {
 
 const cardSubheading = {
   margin: "6px 0 0",
-  color: "#64748b",
+  color: svMuted,
   fontSize: "14px",
 };
 
 const descriptionText = {
   margin: "14px 0 10px",
-  color: "#334155",
+  color: "color-mix(in srgb, var(--sv-ink) 82%, var(--sv-muted) 18%)",
   fontWeight: 500,
 };
 
 const managementNote = (isClosed) => ({
   margin: "12px 0 0",
-  color: isClosed ? "#9a3412" : "#475569",
-  background: isClosed ? "#ffedd5" : "#f8fafc",
+  color: isClosed ? "#c2410c" : svMuted,
+  background: isClosed
+    ? "color-mix(in srgb, #fdba74 18%, var(--sv-paper-solid) 82%)"
+    : svPaperSoft,
   borderRadius: "12px",
   padding: "10px 12px",
 });
@@ -2239,54 +2260,54 @@ const factPill = {
   gap: "8px",
   padding: "8px 12px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.78)",
-  border: "1px solid rgba(148, 163, 184, 0.18)",
+  background: svPaperSoft,
+  border: `1px solid ${svBorder}`,
 };
 
 const factPillAccent = {
-  background: "#ecfeff",
-  border: "1px solid #a5f3fc",
+  background: svAccentSoftSurface,
+  border: `1px solid color-mix(in srgb, ${svAccent} 28%, transparent)`,
 };
 
 const factPillWarning = {
-  background: "#fff7ed",
-  border: "1px solid #fed7aa",
+  background: "color-mix(in srgb, #fdba74 18%, var(--sv-paper-solid) 82%)",
+  border: "1px solid color-mix(in srgb, #fdba74 32%, transparent)",
 };
 
 const factLabel = {
-  color: "#64748b",
+  color: svMuted,
   fontSize: "12px",
   letterSpacing: "0.08em",
   textTransform: "uppercase",
 };
 
 const factValue = {
-  color: "#0f172a",
+  color: svInk,
   fontSize: "13px",
 };
 
 const metaLine = {
   margin: "10px 0 0",
   fontSize: "13px",
-  color: "#64748b",
+  color: svMuted,
 };
 
 const metricBlock = {
-  background: "rgba(255,255,255,0.76)",
+  background: svPaperStrong,
   borderRadius: "18px",
   padding: "12px",
-  border: "1px solid rgba(148, 163, 184, 0.14)",
+  border: `1px solid ${svBorder}`,
 };
 
 const metricValue = {
   margin: "8px 0 0",
   fontWeight: 700,
-  color: "#0f172a",
+  color: svInk,
 };
 
 const progressBar = {
   height: "8px",
-  background: "#e2e8f0",
+  background: "color-mix(in srgb, var(--sv-border) 86%, transparent)",
   borderRadius: "5px",
   marginTop: "12px",
 };
@@ -2315,9 +2336,9 @@ const actionButtonMobile = {
 };
 
 const secondaryButton = {
-  border: "1px solid rgba(148, 163, 184, 0.24)",
-  background: "rgba(255,255,255,0.88)",
-  color: "#0f172a",
+  border: `1px solid ${svBorder}`,
+  background: svPaperStrong,
+  color: svInk,
   borderRadius: "999px",
   padding: "10px 14px",
   cursor: "pointer",
@@ -2346,8 +2367,8 @@ const warningButton = {
 };
 
 const dangerButton = {
-  border: "1px solid #fecaca",
-  background: "rgba(255, 241, 242, 0.9)",
+  border: "1px solid color-mix(in srgb, #fb7185 38%, transparent)",
+  background: "color-mix(in srgb, #fb7185 12%, var(--sv-paper-solid) 88%)",
   color: "#b91c1c",
   borderRadius: "999px",
   padding: "10px 14px",
@@ -2357,7 +2378,7 @@ const dangerButton = {
 
 const editPanel = {
   marginTop: "16px",
-  borderTop: "1px solid #e2e8f0",
+  borderTop: `1px solid ${svBorder}`,
   paddingTop: "16px",
 };
 
@@ -2365,8 +2386,8 @@ const credentialEditPanel = {
   marginTop: "16px",
   padding: "16px",
   borderRadius: "18px",
-  background: "rgba(239, 246, 255, 0.86)",
-  border: "1px solid rgba(191, 219, 254, 0.9)",
+  background: svAccentSoftSurface,
+  border: `1px solid color-mix(in srgb, ${svAccent} 18%, transparent)`,
 };
 
 const editPanelHeader = {
@@ -2388,7 +2409,7 @@ const field = {
 const fieldLabel = {
   fontSize: "13px",
   fontWeight: 600,
-  color: "#334155",
+  color: svInk,
 };
 
 const input = (disabled) => ({
@@ -2396,9 +2417,11 @@ const input = (disabled) => ({
   boxSizing: "border-box",
   padding: "10px 12px",
   borderRadius: "16px",
-  border: "1px solid rgba(148, 163, 184, 0.24)",
-  background: disabled ? "#e2e8f0" : "rgba(255,255,255,0.9)",
-  color: disabled ? "#64748b" : "#0f172a",
+  border: `1px solid ${svBorder}`,
+  background: disabled
+    ? "color-mix(in srgb, var(--sv-border) 72%, var(--sv-paper-solid) 28%)"
+    : "var(--sv-input-surface)",
+  color: disabled ? svMuted : svInk,
 });
 
 const textarea = {
@@ -2407,9 +2430,9 @@ const textarea = {
   minHeight: "90px",
   padding: "10px 12px",
   borderRadius: "16px",
-  border: "1px solid rgba(148, 163, 184, 0.24)",
-  background: "rgba(255,255,255,0.9)",
-  color: "#0f172a",
+  border: `1px solid ${svBorder}`,
+  background: "var(--sv-input-surface)",
+  color: svInk,
   resize: "vertical",
 };
 
@@ -2418,9 +2441,9 @@ const fileInput = {
   boxSizing: "border-box",
   padding: "10px 12px",
   borderRadius: "10px",
-  border: "1px dashed #94a3b8",
-  background: "#fff",
-  color: "#0f172a",
+  border: `1px dashed ${svMuted}`,
+  background: svPaperStrong,
+  color: svInk,
 };
 
 const lockedNote = {
@@ -2434,7 +2457,7 @@ const lockedNote = {
 
 const detailPanel = {
   marginTop: "18px",
-  borderTop: "1px solid #e2e8f0",
+  borderTop: `1px solid ${svBorder}`,
   paddingTop: "18px",
 };
 
@@ -2457,9 +2480,9 @@ const joinedGridMobile = {
 const joinedCard = {
   padding: "20px",
   borderRadius: "20px",
-  background: "#fff",
-  boxShadow: "0 14px 28px rgba(15, 23, 42, 0.06)",
-  border: "1px solid #e2e8f0",
+  background: svPaperStrong,
+  boxShadow: svShadow,
+  border: `1px solid ${svBorder}`,
 };
 
 const joinedCardMobile = {
@@ -2471,8 +2494,8 @@ const ownerCredentialCard = {
   marginBottom: "14px",
   padding: "14px",
   borderRadius: "12px",
-  background: "#ecfdf5",
-  border: "1px solid #a7f3d0",
+  background: svAccentSoftSurface,
+  border: `1px solid color-mix(in srgb, ${svAccent} 22%, transparent)`,
 };
 
 const ownerCredentialEyebrow = {
@@ -2480,12 +2503,12 @@ const ownerCredentialEyebrow = {
   fontSize: "12px",
   letterSpacing: "0.2em",
   textTransform: "uppercase",
-  color: "#047857",
+  color: svAccent,
 };
 
 const ownerCredentialLine = {
   margin: "0 0 8px",
-  color: "#0f172a",
+  color: svInk,
   wordBreak: "break-word",
 };
 
@@ -2493,8 +2516,12 @@ const memberAccessCard = (available) => ({
   marginTop: "16px",
   padding: "14px",
   borderRadius: "12px",
-  background: available ? "#ecfdf5" : "#fff7ed",
-  border: `1px solid ${available ? "#a7f3d0" : "#fed7aa"}`,
+  background: available
+    ? svAccentSoftSurface
+    : "color-mix(in srgb, #fdba74 18%, var(--sv-paper-solid) 82%)",
+  border: `1px solid ${available
+    ? `color-mix(in srgb, ${svAccent} 22%, transparent)`
+    : "color-mix(in srgb, #fdba74 32%, transparent)"}`,
 });
 
 const memberAccessCardMobile = {
@@ -2507,8 +2534,8 @@ const reviewCard = {
   marginTop: "16px",
   padding: "14px",
   borderRadius: "14px",
-  background: "#f8fafc",
-  border: "1px solid #e2e8f0",
+  background: svPaperSoft,
+  border: `1px solid ${svBorder}`,
 };
 
 const reviewCardMobile = {
@@ -2518,7 +2545,7 @@ const reviewCardMobile = {
 
 const reviewTitle = {
   margin: "0 0 8px",
-  color: "#0f172a",
+  color: svInk,
   fontWeight: 700,
 };
 
@@ -2530,9 +2557,9 @@ const reviewTextarea = {
   marginBottom: "10px",
   padding: "10px 12px",
   borderRadius: "10px",
-  border: "1px solid #cbd5e1",
-  background: "#fff",
-  color: "#0f172a",
+  border: `1px solid ${svBorder}`,
+  background: "var(--sv-input-surface)",
+  color: svInk,
   resize: "vertical",
 };
 
@@ -2543,9 +2570,11 @@ const starRow = {
 };
 
 const starButton = (active) => ({
-  border: "1px solid #cbd5e1",
-  background: active ? "#fef3c7" : "#fff",
-  color: active ? "#b45309" : "#94a3b8",
+  border: `1px solid ${svBorder}`,
+  background: active
+    ? "color-mix(in srgb, #f59e0b 22%, var(--sv-paper-solid) 78%)"
+    : svPaperStrong,
+  color: active ? "#b45309" : svMuted,
   borderRadius: "10px",
   padding: "8px 10px",
   cursor: "pointer",
@@ -2579,8 +2608,8 @@ const detailGridLayoutMobile = {
 
 const detailSectionCard = {
   borderRadius: "24px",
-  border: "1px solid rgba(255,255,255,0.74)",
-  background: "rgba(255,255,255,0.78)",
+  border: `1px solid ${svBorder}`,
+  background: svPaperGlass,
   padding: "18px",
   backdropFilter: "blur(10px)",
 };
@@ -2602,12 +2631,12 @@ const detailEyebrow = {
   fontSize: "11px",
   letterSpacing: "0.18em",
   textTransform: "uppercase",
-  color: "#64748b",
+  color: svMuted,
 };
 
 const detailSectionTitle = {
   margin: "6px 0 0",
-  color: "#0f172a",
+  color: svInk,
   fontSize: "22px",
   lineHeight: 1.08,
   fontWeight: 800,
@@ -2621,8 +2650,8 @@ const buyTogetherNotice = {
   marginTop: "16px",
   padding: "14px",
   borderRadius: "12px",
-  background: "#eff6ff",
-  border: "1px solid #bfdbfe",
+  background: "color-mix(in srgb, #60a5fa 14%, var(--sv-paper-solid) 86%)",
+  border: "1px solid color-mix(in srgb, #60a5fa 28%, transparent)",
 };
 
 const buyTogetherNoticeTitle = {
@@ -2694,7 +2723,7 @@ const proofFormCard = {
 };
 
 const proofLink = {
-  color: "#0f766e",
+  color: svAccent,
   fontWeight: 700,
   textDecoration: "none",
 };
@@ -2705,7 +2734,7 @@ const memberRow = {
   alignItems: "center",
   gap: "12px",
   padding: "14px 0",
-  borderBottom: "1px solid #e2e8f0",
+  borderBottom: `1px solid ${svBorder}`,
 };
 
 const memberRowMobile = {
@@ -2721,12 +2750,12 @@ const membersList = {
 const memberName = {
   margin: 0,
   fontWeight: 700,
-  color: "#0f172a",
+  color: svInk,
 };
 
 const memberMeta = {
   margin: "4px 0 0",
-  color: "#64748b",
+  color: svMuted,
   fontSize: "13px",
 };
 
@@ -2799,8 +2828,8 @@ const memberStatus = (paidOrLabel) => {
 
   if (paidOrLabel === "Awaiting payment") {
     return {
-      background: "#e2e8f0",
-      color: "#475569",
+      background: svPaperSoft,
+      color: svMuted,
       borderRadius: "999px",
       padding: "6px 10px",
       fontSize: "12px",
