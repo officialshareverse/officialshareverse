@@ -2156,8 +2156,8 @@
 
   .sv-mobile-icon-button {
     @apply relative inline-flex items-center justify-center border transition;
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 16px;
     border-color: var(--sv-border);
     background: var(--sv-paper-solid);
@@ -2289,7 +2289,7 @@
   }
 
   .sv-mobile-tabbar-inner {
-    @apply grid grid-cols-5 gap-1 border backdrop-blur;
+    @apply grid grid-cols-4 gap-1 border backdrop-blur;
     pointer-events: auto;
     border-radius: 26px;
     padding: 0.45rem;
@@ -2300,7 +2300,7 @@
 
   .sv-mobile-tab {
     @apply relative flex flex-col items-center justify-center gap-1 text-center transition;
-    min-height: 60px;
+    min-height: 58px;
     border-radius: 20px;
     padding: 0.5rem 0.25rem;
     color: var(--sv-muted);
@@ -2350,7 +2350,7 @@
   }
 
   .sv-mobile-tab-label {
-    font-size: 10px;
+    font-size: 9px;
     line-height: 1.1;
     font-weight: 700;
     letter-spacing: 0.01em;
@@ -6683,7 +6683,7 @@
     }
 
     .sv-home-quick-actions {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .sv-home-logo-grid {
@@ -8012,7 +8012,7 @@
     }
 
     .sv-mobile-appbar {
-      padding: 0.7rem 0.8rem;
+      padding: 0.65rem 0.75rem;
       border-radius: 18px;
     }
 
@@ -8032,7 +8032,7 @@
     }
 
     .sv-mobile-tab {
-      min-height: 56px;
+      min-height: 54px;
       border-radius: 16px;
       padding-inline: 0.2rem;
     }
@@ -8089,13 +8089,19 @@
     }
 
     .sv-home-quick-actions {
-      grid-template-columns: 1fr;
-      gap: 0.65rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
     }
 
     .sv-home-action-button {
-      padding: 0.8rem 0.9rem;
+      justify-content: center;
+      padding: 0.75rem 0.8rem;
       border-radius: 18px;
+      gap: 0.5rem;
+    }
+
+    .sv-home-action-button .text-left {
+      text-align: center;
     }
 
     .sv-home-sparkline,

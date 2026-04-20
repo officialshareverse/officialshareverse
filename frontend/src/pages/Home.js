@@ -142,6 +142,9 @@ export default function Home() {
   const [error, setError] = useState("");
   const [showGuide, setShowGuide] = useState(false);
   const [guideStep, setGuideStep] = useState(0);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -176,6 +179,24 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
+
   const currentUserId = dashboard?.current_user?.id || null;
   const onboardingGuideVersion = "v2";
   const onboardingStorageKey = currentUserId ? `sv-home-guide-seen-${onboardingGuideVersion}-${currentUserId}` : "";
@@ -208,7 +229,7 @@ export default function Home() {
   const totalSpent = Number(profileSnapshot?.total_spent || dashboard?.total_spent || 0);
   const profileCompletion = Number(profileSnapshot?.profile_completion || 0);
   const totalGuideSlides = 7;
-  const marketplaceGroups = groups.slice(0, 4);
+  const marketplaceGroups = groups.slice(0, isMobile ? 2 : 4);
   const activeActionCount = membershipNeedsAttention + Number(ownerSummary.buy_together_waiting || 0);
   const walletReadiness = walletBalanceValue > 0 ? Math.min(100, Math.round((walletBalanceValue / 500) * 100)) : 8;
   const responseHealth = activeActionCount > 0 ? Math.max(18, 100 - activeActionCount * 18) : 100;
@@ -317,6 +338,8 @@ export default function Home() {
       sparkline: buildSparklineValues(unreadNotifications, 3),
     },
   ], [activeActionCount, activeGroups, memberships.length, navigate, ownerSummary.buy_together_waiting, ownerSummary.total_groups_created, unreadNotifications, walletBalanceValue]);
+
+  const visibleStats = isMobile ? stats.slice(0, 2) : stats;
 
   const focusItems = useMemo(() => [
     {
@@ -506,13 +529,13 @@ export default function Home() {
               <div className="flex flex-wrap items-center gap-2.5">
                 <BrandMark glow sizeClass="h-10 w-10 sm:h-12 sm:w-12" roundedClass="rounded-[14px] sm:rounded-[18px]" />
                 <span className="sv-chip-dark">Dashboard</span>
-                <span className="sv-chip-dark">{activeGroups} active groups</span>
+                {!isMobile ? <span className="sv-chip-dark">{activeGroups} active groups</span> : null}
               </div>
               <p className="sv-eyebrow-on-dark mt-4 sm:mt-5">
                 {greetingMeta.text}, {currentUserFirstName} {greetingMeta.emoji}
               </p>
               <h1 className="sv-display-on-dark mt-4 max-w-4xl sm:mt-5">
-                Your shared-cost dashboard is cleaner, faster, and ready to act on.
+                {isMobile ? "Stay on top of your splits without extra noise." : "Your shared-cost dashboard is cleaner, faster, and ready to act on."}
               </h1>
               <p className="sv-home-hero-body mt-3 max-w-3xl text-[13px] leading-6 text-slate-300 sm:mt-4 sm:text-sm sm:leading-7 md:text-base md:leading-8">
                 Jump into the next thing that matters, keep wallet and group activity visible at a glance, and scan recent splits without digging through dense cards.
@@ -528,14 +551,18 @@ export default function Home() {
               </div>
 
               <div className="sv-home-quick-actions">
-                <QuickActionButton icon={<PlusIcon className="h-4.5 w-4.5" />} title="Create" note="New split" onClick={() => navigate("/create")} />
-                <QuickActionButton icon={<WalletIcon className="h-4.5 w-4.5" />} title="Top up" note="Add wallet funds" onClick={() => navigate("/wallet")} />
-                <QuickActionButton icon={<LayersIcon className="h-4.5 w-4.5" />} title="Dashboard" note="Jump to focus" onClick={() => focusSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} />
+                <QuickActionButton icon={<PlusIcon className="h-4.5 w-4.5" />} title="Create" note={isMobile ? null : "New split"} onClick={() => navigate("/create")} />
+                <QuickActionButton icon={<WalletIcon className="h-4.5 w-4.5" />} title="Top up" note={isMobile ? null : "Add wallet funds"} onClick={() => navigate("/wallet")} />
+                {!isMobile ? (
+                  <QuickActionButton icon={<LayersIcon className="h-4.5 w-4.5" />} title="Dashboard" note="Jump to focus" onClick={() => focusSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} />
+                ) : null}
               </div>
 
               <div className="mt-4 flex flex-wrap gap-3">
                 <button type="button" onClick={openGuide} className="sv-btn-ghost-dark">Quick guide</button>
-                <button type="button" onClick={() => navigate("/groups")} className="sv-btn-ghost-dark">Explore splits</button>
+                {!isMobile ? (
+                  <button type="button" onClick={() => navigate("/groups")} className="sv-btn-ghost-dark">Explore splits</button>
+                ) : null}
               </div>
             </div>
 
@@ -572,17 +599,27 @@ export default function Home() {
         </section>
 
         <section className="sv-grid-stats sv-animate-rise sv-delay-1">
-          {stats.map((item) => <StatCard key={item.label} {...item} />)}
+          {visibleStats.map((item) => <StatCard key={item.label} {...item} />)}
         </section>
 
-        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(260px,0.92fr)] sv-animate-rise sv-delay-2">
+        <section className={`grid gap-4 sm:gap-6 sv-animate-rise sv-delay-2 ${isMobile ? "" : "lg:grid-cols-[minmax(0,1.08fr)_minmax(260px,0.92fr)]"}`}>
           <section className={`sv-home-primary-card ${primaryCard.accent}`}>
             <div className="sv-home-primary-rail" />
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="sv-eyebrow">{primaryCard.label}</p>
                 <h2 className="mt-2 text-xl font-bold text-slate-950 sm:text-[1.75rem]">{primaryCard.title}</h2>
-                <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">{primaryCard.body}</p>
+                <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
+                  {isMobile
+                    ? primaryCard.label === "Waiting on you"
+                      ? "Finish the next host step so members are not left waiting."
+                      : primaryCard.label === "Needs attention"
+                        ? "Clear the next response waiting in My Splits."
+                        : primaryCard.label === "Explore next"
+                          ? "Browse the newest open splits and join faster."
+                          : "Publish your first split in one clean flow."
+                    : primaryCard.body}
+                </p>
               </div>
               <span className="sv-home-primary-icon">{primaryCard.icon}</span>
             </div>
@@ -602,21 +639,23 @@ export default function Home() {
             </div>
           </section>
 
-          <aside ref={focusSectionRef} className="sv-card sv-home-focus-card" id="sv-home-focus">
-            <p className="sv-eyebrow">Quick focus</p>
-            <h2 className="sv-title mt-1.5 sm:mt-2">Where your dashboard stands</h2>
-            <div className="mt-4 space-y-3 sm:mt-5">
-              {focusItems.map((item) => (
-                <button key={item.label} type="button" onClick={item.onClick} className={`sv-home-focus-item ${item.tone}`}>
-                  <ProgressRing value={item.value} size={58} stroke={6} label={`${Math.round(item.value)}%`} />
-                  <span className="min-w-0 text-left">
-                    <span className="block text-sm font-bold text-slate-950">{item.label}</span>
-                    <span className="mt-1 block text-xs leading-6 text-slate-500">{item.note}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </aside>
+          {!isMobile ? (
+            <aside ref={focusSectionRef} className="sv-card sv-home-focus-card" id="sv-home-focus">
+              <p className="sv-eyebrow">Quick focus</p>
+              <h2 className="sv-title mt-1.5 sm:mt-2">Where your dashboard stands</h2>
+              <div className="mt-4 space-y-3 sm:mt-5">
+                {focusItems.map((item) => (
+                  <button key={item.label} type="button" onClick={item.onClick} className={`sv-home-focus-item ${item.tone}`}>
+                    <ProgressRing value={item.value} size={58} stroke={6} label={`${Math.round(item.value)}%`} />
+                    <span className="min-w-0 text-left">
+                      <span className="block text-sm font-bold text-slate-950">{item.label}</span>
+                      <span className="mt-1 block text-xs leading-6 text-slate-500">{item.note}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </aside>
+          ) : null}
         </section>
 
         <section className="sv-animate-rise sv-delay-3">
@@ -654,7 +693,7 @@ function QuickActionButton({ icon, title, note, onClick }) {
       <span className="sv-home-action-icon">{icon}</span>
       <span className="min-w-0 text-left">
         <span className="block text-sm font-bold text-white">{title}</span>
-        <span className="block text-xs text-slate-300">{note}</span>
+        {note ? <span className="block text-xs text-slate-300">{note}</span> : null}
       </span>
     </button>
   );

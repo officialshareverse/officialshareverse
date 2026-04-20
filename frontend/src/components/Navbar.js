@@ -21,8 +21,8 @@ const navItems = [
   { to: "/home", label: "Home", mobileLabel: "Home", icon: HomeIcon, mobileTab: true, desktopGroup: "primary" },
   { to: "/groups", label: "Explore", mobileLabel: "Explore", icon: CompassIcon, mobileTab: true, desktopGroup: "primary" },
   { to: "/create", label: "Create", mobileLabel: "Create", icon: PlusIcon, mobileTab: true, desktopGroup: "primary" },
-  { to: "/my-shared", label: "My Splits", mobileLabel: "My Splits", icon: LayersIcon, mobileTab: true, desktopGroup: "workspace" },
-  { to: "/wallet", label: "Wallet", mobileLabel: "Wallet", icon: WalletIcon, mobileTab: true, desktopGroup: "workspace" },
+  { to: "/my-shared", label: "My Splits", mobileLabel: "Splits", icon: LayersIcon, mobileTab: true, desktopGroup: "workspace" },
+  { to: "/wallet", label: "Wallet", mobileLabel: "Wallet", icon: WalletIcon, mobileTab: false, desktopGroup: "workspace" },
   { to: "/notifications", label: "Notifications", mobileLabel: "Alerts", icon: BellIcon, badgeKey: "notification", desktopGroup: "signals" },
   { to: "/chats", label: "Chats", mobileLabel: "Chats", icon: ChatIcon, badgeKey: "chat", desktopGroup: "signals" },
   { to: "/profile", label: "Profile", mobileLabel: "Profile", icon: UserIcon },
@@ -364,10 +364,7 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
           <div className="lg:hidden sv-mobile-appbar">
             <div className="min-w-0 flex items-center gap-3">
               <BrandMark glow sizeClass="h-9 w-9" roundedClass="rounded-[14px]" />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold leading-none text-slate-950">Hi, {profileFirstName}</p>
-                <p className="mt-1 truncate text-[11px] font-medium text-slate-500">{currentItem.label}</p>
-              </div>
+              <p className="min-w-0 truncate text-[15px] font-bold leading-none text-slate-950">{currentItem.label}</p>
             </div>
 
             <div className="flex items-center gap-2">
