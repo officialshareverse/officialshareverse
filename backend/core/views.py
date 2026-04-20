@@ -12,7 +12,7 @@ from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import DatabaseError, connections, transaction
-from django.db.models import Avg, Count, ExpressionWrapper, F, IntegerField, Q, Sum, Value
+from django.db.models import Avg, Count, ExpressionWrapper, F, IntegerField, OuterRef, Prefetch, Q, Subquery, Sum, Value
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -751,13 +751,12 @@ def serialize_group_chat_participant(user, role, presence, now=None, current_use
     }
 
 
-def build_group_chat_activity_snapshot(group, current_user=None, presence_map=None, now=None):
+def build_group_chat_activity_snapshot(group, current_user=None, presence_map=None, now=None, members=None):
     reference_time = now or timezone.now()
     participant_users = [group.owner]
-    participant_users.extend(
-        member.user
-        for member in GroupMember.objects.filter(group=group).select_related("user")
-    )
+    if members is None:
+        members = GroupMember.objects.filter(group=group).select_related("user")
+    participant_users.extend(member.user for member in members)
 
     seen_user_ids = set()
     serialized_participants = []
@@ -3410,33 +3409,82 @@ class GroupChatInboxView(APIView):
 
     def get(self, request):
         user = request.user
-        groups = (
+        last_message_subquery = (
+            GroupChatMessage.objects.filter(group_id=OuterRef("pk"))
+            .order_by("-created_at", "-id")
+        )
+        groups = list(
             Group.objects.filter(Q(owner=user) | Q(groupmember__user=user))
             .select_related("subscription", "owner")
+            .prefetch_related(
+                Prefetch(
+                    "groupmember_set",
+                    queryset=GroupMember.objects.select_related("user"),
+                    to_attr="prefetched_group_members",
+                )
+            )
+            .annotate(
+                last_message_id=Subquery(last_message_subquery.values("id")[:1]),
+                last_activity_at=Subquery(last_message_subquery.values("created_at")[:1]),
+            )
             .distinct()
         )
         group_ids = [group.id for group in groups]
+        if not group_ids:
+            return Response(
+                {
+                    "total_unread_count": 0,
+                    "total_chats": 0,
+                    "chats": [],
+                }
+            )
+
         presence_rows = GroupChatPresence.objects.filter(group_id__in=group_ids).select_related("user")
         presence_by_group = {}
         for presence in presence_rows:
             presence_by_group.setdefault(presence.group_id, {})[presence.user_id] = presence
 
+        read_state_by_group = {
+            read_state.group_id: read_state.last_read_at
+            for read_state in GroupChatReadState.objects.filter(group_id__in=group_ids, user=user)
+        }
+        message_count_by_group = {
+            row["group_id"]: row["message_count"]
+            for row in (
+                GroupChatMessage.objects.filter(group_id__in=group_ids)
+                .values("group_id")
+                .annotate(message_count=Count("id"))
+            )
+        }
+        unread_count_by_group = {group_id: 0 for group_id in group_ids}
+        unread_rows = (
+            GroupChatMessage.objects.filter(group_id__in=group_ids)
+            .exclude(sender=user)
+            .values_list("group_id", "created_at")
+        )
+        for group_id, created_at in unread_rows:
+            last_read_at = read_state_by_group.get(group_id)
+            if last_read_at is None or created_at > last_read_at:
+                unread_count_by_group[group_id] += 1
+
+        last_message_ids = [group.last_message_id for group in groups if group.last_message_id]
+        last_message_by_id = {
+            message.id: message
+            for message in GroupChatMessage.objects.filter(id__in=last_message_ids).select_related("sender")
+        }
+
         chat_items = []
         total_unread_count = 0
 
         for group in groups:
-            last_message = (
-                GroupChatMessage.objects.filter(group=group)
-                .select_related("sender")
-                .order_by("-created_at", "-id")
-                .first()
-            )
-            unread_count = get_group_chat_unread_count(user, group)
+            last_message = last_message_by_id.get(group.last_message_id)
+            unread_count = unread_count_by_group.get(group.id, 0)
             total_unread_count += unread_count
             activity_snapshot = build_group_chat_activity_snapshot(
                 group,
                 current_user=user,
                 presence_map=presence_by_group.get(group.id, {}),
+                members=getattr(group, "prefetched_group_members", None),
             )
 
             chat_items.append(
@@ -3458,7 +3506,7 @@ class GroupChatInboxView(APIView):
                     "online_participant_count": activity_snapshot["online_participant_count"],
                     "active_typing_users": activity_snapshot["active_typing_users"],
                     "has_someone_typing": activity_snapshot["has_someone_typing"],
-                    "message_count": GroupChatMessage.objects.filter(group=group).count(),
+                    "message_count": message_count_by_group.get(group.id, 0),
                     "last_message": (
                         {
                             "id": last_message.id,
@@ -3470,7 +3518,7 @@ class GroupChatInboxView(APIView):
                         if last_message
                         else None
                     ),
-                    "last_activity_at": last_message.created_at if last_message else group.created_at,
+                    "last_activity_at": group.last_activity_at or group.created_at,
                 }
             )
 
