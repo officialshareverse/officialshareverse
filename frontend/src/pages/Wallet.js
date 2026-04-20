@@ -135,6 +135,29 @@ function formatDateTime(value) {
   });
 }
 
+function formatRelativeWalletTime(value) {
+  if (!value) {
+    return "Just now";
+  }
+  const timestamp = new Date(value).getTime();
+  if (Number.isNaN(timestamp)) {
+    return "Just now";
+  }
+  const deltaMinutes = Math.max(1, Math.round((Date.now() - timestamp) / 60000));
+  if (deltaMinutes < 60) {
+    return `${deltaMinutes}m ago`;
+  }
+  const deltaHours = Math.round(deltaMinutes / 60);
+  if (deltaHours < 24) {
+    return `${deltaHours}h ago`;
+  }
+  const deltaDays = Math.round(deltaHours / 24);
+  if (deltaDays < 7) {
+    return `${deltaDays}d ago`;
+  }
+  return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
 function bucketTransactions(items) {
   const now = new Date();
   const today = startOfDay(now).getTime();
@@ -288,6 +311,7 @@ export default function Wallet() {
     typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
   );
   const [isMobileActionDrawerOpen, setIsMobileActionDrawerOpen] = useState(false);
+  const [isMobileHistoryDrawerOpen, setIsMobileHistoryDrawerOpen] = useState(false);
   const [transactionSearch, setTransactionSearch] = useState("");
   const [transactionFilter, setTransactionFilter] = useState("all");
   const payoutsLive = Boolean(payoutConfig?.payout_enabled);
@@ -321,6 +345,7 @@ export default function Wallet() {
   useEffect(() => {
     if (!isMobile) {
       setIsMobileActionDrawerOpen(false);
+      setIsMobileHistoryDrawerOpen(false);
     }
   }, [isMobile]);
 
@@ -387,6 +412,9 @@ export default function Wallet() {
     () => bucketTransactions(filteredTransactions),
     [filteredTransactions]
   );
+
+  const activeTransactionFilterLabel =
+    transactionFilter === "all" ? "All" : transactionFilter === "credit" ? "Credits" : "Debits";
 
   const sortedPayouts = useMemo(
     () => [...payouts].sort((left, right) => toTimestamp(right.requested_at) - toTimestamp(left.requested_at)),
@@ -969,6 +997,54 @@ export default function Wallet() {
         </Drawer>
       ) : null}
 
+      {isMobile ? (
+        <Drawer
+          open={isMobileHistoryDrawerOpen}
+          onClose={() => setIsMobileHistoryDrawerOpen(false)}
+          eyebrow="History filters"
+          title="Find wallet activity"
+          description="Search transactions or narrow the list before jumping back to the compact wallet feed."
+          className="sv-wallet-history-mobile-drawer"
+          footer={(
+            <button
+              type="button"
+              onClick={() => setIsMobileHistoryDrawerOpen(false)}
+              className="sv-btn-secondary w-full justify-center"
+            >
+              Done
+            </button>
+          )}
+        >
+          <label className="sv-wallet-search">
+            <SearchIcon className="h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              value={transactionSearch}
+              onChange={(event) => setTransactionSearch(event.target.value)}
+              placeholder="Search titles, groups, or descriptions"
+              className="sv-wallet-search-input"
+            />
+          </label>
+
+          <div className="sv-wallet-filter-row">
+            {[
+              { value: "all", label: "All" },
+              { value: "credit", label: "Credits" },
+              { value: "debit", label: "Debits" },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setTransactionFilter(option.value)}
+                className={`sv-wallet-filter-pill ${transactionFilter === option.value ? "is-active" : ""}`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </Drawer>
+      ) : null}
+
       <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
         <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.08fr_0.92fr]">
           <div className="sv-card-solid sv-wallet-balance-card sv-reveal">
@@ -1166,7 +1242,7 @@ export default function Wallet() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="sv-eyebrow">Payout Requests</p>
-                <h2 className="sv-title mt-2">{payoutsLive ? "Recent withdrawals" : "Recent withdrawal requests"}</h2>
+                <h2 className="sv-title mt-2">{isMobile ? "Payouts" : payoutsLive ? "Recent withdrawals" : "Recent withdrawal requests"}</h2>
               </div>
               <span className="sv-chip">
                 {sortedPayouts.length} request{sortedPayouts.length === 1 ? "" : "s"}
@@ -1190,7 +1266,7 @@ export default function Wallet() {
                 sortedPayouts.map((payout) => {
                   const canSync = Boolean(payout.provider_payout_id) && ["pending", "queued", "processing"].includes(payout.status);
                   return (
-                    <article key={payout.id} className="sv-wallet-payout-card">
+                    <article key={payout.id} className={`sv-wallet-payout-card ${isMobile ? "is-compact" : ""}`}>
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
@@ -1204,18 +1280,21 @@ export default function Wallet() {
                               {payout.status}
                             </span>
                           </div>
-                          <p className="mt-2 text-sm leading-7 text-slate-600">
+                          <p className={`mt-2 text-sm text-slate-600 ${isMobile ? "leading-6 sv-wallet-message-compact" : "leading-7"}`}>
                             {payout.failure_reason || `Mode: ${payout.mode}${payout.utr ? ` | UTR: ${payout.utr}` : ""}`}
                           </p>
-                          <p className="mt-1 text-xs text-slate-500">Requested {formatDateTime(payout.requested_at)}</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                            <span>Requested {formatDateTime(payout.requested_at)}</span>
+                            {isMobile ? <span>{getEstimatedPayoutLabel(payout, payoutsLive)}</span> : null}
+                          </div>
                         </div>
                         <div className="text-left sm:text-right">
                           <p className="text-lg font-semibold text-rose-700">- {formatCurrency(payout.amount)}</p>
-                          <p className="mt-2 text-xs text-slate-500">{getEstimatedPayoutLabel(payout, payoutsLive)}</p>
+                          {!isMobile ? <p className="mt-2 text-xs text-slate-500">{getEstimatedPayoutLabel(payout, payoutsLive)}</p> : null}
                         </div>
                       </div>
 
-                      <PayoutTimeline steps={getPayoutTimeline(payout.status, payoutsLive)} />
+                      {!isMobile ? <PayoutTimeline steps={getPayoutTimeline(payout.status, payoutsLive)} /> : null}
 
                       {canSync ? (
                         <button
@@ -1224,7 +1303,7 @@ export default function Wallet() {
                           onClick={() => syncPayout(payout.id)}
                           disabled={workingAction !== "" && workingAction !== `sync-${payout.id}`}
                         >
-                          {workingAction === `sync-${payout.id}` ? "Refreshing..." : "Refresh status"}
+                          {workingAction === `sync-${payout.id}` ? "Refreshing..." : isMobile ? "Refresh" : "Refresh status"}
                         </button>
                       ) : null}
                     </article>
@@ -1238,62 +1317,76 @@ export default function Wallet() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="sv-eyebrow">History</p>
-                <h2 className="sv-title mt-2">Transaction activity</h2>
+                <h2 className="sv-title mt-2">{isMobile ? "Transactions" : "Transaction activity"}</h2>
               </div>
               <span className="sv-chip">
                 {filteredTransactions.length} record{filteredTransactions.length === 1 ? "" : "s"}
               </span>
             </div>
 
-            <div className="sv-wallet-history-top mt-5">
-              <div className="sv-wallet-mini-chart">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Flow snapshot</p>
-                    <p className="mt-1 text-sm text-slate-600">Recent balance movement across the last 7 days.</p>
+            {isMobile ? (
+              <button
+                type="button"
+                onClick={() => setIsMobileHistoryDrawerOpen(true)}
+                className="sv-wallet-history-mobile-trigger mt-5"
+              >
+                <span className="sv-wallet-history-mobile-trigger-copy">
+                  <span>Search &amp; filter</span>
+                  <strong>{transactionSearch ? `Searching "${transactionSearch}"` : activeTransactionFilterLabel}</strong>
+                </span>
+                <SearchIcon className="h-4 w-4" />
+              </button>
+            ) : (
+              <div className="sv-wallet-history-top mt-5">
+                <div className="sv-wallet-mini-chart">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Flow snapshot</p>
+                      <p className="mt-1 text-sm text-slate-600">Recent balance movement across the last 7 days.</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-emerald-700">+ {formatShortCurrency(transactionSummary.credit)}</p>
+                      <p className="mt-1 text-sm font-semibold text-rose-700">- {formatShortCurrency(transactionSummary.debit)}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-emerald-700">+ {formatShortCurrency(transactionSummary.credit)}</p>
-                    <p className="mt-1 text-sm font-semibold text-rose-700">- {formatShortCurrency(transactionSummary.debit)}</p>
+                  <div className="sv-wallet-trend-grid mt-4">
+                    {trendPoints.map((point) => (
+                      <TrendColumn key={`history-${point.key}`} point={point} maxValue={trendMax} compact />
+                    ))}
                   </div>
                 </div>
-                <div className="sv-wallet-trend-grid mt-4">
-                  {trendPoints.map((point) => (
-                    <TrendColumn key={`history-${point.key}`} point={point} maxValue={trendMax} compact />
-                  ))}
+
+                <div className="sv-wallet-history-controls">
+                  <label className="sv-wallet-search">
+                    <SearchIcon className="h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={transactionSearch}
+                      onChange={(event) => setTransactionSearch(event.target.value)}
+                      placeholder="Search titles, groups, or descriptions"
+                      className="sv-wallet-search-input"
+                    />
+                  </label>
+
+                  <div className="sv-wallet-filter-row">
+                    {[
+                      { value: "all", label: "All" },
+                      { value: "credit", label: "Credits" },
+                      { value: "debit", label: "Debits" },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setTransactionFilter(option.value)}
+                        className={`sv-wallet-filter-pill ${transactionFilter === option.value ? "is-active" : ""}`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-
-              <div className="sv-wallet-history-controls">
-                <label className="sv-wallet-search">
-                  <SearchIcon className="h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    value={transactionSearch}
-                    onChange={(event) => setTransactionSearch(event.target.value)}
-                    placeholder="Search titles, groups, or descriptions"
-                    className="sv-wallet-search-input"
-                  />
-                </label>
-
-                <div className="sv-wallet-filter-row">
-                  {[
-                    { value: "all", label: "All" },
-                    { value: "credit", label: "Credits" },
-                    { value: "debit", label: "Debits" },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setTransactionFilter(option.value)}
-                      className={`sv-wallet-filter-pill ${transactionFilter === option.value ? "is-active" : ""}`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+            )}
 
             <div className="mt-5 space-y-5">
               {groupedTransactions.length === 0 ? (
@@ -1312,7 +1405,7 @@ export default function Wallet() {
                     <div className="sv-wallet-group-header">{group.label}</div>
                     <div className="mt-3 space-y-3">
                       {group.items.map((transaction) => (
-                        <article key={transaction.id} className="sv-wallet-transaction-card">
+                        <article key={transaction.id} className={`sv-wallet-transaction-card ${isMobile ? "is-compact" : ""}`}>
                           <div className="flex items-start gap-3">
                             <span
                               className={`sv-wallet-transaction-icon ${transaction.type === "credit" ? "is-credit" : "is-debit"}`}
@@ -1335,10 +1428,11 @@ export default function Wallet() {
                                   {transaction.status}
                                 </span>
                               </div>
-                              <p className="mt-2 text-sm leading-7 text-slate-600">{transaction.description}</p>
+                              <p className={`mt-2 text-sm text-slate-600 ${isMobile ? "leading-6 sv-wallet-message-compact" : "leading-7"}`}>{transaction.description}</p>
                               <p className="mt-1 text-xs text-slate-500">
-                                {transaction.mode_label}
-                                {transaction.group_name ? ` | ${transaction.group_name}` : ""}
+                                {isMobile
+                                  ? transaction.group_name || transaction.mode_label
+                                  : `${transaction.mode_label}${transaction.group_name ? ` | ${transaction.group_name}` : ""}`}
                               </p>
                             </div>
                           </div>
@@ -1347,7 +1441,7 @@ export default function Wallet() {
                             <p className={`text-lg font-semibold ${transaction.type === "credit" ? "text-emerald-700" : "text-rose-700"}`}>
                               {transaction.type === "credit" ? "+" : "-"} {formatCurrency(transaction.amount)}
                             </p>
-                            <p className="mt-2 text-xs text-slate-500">{formatDateTime(transaction.created_at)}</p>
+                            <p className="mt-2 text-xs text-slate-500">{isMobile ? formatRelativeWalletTime(transaction.created_at) : formatDateTime(transaction.created_at)}</p>
                           </div>
                         </article>
                       ))}
