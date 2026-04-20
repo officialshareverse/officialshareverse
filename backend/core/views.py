@@ -12,7 +12,7 @@ from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import DatabaseError, connections, transaction
-from django.db.models import Avg, Count, ExpressionWrapper, F, IntegerField, OuterRef, Prefetch, Q, Subquery, Sum, Value
+from django.db.models import Avg, Count, ExpressionWrapper, F, IntegerField, Max, OuterRef, Prefetch, Q, Subquery, Sum, Value
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -673,7 +673,11 @@ def get_group_chat_participants(group):
 
 
 def get_group_chat_unread_count(user, group):
-    read_state = GroupChatReadState.objects.filter(group=group, user=user).first()
+    read_state = (
+        GroupChatReadState.objects.filter(group=group, user=user)
+        .order_by("-last_read_at", "-id")
+        .first()
+    )
     unread_messages = GroupChatMessage.objects.filter(group=group).exclude(sender=user)
     if read_state:
         unread_messages = unread_messages.filter(created_at__gt=read_state.last_read_at)
@@ -681,10 +685,25 @@ def get_group_chat_unread_count(user, group):
 
 
 def mark_group_chat_read(user, group):
-    GroupChatReadState.objects.update_or_create(
+    now = timezone.now()
+    existing_states = list(
+        GroupChatReadState.objects.filter(group=group, user=user).order_by("-last_read_at", "-id")
+    )
+
+    if existing_states:
+        primary_state = existing_states[0]
+        duplicate_ids = [state.id for state in existing_states[1:]]
+        if duplicate_ids:
+            GroupChatReadState.objects.filter(id__in=duplicate_ids).delete()
+
+        GroupChatReadState.objects.filter(id=primary_state.id).update(last_read_at=now)
+        primary_state.last_read_at = now
+        return primary_state
+
+    return GroupChatReadState.objects.create(
         group=group,
         user=user,
-        defaults={"last_read_at": timezone.now()},
+        last_read_at=now,
     )
 
 
@@ -728,16 +747,36 @@ def get_group_chat_presence_state(presence, now=None):
 
 def touch_group_chat_presence(user, group, is_typing=None):
     now = timezone.now()
-    defaults = {"last_seen_at": now}
-    if is_typing is not None:
-        defaults["is_typing"] = bool(is_typing)
-        defaults["typing_updated_at"] = now
+    existing_rows = list(
+        GroupChatPresence.objects.filter(group=group, user=user).order_by("-updated_at", "-id")
+    )
 
-    return GroupChatPresence.objects.update_or_create(
-        group=group,
-        user=user,
-        defaults=defaults,
-    )[0]
+    if existing_rows:
+        primary_presence = existing_rows[0]
+        duplicate_ids = [presence.id for presence in existing_rows[1:]]
+        if duplicate_ids:
+            GroupChatPresence.objects.filter(id__in=duplicate_ids).delete()
+
+        update_kwargs = {"last_seen_at": now}
+        primary_presence.last_seen_at = now
+        if is_typing is not None:
+            update_kwargs["is_typing"] = bool(is_typing)
+            update_kwargs["typing_updated_at"] = now
+            primary_presence.is_typing = bool(is_typing)
+            primary_presence.typing_updated_at = now
+
+        GroupChatPresence.objects.filter(id=primary_presence.id).update(**update_kwargs)
+        return primary_presence
+
+    create_kwargs = {
+        "group": group,
+        "user": user,
+        "last_seen_at": now,
+    }
+    if is_typing is not None:
+        create_kwargs["is_typing"] = bool(is_typing)
+        create_kwargs["typing_updated_at"] = now
+    return GroupChatPresence.objects.create(**create_kwargs)
 
 
 def serialize_group_chat_participant(user, role, presence, now=None, current_user=None):
@@ -3439,14 +3478,24 @@ class GroupChatInboxView(APIView):
                 }
             )
 
-        presence_rows = GroupChatPresence.objects.filter(group_id__in=group_ids).select_related("user")
+        presence_rows = (
+            GroupChatPresence.objects.filter(group_id__in=group_ids)
+            .select_related("user")
+            .order_by("group_id", "user_id", "-updated_at", "-id")
+        )
         presence_by_group = {}
         for presence in presence_rows:
-            presence_by_group.setdefault(presence.group_id, {})[presence.user_id] = presence
+            group_presence = presence_by_group.setdefault(presence.group_id, {})
+            if presence.user_id not in group_presence:
+                group_presence[presence.user_id] = presence
 
         read_state_by_group = {
-            read_state.group_id: read_state.last_read_at
-            for read_state in GroupChatReadState.objects.filter(group_id__in=group_ids, user=user)
+            row["group_id"]: row["last_read_at"]
+            for row in (
+                GroupChatReadState.objects.filter(group_id__in=group_ids, user=user)
+                .values("group_id")
+                .annotate(last_read_at=Max("last_read_at"))
+            )
         }
         message_count_by_group = {
             row["group_id"]: row["message_count"]
