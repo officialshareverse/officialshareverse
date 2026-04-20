@@ -914,6 +914,19 @@ def build_safe_group_chat_group_payload(group):
     }
 
 
+def build_emergency_group_chat_group_payload(group):
+    return {
+        "id": getattr(group, "id", None),
+        "subscription_name": "Unknown split",
+        "mode": (getattr(group, "mode", "") or "sharing").strip() or "sharing",
+        "mode_label": "Buy together" if getattr(group, "mode", "") == "group_buy" else "Share existing plan",
+        "status": (getattr(group, "status", "") or "forming").strip() or "forming",
+        "status_label": "Unavailable right now",
+        "owner_name": "Unknown owner",
+        "created_at": getattr(group, "created_at", None),
+    }
+
+
 def extract_notification_context_title(message):
     raw_message = (message or "").strip()
     patterns = [
@@ -3425,42 +3438,57 @@ class GroupChatView(APIView):
             return error_response
 
         try:
-            messages = GroupChatMessage.objects.filter(group=group).select_related("sender")
-            serialized_messages = GroupChatMessageSerializer(
-                messages,
-                many=True,
-                context={"request": request},
-            ).data
-        except Exception:
-            serialized_messages = []
+            try:
+                messages = GroupChatMessage.objects.filter(group=group).select_related("sender")
+                serialized_messages = GroupChatMessageSerializer(
+                    messages,
+                    many=True,
+                    context={"request": request},
+                ).data
+            except Exception:
+                serialized_messages = []
 
-        mark_group_chat_read(request.user, group)
-        touch_group_chat_presence(request.user, group)
-        try:
-            presence_map = {
-                presence.user_id: presence
-                for presence in GroupChatPresence.objects.filter(group=group).select_related("user")
-            }
-            activity_snapshot = build_group_chat_activity_snapshot(
+            mark_group_chat_read(request.user, group)
+            touch_group_chat_presence(request.user, group)
+            try:
+                presence_map = {
+                    presence.user_id: presence
+                    for presence in GroupChatPresence.objects.filter(group=group).select_related("user")
+                }
+                activity_snapshot = build_group_chat_activity_snapshot(
+                    group,
+                    current_user=request.user,
+                    presence_map=presence_map,
+                )
+            except Exception:
+                activity_snapshot = build_group_chat_fallback_snapshot(
+                    group,
+                    current_user=request.user,
+                )
+
+            return Response({
+                "group": build_safe_group_chat_group_payload(group),
+                "participants": activity_snapshot["participants"],
+                "messages": serialized_messages,
+                "unread_chat_count": 0,
+                "online_participant_count": activity_snapshot["online_participant_count"],
+                "active_typing_users": activity_snapshot["active_typing_users"],
+                "has_someone_typing": activity_snapshot["has_someone_typing"],
+            })
+        except Exception:
+            fallback_snapshot = build_group_chat_fallback_snapshot(
                 group,
                 current_user=request.user,
-                presence_map=presence_map,
             )
-        except Exception:
-            activity_snapshot = build_group_chat_fallback_snapshot(
-                group,
-                current_user=request.user,
-            )
-
-        return Response({
-            "group": build_safe_group_chat_group_payload(group),
-            "participants": activity_snapshot["participants"],
-            "messages": serialized_messages,
-            "unread_chat_count": 0,
-            "online_participant_count": activity_snapshot["online_participant_count"],
-            "active_typing_users": activity_snapshot["active_typing_users"],
-            "has_someone_typing": activity_snapshot["has_someone_typing"],
-        })
+            return Response({
+                "group": build_emergency_group_chat_group_payload(group),
+                "participants": fallback_snapshot["participants"],
+                "messages": [],
+                "unread_chat_count": 0,
+                "online_participant_count": 0,
+                "active_typing_users": [],
+                "has_someone_typing": False,
+            })
 
     def post(self, request, group_id):
         group, error_response = self._get_group_for_user(request, group_id)
@@ -3529,28 +3557,28 @@ class GroupChatInboxView(APIView):
     def get(self, request):
         user = request.user
         try:
-            last_message_subquery = (
-                GroupChatMessage.objects.filter(group_id=OuterRef("pk"))
-                .order_by("-created_at", "-id")
-            )
-            groups = list(
-                Group.objects.filter(Q(owner=user) | Q(groupmember__user=user))
-                .select_related("subscription", "owner")
-                .prefetch_related(
-                    Prefetch(
-                        "groupmember_set",
-                        queryset=GroupMember.objects.select_related("user"),
-                        to_attr="prefetched_group_members",
-                    )
-                )
-                .annotate(
-                    last_message_id=Subquery(last_message_subquery.values("id")[:1]),
-                    last_activity_at=Subquery(last_message_subquery.values("created_at")[:1]),
-                )
-                .distinct()
-            )
-        except Exception:
             try:
+                last_message_subquery = (
+                    GroupChatMessage.objects.filter(group_id=OuterRef("pk"))
+                    .order_by("-created_at", "-id")
+                )
+                groups = list(
+                    Group.objects.filter(Q(owner=user) | Q(groupmember__user=user))
+                    .select_related("subscription", "owner")
+                    .prefetch_related(
+                        Prefetch(
+                            "groupmember_set",
+                            queryset=GroupMember.objects.select_related("user"),
+                            to_attr="prefetched_group_members",
+                        )
+                    )
+                    .annotate(
+                        last_message_id=Subquery(last_message_subquery.values("id")[:1]),
+                        last_activity_at=Subquery(last_message_subquery.values("created_at")[:1]),
+                    )
+                    .distinct()
+                )
+            except Exception:
                 groups = list(
                     Group.objects.filter(Q(owner=user) | Q(groupmember__user=user))
                     .select_related("subscription", "owner")
@@ -3563,7 +3591,8 @@ class GroupChatInboxView(APIView):
                     )
                     .distinct()
                 )
-            except Exception:
+            group_ids = [group.id for group in groups]
+            if not group_ids:
                 return Response(
                     {
                         "total_unread_count": 0,
@@ -3571,8 +3600,137 @@ class GroupChatInboxView(APIView):
                         "chats": [],
                     }
                 )
-        group_ids = [group.id for group in groups]
-        if not group_ids:
+
+            try:
+                presence_rows = (
+                    GroupChatPresence.objects.filter(group_id__in=group_ids)
+                    .select_related("user")
+                    .order_by("group_id", "user_id", "-updated_at", "-id")
+                )
+            except Exception:
+                presence_rows = []
+            presence_by_group = {}
+            for presence in presence_rows:
+                group_presence = presence_by_group.setdefault(presence.group_id, {})
+                if presence.user_id not in group_presence:
+                    group_presence[presence.user_id] = presence
+
+            try:
+                read_state_by_group = {
+                    row["group_id"]: row["last_read_at"]
+                    for row in (
+                        GroupChatReadState.objects.filter(group_id__in=group_ids, user=user)
+                        .values("group_id")
+                        .annotate(last_read_at=Max("last_read_at"))
+                    )
+                }
+            except Exception:
+                read_state_by_group = {}
+
+            try:
+                message_count_by_group = {
+                    row["group_id"]: row["message_count"]
+                    for row in (
+                        GroupChatMessage.objects.filter(group_id__in=group_ids)
+                        .values("group_id")
+                        .annotate(message_count=Count("id"))
+                    )
+                }
+                unread_count_by_group = {group_id: 0 for group_id in group_ids}
+                unread_rows = (
+                    GroupChatMessage.objects.filter(group_id__in=group_ids)
+                    .exclude(sender=user)
+                    .values_list("group_id", "created_at")
+                )
+                for group_id, created_at in unread_rows:
+                    last_read_at = read_state_by_group.get(group_id)
+                    if last_read_at is None or created_at > last_read_at:
+                        unread_count_by_group[group_id] += 1
+
+                last_message_ids = [group.last_message_id for group in groups if getattr(group, "last_message_id", None)]
+                last_message_by_id = {
+                    message.id: message
+                    for message in GroupChatMessage.objects.filter(id__in=last_message_ids).select_related("sender")
+                }
+            except Exception:
+                message_count_by_group = {group_id: 0 for group_id in group_ids}
+                unread_count_by_group = {group_id: 0 for group_id in group_ids}
+                last_message_by_id = {}
+
+            chat_items = []
+            total_unread_count = 0
+
+            for group in groups:
+                try:
+                    last_message = last_message_by_id.get(getattr(group, "last_message_id", None))
+                    unread_count = unread_count_by_group.get(group.id, 0)
+                    total_unread_count += unread_count
+                    activity_snapshot = build_group_chat_activity_snapshot(
+                        group,
+                        current_user=user,
+                        presence_map=presence_by_group.get(group.id, {}),
+                        members=getattr(group, "prefetched_group_members", None),
+                    )
+                    chat_items.append(
+                        {
+                            "group": build_safe_group_chat_group_payload(group),
+                            "is_owner": getattr(group, "owner_id", None) == user.id,
+                            "unread_chat_count": unread_count,
+                            "participant_count": activity_snapshot["participant_count"],
+                            "participant_preview": activity_snapshot["participants"][:4],
+                            "online_participant_count": activity_snapshot["online_participant_count"],
+                            "active_typing_users": activity_snapshot["active_typing_users"],
+                            "has_someone_typing": activity_snapshot["has_someone_typing"],
+                            "message_count": message_count_by_group.get(group.id, 0),
+                            "last_message": (
+                                {
+                                    "id": last_message.id,
+                                    "sender_username": getattr(getattr(last_message, "sender", None), "username", "Unknown"),
+                                    "message": getattr(last_message, "message", ""),
+                                    "created_at": getattr(last_message, "created_at", None),
+                                    "is_own": getattr(last_message, "sender_id", None) == user.id,
+                                }
+                                if last_message
+                                else None
+                            ),
+                            "last_activity_at": getattr(group, "last_activity_at", None) or getattr(group, "created_at", None),
+                            }
+                        )
+                except Exception:
+                    activity_snapshot = build_group_chat_fallback_snapshot(
+                        group,
+                        current_user=user,
+                        members=getattr(group, "prefetched_group_members", None),
+                    )
+                    chat_items.append(
+                        {
+                            "group": build_emergency_group_chat_group_payload(group),
+                            "is_owner": getattr(group, "owner_id", None) == user.id,
+                            "unread_chat_count": 0,
+                            "participant_count": activity_snapshot["participant_count"],
+                            "participant_preview": activity_snapshot["participants"][:4],
+                            "online_participant_count": activity_snapshot["online_participant_count"],
+                            "active_typing_users": activity_snapshot["active_typing_users"],
+                            "has_someone_typing": activity_snapshot["has_someone_typing"],
+                            "message_count": 0,
+                            "last_message": None,
+                            "last_activity_at": getattr(group, "created_at", None),
+                        }
+                    )
+
+            chat_items.sort(
+                key=lambda item: (item["last_activity_at"], item["group"]["id"]),
+                reverse=True,
+            )
+
+            return Response(
+                {
+                    "total_unread_count": total_unread_count,
+                    "total_chats": len(chat_items),
+                    "chats": chat_items,
+                }
+            )
+        except Exception:
             return Response(
                 {
                     "total_unread_count": 0,
@@ -3580,135 +3738,6 @@ class GroupChatInboxView(APIView):
                     "chats": [],
                 }
             )
-
-        try:
-            presence_rows = (
-                GroupChatPresence.objects.filter(group_id__in=group_ids)
-                .select_related("user")
-                .order_by("group_id", "user_id", "-updated_at", "-id")
-            )
-        except Exception:
-            presence_rows = []
-        presence_by_group = {}
-        for presence in presence_rows:
-            group_presence = presence_by_group.setdefault(presence.group_id, {})
-            if presence.user_id not in group_presence:
-                group_presence[presence.user_id] = presence
-
-        try:
-            read_state_by_group = {
-                row["group_id"]: row["last_read_at"]
-                for row in (
-                    GroupChatReadState.objects.filter(group_id__in=group_ids, user=user)
-                    .values("group_id")
-                    .annotate(last_read_at=Max("last_read_at"))
-                )
-            }
-        except Exception:
-            read_state_by_group = {}
-        try:
-            message_count_by_group = {
-                row["group_id"]: row["message_count"]
-                for row in (
-                    GroupChatMessage.objects.filter(group_id__in=group_ids)
-                    .values("group_id")
-                    .annotate(message_count=Count("id"))
-                )
-            }
-            unread_count_by_group = {group_id: 0 for group_id in group_ids}
-            unread_rows = (
-                GroupChatMessage.objects.filter(group_id__in=group_ids)
-                .exclude(sender=user)
-                .values_list("group_id", "created_at")
-            )
-            for group_id, created_at in unread_rows:
-                last_read_at = read_state_by_group.get(group_id)
-                if last_read_at is None or created_at > last_read_at:
-                    unread_count_by_group[group_id] += 1
-
-            last_message_ids = [group.last_message_id for group in groups if getattr(group, "last_message_id", None)]
-            last_message_by_id = {
-                message.id: message
-                for message in GroupChatMessage.objects.filter(id__in=last_message_ids).select_related("sender")
-            }
-        except Exception:
-            message_count_by_group = {group_id: 0 for group_id in group_ids}
-            unread_count_by_group = {group_id: 0 for group_id in group_ids}
-            last_message_by_id = {}
-
-        chat_items = []
-        total_unread_count = 0
-
-        for group in groups:
-            try:
-                last_message = last_message_by_id.get(getattr(group, "last_message_id", None))
-                unread_count = unread_count_by_group.get(group.id, 0)
-                total_unread_count += unread_count
-                activity_snapshot = build_group_chat_activity_snapshot(
-                    group,
-                    current_user=user,
-                    presence_map=presence_by_group.get(group.id, {}),
-                    members=getattr(group, "prefetched_group_members", None),
-                )
-                chat_items.append(
-                    {
-                        "group": build_safe_group_chat_group_payload(group),
-                        "is_owner": getattr(group, "owner_id", None) == user.id,
-                        "unread_chat_count": unread_count,
-                        "participant_count": activity_snapshot["participant_count"],
-                        "participant_preview": activity_snapshot["participants"][:4],
-                        "online_participant_count": activity_snapshot["online_participant_count"],
-                        "active_typing_users": activity_snapshot["active_typing_users"],
-                        "has_someone_typing": activity_snapshot["has_someone_typing"],
-                        "message_count": message_count_by_group.get(group.id, 0),
-                        "last_message": (
-                            {
-                                "id": last_message.id,
-                                "sender_username": getattr(getattr(last_message, "sender", None), "username", "Unknown"),
-                                "message": getattr(last_message, "message", ""),
-                                "created_at": getattr(last_message, "created_at", None),
-                                "is_own": getattr(last_message, "sender_id", None) == user.id,
-                            }
-                            if last_message
-                            else None
-                        ),
-                        "last_activity_at": getattr(group, "last_activity_at", None) or getattr(group, "created_at", None),
-                    }
-                )
-            except Exception:
-                activity_snapshot = build_group_chat_fallback_snapshot(
-                    group,
-                    current_user=user,
-                    members=getattr(group, "prefetched_group_members", None),
-                )
-                chat_items.append(
-                    {
-                        "group": build_safe_group_chat_group_payload(group),
-                        "is_owner": getattr(group, "owner_id", None) == user.id,
-                        "unread_chat_count": 0,
-                        "participant_count": activity_snapshot["participant_count"],
-                        "participant_preview": activity_snapshot["participants"][:4],
-                        "online_participant_count": activity_snapshot["online_participant_count"],
-                        "active_typing_users": activity_snapshot["active_typing_users"],
-                        "has_someone_typing": activity_snapshot["has_someone_typing"],
-                        "message_count": 0,
-                        "last_message": None,
-                        "last_activity_at": getattr(group, "created_at", None),
-                    }
-                )
-
-        chat_items.sort(
-            key=lambda item: (item["last_activity_at"], item["group"]["id"]),
-            reverse=True,
-        )
-
-        return Response(
-            {
-                "total_unread_count": total_unread_count,
-                "total_chats": len(chat_items),
-                "chats": chat_items,
-            }
-        )
 
 
 def build_profile_response(user, request=None):
