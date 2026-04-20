@@ -964,6 +964,19 @@ def build_empty_group_chat_response(group=None, group_id=None, current_user=None
     }
 
 
+def log_group_chat_failure(request, endpoint, stage, exc, group_id=None):
+    log_operation_event(
+        f"{endpoint}_{stage}_failed",
+        level="error",
+        endpoint=endpoint,
+        stage=stage,
+        user_id=getattr(getattr(request, "user", None), "id", None),
+        group_id=group_id,
+        exception_type=type(exc).__name__,
+        exception_message=str(exc),
+    )
+
+
 def extract_notification_context_title(message):
     raw_message = (message or "").strip()
     patterns = [
@@ -3461,9 +3474,16 @@ class GroupChatView(APIView):
     def dispatch(self, request, *args, **kwargs):
         try:
             return super().dispatch(request, *args, **kwargs)
-        except Exception:
+        except Exception as exc:
             group = None
             group_id = kwargs.get("group_id")
+            log_group_chat_failure(
+                request,
+                endpoint="group_chat_detail",
+                stage="dispatch",
+                exc=exc,
+                group_id=group_id,
+            )
             if group_id is not None:
                 try:
                     group = Group.objects.select_related("subscription", "owner").get(id=group_id)
@@ -3502,7 +3522,14 @@ class GroupChatView(APIView):
                     many=True,
                     context={"request": request},
                 ).data
-            except Exception:
+            except Exception as exc:
+                log_group_chat_failure(
+                    request,
+                    endpoint="group_chat_detail",
+                    stage="messages_load",
+                    exc=exc,
+                    group_id=group.id,
+                )
                 serialized_messages = []
 
             mark_group_chat_read(request.user, group)
@@ -3517,7 +3544,14 @@ class GroupChatView(APIView):
                     current_user=request.user,
                     presence_map=presence_map,
                 )
-            except Exception:
+            except Exception as exc:
+                log_group_chat_failure(
+                    request,
+                    endpoint="group_chat_detail",
+                    stage="activity_snapshot",
+                    exc=exc,
+                    group_id=group.id,
+                )
                 activity_snapshot = build_group_chat_fallback_snapshot(
                     group,
                     current_user=request.user,
@@ -3532,7 +3566,14 @@ class GroupChatView(APIView):
                 "active_typing_users": activity_snapshot["active_typing_users"],
                 "has_someone_typing": activity_snapshot["has_someone_typing"],
             })
-        except Exception:
+        except Exception as exc:
+            log_group_chat_failure(
+                request,
+                endpoint="group_chat_detail",
+                stage="response_fallback",
+                exc=exc,
+                group_id=group.id,
+            )
             fallback_snapshot = build_group_chat_fallback_snapshot(
                 group,
                 current_user=request.user,
@@ -3614,7 +3655,13 @@ class GroupChatInboxView(APIView):
     def dispatch(self, request, *args, **kwargs):
         try:
             return super().dispatch(request, *args, **kwargs)
-        except Exception:
+        except Exception as exc:
+            log_group_chat_failure(
+                request,
+                endpoint="group_chat_inbox",
+                stage="dispatch",
+                exc=exc,
+            )
             response = Response(
                 {
                     "total_unread_count": 0,
@@ -3648,7 +3695,13 @@ class GroupChatInboxView(APIView):
                     )
                     .distinct()
                 )
-            except Exception:
+            except Exception as exc:
+                log_group_chat_failure(
+                    request,
+                    endpoint="group_chat_inbox",
+                    stage="group_query",
+                    exc=exc,
+                )
                 groups = list(
                     Group.objects.filter(Q(owner=user) | Q(groupmember__user=user))
                     .select_related("subscription", "owner")
@@ -3677,7 +3730,13 @@ class GroupChatInboxView(APIView):
                     .select_related("user")
                     .order_by("group_id", "user_id", "-updated_at", "-id")
                 )
-            except Exception:
+            except Exception as exc:
+                log_group_chat_failure(
+                    request,
+                    endpoint="group_chat_inbox",
+                    stage="presence_load",
+                    exc=exc,
+                )
                 presence_rows = []
             presence_by_group = {}
             for presence in presence_rows:
@@ -3722,7 +3781,13 @@ class GroupChatInboxView(APIView):
                     message.id: message
                     for message in GroupChatMessage.objects.filter(id__in=last_message_ids).select_related("sender")
                 }
-            except Exception:
+            except Exception as exc:
+                log_group_chat_failure(
+                    request,
+                    endpoint="group_chat_inbox",
+                    stage="message_summary",
+                    exc=exc,
+                )
                 message_count_by_group = {group_id: 0 for group_id in group_ids}
                 unread_count_by_group = {group_id: 0 for group_id in group_ids}
                 last_message_by_id = {}
@@ -3766,7 +3831,14 @@ class GroupChatInboxView(APIView):
                             "last_activity_at": getattr(group, "last_activity_at", None) or getattr(group, "created_at", None),
                             }
                         )
-                except Exception:
+                except Exception as exc:
+                    log_group_chat_failure(
+                        request,
+                        endpoint="group_chat_inbox",
+                        stage="group_item_build",
+                        exc=exc,
+                        group_id=group.id,
+                    )
                     activity_snapshot = build_group_chat_fallback_snapshot(
                         group,
                         current_user=user,
@@ -3800,7 +3872,13 @@ class GroupChatInboxView(APIView):
                     "chats": chat_items,
                 }
             )
-        except Exception:
+        except Exception as exc:
+            log_group_chat_failure(
+                request,
+                endpoint="group_chat_inbox",
+                stage="response_fallback",
+                exc=exc,
+            )
             return Response(
                 {
                     "total_unread_count": 0,
