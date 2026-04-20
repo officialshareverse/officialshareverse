@@ -927,6 +927,43 @@ def build_emergency_group_chat_group_payload(group):
     }
 
 
+def build_empty_group_chat_response(group=None, group_id=None, current_user=None):
+    fallback_group = (
+        build_emergency_group_chat_group_payload(group)
+        if group is not None
+        else {
+            "id": group_id,
+            "subscription_name": "Unknown split",
+            "mode": "sharing",
+            "mode_label": "Share existing plan",
+            "status": "forming",
+            "status_label": "Unavailable right now",
+            "owner_name": "Unknown owner",
+            "created_at": None,
+        }
+    )
+    fallback_snapshot = (
+        build_group_chat_fallback_snapshot(group, current_user=current_user)
+        if group is not None
+        else {
+            "participants": [],
+            "participant_count": 0,
+            "online_participant_count": 0,
+            "active_typing_users": [],
+            "has_someone_typing": False,
+        }
+    )
+    return {
+        "group": fallback_group,
+        "participants": fallback_snapshot["participants"],
+        "messages": [],
+        "unread_chat_count": 0,
+        "online_participant_count": fallback_snapshot["online_participant_count"],
+        "active_typing_users": fallback_snapshot["active_typing_users"],
+        "has_someone_typing": fallback_snapshot["has_someone_typing"],
+    }
+
+
 def extract_notification_context_title(message):
     raw_message = (message or "").strip()
     patterns = [
@@ -3421,6 +3458,26 @@ class MarkAllNotificationsReadView(APIView):
 class GroupChatView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            return super().dispatch(request, *args, **kwargs)
+        except Exception:
+            group = None
+            group_id = kwargs.get("group_id")
+            if group_id is not None:
+                try:
+                    group = Group.objects.select_related("subscription", "owner").get(id=group_id)
+                except Exception:
+                    group = None
+            response = Response(
+                build_empty_group_chat_response(
+                    group=group,
+                    group_id=group_id,
+                    current_user=getattr(request, "user", None),
+                )
+            )
+            return self.finalize_response(request, response, *args, **kwargs)
+
     def _get_group_for_user(self, request, group_id):
         try:
             group = Group.objects.select_related("subscription", "owner").get(id=group_id)
@@ -3553,6 +3610,19 @@ class GroupChatView(APIView):
 
 class GroupChatInboxView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            return super().dispatch(request, *args, **kwargs)
+        except Exception:
+            response = Response(
+                {
+                    "total_unread_count": 0,
+                    "total_chats": 0,
+                    "chats": [],
+                }
+            )
+            return self.finalize_response(request, response, *args, **kwargs)
 
     def get(self, request):
         user = request.user

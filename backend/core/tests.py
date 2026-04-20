@@ -1199,6 +1199,17 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.data["messages"], [])
         self.assertEqual(response.data["active_typing_users"], [])
 
+    @patch("core.views.GroupChatView.get", side_effect=RuntimeError("view exploded"))
+    def test_group_chat_detail_dispatch_catches_uncaught_failures(self, _get_mock):
+        group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+
+        response = self.get_group_chat(group, self.member_one)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["group"]["id"], group.id)
+        self.assertEqual(response.data["messages"], [])
+
     @patch("core.views.GroupChatPresence.objects.filter", side_effect=DatabaseError("presence unavailable"))
     def test_group_chat_inbox_handles_presence_table_failures(self, _presence_filter_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
@@ -1257,6 +1268,17 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["total_chats"], 1)
         self.assertEqual(response.data["chats"][0]["group"]["status_label"], "Unavailable right now")
+
+    @patch("core.views.GroupChatInboxView.get", side_effect=RuntimeError("view exploded"))
+    def test_group_chat_inbox_dispatch_catches_uncaught_failures(self, _get_mock):
+        group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+
+        response = self.get_chat_inbox(self.member_one)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total_chats"], 0)
+        self.assertEqual(response.data["chats"], [])
 
     @override_settings(
         RAZORPAYX_KEY_ID="rzp_test_x_123",
