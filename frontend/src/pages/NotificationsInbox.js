@@ -197,6 +197,9 @@ export default function NotificationsInbox() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
   const [filter, setFilter] = useState("all");
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [workingId, setWorkingId] = useState(null);
@@ -225,6 +228,24 @@ export default function NotificationsInbox() {
     return () => {
       isMountedRef.current = false;
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
   }, []);
 
   useEffect(() => {
@@ -438,17 +459,23 @@ export default function NotificationsInbox() {
           <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
               <p className="sv-eyebrow-on-dark">Notifications</p>
-              <h1 className="sv-display-on-dark mt-2 max-w-4xl sm:mt-3">Smart inbox for groups, wallet, and system updates</h1>
+              <h1 className="sv-display-on-dark mt-2 max-w-4xl sm:mt-3">
+                {isMobile ? "Stay on top of the updates that matter." : "Smart inbox for groups, wallet, and system updates"}
+              </h1>
               <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-4 sm:text-base sm:leading-8">
-                Filter by category, keep repeated chat alerts bundled, and control whether new unread activity plays a chime.
+                {isMobile
+                  ? "Use one simple control panel to filter unread updates and keep the list easy to scan."
+                  : "Filter by category, keep repeated chat alerts bundled, and control whether new unread activity plays a chime."}
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => setSoundEnabled((current) => !current)} className="sv-btn-ghost-dark">
-                <BellIcon className="h-4 w-4" />
-                {soundEnabled ? "Sound on" : "Sound off"}
-              </button>
+              {!isMobile ? (
+                <button type="button" onClick={() => setSoundEnabled((current) => !current)} className="sv-btn-ghost-dark">
+                  <BellIcon className="h-4 w-4" />
+                  {soundEnabled ? "Sound on" : "Sound off"}
+                </button>
+              ) : null}
               <button type="button" onClick={() => navigate("/home")} className="sv-btn-ghost-dark">
                 Back to Home
               </button>
@@ -456,19 +483,21 @@ export default function NotificationsInbox() {
           </div>
         </section>
 
-        <section className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
-          <SummaryCard label="All updates" value={counts.all} className="col-span-2 md:col-span-1" />
-          <SummaryCard label="Unread" value={counts.unread} tone={counts.unread > 0 ? "text-emerald-700" : "text-slate-900"} />
-          <SummaryCard label="Groups" value={counts.groups} tone="text-violet-700" />
-          <SummaryCard label="Wallet + System" value={counts.wallet + counts.system} tone="text-sky-700" />
-        </section>
+        {!isMobile ? (
+          <section className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
+            <SummaryCard label="All updates" value={counts.all} className="col-span-2 md:col-span-1" />
+            <SummaryCard label="Unread" value={counts.unread} tone={counts.unread > 0 ? "text-emerald-700" : "text-slate-900"} />
+            <SummaryCard label="Groups" value={counts.groups} tone="text-violet-700" />
+            <SummaryCard label="Wallet + System" value={counts.wallet + counts.system} tone="text-sky-700" />
+          </section>
+        ) : null}
 
         <section className="sv-card sv-reveal">
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Inbox</p>
-                <h2 className="mt-2 text-2xl font-bold text-slate-900">Categorized updates</h2>
+                <h2 className="mt-2 text-2xl font-bold text-slate-900">{isMobile ? "Your updates" : "Categorized updates"}</h2>
               </div>
 
               <button
@@ -541,6 +570,7 @@ export default function NotificationsInbox() {
                           item={item}
                           working={workingId === item.id}
                           onMarkRead={() => markBundleRead(item.notificationIds, item.id)}
+                          compact={isMobile}
                         />
                       ) : (
                         <NotificationCard
@@ -548,6 +578,7 @@ export default function NotificationsInbox() {
                           notification={item.notification}
                           working={workingId === `single-${item.notification.id}`}
                           onMarkRead={() => markAsRead(item.notification.id)}
+                          compact={isMobile}
                         />
                       )
                     )}
@@ -632,7 +663,7 @@ export default function NotificationsInbox() {
   );
 }
 
-function NotificationCard({ notification, working, onMarkRead }) {
+function NotificationCard({ notification, working, onMarkRead, compact = false }) {
   const Icon = getNotificationIcon(notification.icon);
 
   return (
@@ -644,15 +675,15 @@ function NotificationCard({ notification, working, onMarkRead }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="sv-notification-pill">{notification.category_label}</span>
-          {notification.context_title ? <span className="sv-notification-pill is-context">{notification.context_title}</span> : null}
+          {!compact && notification.context_title ? <span className="sv-notification-pill is-context">{notification.context_title}</span> : null}
           <span className="sv-notification-time">{formatRelativeTime(notification.created_at)}</span>
         </div>
-        <p className="mt-3 text-sm leading-7 text-slate-700">{notification.message}</p>
+        <p className={`mt-3 text-sm leading-7 text-slate-700 ${compact ? "sv-notification-message-compact" : ""}`}>{notification.message}</p>
       </div>
 
       {!notification.is_read ? (
         <button type="button" onClick={onMarkRead} disabled={working} className="sv-btn-secondary">
-          {working ? <><LoadingSpinner />Saving...</> : <><CheckCircleIcon className="h-4 w-4" />Mark read</>}
+          {working ? <><LoadingSpinner />Saving...</> : <><CheckCircleIcon className="h-4 w-4" />{compact ? "Read" : "Mark read"}</>}
         </button>
       ) : (
         <span className="sv-notification-read-pill">
@@ -664,7 +695,7 @@ function NotificationCard({ notification, working, onMarkRead }) {
   );
 }
 
-function NotificationBundleCard({ item, working, onMarkRead }) {
+function NotificationBundleCard({ item, working, onMarkRead, compact = false }) {
   return (
     <article className="sv-notification-card is-unread chat-bundle">
       <div className="sv-notification-icon chat">
@@ -674,12 +705,12 @@ function NotificationBundleCard({ item, working, onMarkRead }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="sv-notification-pill">{item.category_label}</span>
-          <span className="sv-notification-pill is-context">{item.context_title}</span>
+          {!compact ? <span className="sv-notification-pill is-context">{item.context_title}</span> : null}
           <span className="sv-notification-time">{formatRelativeTime(item.latestCreatedAt)}</span>
         </div>
         <p className="mt-3 text-sm font-semibold text-slate-900">{item.count} unread chat update{item.count === 1 ? "" : "s"} bundled together</p>
         <div className="sv-notification-bundle-list mt-3">
-          {item.messages.map((message) => (
+          {(compact ? item.messages.slice(0, 2) : item.messages).map((message) => (
             <p key={`${item.id}-${message}`} className="text-sm leading-7 text-slate-600">
               {message}
             </p>
@@ -688,7 +719,7 @@ function NotificationBundleCard({ item, working, onMarkRead }) {
       </div>
 
       <button type="button" onClick={onMarkRead} disabled={working} className="sv-btn-secondary">
-        {working ? <><LoadingSpinner />Saving...</> : <><CheckCircleIcon className="h-4 w-4" />Mark bundle read</>}
+        {working ? <><LoadingSpinner />Saving...</> : <><CheckCircleIcon className="h-4 w-4" />{compact ? "Read" : "Mark bundle read"}</>}
       </button>
     </article>
   );

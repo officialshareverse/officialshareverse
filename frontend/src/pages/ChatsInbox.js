@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import AvatarStack from "../components/AvatarStack";
 import CountUp from "../components/CountUp";
+import Drawer from "../components/Drawer";
 import EmptyState from "../components/EmptyState";
 import PullToRefreshIndicator from "../components/PullToRefreshIndicator";
 import {
@@ -135,8 +136,12 @@ export default function ChatsInbox() {
   const [chatInbox, setChatInbox] = useState({ chats: [], total_chats: 0, total_unread_count: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const previousUnreadCountRef = useRef(null);
   const isMountedRef = useRef(true);
   const [pinnedChatIds, setPinnedChatIds] = useState(() => {
@@ -160,6 +165,30 @@ export default function ChatsInbox() {
       isMountedRef.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileDrawerOpen(false);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     window.localStorage.setItem(PINNED_CHATS_STORAGE_KEY, JSON.stringify(pinnedChatIds));
@@ -308,9 +337,13 @@ export default function ChatsInbox() {
           <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
               <p className="sv-eyebrow-on-dark">Chats</p>
-              <h1 className="sv-display-on-dark mt-2 max-w-4xl sm:mt-3">Pinned threads, faster scans, and clearer group context</h1>
+              <h1 className="sv-display-on-dark mt-2 max-w-4xl sm:mt-3">
+                {isMobile ? "Find the right thread fast." : "Pinned threads, faster scans, and clearer group context"}
+              </h1>
               <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-4 sm:text-base sm:leading-8">
-                Separate hosted chats from joined ones, keep important threads pinned, and jump in with a clearer sense of status and who is inside the conversation.
+                {isMobile
+                  ? "Open one control sheet for search and filters, then scan a much simpler chat list."
+                  : "Separate hosted chats from joined ones, keep important threads pinned, and jump in with a clearer sense of status and who is inside the conversation."}
               </p>
               <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
                 Pull down on mobile to refresh this inbox quickly.
@@ -322,43 +355,61 @@ export default function ChatsInbox() {
           </div>
         </section>
 
-        <section className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
-          <SummaryCard label="Total chats" value={stats.total} className="col-span-2 md:col-span-1" />
-          <SummaryCard label="Unread messages" value={stats.unreadMessages} tone={stats.unreadMessages > 0 ? "text-emerald-700" : "text-slate-900"} />
-          <SummaryCard label="Pinned" value={stats.pinned} tone="text-amber-700" />
-          <SummaryCard label="Hosted by you" value={stats.hosted} tone="text-violet-700" />
-        </section>
+        {!isMobile ? (
+          <section className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
+            <SummaryCard label="Total chats" value={stats.total} className="col-span-2 md:col-span-1" />
+            <SummaryCard label="Unread messages" value={stats.unreadMessages} tone={stats.unreadMessages > 0 ? "text-emerald-700" : "text-slate-900"} />
+            <SummaryCard label="Pinned" value={stats.pinned} tone="text-amber-700" />
+            <SummaryCard label="Hosted by you" value={stats.hosted} tone="text-violet-700" />
+          </section>
+        ) : null}
 
         <section className="sv-card sv-reveal">
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Inbox</p>
-                <h2 className="mt-2 text-2xl font-bold text-slate-900">Your conversations</h2>
+                <h2 className="mt-2 text-2xl font-bold text-slate-900">{isMobile ? "Chat list" : "Your conversations"}</h2>
               </div>
 
-              <label className="sv-chat-search">
-                <SearchIcon className="h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search groups, hosts, or messages"
-                  className="sv-chat-search-input"
-                />
-              </label>
+              {isMobile ? (
+                <button
+                  type="button"
+                  onClick={() => setIsMobileDrawerOpen(true)}
+                  className="sv-chat-mobile-trigger"
+                >
+                  <span className="sv-chat-mobile-trigger-copy">
+                    <span>Search &amp; filters</span>
+                    <strong>{searchTerm ? `Searching "${searchTerm}"` : filter === "all" ? "All chats" : filter.charAt(0).toUpperCase() + filter.slice(1)}</strong>
+                  </span>
+                  <SearchIcon className="h-4 w-4" />
+                </button>
+              ) : (
+                <label className="sv-chat-search">
+                  <SearchIcon className="h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Search groups, hosts, or messages"
+                    className="sv-chat-search-input"
+                  />
+                </label>
+              )}
             </div>
 
-            <Tabs
-              tabs={[
-                { value: "all", label: "All chats", count: stats.total },
-                { value: "unread", label: "Unread", count: stats.unreadThreads },
-                { value: "pinned", label: "Pinned", count: stats.pinned },
-                { value: "hosted", label: "Hosted", count: stats.hosted },
-              ]}
-              value={filter}
-              onChange={setFilter}
-            />
+            {!isMobile ? (
+              <Tabs
+                tabs={[
+                  { value: "all", label: "All chats", count: stats.total },
+                  { value: "unread", label: "Unread", count: stats.unreadThreads },
+                  { value: "pinned", label: "Pinned", count: stats.pinned },
+                  { value: "hosted", label: "Hosted", count: stats.hosted },
+                ]}
+                value={filter}
+                onChange={setFilter}
+              />
+            ) : null}
           </div>
 
           {error ? (
@@ -382,17 +433,70 @@ export default function ChatsInbox() {
                   pinned={pinnedChatIds.includes(chat.group.id)}
                   onTogglePinned={() => togglePinnedChat(chat.group.id)}
                   onOpen={() => navigate(`/groups/${chat.group.id}/chat`)}
+                  compact={isMobile}
                 />
               ))
             )}
           </div>
         </section>
       </div>
+
+      <Drawer
+        open={isMobile && isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        eyebrow="Chat controls"
+        title="Find the right thread"
+        description="Search chats, narrow the list, and then jump back to the compact inbox."
+        footer={(
+          <button
+            type="button"
+            onClick={() => setIsMobileDrawerOpen(false)}
+            className="sv-btn-secondary w-full justify-center"
+          >
+            Done
+          </button>
+        )}
+      >
+        <label className="sv-chat-search sv-chat-search-drawer">
+          <SearchIcon className="h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search groups, hosts, or messages"
+            className="sv-chat-search-input"
+          />
+        </label>
+
+        <Tabs
+          tabs={[
+            { value: "all", label: "All chats", count: stats.total },
+            { value: "unread", label: "Unread", count: stats.unreadThreads },
+            { value: "pinned", label: "Pinned", count: stats.pinned },
+            { value: "hosted", label: "Hosted", count: stats.hosted },
+          ]}
+          value={filter}
+          onChange={setFilter}
+          className="sv-drawer-tabs"
+        />
+
+        <div className="sv-drawer-stack">
+          <button type="button" onClick={() => navigate("/my-shared")} className="sv-drawer-action">
+            <span className="sv-drawer-action-icon">
+              <ChatIcon className="h-4.5 w-4.5" />
+            </span>
+            <span className="sv-drawer-action-copy">
+              <strong>Back to My Splits</strong>
+              <span>Return to the dashboard for the groups behind these chats.</span>
+            </span>
+          </button>
+        </div>
+      </Drawer>
     </div>
   );
 }
 
-function ChatCard({ chat, pinned, onTogglePinned, onOpen }) {
+function ChatCard({ chat, pinned, onTogglePinned, onOpen, compact = false }) {
   const statusMeta = getStatusBucket(chat.group.status);
   const tone = getModeTone(chat.group.mode);
   const typingLabel = formatTypingLabel(chat.active_typing_users);
@@ -411,22 +515,26 @@ function ChatCard({ chat, pinned, onTogglePinned, onOpen }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-lg font-semibold text-slate-900">{chat.group.subscription_name}</h3>
-              <span className={`sv-chat-status-pill ${statusMeta.className}`}>{statusMeta.label}</span>
-              <span className="sv-chat-mode-pill">{chat.group.mode_label}</span>
+              {!compact ? <span className={`sv-chat-status-pill ${statusMeta.className}`}>{statusMeta.label}</span> : null}
+              {!compact ? <span className="sv-chat-mode-pill">{chat.group.mode_label}</span> : null}
               {pinned ? <span className="sv-chat-pinned-pill">Pinned</span> : null}
             </div>
 
             <p className="mt-2 text-sm text-slate-500">
-              {chat.is_owner ? "Hosted by you" : `Hosted by ${chat.group.owner_name}`} | {chat.participant_count} participant{chat.participant_count === 1 ? "" : "s"}
+              {compact
+                ? chat.is_owner
+                  ? "Hosted by you"
+                  : `Host: ${chat.group.owner_name}`
+                : `${chat.is_owner ? "Hosted by you" : `Hosted by ${chat.group.owner_name}`} | ${chat.participant_count} participant${chat.participant_count === 1 ? "" : "s"}`}
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+            {!compact ? <div className="mt-2 flex flex-wrap items-center gap-2">
               {hasTyping ? <span className="sv-chat-typing-pill">{typingLabel}</span> : null}
               {!hasTyping && onlineCount > 0 ? (
                 <span className="sv-chat-live-pill">
                   {onlineCount} active now
                 </span>
               ) : null}
-            </div>
+            </div> : null}
           </div>
         </div>
 
@@ -445,48 +553,52 @@ function ChatCard({ chat, pinned, onTogglePinned, onOpen }) {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <AvatarStack
-          className="sv-chat-avatar-stack"
-          chipClassName="sv-chat-avatar-chip"
-          items={(chat.participant_preview || []).map((participant) => {
-            const presenceMeta = getPresenceMeta(participant.presence);
-            return {
-              id: `${chat.group.id}-${participant.username}`,
-              initials: participant.initials || getAvatarToken(participant.username),
-              label: participant.username,
-              title: `${participant.username} - ${presenceMeta.label}`,
-              className: presenceMeta.className,
-              indicatorClassName: presenceMeta.className,
-            };
-          })}
-        />
-        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-          {chat.message_count} message{chat.message_count === 1 ? "" : "s"}
-        </span>
-        {chat.unread_chat_count > 0 ? (
-          <span className="sv-chat-unread-badge">
-            {chat.unread_chat_count} unread
+      {!compact ? (
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <AvatarStack
+            className="sv-chat-avatar-stack"
+            chipClassName="sv-chat-avatar-chip"
+            items={(chat.participant_preview || []).map((participant) => {
+              const presenceMeta = getPresenceMeta(participant.presence);
+              return {
+                id: `${chat.group.id}-${participant.username}`,
+                initials: participant.initials || getAvatarToken(participant.username),
+                label: participant.username,
+                title: `${participant.username} - ${presenceMeta.label}`,
+                className: presenceMeta.className,
+                indicatorClassName: presenceMeta.className,
+              };
+            })}
+          />
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            {chat.message_count} message{chat.message_count === 1 ? "" : "s"}
           </span>
-        ) : (
-          <span className="sv-chat-read-badge">
-            <CheckCircleIcon className="h-3.5 w-3.5" />
-            Read
-          </span>
-        )}
-      </div>
+          {chat.unread_chat_count > 0 ? (
+            <span className="sv-chat-unread-badge">
+              {chat.unread_chat_count} unread
+            </span>
+          ) : (
+            <span className="sv-chat-read-badge">
+              <CheckCircleIcon className="h-3.5 w-3.5" />
+              Read
+            </span>
+          )}
+        </div>
+      ) : null}
 
-      <button type="button" onClick={onOpen} className="sv-chat-card-body">
+      <button type="button" onClick={onOpen} className={`sv-chat-card-body ${compact ? "is-compact" : ""}`}>
         {hasTyping ? (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                <span className="sv-chat-inline-dot is-online" />
-                Live right now
-              </p>
-              <span className="text-xs text-slate-400">{formatRelativeTime(chat.last_activity_at)}</span>
-            </div>
-            <p className="mt-2 text-sm font-semibold leading-7 text-emerald-700">{typingLabel}</p>
+            {!compact ? (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                  <span className="sv-chat-inline-dot is-online" />
+                  Live right now
+                </p>
+                <span className="text-xs text-slate-400">{formatRelativeTime(chat.last_activity_at)}</span>
+              </div>
+            ) : null}
+            <p className={`mt-2 text-sm font-semibold ${compact ? "sv-chat-message-compact text-emerald-700" : "leading-7 text-emerald-700"}`}>{typingLabel}</p>
           </>
         ) : chat.last_message ? (
           <>
@@ -494,9 +606,9 @@ function ChatCard({ chat, pinned, onTogglePinned, onOpen }) {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 {chat.last_message.is_own ? "You" : chat.last_message.sender_username}
               </p>
-              <span className="text-xs text-slate-400">{formatRelativeTime(chat.last_message.created_at)}</span>
+              {!compact ? <span className="text-xs text-slate-400">{formatRelativeTime(chat.last_message.created_at)}</span> : null}
             </div>
-            <p className={`mt-2 text-sm leading-7 ${chat.unread_chat_count > 0 ? "font-semibold text-slate-900" : "text-slate-700"}`}>
+            <p className={`mt-2 text-sm ${compact ? "sv-chat-message-compact leading-6" : "leading-7"} ${chat.unread_chat_count > 0 ? "font-semibold text-slate-900" : "text-slate-700"}`}>
               {chat.last_message.message}
             </p>
           </>
@@ -510,6 +622,22 @@ function ChatCard({ chat, pinned, onTogglePinned, onOpen }) {
           </>
         )}
       </button>
+
+      {compact ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {chat.unread_chat_count > 0 ? (
+            <span className="sv-chat-unread-badge">
+              {chat.unread_chat_count} unread
+            </span>
+          ) : (
+            <span className="sv-chat-read-badge">
+              <CheckCircleIcon className="h-3.5 w-3.5" />
+              Read
+            </span>
+          )}
+          {!hasTyping && onlineCount > 0 ? <span className="sv-chat-live-pill">{onlineCount} active</span> : null}
+        </div>
+      ) : null}
     </article>
   );
 }

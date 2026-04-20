@@ -1472,7 +1472,8 @@
     gap: 0.75rem;
   }
 
-  .sv-notification-mobile-trigger {
+  .sv-notification-mobile-trigger,
+  .sv-chat-mobile-trigger {
     display: inline-flex;
     align-items: center;
     justify-content: space-between;
@@ -1488,13 +1489,15 @@
     text-align: left;
   }
 
-  .sv-notification-mobile-trigger-copy {
+  .sv-notification-mobile-trigger-copy,
+  .sv-chat-mobile-trigger-copy {
     display: grid;
     gap: 0.22rem;
     min-width: 0;
   }
 
-  .sv-notification-mobile-trigger-copy span {
+  .sv-notification-mobile-trigger-copy span,
+  .sv-chat-mobile-trigger-copy span {
     color: var(--sv-muted);
     font-size: 11px;
     font-weight: 800;
@@ -1502,7 +1505,8 @@
     text-transform: uppercase;
   }
 
-  .sv-notification-mobile-trigger-copy strong {
+  .sv-notification-mobile-trigger-copy strong,
+  .sv-chat-mobile-trigger-copy strong {
     color: var(--sv-ink);
     font-size: 14px;
     font-weight: 800;
@@ -1696,6 +1700,14 @@
     gap: 0.45rem;
   }
 
+  .sv-notification-message-compact,
+  .sv-chat-message-compact {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
   .sv-chat-search {
     display: inline-flex;
     align-items: center;
@@ -1715,6 +1727,10 @@
     background: transparent;
     color: var(--sv-ink);
     font-size: 14px;
+  }
+
+  .sv-chat-search-drawer {
+    width: 100%;
   }
 
   .sv-chat-card {
@@ -1945,6 +1961,12 @@
   .sv-chat-card-body:hover {
     transform: translateY(-1px);
     box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
+  }
+
+  .sv-chat-card-body.is-compact {
+    margin-top: 0.85rem;
+    padding: 0.85rem 0.9rem;
+    border-radius: 18px;
   }
 
   .sv-group-chat-live-strip {
@@ -8121,6 +8143,66 @@
     .sv-group-card-shell {
       gap: 0.75rem;
       padding: 0.9rem;
+    }
+
+    .sv-notification-mobile-trigger,
+    .sv-chat-mobile-trigger {
+      min-height: 50px;
+      padding: 0.75rem 0.85rem;
+      border-radius: 18px;
+    }
+
+    .sv-notification-mobile-trigger-copy strong,
+    .sv-chat-mobile-trigger-copy strong {
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .sv-notification-card {
+      gap: 0.75rem;
+      padding: 0.85rem;
+      border-radius: 20px;
+    }
+
+    .sv-notification-icon {
+      width: 2.4rem;
+      height: 2.4rem;
+      border-radius: 16px;
+    }
+
+    .sv-notification-pill,
+    .sv-notification-read-pill,
+    .sv-chat-status-pill,
+    .sv-chat-mode-pill,
+    .sv-chat-pinned-pill,
+    .sv-chat-unread-badge,
+    .sv-chat-read-badge {
+      min-height: 28px;
+      padding: 0.35rem 0.6rem;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+    }
+
+    .sv-chat-card {
+      padding: 0.85rem;
+      border-radius: 22px;
+    }
+
+    .sv-chat-group-avatar {
+      width: 2.6rem;
+      height: 2.6rem;
+      border-radius: 18px;
+      font-size: 12px;
+    }
+
+    .sv-chat-pin {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+    }
+
+    .sv-chat-card-body.is-compact {
+      padding: 0.75rem 0.8rem;
     }
 
     .sv-group-icon {
