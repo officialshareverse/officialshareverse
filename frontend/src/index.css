@@ -8496,6 +8496,23 @@
       letter-spacing: 0.1em;
     }
 
+    .sv-group-badge-row {
+      flex-wrap: nowrap;
+      gap: 0.35rem;
+      overflow-x: auto;
+      padding-bottom: 0.1rem;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .sv-group-badge-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .sv-group-badge-row > * {
+      flex: 0 0 auto;
+    }
+
     .sv-group-card-description,
     .sv-group-owner-row,
     .sv-group-metric-grid,
