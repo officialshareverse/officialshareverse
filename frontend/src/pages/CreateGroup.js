@@ -766,37 +766,39 @@ export default function CreateGroup() {
                         <InputError message={errors.subscription_name} />
                       </div>
 
-                      <div>
-                        <div className="flex items-center justify-between gap-3">
-                          <label className="text-sm font-semibold text-slate-700">Quick picks</label>
-                          {loadingSuggestions ? <span className="text-xs text-slate-500">Loading suggestions...</span> : null}
-                        </div>
+                        {!isMobile ? (
+                          <div>
+                            <div className="flex items-center justify-between gap-3">
+                              <label className="text-sm font-semibold text-slate-700">Quick picks</label>
+                              {loadingSuggestions ? <span className="text-xs text-slate-500">Loading suggestions...</span> : null}
+                            </div>
 
-                        <div className="sv-create-quickpick-groups mt-3">
-                          {quickPickGroups.length > 0 ? (
-                            quickPickGroups.map((group) => (
-                              <div key={group.title} className="sv-create-quickpick-group">
-                                <p className="sv-create-quickpick-title">{group.title}</p>
-                                <div className="flex flex-wrap gap-2">
-                                  {group.items.map((item) => (
-                                    <button
-                                      key={item.id}
-                                      type="button"
-                                      onClick={() => handleQuickPick(item.name)}
-                                      className={`sv-create-quickpick-chip ${form.subscription_name === item.name ? "is-active" : ""}`}
-                                    >
-                                      <span className={`sv-create-quickpick-badge ${item.meta.toneClass}`}>{item.meta.badge}</span>
-                                      <span>{item.name}</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <span className="text-sm text-slate-500">Add any plan, course, or tool name manually.</span>
-                          )}
-                        </div>
-                      </div>
+                            <div className="sv-create-quickpick-groups mt-3">
+                              {quickPickGroups.length > 0 ? (
+                                quickPickGroups.map((group) => (
+                                  <div key={group.title} className="sv-create-quickpick-group">
+                                    <p className="sv-create-quickpick-title">{group.title}</p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {group.items.map((item) => (
+                                        <button
+                                          key={item.id}
+                                          type="button"
+                                          onClick={() => handleQuickPick(item.name)}
+                                          className={`sv-create-quickpick-chip ${form.subscription_name === item.name ? "is-active" : ""}`}
+                                        >
+                                          <span className={`sv-create-quickpick-badge ${item.meta.toneClass}`}>{item.meta.badge}</span>
+                                          <span>{item.name}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <span className="text-sm text-slate-500">Add any plan, course, or tool name manually.</span>
+                              )}
+                            </div>
+                          </div>
+                        ) : null}
 
                       <div className="grid gap-5 md:grid-cols-2">
                         <div>
