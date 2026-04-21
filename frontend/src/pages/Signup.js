@@ -155,6 +155,10 @@ function getNextButtonLabel(stepIndex) {
   return stepIndex === SIGNUP_STEPS.length - 1 ? "Verify code & create account" : "Next step";
 }
 
+function getMobileSignupButtonLabel(hasVerificationSession) {
+  return hasVerificationSession ? "Verify code & create account" : "Send verification code";
+}
+
 export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
   const navigate = useNavigate();
   const toast = useToast();
@@ -183,6 +187,11 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
   const [otpExpiryAt, setOtpExpiryAt] = useState(0);
   const [otpCooldownUntil, setOtpCooldownUntil] = useState(0);
   const [clockTick, setClockTick] = useState(Date.now());
+  const [isMobileSignup, setIsMobileSignup] = useState(() => (
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia("(max-width: 639px)").matches
+      : false
+  ));
   const usernameRequestSequenceRef = useRef(0);
   const otpInputsRef = useRef([]);
   const submitSignupRef = useRef(async () => false);
@@ -197,6 +206,7 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
   const remainingExpirySeconds = otpExpiryAt ? Math.max(0, Math.ceil((otpExpiryAt - clockTick) / 1000)) : 0;
   const remainingCooldownSeconds = otpCooldownUntil ? Math.max(0, Math.ceil((otpCooldownUntil - clockTick) / 1000)) : 0;
   const usernameStatusCopy = getUsernameStatusCopy(usernameStatus);
+  const mobileSubmitDisabled = loading || otpLoading || (hasVerificationSession && otpDigits.some((digit) => !digit));
 
   const resetOtpState = (nextNotice = "") => {
     setSignupSessionId("");
@@ -246,6 +256,27 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
       window.clearTimeout(timeoutId);
     };
   }, [form.username]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 639px)");
+    const handleMediaChange = (event) => {
+      setIsMobileSignup(event.matches);
+    };
+
+    setIsMobileSignup(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleMediaChange);
+      return () => mediaQuery.removeEventListener("change", handleMediaChange);
+    }
+
+    mediaQuery.addListener(handleMediaChange);
+    return () => mediaQuery.removeListener(handleMediaChange);
+  }, []);
 
   useEffect(() => {
     if (!otpExpiryAt && !otpCooldownUntil) {
@@ -402,6 +433,37 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    if (isMobileSignup) {
+      const identityError = validateIdentityStep(form, usernameStatus);
+      if (identityError) {
+        setCurrentStep(0);
+        setError(identityError);
+        return;
+      }
+
+      const contactError = validateContactStep(form);
+      if (contactError) {
+        setCurrentStep(1);
+        setError(contactError);
+        return;
+      }
+
+      const securityError = validateSecurityStep(form, acceptedTerms);
+      if (securityError) {
+        setCurrentStep(2);
+        setError(securityError);
+        return;
+      }
+
+      if (!hasVerificationSession) {
+        await handleRequestOtp();
+        return;
+      }
+
+      await submitSignup();
+      return;
+    }
+
     if (currentStep === 0) {
       const validationError = validateIdentityStep(form, usernameStatus);
       if (validationError) {
@@ -522,7 +584,7 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
     <AuthShell
       eyebrow="Create account"
       title="Set up your ShareVerse account."
-      subtitle="Move through four quick steps: choose your login details, add verification info, secure the account, and confirm the OTP."
+      subtitle={isMobileSignup ? "Complete signup on one page: fill your details, request the OTP, and finish right here." : "Move through four quick steps: choose your login details, add verification info, secure the account, and confirm the OTP."}
       themeMode={themeMode}
       toggleTheme={toggleTheme}
       footer={<SignupFooter />}
@@ -532,52 +594,63 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
       <div className="sv-signup-shell">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="sv-eyebrow">Signup wizard</p>
+            <p className="sv-eyebrow">{isMobileSignup ? "Single-page signup" : "Signup wizard"}</p>
             <h2 className="mt-2 text-2xl font-bold leading-tight text-slate-950 sm:mt-3 sm:text-3xl md:text-[2.45rem]">
               Create your ShareVerse account
             </h2>
             <p className="mt-2 max-w-2xl text-[13px] leading-6 text-slate-600 sm:mt-3 sm:text-sm sm:leading-7">
-              {currentStepConfig.helper}
+              {isMobileSignup ? "Add your details below, request the verification code, then enter the 6 digits to finish signup without changing screens." : currentStepConfig.helper}
             </p>
           </div>
-          <div className="sv-signup-step-pill">
-            <span>{currentStepConfig.eyebrow}</span>
-            <strong>{currentStep + 1} / {SIGNUP_STEPS.length}</strong>
+          {!isMobileSignup ? (
+            <div className="sv-signup-step-pill">
+              <span>{currentStepConfig.eyebrow}</span>
+              <strong>{currentStep + 1} / {SIGNUP_STEPS.length}</strong>
+            </div>
+          ) : null}
+        </div>
+
+        {!isMobileSignup ? (
+          <>
+            <div className="sv-signup-progress mt-5">
+              <span className="sv-signup-progress-fill" style={{ width: `${progressPercent}%` }} />
+            </div>
+
+            <div className="sv-signup-step-row mt-4">
+              {SIGNUP_STEPS.map((step, index) => {
+                const isActive = index === currentStep;
+                const isComplete = index < currentStep;
+                return (
+                  <button
+                    key={step.id}
+                    type="button"
+                    onClick={() => {
+                      if (index <= currentStep) {
+                        setCurrentStep(index);
+                        setError("");
+                      }
+                    }}
+                    disabled={index > currentStep}
+                    className={`sv-signup-step-card ${isActive ? "is-active" : ""} ${isComplete ? "is-complete" : ""}`}
+                  >
+                    <span className="sv-signup-step-index">
+                      {isComplete ? <CheckCircleIcon className="h-4 w-4" /> : `0${index + 1}`}
+                    </span>
+                    <span className="sv-signup-step-copy">
+                      <strong>{step.label}</strong>
+                      <small>{step.eyebrow}</small>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <div className="sv-signup-mobile-note mt-5">
+            <strong>One page on mobile</strong>
+            <span>Fill every section below, then send the OTP and finish signup from the same screen.</span>
           </div>
-        </div>
-
-        <div className="sv-signup-progress mt-5">
-          <span className="sv-signup-progress-fill" style={{ width: `${progressPercent}%` }} />
-        </div>
-
-        <div className="sv-signup-step-row mt-4">
-          {SIGNUP_STEPS.map((step, index) => {
-            const isActive = index === currentStep;
-            const isComplete = index < currentStep;
-            return (
-              <button
-                key={step.id}
-                type="button"
-                onClick={() => {
-                  if (index <= currentStep) {
-                    setCurrentStep(index);
-                    setError("");
-                  }
-                }}
-                disabled={index > currentStep}
-                className={`sv-signup-step-card ${isActive ? "is-active" : ""} ${isComplete ? "is-complete" : ""}`}
-              >
-                <span className="sv-signup-step-index">
-                  {isComplete ? <CheckCircleIcon className="h-4 w-4" /> : `0${index + 1}`}
-                </span>
-                <span className="sv-signup-step-copy">
-                  <strong>{step.label}</strong>
-                  <small>{step.eyebrow}</small>
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        )}
 
         {error ? (
           <div className="sv-signup-alert is-error mt-5">
@@ -610,28 +683,58 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-          {currentStep === 0 ? <IdentityStep form={form} handleChange={handleChange} usernameStatus={usernameStatus} usernameStatusCopy={usernameStatusCopy} /> : null}
-          {currentStep === 1 ? <ContactStep form={form} handleChange={handleChange} /> : null}
-          {currentStep === 2 ? <SecurityStep form={form} handleChange={handleChange} acceptedTerms={acceptedTerms} setAcceptedTerms={setAcceptedTerms} passwordStrength={passwordStrength} passwordChecklist={passwordChecklist} showPassword={showPassword} setShowPassword={setShowPassword} showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword} setError={setError} /> : null}
-          {currentStep === 3 ? <VerificationStep form={form} deliveryChannel={deliveryChannel} hasVerificationSession={hasVerificationSession} handleRequestOtp={handleRequestOtp} otpLoading={otpLoading} remainingCooldownSeconds={remainingCooldownSeconds} remainingExpirySeconds={remainingExpirySeconds} devOtp={devOtp} otpDigits={otpDigits} otpInputsRef={otpInputsRef} handleOtpDigitChange={handleOtpDigitChange} handleOtpKeyDown={handleOtpKeyDown} handleOtpPaste={handleOtpPaste} /> : null}
+          {isMobileSignup ? (
+            <>
+              <IdentityStep form={form} handleChange={handleChange} usernameStatus={usernameStatus} usernameStatusCopy={usernameStatusCopy} />
+              <ContactStep form={form} handleChange={handleChange} />
+              <SecurityStep form={form} handleChange={handleChange} acceptedTerms={acceptedTerms} setAcceptedTerms={setAcceptedTerms} passwordStrength={passwordStrength} passwordChecklist={passwordChecklist} showPassword={showPassword} setShowPassword={setShowPassword} showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword} setError={setError} />
+              <VerificationStep form={form} deliveryChannel={deliveryChannel} hasVerificationSession={hasVerificationSession} handleRequestOtp={handleRequestOtp} otpLoading={otpLoading} remainingCooldownSeconds={remainingCooldownSeconds} remainingExpirySeconds={remainingExpirySeconds} devOtp={devOtp} otpDigits={otpDigits} otpInputsRef={otpInputsRef} handleOtpDigitChange={handleOtpDigitChange} handleOtpKeyDown={handleOtpKeyDown} handleOtpPaste={handleOtpPaste} />
 
-          <div className="sv-signup-nav">
-            <button type="button" onClick={handleStepBack} className="sv-btn-secondary">
-              {currentStep === 0 ? "Back to login" : "Back"}
-            </button>
-            <div className="sv-signup-nav-copy">
-              <p>Step {currentStep + 1} of {SIGNUP_STEPS.length}</p>
-              <span>{currentStepConfig.label}</span>
-            </div>
-            <button
-              type="submit"
-              disabled={loading || (currentStep === SIGNUP_STEPS.length - 1 && (!hasVerificationSession || otpDigits.some((digit) => !digit)))}
-              className="sv-btn-primary gap-2"
-            >
-              {loading ? <LoadingSpinner /> : currentStep === SIGNUP_STEPS.length - 1 ? <CheckCircleIcon className="h-4 w-4" /> : <SparkIcon className="h-4 w-4" />}
-              {loading ? "Creating your account..." : getNextButtonLabel(currentStep)}
-            </button>
-          </div>
+              <div className="sv-signup-mobile-submit">
+                <div className="sv-signup-mobile-submit-copy">
+                  <p>{hasVerificationSession ? "OTP ready" : "Finish in one flow"}</p>
+                  <span>{hasVerificationSession ? "Enter all 6 digits, then create the account from here." : "We will send the 6-digit code to your email from this same page."}</span>
+                </div>
+                <button
+                  type="submit"
+                  disabled={mobileSubmitDisabled}
+                  className="sv-btn-primary w-full justify-center gap-2"
+                >
+                  {loading ? <LoadingSpinner /> : otpLoading ? <LoadingSpinner /> : hasVerificationSession ? <CheckCircleIcon className="h-4 w-4" /> : <ShieldIcon className="h-4 w-4" />}
+                  {loading
+                    ? "Creating your account..."
+                    : otpLoading
+                      ? "Sending code..."
+                      : getMobileSignupButtonLabel(hasVerificationSession)}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {currentStep === 0 ? <IdentityStep form={form} handleChange={handleChange} usernameStatus={usernameStatus} usernameStatusCopy={usernameStatusCopy} /> : null}
+              {currentStep === 1 ? <ContactStep form={form} handleChange={handleChange} /> : null}
+              {currentStep === 2 ? <SecurityStep form={form} handleChange={handleChange} acceptedTerms={acceptedTerms} setAcceptedTerms={setAcceptedTerms} passwordStrength={passwordStrength} passwordChecklist={passwordChecklist} showPassword={showPassword} setShowPassword={setShowPassword} showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword} setError={setError} /> : null}
+              {currentStep === 3 ? <VerificationStep form={form} deliveryChannel={deliveryChannel} hasVerificationSession={hasVerificationSession} handleRequestOtp={handleRequestOtp} otpLoading={otpLoading} remainingCooldownSeconds={remainingCooldownSeconds} remainingExpirySeconds={remainingExpirySeconds} devOtp={devOtp} otpDigits={otpDigits} otpInputsRef={otpInputsRef} handleOtpDigitChange={handleOtpDigitChange} handleOtpKeyDown={handleOtpKeyDown} handleOtpPaste={handleOtpPaste} /> : null}
+
+              <div className="sv-signup-nav">
+                <button type="button" onClick={handleStepBack} className="sv-btn-secondary">
+                  {currentStep === 0 ? "Back to login" : "Back"}
+                </button>
+                <div className="sv-signup-nav-copy">
+                  <p>Step {currentStep + 1} of {SIGNUP_STEPS.length}</p>
+                  <span>{currentStepConfig.label}</span>
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading || (currentStep === SIGNUP_STEPS.length - 1 && (!hasVerificationSession || otpDigits.some((digit) => !digit)))}
+                  className="sv-btn-primary gap-2"
+                >
+                  {loading ? <LoadingSpinner /> : currentStep === SIGNUP_STEPS.length - 1 ? <CheckCircleIcon className="h-4 w-4" /> : <SparkIcon className="h-4 w-4" />}
+                  {loading ? "Creating your account..." : getNextButtonLabel(currentStep)}
+                </button>
+              </div>
+            </>
+          )}
         </form>
 
         <section className="sv-signup-benefits mt-6">

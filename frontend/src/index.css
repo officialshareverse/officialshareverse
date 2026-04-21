@@ -1444,6 +1444,34 @@
     color: var(--sv-muted);
   }
 
+  .sv-signup-mobile-note,
+  .sv-signup-mobile-submit {
+    display: grid;
+    gap: 0.55rem;
+    border-radius: 22px;
+    border: 1px solid var(--sv-border);
+    background: color-mix(in srgb, var(--sv-paper) 95%, transparent);
+    padding: 0.95rem 1rem;
+  }
+
+  .sv-signup-mobile-note strong,
+  .sv-signup-mobile-submit-copy p {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--sv-ink);
+  }
+
+  .sv-signup-mobile-note span,
+  .sv-signup-mobile-submit-copy span {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--sv-muted);
+  }
+
+  .sv-signup-mobile-submit {
+    gap: 0.85rem;
+  }
+
   .sv-signup-benefit-item,
   .sv-signup-info-row {
     border-radius: 18px;
@@ -1456,6 +1484,15 @@
   }
 
   @media (max-width: 639px) {
+    .sv-signup-stage-card {
+      padding: 0.95rem;
+    }
+
+    .sv-signup-mini-badge,
+    .sv-signup-side-note {
+      display: none;
+    }
+
     .sv-signup-otp-grid {
       gap: 0.45rem;
     }
@@ -1463,6 +1500,12 @@
     .sv-signup-otp-input {
       min-height: 50px;
       font-size: 1rem;
+    }
+
+    .sv-signup-mobile-note,
+    .sv-signup-mobile-submit {
+      border-radius: 20px;
+      padding: 0.85rem 0.9rem;
     }
   }
 
@@ -7043,6 +7086,8 @@
   body.sv-dark .sv-signup-timer-card,
   body.sv-dark .sv-signup-availability,
   body.sv-dark .sv-signup-terms-card,
+  body.sv-dark .sv-signup-mobile-note,
+  body.sv-dark .sv-signup-mobile-submit,
   body.sv-dark .sv-signup-step-card {
     background: rgba(15, 23, 42, 0.86);
     border-color: rgba(148, 163, 184, 0.14);
