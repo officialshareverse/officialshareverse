@@ -447,7 +447,7 @@ export default function CreateGroup() {
   const isSinglePageMobile = isMobile;
   const formHeadTitle = isSinglePageMobile ? "Create your split" : currentStepConfig.label;
   const formHeadHelper = isSinglePageMobile
-    ? "Everything is on one page here. Choose the mode, fill the details, set the dates, and publish when it looks right."
+    ? "Everything is on one page here. Choose the mode, fill the details, set the dates, and publish when the basics are ready."
     : currentStepConfig.helper;
 
   const handleChange = (event) => {
@@ -604,19 +604,19 @@ export default function CreateGroup() {
       <div className="mx-auto max-w-7xl space-y-6">
         <section className="sv-dark-hero sv-create-hero px-6 py-8 md:px-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-4xl">
-              <p className="sv-eyebrow-on-dark">Create Split</p>
-              <h1 className="sv-display-on-dark mt-4 max-w-4xl">
-                {isSinglePageMobile
-                  ? "Set up the split on one page and publish when it looks right."
-                  : "Build the split in steps, preview it live, and publish only when the whole flow feels clear."}
-              </h1>
-              <p className="sv-create-hero-body mt-4 max-w-3xl text-sm leading-7 text-slate-200 sm:text-base sm:leading-8">
-                {isSinglePageMobile
-                  ? "Choose the mode, fill the basics, set the timing, and review the card before you publish."
-                  : `Step ${currentStep + 1} of ${WIZARD_STEPS.length}: ${currentStepConfig.label}. Choose the mode, set the details, confirm the timing, and review the listing before it goes live.`}
-              </p>
-            </div>
+              <div className="max-w-4xl">
+                <p className="sv-eyebrow-on-dark">Create Split</p>
+                <h1 className="sv-display-on-dark mt-4 max-w-4xl">
+                  {isSinglePageMobile
+                    ? "Set up the split on one page and publish when the basics are ready."
+                    : "Build the split in steps, preview it live, and publish only when the whole flow feels clear."}
+                </h1>
+                <p className="sv-create-hero-body mt-4 max-w-3xl text-sm leading-7 text-slate-200 sm:text-base sm:leading-8">
+                  {isSinglePageMobile
+                    ? "Choose the mode, fill the basics, set the timing, and publish once everything important is in place."
+                    : `Step ${currentStep + 1} of ${WIZARD_STEPS.length}: ${currentStepConfig.label}. Choose the mode, set the details, confirm the timing, and review the listing before it goes live.`}
+                </p>
+              </div>
 
             <div className="sv-create-hero-stats">
               <span className="sv-chip-dark">2 setup modes</span>
@@ -963,12 +963,12 @@ export default function CreateGroup() {
                 </div>
               ) : null}
 
-              {isSinglePageMobile || currentStep === 3 ? (
-                <div className="sv-create-stage sv-animate-rise">
-                  <section className="sv-create-section-card">
-                    <div className="flex flex-wrap items-end justify-between gap-4">
-                      <div>
-                        <p className="sv-eyebrow">Review</p>
+                {!isSinglePageMobile && currentStep === 3 ? (
+                  <div className="sv-create-stage sv-animate-rise">
+                    <section className="sv-create-section-card">
+                      <div className="flex flex-wrap items-end justify-between gap-4">
+                        <div>
+                          <p className="sv-eyebrow">Review</p>
                         <h3 className="sv-title mt-2">Check the listing before you publish it</h3>
                       </div>
                       <button
@@ -1048,14 +1048,14 @@ export default function CreateGroup() {
               <button type="button" onClick={moveToPreviousStep} className="sv-btn-secondary">
                 {isSinglePageMobile || currentStep === 0 ? "Cancel" : "Back"}
               </button>
-              <div className="text-center">
-                <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
-                  {isSinglePageMobile ? "Mobile create flow" : `Step ${currentStep + 1} of ${WIZARD_STEPS.length}`}
-                </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  {isSinglePageMobile ? "Review the card below, then publish when the basics look right." : currentStepConfig.helper}
-                </p>
-              </div>
+                <div className="text-center">
+                  <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                    {isSinglePageMobile ? "Mobile create flow" : `Step ${currentStep + 1} of ${WIZARD_STEPS.length}`}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {isSinglePageMobile ? "Fill the essentials here, then publish when the split is ready." : currentStepConfig.helper}
+                  </p>
+                </div>
               <button type="submit" disabled={loading} className="sv-btn-primary">
                 {loading ? (
                   <>
