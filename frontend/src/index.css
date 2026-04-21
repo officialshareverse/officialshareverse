@@ -8267,8 +8267,10 @@
     }
 
     .sv-group-card-shell {
-      gap: 0.75rem;
-      padding: 0.9rem;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: start;
+      gap: 0.6rem;
+      padding: 0.78rem;
     }
 
     .sv-notification-mobile-trigger,
@@ -8447,31 +8449,31 @@
     }
 
     .sv-group-icon {
-      width: 3.3rem;
-      height: 3.3rem;
-      border-radius: 18px;
-      font-size: 0.75rem;
-      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.1);
+      width: 2.8rem;
+      height: 2.8rem;
+      border-radius: 16px;
+      font-size: 0.7rem;
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
     }
 
     .sv-group-mobile-summary {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.5rem;
-      margin-top: 0.15rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.4rem;
+      margin-top: 0;
     }
 
     .sv-group-mobile-summary-item {
       display: grid;
-      gap: 0.2rem;
-      border-radius: 16px;
+      gap: 0.15rem;
+      border-radius: 14px;
       border: 1px solid var(--sv-border);
       background: color-mix(in srgb, var(--sv-paper-solid) 94%, transparent);
-      padding: 0.7rem 0.75rem;
+      padding: 0.55rem 0.6rem;
     }
 
     .sv-group-mobile-summary-label {
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -8479,9 +8481,19 @@
     }
 
     .sv-group-mobile-summary-value {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
       color: var(--sv-ink);
+    }
+
+    .sv-group-mode-pill,
+    .sv-group-status-pill,
+    .sv-group-urgency-pill {
+      min-height: 32px;
+      margin-top: 0.65rem;
+      padding: 0.4rem 0.72rem;
+      font-size: 10px;
+      letter-spacing: 0.1em;
     }
 
     .sv-group-card-description,
@@ -8513,14 +8525,14 @@
     }
 
     .sv-group-footer {
-      margin-top: 0.85rem;
-      gap: 0.75rem;
+      margin-top: 0.6rem;
+      gap: 0.55rem;
     }
 
     .sv-group-footer-actions {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 0.65rem;
+      gap: 0.5rem;
       align-items: center;
     }
 
@@ -8529,16 +8541,17 @@
       align-items: center;
       justify-content: space-between;
       gap: 0.55rem;
-      min-height: 44px;
+      min-height: 40px;
       width: 100%;
-      padding: 0.75rem 0.9rem;
+      padding: 0.65rem 0.75rem;
       border-radius: 999px;
       border: 1px solid var(--sv-border);
       background: color-mix(in srgb, var(--sv-paper) 94%, transparent);
       color: var(--sv-ink);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.04em;
+      line-height: 1.4;
     }
 
     .sv-group-mobile-chevron {
@@ -8563,7 +8576,10 @@
 
     .sv-group-join-button {
       min-width: 0;
-      padding-inline: 0.85rem;
+      min-height: 42px;
+      padding: 0.72rem 0.82rem;
+      padding-inline: 0.82rem;
+      font-size: 13px;
     }
 
     .sv-join-hero {

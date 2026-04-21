@@ -717,7 +717,7 @@ export default function Groups() {
                           <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-[11px]">
                             {planMeta.label}
                           </p>
-                          <h3 className="mt-1.5 truncate text-lg font-bold leading-tight text-slate-950 sm:text-2xl">
+                          <h3 className="mt-1 truncate text-base font-bold leading-tight text-slate-950 sm:mt-1.5 sm:text-2xl">
                             {group.subscription_name || group.subscription}
                           </h3>
                           <p className="sv-group-card-description mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
