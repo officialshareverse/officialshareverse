@@ -450,6 +450,35 @@ class GroupFlowTests(APITestCase):
         self.assertIn("access", refresh_response.data)
         self.assertEqual(refresh_response.data["user"]["username"], self.owner.username)
 
+    def test_login_accepts_email_identifier(self):
+        response = self.client.post(
+            "/api/login/",
+            {
+                "username": self.owner.email.upper(),
+                "password": "password123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["user"]["username"], self.owner.username)
+        self.assertIn("sv_refresh_token", response.cookies)
+
+    @patch("core.rate_limit.cache.delete_many", side_effect=RuntimeError("cache unavailable"))
+    @patch("core.rate_limit.cache.get", side_effect=RuntimeError("cache unavailable"))
+    def test_login_succeeds_when_rate_limit_cache_is_unavailable(self, cache_get_mock, cache_delete_many_mock):
+        response = self.client.post(
+            "/api/login/",
+            {
+                "username": self.owner.username,
+                "password": "password123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["user"]["username"], self.owner.username)
+
     def test_logout_clears_refresh_cookie(self):
         login_response = self.client.post(
             "/api/login/",
@@ -579,6 +608,35 @@ class GroupFlowTests(APITestCase):
         )
         self.assertEqual(login_response.status_code, status.HTTP_200_OK)
         self.assertIn("access", login_response.data)
+
+    def test_forgot_password_accepts_email_identifier(self):
+        request_otp_response = self.client.post(
+            "/api/forgot-password/request-otp/",
+            {
+                "username": self.owner.email.upper(),
+                "email": self.owner.email.upper(),
+            },
+            format="json",
+        )
+
+        self.assertEqual(request_otp_response.status_code, status.HTTP_200_OK)
+        self.assertIn("reset_session_id", request_otp_response.data)
+        self.assertIn("dev_otp", request_otp_response.data)
+
+        confirm_response = self.client.post(
+            "/api/forgot-password/confirm-otp/",
+            {
+                "username": self.owner.email.upper(),
+                "reset_session_id": request_otp_response.data["reset_session_id"],
+                "otp": request_otp_response.data["dev_otp"],
+                "new_password": "emailpass123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(confirm_response.status_code, status.HTTP_200_OK)
+        self.owner.refresh_from_db()
+        self.assertTrue(self.owner.check_password("emailpass123"))
 
     def test_login_is_rate_limited_after_repeated_failures(self):
         with patch("core.views.LOGIN_FAILED_ATTEMPT_LIMIT", 2), patch(

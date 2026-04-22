@@ -4,6 +4,7 @@ from django.contrib.auth.hashers import make_password
 from django.db.models import Sum
 from rest_framework import serializers
 
+from .auth_identity import find_user_by_login_identifier, normalize_login_identifier
 from .models import (
     EscrowLedger,
     Group,
@@ -306,19 +307,18 @@ class ForgotPasswordRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True, allow_null=True)
 
     def validate(self, attrs):
-        username = (attrs.get("username") or "").strip()
+        username = normalize_login_identifier(attrs.get("username"))
         phone = (attrs.get("phone") or "").strip()
         email = (attrs.get("email") or "").strip().lower()
 
         if not username:
-            raise serializers.ValidationError({"username": "Username is required."})
+            raise serializers.ValidationError({"username": "Username or email is required."})
 
         if not phone and not email:
             raise serializers.ValidationError({"phone": "Provide phone or email to verify your account."})
 
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
+        user = find_user_by_login_identifier(username)
+        if not user:
             raise serializers.ValidationError({"username": "Account verification failed."})
 
         if phone and (user.phone or "").strip() != phone:
@@ -339,11 +339,11 @@ class ForgotPasswordConfirmSerializer(serializers.Serializer):
     new_password = serializers.CharField(min_length=8, write_only=True)
 
     def validate(self, attrs):
-        attrs["username"] = (attrs.get("username") or "").strip()
+        attrs["username"] = normalize_login_identifier(attrs.get("username"))
         attrs["otp"] = (attrs.get("otp") or "").strip()
 
         if not attrs["username"]:
-            raise serializers.ValidationError({"username": "Username is required."})
+            raise serializers.ValidationError({"username": "Username or email is required."})
 
         if not attrs["otp"].isdigit():
             raise serializers.ValidationError({"otp": "OTP must be a 6-digit code."})

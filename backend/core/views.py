@@ -23,6 +23,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .auth_identity import find_user_by_login_identifier, normalize_login_identifier
 from .models import (
     CredentialRevealToken,
     EscrowLedger,
@@ -2092,10 +2093,12 @@ def build_auth_response(user, *, created=None):
 
 class LoginView(APIView):
     def post(self, request):
-        username = (request.data.get("username") or "").strip()
+        login_identifier = normalize_login_identifier(request.data.get("username"))
         password = request.data.get("password")
+        login_user = find_user_by_login_identifier(login_identifier)
+        rate_limit_identity_seed = login_user.username if login_user else login_identifier
 
-        login_identity = build_rate_limit_identity(request, username)
+        login_identity = build_rate_limit_identity(request, rate_limit_identity_seed)
         current_lockout = get_rate_limit_status("login_failed", login_identity)
         if current_lockout["count"] >= LOGIN_FAILED_ATTEMPT_LIMIT:
             return Response(
@@ -2106,7 +2109,8 @@ class LoginView(APIView):
                 status=429,
             )
 
-        user = authenticate(username=username, password=password)
+        authenticate_username = login_user.username if login_user else login_identifier
+        user = authenticate(username=authenticate_username, password=password)
 
         if user is None:
             rate_result = check_and_increment_rate_limit(
@@ -2234,12 +2238,14 @@ class ForgotPasswordConfirmOTPView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
 
-        username = serializer.validated_data["username"]
+        login_identifier = serializer.validated_data["username"]
         reset_session_id = serializer.validated_data["reset_session_id"]
         otp = serializer.validated_data["otp"]
         new_password = serializer.validated_data["new_password"]
+        user = find_user_by_login_identifier(login_identifier)
+        confirm_identity_seed = user.username if user else login_identifier
 
-        confirm_identity = build_rate_limit_identity(request, username)
+        confirm_identity = build_rate_limit_identity(request, confirm_identity_seed)
         confirm_rate_result = check_and_increment_rate_limit(
             scope="otp_confirm",
             identity=confirm_identity,
@@ -2256,9 +2262,7 @@ class ForgotPasswordConfirmOTPView(APIView):
             )
 
         with transaction.atomic():
-            try:
-                user = User.objects.get(username=username)
-            except User.DoesNotExist:
+            if not user:
                 return Response({"error": "Invalid reset session."}, status=400)
 
             failed_attempts = get_recent_otp_failed_attempts(user)

@@ -118,7 +118,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
     const email = resetForm.email.trim();
 
     if (!username) {
-      setResetError("Enter your username.");
+      setResetError("Enter your username or email.");
       return;
     }
 
@@ -328,7 +328,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
         </div>
 
         <p className="mt-4 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
-          Use the username you created at signup. Your wallet, joined groups, and member activity will be waiting for you.
+          Use the username you created at signup or the email linked to your account. Your wallet, joined groups, and member activity will be waiting for you.
         </p>
 
         {lastLoginNote ? (
@@ -362,7 +362,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
         />
 
         <div className="sv-google-auth-divider">
-          <span>Or sign in with username</span>
+          <span>Or sign in with password</span>
         </div>
 
         {notice ? (
@@ -378,12 +378,12 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
         ) : null}
 
         <form onSubmit={handleLogin} className="mt-5 space-y-4 sm:mt-6">
-          <FieldShell label="Username" helper="Enter the username linked to your account.">
+          <FieldShell label="Username or email" helper="Enter the username you created at signup or the email linked to your account.">
             <input
               type="text"
               name="username"
               autoComplete="username"
-              placeholder="your-username"
+              placeholder="your-username or you@example.com"
               value={form.username}
               onChange={handleChange}
               className="sv-input"
@@ -510,7 +510,7 @@ function ResetPasswordModal({
 
         <p className="mt-3 text-sm leading-7 text-slate-600">
           {resetStep === "request"
-            ? "Verify your account with username and phone or email so we can send an OTP."
+            ? "Verify your account with your username or email, then confirm with phone or email so we can send an OTP."
             : "Enter the six-digit OTP and set the new password you want to use next."}
         </p>
 
@@ -528,11 +528,11 @@ function ResetPasswordModal({
 
         <form onSubmit={onSubmit} className="mt-5 space-y-3.5">
           <div className="sv-login-modal-grid">
-            <FieldShell label="Username" helper="This stays tied to the account being recovered.">
+            <FieldShell label="Username or email" helper="Use the username or email linked to the account being recovered.">
               <input
                 type="text"
                 name="username"
-                placeholder="Username"
+                placeholder="Username or email"
                 value={resetForm.username}
                 onChange={onChange}
                 disabled={resetStep === "confirm"}
