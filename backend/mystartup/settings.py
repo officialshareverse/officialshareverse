@@ -12,8 +12,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import importlib.util
 import os
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
+from datetime import timedelta
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,6 +32,13 @@ def _parse_env_value(value):
     if len(normalized) >= 2 and normalized[0] == normalized[-1] and normalized[0] in {'"', "'"}:
         normalized = normalized[1:-1]
     return normalized
+
+
+def _get_env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return _parse_env_value(value).lower() == "true"
 
 
 def _load_env_file(env_path):
@@ -55,17 +65,27 @@ for candidate_env_path in (BASE_DIR.parent / ".env", BASE_DIR / ".env"):
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
+IS_TEST_ENV = any(arg == "test" or "pytest" in arg for arg in sys.argv)
+ENVIRONMENT = os.environ.get("DJANGO_ENV", "test" if IS_TEST_ENV else "production").strip().lower() or ("test" if IS_TEST_ENV else "production")
+IS_DEV_ENV = ENVIRONMENT in {"dev", "development", "local"}
+IS_PRODUCTION_ENV = not IS_DEV_ENV and not IS_TEST_ENV
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY',
-    'django-insecure-dev-key-change-me'
-)
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '').strip()
+if not SECRET_KEY:
+    if IS_DEV_ENV or IS_TEST_ENV:
+        SECRET_KEY = 'django-insecure-dev-key-change-me'
+    else:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set outside development and tests.")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() == 'true'
-EXPOSE_DEV_OTP = os.environ.get('DJANGO_EXPOSE_DEV_OTP', 'true').lower() == 'true'
+DEBUG = _get_env_bool('DJANGO_DEBUG', IS_DEV_ENV)
+EXPOSE_DEV_OTP = _get_env_bool('DJANGO_EXPOSE_DEV_OTP', IS_DEV_ENV or IS_TEST_ENV)
+if IS_PRODUCTION_ENV and EXPOSE_DEV_OTP:
+    raise ImproperlyConfigured("DJANGO_EXPOSE_DEV_OTP cannot be enabled outside development and tests.")
+
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
-SERVE_MEDIA_FILES = DEBUG or os.environ.get('DJANGO_SERVE_MEDIA', 'false').lower() == 'true'
+SERVE_MEDIA_FILES = DEBUG or _get_env_bool('DJANGO_SERVE_MEDIA', False)
 EMAIL_BACKEND = os.environ.get(
     'DJANGO_EMAIL_BACKEND',
     'django.core.mail.backends.console.EmailBackend',
@@ -74,8 +94,8 @@ EMAIL_HOST = os.environ.get('DJANGO_EMAIL_HOST', '').strip()
 EMAIL_PORT = int(os.environ.get('DJANGO_EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.environ.get('DJANGO_EMAIL_HOST_USER', '').strip()
 EMAIL_HOST_PASSWORD = os.environ.get('DJANGO_EMAIL_HOST_PASSWORD', '').strip()
-EMAIL_USE_TLS = os.environ.get('DJANGO_EMAIL_USE_TLS', 'true').lower() == 'true'
-EMAIL_USE_SSL = os.environ.get('DJANGO_EMAIL_USE_SSL', 'false').lower() == 'true'
+EMAIL_USE_TLS = _get_env_bool('DJANGO_EMAIL_USE_TLS', True)
+EMAIL_USE_SSL = _get_env_bool('DJANGO_EMAIL_USE_SSL', False)
 DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_DEFAULT_FROM_EMAIL', 'ShareVerse <no-reply@shareverse.in>').strip()
 GOOGLE_OAUTH_CLIENT_IDS = [
     value.strip()
@@ -128,7 +148,8 @@ MIDDLEWARE += [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOW_ALL_ORIGINS = _get_env_bool('DJANGO_CORS_ALLOW_ALL_ORIGINS', False)
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
@@ -253,8 +274,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'core.User'
 
-from datetime import timedelta
-
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -263,7 +282,14 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
 }
+
+AUTH_REFRESH_COOKIE_NAME = os.environ.get('DJANGO_AUTH_REFRESH_COOKIE_NAME', 'sv_refresh_token').strip() or 'sv_refresh_token'
+AUTH_REFRESH_COOKIE_SECURE = _get_env_bool('DJANGO_AUTH_REFRESH_COOKIE_SECURE', not DEBUG)
+AUTH_REFRESH_COOKIE_SAMESITE = os.environ.get('DJANGO_AUTH_REFRESH_COOKIE_SAMESITE', 'Lax').strip() or 'Lax'
+AUTH_REFRESH_COOKIE_PATH = os.environ.get('DJANGO_AUTH_REFRESH_COOKIE_PATH', '/api/').strip() or '/api/'
+AUTH_REFRESH_COOKIE_DOMAIN = os.environ.get('DJANGO_AUTH_REFRESH_COOKIE_DOMAIN', '').strip() or None
 
 DJANGO_LOG_LEVEL = os.environ.get('DJANGO_LOG_LEVEL', 'INFO').upper()
 
@@ -325,10 +351,10 @@ RAZORPAYX_KEY_SECRET = os.environ.get('RAZORPAYX_KEY_SECRET', '').strip()
 RAZORPAYX_WEBHOOK_SECRET = os.environ.get('RAZORPAYX_WEBHOOK_SECRET', '').strip()
 RAZORPAYX_SOURCE_ACCOUNT_NUMBER = os.environ.get('RAZORPAYX_SOURCE_ACCOUNT_NUMBER', '').strip()
 
-if not DEBUG:
+if not DEBUG and not IS_TEST_ENV:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     USE_X_FORWARDED_HOST = True
-    SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SECURE_SSL_REDIRECT', 'true').lower() == 'true'
+    SECURE_SSL_REDIRECT = _get_env_bool('DJANGO_SECURE_SSL_REDIRECT', True)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_SECURE_HSTS_SECONDS', '31536000') or '31536000')

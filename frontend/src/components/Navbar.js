@@ -236,7 +236,13 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
     return 0;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await API.post("auth/logout/", {});
+    } catch {
+      // ignore logout endpoint failures and clear the local session anyway
+    }
+
     clearAuthSession();
     setIsAuth(false);
     navigate("/");

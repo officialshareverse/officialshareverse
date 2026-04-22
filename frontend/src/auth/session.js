@@ -1,33 +1,77 @@
 export const AUTH_NOTICE_KEY = "shareverse-auth-notice";
-const AUTH_TOKEN_KEY = "token";
+const AUTH_TOKEN_KEY = "sv-access-token";
+const LEGACY_AUTH_TOKEN_KEY = "token";
+
+function getSessionStore() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return window.sessionStorage;
+}
 
 export function getAuthToken() {
-  return localStorage.getItem(AUTH_TOKEN_KEY);
+  const sessionStore = getSessionStore();
+  const sessionToken = sessionStore?.getItem(AUTH_TOKEN_KEY);
+  if (sessionToken) {
+    return sessionToken;
+  }
+
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const legacyToken = window.localStorage.getItem(LEGACY_AUTH_TOKEN_KEY);
+  if (legacyToken) {
+    sessionStore?.setItem(AUTH_TOKEN_KEY, legacyToken);
+    window.localStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+    return legacyToken;
+  }
+
+  return null;
 }
 
 export function setAuthToken(token) {
+  const sessionStore = getSessionStore();
+
   if (token) {
-    localStorage.setItem(AUTH_TOKEN_KEY, token);
+    sessionStore?.setItem(AUTH_TOKEN_KEY, token);
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+    }
     return;
   }
 
-  localStorage.removeItem(AUTH_TOKEN_KEY);
+  sessionStore?.removeItem(AUTH_TOKEN_KEY);
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+  }
 }
 
 export function clearAuthSession(message = "") {
-  localStorage.removeItem(AUTH_TOKEN_KEY);
+  const sessionStore = getSessionStore();
+  sessionStore?.removeItem(AUTH_TOKEN_KEY);
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
 
   if (message) {
-    sessionStorage.setItem(AUTH_NOTICE_KEY, message);
+    window.sessionStorage.setItem(AUTH_NOTICE_KEY, message);
   } else {
-    sessionStorage.removeItem(AUTH_NOTICE_KEY);
+    window.sessionStorage.removeItem(AUTH_NOTICE_KEY);
   }
 }
 
 export function consumeAuthNotice() {
-  const notice = sessionStorage.getItem(AUTH_NOTICE_KEY) || "";
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  const notice = window.sessionStorage.getItem(AUTH_NOTICE_KEY) || "";
   if (notice) {
-    sessionStorage.removeItem(AUTH_NOTICE_KEY);
+    window.sessionStorage.removeItem(AUTH_NOTICE_KEY);
   }
   return notice;
 }

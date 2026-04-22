@@ -20,6 +20,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import (
@@ -2041,6 +2042,54 @@ class SignupView(APIView):
         return Response({"message": "User created and verified."}, status=201)
 
 
+def serialize_auth_user(user):
+    return {
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+    }
+
+
+def attach_refresh_cookie(response, refresh_token):
+    refresh_lifetime = settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"]
+    response.set_cookie(
+        settings.AUTH_REFRESH_COOKIE_NAME,
+        str(refresh_token),
+        max_age=int(refresh_lifetime.total_seconds()),
+        httponly=True,
+        secure=settings.AUTH_REFRESH_COOKIE_SECURE,
+        samesite=settings.AUTH_REFRESH_COOKIE_SAMESITE,
+        path=settings.AUTH_REFRESH_COOKIE_PATH,
+        domain=settings.AUTH_REFRESH_COOKIE_DOMAIN,
+    )
+    return response
+
+
+def clear_refresh_cookie(response):
+    response.delete_cookie(
+        settings.AUTH_REFRESH_COOKIE_NAME,
+        path=settings.AUTH_REFRESH_COOKIE_PATH,
+        domain=settings.AUTH_REFRESH_COOKIE_DOMAIN,
+        samesite=settings.AUTH_REFRESH_COOKIE_SAMESITE,
+    )
+    return response
+
+
+def build_auth_response(user, *, created=None):
+    refresh = RefreshToken.for_user(user)
+    payload = {
+        "access": str(refresh.access_token),
+        "user": serialize_auth_user(user),
+    }
+    if created is not None:
+        payload["created"] = created
+
+    response = Response(payload)
+    attach_refresh_cookie(response, refresh)
+    return response
+
+
 class LoginView(APIView):
     def post(self, request):
         username = (request.data.get("username") or "").strip()
@@ -2077,11 +2126,42 @@ class LoginView(APIView):
             return Response({"error": "Invalid credentials"}, status=401)
 
         reset_rate_limit("login_failed", login_identity)
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        })
+        return build_auth_response(user)
+
+
+class RefreshSessionView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        refresh_token = (request.COOKIES.get(settings.AUTH_REFRESH_COOKIE_NAME) or "").strip()
+        if not refresh_token:
+            response = Response({"error": "Refresh session missing."}, status=401)
+            clear_refresh_cookie(response)
+            return response
+
+        try:
+            refresh = RefreshToken(refresh_token)
+            user = User.objects.get(id=refresh["user_id"])
+        except (KeyError, TokenError, User.DoesNotExist):
+            response = Response({"error": "Refresh session is invalid or expired."}, status=401)
+            clear_refresh_cookie(response)
+            return response
+
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "user": serialize_auth_user(user),
+            }
+        )
+
+
+class LogoutView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        response = Response({"message": "Logged out."}, status=200)
+        clear_refresh_cookie(response)
+        return response
 
 
 class GoogleAuthView(APIView):
@@ -2107,21 +2187,7 @@ class GoogleAuthView(APIView):
             return Response({"error": "Please use a Google account with a verified email."}, status=400)
 
         user, created = get_or_create_google_user(claims)
-        refresh = RefreshToken.for_user(user)
-
-        return Response(
-            {
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
-                "created": created,
-                "user": {
-                    "username": user.username,
-                    "email": user.email,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                },
-            }
-        )
+        return build_auth_response(user, created=created)
 
 
 class ForgotPasswordRequestOTPView(APIView):

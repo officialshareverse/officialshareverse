@@ -384,8 +384,9 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["created"])
         self.assertIn("access", response.data)
-        self.assertIn("refresh", response.data)
         self.assertEqual(response.data["user"]["email"], "google-user@example.com")
+        self.assertIn("sv_refresh_token", response.cookies)
+        self.assertTrue(response.cookies["sv_refresh_token"]["httponly"])
 
         created_user = User.objects.get(email="google-user@example.com")
         self.assertTrue(created_user.is_verified)
@@ -427,6 +428,49 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(existing_user.last_name, "Member")
         self.assertTrue(existing_user.is_verified)
         self.assertEqual(response.data["user"]["username"], existing_user.username)
+        self.assertIn("sv_refresh_token", response.cookies)
+
+    def test_login_sets_refresh_cookie_and_refresh_endpoint_restores_access(self):
+        login_response = self.client.post(
+            "/api/login/",
+            {
+                "username": self.owner.username,
+                "password": "password123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", login_response.data)
+        self.assertNotIn("refresh", login_response.data)
+        self.assertIn("sv_refresh_token", login_response.cookies)
+        self.assertTrue(login_response.cookies["sv_refresh_token"]["httponly"])
+
+        self.client.cookies["sv_refresh_token"] = login_response.cookies["sv_refresh_token"].value
+        refresh_response = self.client.post("/api/auth/refresh/", format="json")
+
+        self.assertEqual(refresh_response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", refresh_response.data)
+        self.assertEqual(refresh_response.data["user"]["username"], self.owner.username)
+
+    def test_logout_clears_refresh_cookie(self):
+        login_response = self.client.post(
+            "/api/login/",
+            {
+                "username": self.owner.username,
+                "password": "password123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        self.client.cookies["sv_refresh_token"] = login_response.cookies["sv_refresh_token"].value
+
+        logout_response = self.client.post("/api/auth/logout/", format="json")
+
+        self.assertEqual(logout_response.status_code, status.HTTP_200_OK)
+        self.assertIn("sv_refresh_token", logout_response.cookies)
+        self.assertEqual(logout_response.cookies["sv_refresh_token"].value, "")
 
     @patch("core.views.verify_google_id_token", side_effect=ValueError("bad token"))
     def test_google_auth_rejects_invalid_credentials(self, verify_google_id_token_mock):

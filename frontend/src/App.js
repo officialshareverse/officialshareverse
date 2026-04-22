@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
-import { getAuthToken } from "./auth/session";
+import API from "./api/axios";
+import { getAuthToken, setAuthToken } from "./auth/session";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/Navbar";
 import {
@@ -64,9 +65,45 @@ function App() {
   const [themeMode, setThemeMode] = useState(getInitialTheme);
 
   useEffect(() => {
-    const token = getAuthToken();
-    setIsAuth(!!token);
-    setIsBootstrapping(false);
+    let isMounted = true;
+
+    const bootstrapAuth = async () => {
+      const token = getAuthToken();
+      if (token) {
+        if (isMounted) {
+          setIsAuth(true);
+          setIsBootstrapping(false);
+        }
+        return;
+      }
+
+      try {
+        const response = await API.post("auth/refresh/", {});
+        const nextAccessToken = response?.data?.access || "";
+        if (nextAccessToken) {
+          setAuthToken(nextAccessToken);
+          if (isMounted) {
+            setIsAuth(true);
+          }
+        } else if (isMounted) {
+          setIsAuth(false);
+        }
+      } catch {
+        if (isMounted) {
+          setIsAuth(false);
+        }
+      } finally {
+        if (isMounted) {
+          setIsBootstrapping(false);
+        }
+      }
+    };
+
+    void bootstrapAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
