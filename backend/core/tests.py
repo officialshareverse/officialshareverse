@@ -360,7 +360,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.data["attempts_remaining"], 4)
         self.assertFalse(User.objects.filter(username="otpuser").exists())
 
-    @patch("core.views.verify_google_id_token")
+    @patch("core.auth_views.verify_google_id_token")
     def test_google_auth_creates_verified_user_and_returns_tokens(self, verify_google_id_token_mock):
         verify_google_id_token_mock.return_value = {
             "iss": "accounts.google.com",
@@ -391,7 +391,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(created_user.last_name, "Member")
         self.assertFalse(created_user.has_usable_password())
 
-    @patch("core.views.verify_google_id_token")
+    @patch("core.auth_views.verify_google_id_token")
     def test_google_auth_logs_in_existing_user_with_same_email(self, verify_google_id_token_mock):
         existing_user = User.objects.create_user(
             username="existinggoogle",
@@ -525,7 +525,7 @@ class GroupFlowTests(APITestCase):
         self.assertIn("sv_refresh_token", logout_response.cookies)
         self.assertEqual(logout_response.cookies["sv_refresh_token"].value, "")
 
-    @patch("core.views.verify_google_id_token", side_effect=ValueError("bad token"))
+    @patch("core.auth_views.verify_google_id_token", side_effect=ValueError("bad token"))
     def test_google_auth_rejects_invalid_credentials(self, verify_google_id_token_mock):
         response = self.client.post(
             "/api/auth/google/",
@@ -666,8 +666,8 @@ class GroupFlowTests(APITestCase):
         self.assertTrue(self.owner.check_password("emailpass123"))
 
     def test_login_is_rate_limited_after_repeated_failures(self):
-        with patch("core.views.LOGIN_FAILED_ATTEMPT_LIMIT", 2), patch(
-            "core.views.LOGIN_FAILED_ATTEMPT_WINDOW_SECONDS", 120
+        with patch("core.auth_views.LOGIN_FAILED_ATTEMPT_LIMIT", 2), patch(
+            "core.auth_views.LOGIN_FAILED_ATTEMPT_WINDOW_SECONDS", 120
         ):
             first_attempt = self.client.post(
                 "/api/login/",
@@ -700,8 +700,8 @@ class GroupFlowTests(APITestCase):
         self.assertIn("retry_after_seconds", third_attempt.data)
 
     def test_successful_login_clears_failed_login_rate_limit_state(self):
-        with patch("core.views.LOGIN_FAILED_ATTEMPT_LIMIT", 2), patch(
-            "core.views.LOGIN_FAILED_ATTEMPT_WINDOW_SECONDS", 120
+        with patch("core.auth_views.LOGIN_FAILED_ATTEMPT_LIMIT", 2), patch(
+            "core.auth_views.LOGIN_FAILED_ATTEMPT_WINDOW_SECONDS", 120
         ):
             first_failed_attempt = self.client.post(
                 "/api/login/",
@@ -882,8 +882,8 @@ class GroupFlowTests(APITestCase):
         )
         self.assertEqual(request_otp_response.status_code, status.HTTP_200_OK)
 
-        with patch("core.views.PASSWORD_RESET_OTP_CONFIRM_RATE_LIMIT", 2), patch(
-            "core.views.PASSWORD_RESET_OTP_CONFIRM_RATE_WINDOW_SECONDS", 120
+        with patch("core.auth_views.PASSWORD_RESET_OTP_CONFIRM_RATE_LIMIT", 2), patch(
+            "core.auth_views.PASSWORD_RESET_OTP_CONFIRM_RATE_WINDOW_SECONDS", 120
         ):
             first_attempt = self.client.post(
                 "/api/forgot-password/confirm-otp/",

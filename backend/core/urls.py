@@ -1,5 +1,16 @@
 from django.urls import path
 
+from .auth_views import (
+    ForgotPasswordConfirmOTPView,
+    ForgotPasswordRequestOTPView,
+    GoogleAuthView,
+    LoginView,
+    LogoutView,
+    RefreshSessionView,
+    SignupAvailabilityView,
+    SignupRequestOTPView,
+    SignupView,
+)
 from .views import (
     ActivateGroupPurchaseView,
     AddMoneyView,
@@ -7,9 +18,6 @@ from .views import (
     ConfirmGroupAccessView,
     CreateGroupView,
     DashboardView,
-    ForgotPasswordConfirmOTPView,
-    ForgotPasswordRequestOTPView,
-    GoogleAuthView,
     GroupChatInboxView,
     GroupChatView,
     GroupListView,
@@ -17,8 +25,6 @@ from .views import (
     HealthCheckView,
     JoinGroupView,
     LeaveGroupView,
-    LoginView,
-    LogoutView,
     MarkAllNotificationsReadView,
     MarkNotificationReadView,
     MyGroupDetailView,
@@ -31,11 +37,7 @@ from .views import (
     ReportGroupAccessIssueView,
     RefundGroupFundsView,
     RequestCredentialRevealView,
-    RefreshSessionView,
     RevealCredentialView,
-    SignupView,
-    SignupAvailabilityView,
-    SignupRequestOTPView,
     SubmitPurchaseProofView,
     SubscriptionListView,
     TransactionHistoryView,
