@@ -646,6 +646,138 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  .sv-action-dialog {
+    width: min(100%, 30rem);
+    margin: 0 auto;
+    min-height: calc(100dvh - max(1.5rem, env(safe-area-inset-top)) - max(1.5rem, env(safe-area-inset-bottom)));
+    display: grid;
+    place-items: center;
+  }
+
+  .sv-action-dialog-shell {
+    width: 100%;
+    display: grid;
+    gap: 1rem;
+    border-radius: 28px;
+    border: 1px solid var(--sv-border);
+    background:
+      radial-gradient(circle at top right, rgba(45, 212, 191, 0.12), transparent 38%),
+      color-mix(in srgb, var(--sv-elevated-surface) 98%, transparent);
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.26);
+    backdrop-filter: blur(22px) saturate(165%);
+    padding: 1.15rem;
+    animation: sv-pop 0.24s ease both;
+  }
+
+  .sv-action-dialog-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .sv-action-dialog-copy {
+    min-width: 0;
+  }
+
+  .sv-action-dialog-title {
+    margin: 0.45rem 0 0;
+    color: var(--sv-ink);
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .sv-action-dialog-description {
+    margin: 0.6rem 0 0;
+    color: var(--sv-muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .sv-action-dialog-close {
+    min-height: 44px;
+    padding: 0.7rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid var(--sv-border);
+    background: color-mix(in srgb, var(--sv-paper-solid) 92%, transparent);
+    color: var(--sv-ink);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+
+  .sv-action-dialog-close:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--sv-accent) 24%, transparent);
+  }
+
+  .sv-action-dialog-field {
+    display: grid;
+    gap: 0.5rem;
+    color: var(--sv-ink);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .sv-action-dialog-field .sv-input {
+    margin: 0;
+  }
+
+  .sv-action-dialog-textarea {
+    min-height: 8rem;
+    resize: vertical;
+  }
+
+  .sv-action-dialog-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .sv-action-dialog-button {
+    min-height: 44px;
+    min-width: 7.25rem;
+    padding: 0.8rem 1rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 13px;
+    font-weight: 800;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+  }
+
+  .sv-action-dialog-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .sv-action-dialog-button:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+  }
+
+  .sv-action-dialog-button.is-secondary {
+    border-color: var(--sv-border);
+    background: color-mix(in srgb, var(--sv-paper-solid) 94%, transparent);
+    color: var(--sv-ink);
+  }
+
+  .sv-action-dialog-button.is-primary {
+    background: linear-gradient(135deg, #0f766e 0%, #0f172a 100%);
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.14);
+    color: #fff;
+  }
+
+  .sv-action-dialog-button.is-danger {
+    background: linear-gradient(135deg, #e11d48 0%, #fb7185 100%);
+    box-shadow: 0 18px 34px rgba(225, 29, 72, 0.18);
+    color: #fff;
+  }
+
   .sv-drawer-backdrop {
     position: fixed;
     inset: 0;
@@ -749,6 +881,22 @@
   @media (max-width: 767px) {
     .sv-modal-backdrop {
       padding: max(0.625rem, env(safe-area-inset-top)) 0.625rem max(0.625rem, env(safe-area-inset-bottom));
+    }
+
+    .sv-action-dialog-shell {
+      gap: 0.9rem;
+      border-radius: 24px;
+      padding: 0.95rem;
+    }
+
+    .sv-action-dialog-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sv-action-dialog-button {
+      width: 100%;
+      min-width: 0;
     }
 
     .sv-drawer-backdrop {

@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { revealGroupCredentials } from "../api/credentials";
+import ActionDialog from "../components/ActionDialog";
 import Drawer from "../components/Drawer";
+import { useToast } from "../components/ToastProvider";
 import {
   ChatIcon,
   ClockIcon,
@@ -11,89 +13,21 @@ import {
   SparkIcon,
   WalletIcon,
 } from "../components/UiIcons";
-
-function getInitialEditForm(group, detail = null) {
-  return {
-    subscription_name: detail?.subscription_name || group.subscription_name || "",
-    total_slots: String(detail?.total_slots ?? group.total_slots ?? ""),
-    price_per_slot: String(detail?.price_per_slot ?? group.price_per_slot ?? ""),
-    access_identifier: "",
-    access_password: "",
-    access_notes: "",
-    start_date: detail?.start_date || group.start_date || "",
-    end_date: detail?.end_date || group.end_date || "",
-  };
-}
-
-function getInitialProofForm(detail = null) {
-  return {
-    purchase_reference: detail?.purchase_proof?.purchase_reference || "",
-    purchase_notes: detail?.purchase_proof?.purchase_notes || "",
-    purchase_proof: null,
-  };
-}
-
-function getInitialReviewForm(review = null) {
-  return {
-    rating: review?.rating || 5,
-    comment: review?.comment || "",
-  };
-}
-
-function getReviewKey(groupId, userId) {
-  return `${groupId}:${userId}`;
-}
-
-function canDeleteGroup(group) {
-  return group.filled_slots === 0;
-}
-
-function canCloseGroup(group) {
-  if (group.status === "closed" || group.filled_slots === 0) {
-    return false;
-  }
-
-  if (group.mode === "group_buy" && group.status !== "active") {
-    return false;
-  }
-
-  return true;
-}
-
-function getLifecycleNote(group) {
-  if (group.status === "closed") {
-    return "Closed groups stay in your workspace for record-keeping and no longer accept new joins.";
-  }
-
-  if (group.status === "refunded") {
-    return "This buy-together group timed out or was canceled, and held member funds have already been returned.";
-  }
-
-  if (canDeleteGroup(group)) {
-    return "This group is still empty, so you can delete it completely.";
-  }
-
-  if (group.mode === "group_buy" && group.status === "proof_submitted") {
-    return "Purchase proof is uploaded. Members can confirm access or report a problem, and escrow releases automatically when everyone confirms or the clean confirmation window ends.";
-  }
-
-  if (group.mode === "group_buy" && group.status === "disputed") {
-    return "A member reported an access problem. Payout is paused until the issue is resolved or you refund the group.";
-  }
-
-  if (group.mode === "group_buy" && group.status !== "active") {
-    return "This buy-together group has member commitments, so it must complete or refund before it can be closed.";
-  }
-
-  if (canCloseGroup(group)) {
-    return "Closing stops new joins and marks the group as owner-closed.";
-  }
-
-  return null;
-}
+import {
+  canCloseGroup,
+  canDeleteGroup,
+  getActionError,
+  getEscrowLabel,
+  getInitialEditForm,
+  getInitialProofForm,
+  getInitialReviewForm,
+  getLifecycleNote,
+  getReviewKey,
+} from "./mySharedUtils";
 
 export default function MyShared() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
   );
@@ -118,6 +52,22 @@ export default function MyShared() {
   const [submittingReviewKey, setSubmittingReviewKey] = useState("");
   const [mobileOwnerActionGroupId, setMobileOwnerActionGroupId] = useState(null);
   const [mobileJoinedActionGroupId, setMobileJoinedActionGroupId] = useState(null);
+  const [actionDialog, setActionDialog] = useState({
+    open: false,
+    eyebrow: "Confirm action",
+    title: "",
+    description: "",
+    confirmLabel: "Confirm",
+    confirmPendingLabel: "Working...",
+    cancelLabel: "Cancel",
+    tone: "default",
+    inputLabel: "",
+    inputPlaceholder: "",
+    inputValue: "",
+    multiline: false,
+    isSubmitting: false,
+    onConfirm: null,
+  });
 
   const storeDetail = (groupId, detail, resetProofForm = false) => {
     setDetails((current) => ({
@@ -274,6 +224,77 @@ export default function MyShared() {
     (activeMobileJoinedReviewKey && reviewForms[activeMobileJoinedReviewKey]) ||
     getInitialReviewForm(activeMobileJoinedReviewTarget?.my_review);
 
+  const resetActionDialog = () => ({
+    open: false,
+    eyebrow: "Confirm action",
+    title: "",
+    description: "",
+    confirmLabel: "Confirm",
+    confirmPendingLabel: "Working...",
+    cancelLabel: "Cancel",
+    tone: "default",
+    inputLabel: "",
+    inputPlaceholder: "",
+    inputValue: "",
+    multiline: false,
+    isSubmitting: false,
+    onConfirm: null,
+  });
+
+  const closeActionDialog = () => {
+    setActionDialog((current) => (current.isSubmitting ? current : resetActionDialog()));
+  };
+
+  const openActionDialog = (config) => {
+    setActionDialog({
+      ...resetActionDialog(),
+      open: true,
+      eyebrow: config.eyebrow || "Confirm action",
+      title: config.title || "",
+      description: config.description || "",
+      confirmLabel: config.confirmLabel || "Confirm",
+      confirmPendingLabel: config.confirmPendingLabel || "Working...",
+      cancelLabel: config.cancelLabel || "Cancel",
+      tone: config.tone || "default",
+      inputLabel: config.inputLabel || "",
+      inputPlaceholder: config.inputPlaceholder || "",
+      inputValue: config.inputValue || "",
+      multiline: Boolean(config.multiline),
+      onConfirm: config.onConfirm || null,
+    });
+  };
+
+  const handleDialogConfirm = async () => {
+    if (!actionDialog.onConfirm) {
+      closeActionDialog();
+      return;
+    }
+
+    try {
+      setActionDialog((current) => ({
+        ...current,
+        isSubmitting: true,
+      }));
+
+      const shouldClose = await actionDialog.onConfirm(actionDialog.inputValue);
+      if (shouldClose !== false) {
+        setActionDialog(resetActionDialog());
+        return;
+      }
+
+      setActionDialog((current) => ({
+        ...current,
+        isSubmitting: false,
+      }));
+    } catch (error) {
+      console.error(error);
+      setActionDialog((current) => ({
+        ...current,
+        isSubmitting: false,
+      }));
+    }
+  };
+
   const toggleDetails = async (groupId) => {
     if (details[groupId]) {
       setDetails((current) => {
@@ -290,7 +311,7 @@ export default function MyShared() {
       storeDetail(groupId, res.data);
     } catch (err) {
       console.error(err);
-      alert("Failed to load group details");
+      toast.error("Failed to load group details");
     } finally {
       setLoadingDetailId(null);
     }
@@ -307,7 +328,7 @@ export default function MyShared() {
       storeDetail(groupId, res.data);
     } catch (err) {
       console.error(err);
-      alert("Failed to load the proof upload panel");
+      toast.error("Failed to load the proof upload panel");
     } finally {
       setLoadingDetailId(null);
     }
@@ -319,138 +340,163 @@ export default function MyShared() {
       const response = await API.post(`groups/${groupId}/confirm-access/`);
       const joinedRes = await API.get("dashboard/");
       setJoinedGroups(joinedRes.data?.groups || []);
-      alert(response.data?.message || "Access confirmed successfully");
+      toast.success(response.data?.message || "Access confirmed successfully");
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Failed to confirm access");
+      toast.error(getActionError(err.response?.data, "Failed to confirm access"));
     } finally {
       setConfirmingId(null);
     }
   };
 
-  const reportAccessIssue = async (groupId) => {
-    const details = window.prompt(
-      "What went wrong with the access you received?",
-      "I did not receive the credentials yet."
-    );
+  const requestAccessIssueReport = (groupId) => {
+    openActionDialog({
+      eyebrow: "Report issue",
+      title: "Describe the access problem",
+      description:
+        "Share a short note so the host can fix the issue or refund the group if needed.",
+      confirmLabel: "Send report",
+      confirmPendingLabel: "Sending...",
+      inputLabel: "Issue details",
+      inputPlaceholder: "I did not receive the credentials yet.",
+      inputValue: "I did not receive the credentials yet.",
+      multiline: true,
+      onConfirm: async (issueDetails) => {
+        const nextDetails = issueDetails.trim();
+        if (!nextDetails) {
+          toast.warning("Add a short note before sending the report.");
+          return false;
+        }
 
-    if (!details || !details.trim()) {
-      return;
-    }
-
-    try {
-      setReportingIssueId(groupId);
-      const response = await API.post(`groups/${groupId}/report-access-issue/`, {
-        details: details.trim(),
-      });
-      const joinedRes = await API.get("dashboard/");
-      setJoinedGroups(joinedRes.data?.groups || []);
-      alert(response.data?.message || "Access issue reported");
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.error || "Failed to report the access issue");
-    } finally {
-      setReportingIssueId(null);
-    }
+        try {
+          setReportingIssueId(groupId);
+          const response = await API.post(`groups/${groupId}/report-access-issue/`, {
+            details: nextDetails,
+          });
+          const joinedRes = await API.get("dashboard/");
+          setJoinedGroups(joinedRes.data?.groups || []);
+          toast.success(response.data?.message || "Access issue reported");
+          return true;
+        } catch (err) {
+          console.error(err);
+          toast.error(getActionError(err.response?.data, "Failed to report the access issue"));
+          return false;
+        } finally {
+          setReportingIssueId(null);
+        }
+      },
+    });
   };
 
-  const refundGroup = async (group) => {
-    const confirmed = window.confirm(
-      "Refund all held member contributions for this buy-together group?"
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      setRefundingId(group.id);
-      await API.post(`my-groups/${group.id}/refund/`);
-      const [groupsRes, detailRes, joinedRes] = await Promise.all([
-        API.get("my-groups/"),
-        API.get(`my-groups/${group.id}/`),
-        API.get("dashboard/"),
-      ]);
-      setGroups(groupsRes.data);
-      storeDetail(group.id, detailRes.data, true);
-      setJoinedGroups(joinedRes.data?.groups || []);
-      alert("Held member funds refunded successfully");
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.error || "Failed to refund held funds");
-    } finally {
-      setRefundingId(null);
-    }
+  const requestRefundGroup = (group) => {
+    openActionDialog({
+      eyebrow: "Refund members",
+      title: "Refund held contributions?",
+      description: "This returns all held member contributions for the buy-together group.",
+      confirmLabel: "Refund now",
+      confirmPendingLabel: "Refunding...",
+      tone: "danger",
+      onConfirm: async () => {
+        try {
+          setRefundingId(group.id);
+          await API.post(`my-groups/${group.id}/refund/`);
+          const [groupsRes, detailRes, joinedRes] = await Promise.all([
+            API.get("my-groups/"),
+            API.get(`my-groups/${group.id}/`),
+            API.get("dashboard/"),
+          ]);
+          setGroups(groupsRes.data);
+          storeDetail(group.id, detailRes.data, true);
+          setJoinedGroups(joinedRes.data?.groups || []);
+          toast.success("Held member funds refunded successfully");
+          return true;
+        } catch (err) {
+          console.error(err);
+          toast.error(getActionError(err.response?.data, "Failed to refund held funds"));
+          return false;
+        } finally {
+          setRefundingId(null);
+        }
+      },
+    });
   };
 
-  const closeGroup = async (group) => {
-    const confirmed = window.confirm(
-      "Close this group? It will stay in your workspace, but new members will no longer be able to join."
-    );
+  const requestCloseGroup = (group) => {
+    openActionDialog({
+      eyebrow: "Close split",
+      title: "Close this split?",
+      description:
+        "The split will stay in your workspace, but new members will no longer be able to join.",
+      confirmLabel: "Close split",
+      confirmPendingLabel: "Closing...",
+      onConfirm: async () => {
+        try {
+          setClosingId(group.id);
+          await API.post(`my-groups/${group.id}/close/`);
 
-    if (!confirmed) {
-      return;
-    }
+          const [groupsRes, detailRes] = await Promise.all([
+            API.get("my-groups/"),
+            API.get(`my-groups/${group.id}/`),
+          ]);
 
-    try {
-      setClosingId(group.id);
-      await API.post(`my-groups/${group.id}/close/`);
-
-      const [groupsRes, detailRes] = await Promise.all([
-        API.get("my-groups/"),
-        API.get(`my-groups/${group.id}/`),
-      ]);
-
-      setGroups(groupsRes.data);
-      storeDetail(group.id, detailRes.data, true);
-      setEditingId(null);
-      setEditForm(null);
-      alert("Group closed successfully");
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.error || "Failed to close group");
-    } finally {
-      setClosingId(null);
-    }
+          setGroups(groupsRes.data);
+          storeDetail(group.id, detailRes.data, true);
+          setEditingId(null);
+          setEditForm(null);
+          toast.success("Group closed successfully");
+          return true;
+        } catch (err) {
+          console.error(err);
+          toast.error(getActionError(err.response?.data, "Failed to close group"));
+          return false;
+        } finally {
+          setClosingId(null);
+        }
+      },
+    });
   };
 
-  const deleteGroup = async (group) => {
-    const confirmed = window.confirm(
-      "Delete this empty group? This cannot be undone."
-    );
+  const requestDeleteGroup = (group) => {
+    openActionDialog({
+      eyebrow: "Delete split",
+      title: "Delete this empty split?",
+      description: "This permanently removes the split and cannot be undone.",
+      confirmLabel: "Delete split",
+      confirmPendingLabel: "Deleting...",
+      tone: "danger",
+      onConfirm: async () => {
+        try {
+          setDeletingId(group.id);
+          await API.delete(`my-groups/${group.id}/`);
 
-    if (!confirmed) {
-      return;
-    }
+          setGroups((current) => current.filter((item) => item.id !== group.id));
+          setDetails((current) => {
+            const next = { ...current };
+            delete next[group.id];
+            return next;
+          });
+          setProofForms((current) => {
+            const next = { ...current };
+            delete next[group.id];
+            return next;
+          });
 
-    try {
-      setDeletingId(group.id);
-      await API.delete(`my-groups/${group.id}/`);
+          if (editingId === group.id) {
+            setEditingId(null);
+            setEditForm(null);
+          }
 
-      setGroups((current) => current.filter((item) => item.id !== group.id));
-      setDetails((current) => {
-        const next = { ...current };
-        delete next[group.id];
-        return next;
-      });
-      setProofForms((current) => {
-        const next = { ...current };
-        delete next[group.id];
-        return next;
-      });
-
-      if (editingId === group.id) {
-        setEditingId(null);
-        setEditForm(null);
-      }
-
-      alert("Group deleted successfully");
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.error || "Failed to delete group");
-    } finally {
-      setDeletingId(null);
-    }
+          toast.success("Group deleted successfully");
+          return true;
+        } catch (err) {
+          console.error(err);
+          toast.error(getActionError(err.response?.data, "Failed to delete group"));
+          return false;
+        } finally {
+          setDeletingId(null);
+        }
+      },
+    });
   };
 
   const startEditing = async (group) => {
@@ -464,7 +510,7 @@ export default function MyShared() {
         storeDetail(group.id, res.data);
       } catch (err) {
         console.error(err);
-        alert("Failed to load group details");
+        toast.error("Failed to load group details");
         return;
       } finally {
         setLoadingDetailId(null);
@@ -509,7 +555,7 @@ export default function MyShared() {
         const hasNotes = Boolean(editForm.access_notes?.trim());
 
         if (hasIdentifier !== hasPassword) {
-          alert("To update credentials, provide both login identifier and password.");
+          toast.warning("To update credentials, provide both login identifier and password.");
           setSavingId(null);
           return;
         }
@@ -535,14 +581,10 @@ export default function MyShared() {
 
       setEditingId(null);
       setEditForm(null);
-      alert("Group updated successfully");
+      toast.success("Group updated successfully");
     } catch (err) {
       console.error(err);
-      const errorData = err.response?.data;
-      const firstError = errorData && typeof errorData === "object"
-        ? Object.values(errorData)[0]
-        : null;
-      alert(Array.isArray(firstError) ? firstError[0] : "Failed to update group");
+      toast.error(getActionError(err.response?.data, "Failed to update group"));
     } finally {
       setSavingId(null);
     }
@@ -558,7 +600,7 @@ export default function MyShared() {
       }));
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Failed to reveal credentials");
+      toast.error(getActionError(err.response?.data, "Failed to reveal credentials"));
     } finally {
       setRevealingGroupId(null);
     }
@@ -609,17 +651,10 @@ export default function MyShared() {
         ...current,
         [reviewKey]: getInitialReviewForm(response.data?.review),
       }));
-      alert(response.data?.message || "Rating saved successfully");
+      toast.success(response.data?.message || "Rating saved successfully");
     } catch (err) {
       console.error(err);
-      const errorData = err.response?.data;
-      const firstError =
-        errorData && typeof errorData === "object" ? Object.values(errorData)[0] : null;
-      alert(
-        Array.isArray(firstError)
-          ? firstError[0]
-          : err.response?.data?.error || "Failed to save your rating"
-      );
+      toast.error(getActionError(err.response?.data, "Failed to save your rating"));
     } finally {
       setSubmittingReviewKey("");
     }
@@ -629,7 +664,7 @@ export default function MyShared() {
     const currentProofForm = proofForms[groupId] || getInitialProofForm(details[groupId]);
 
     if (!currentProofForm.purchase_proof) {
-      alert("Select a proof file before uploading.");
+      toast.warning("Select a proof file before uploading.");
       return;
     }
 
@@ -656,14 +691,10 @@ export default function MyShared() {
       ]);
       setGroups(groupsRes.data);
       storeDetail(groupId, detailRes.data, true);
-      alert("Purchase proof uploaded successfully");
+      toast.success("Purchase proof uploaded successfully");
     } catch (err) {
       console.error(err);
-      const errorData = err.response?.data;
-      const firstError = errorData && typeof errorData === "object"
-        ? Object.values(errorData)[0]
-        : null;
-      alert(Array.isArray(firstError) ? firstError[0] : err.response?.data?.error || "Failed to upload purchase proof");
+      toast.error(getActionError(err.response?.data, "Failed to upload purchase proof"));
     } finally {
       setSubmittingProofId(null);
     }
@@ -683,6 +714,30 @@ export default function MyShared() {
 
   return (
     <>
+    <ActionDialog
+      open={actionDialog.open}
+      onClose={closeActionDialog}
+      onConfirm={handleDialogConfirm}
+      eyebrow={actionDialog.eyebrow}
+      title={actionDialog.title}
+      description={actionDialog.description}
+      confirmLabel={actionDialog.confirmLabel}
+      confirmPendingLabel={actionDialog.confirmPendingLabel}
+      cancelLabel={actionDialog.cancelLabel}
+      tone={actionDialog.tone}
+      inputLabel={actionDialog.inputLabel}
+      inputPlaceholder={actionDialog.inputPlaceholder}
+      inputValue={actionDialog.inputValue}
+      onInputChange={(value) =>
+        setActionDialog((current) => ({
+          ...current,
+          inputValue: value,
+        }))
+      }
+      confirmDisabled={Boolean(actionDialog.inputLabel) && !actionDialog.inputValue.trim()}
+      multiline={actionDialog.multiline}
+      isSubmitting={actionDialog.isSubmitting}
+    />
     {isMobile && activeMobileOwnerGroup ? (
       <Drawer
         open={Boolean(activeMobileOwnerGroup)}
@@ -746,7 +801,7 @@ export default function MyShared() {
               disabled={refundingId === activeMobileOwnerGroup.id}
               onClick={() => {
                 closeMobileOwnerActions();
-                refundGroup(activeMobileOwnerGroup);
+                requestRefundGroup(activeMobileOwnerGroup);
               }}
             />
           ) : null}
@@ -760,7 +815,7 @@ export default function MyShared() {
               disabled={closingId === activeMobileOwnerGroup.id}
               onClick={() => {
                 closeMobileOwnerActions();
-                closeGroup(activeMobileOwnerGroup);
+                requestCloseGroup(activeMobileOwnerGroup);
               }}
             />
           ) : null}
@@ -774,7 +829,7 @@ export default function MyShared() {
               disabled={deletingId === activeMobileOwnerGroup.id}
               onClick={() => {
                 closeMobileOwnerActions();
-                deleteGroup(activeMobileOwnerGroup);
+                requestDeleteGroup(activeMobileOwnerGroup);
               }}
             />
           ) : null}
@@ -924,7 +979,7 @@ export default function MyShared() {
                     {activeMobileJoinedGroup.can_report_access_issue ? (
                       <button
                         style={{ ...dangerButton, ...actionButtonMobile }}
-                        onClick={() => reportAccessIssue(activeMobileJoinedGroup.id)}
+                        onClick={() => requestAccessIssueReport(activeMobileJoinedGroup.id)}
                         disabled={reportingIssueId === activeMobileJoinedGroup.id}
                       >
                         {reportingIssueId === activeMobileJoinedGroup.id ? "Reporting..." : "Report issue"}
@@ -1148,7 +1203,7 @@ export default function MyShared() {
                     {showAdvancedOwnerActions && !isEditing && detail?.can_refund ? (
                       <button
                         style={{ ...dangerButton, ...(isMobile ? actionButtonMobile : {}) }}
-                        onClick={() => refundGroup(group)}
+                        onClick={() => requestRefundGroup(group)}
                         disabled={refundingId === group.id}
                       >
                         {refundingId === group.id ? "Refunding..." : "Refund members"}
@@ -1158,7 +1213,7 @@ export default function MyShared() {
                     {showAdvancedOwnerActions && !isEditing && canCloseGroup(group) ? (
                       <button
                         style={{ ...warningButton, ...(isMobile ? actionButtonMobile : {}) }}
-                        onClick={() => closeGroup(group)}
+                        onClick={() => requestCloseGroup(group)}
                         disabled={closingId === group.id}
                       >
                         {closingId === group.id ? "Closing..." : "Close group"}
@@ -1168,7 +1223,7 @@ export default function MyShared() {
                     {showAdvancedOwnerActions && !isEditing && canDeleteGroup(group) ? (
                       <button
                         style={{ ...dangerButton, ...(isMobile ? actionButtonMobile : {}) }}
-                        onClick={() => deleteGroup(group)}
+                        onClick={() => requestDeleteGroup(group)}
                         disabled={deletingId === group.id}
                       >
                         {deletingId === group.id ? "Deleting..." : "Delete empty group"}
@@ -1801,7 +1856,7 @@ export default function MyShared() {
                             {group.can_report_access_issue ? (
                               <button
                                 style={{ ...dangerButton, ...(isMobile ? actionButtonMobile : {}) }}
-                                onClick={() => reportAccessIssue(group.id)}
+                                onClick={() => requestAccessIssueReport(group.id)}
                                 disabled={reportingIssueId === group.id}
                               >
                                 {reportingIssueId === group.id ? "Reporting..." : "Report issue"}
@@ -1950,38 +2005,6 @@ function StarPicker({ value, onChange }) {
       ))}
     </div>
   );
-}
-
-function getEscrowLabel(member, groupStatus = "") {
-  if (member.escrow_status === "released") {
-    return "Funds released";
-  }
-
-  if (member.escrow_status === "refunded") {
-    return "Refunded";
-  }
-
-  if (member.access_issue_reported) {
-    return "Access issue reported";
-  }
-
-  if (member.access_confirmed) {
-    return "Access confirmed";
-  }
-
-  if ((groupStatus === "proof_submitted" || groupStatus === "disputed") && member.has_paid) {
-    return "Awaiting confirmation";
-  }
-
-  if (member.escrow_status === "held" && member.has_paid) {
-    return "Awaiting access confirmation";
-  }
-
-  if (member.has_paid) {
-    return "Held in escrow";
-  }
-
-  return "Awaiting payment";
 }
 
 const svPageBackground = "radial-gradient(circle at top left, var(--sv-page-radial-a), transparent 28%), radial-gradient(circle at bottom right, var(--sv-page-radial-b), transparent 24%), linear-gradient(180deg, color-mix(in srgb, var(--sv-bg) 92%, var(--sv-paper-solid) 8%) 0%, var(--sv-bg-soft) 100%)";

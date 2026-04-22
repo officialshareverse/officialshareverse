@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import { revealGroupCredentials } from "../api/credentials";
+import { useToast } from "../components/ToastProvider";
 
 export default function Dashboard() {
+  const toast = useToast();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [revealedCredentials, setRevealedCredentials] = useState({});
@@ -37,7 +39,7 @@ export default function Dashboard() {
       }));
     } catch (revealError) {
       console.error(revealError);
-      alert(revealError.response?.data?.error || "Failed to reveal credentials");
+      toast.error(revealError.response?.data?.error || "Failed to reveal credentials");
     } finally {
       setRevealingGroupId(null);
     }
