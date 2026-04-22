@@ -450,6 +450,33 @@ class GroupFlowTests(APITestCase):
         self.assertIn("access", refresh_response.data)
         self.assertEqual(refresh_response.data["user"]["username"], self.owner.username)
 
+    def test_login_cors_preflight_allows_credentials(self):
+        response = self.client.options(
+            "/api/login/",
+            HTTP_ORIGIN="http://localhost:3000",
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST",
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS="content-type",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Access-Control-Allow-Origin"], "http://localhost:3000")
+        self.assertEqual(response["Access-Control-Allow-Credentials"], "true")
+
+    def test_login_response_includes_cors_credentials_header(self):
+        response = self.client.post(
+            "/api/login/",
+            {
+                "username": self.owner.username,
+                "password": "password123",
+            },
+            format="json",
+            HTTP_ORIGIN="http://localhost:3000",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Access-Control-Allow-Origin"], "http://localhost:3000")
+        self.assertEqual(response["Access-Control-Allow-Credentials"], "true")
+
     def test_login_accepts_email_identifier(self):
         response = self.client.post(
             "/api/login/",
