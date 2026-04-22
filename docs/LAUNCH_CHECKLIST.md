@@ -39,6 +39,7 @@ Use this list before opening ShareVerse to real users.
 
 - Vercel frontend is live at `https://shareverse.in`
 - VPS backend is live at `https://api.shareverse.in`
+- backend release runs through `backend/release.sh`
 - PostgreSQL configured and backed up
 - Redis configured
 - backend media storage is persistent
@@ -47,6 +48,7 @@ Use this list before opening ShareVerse to real users.
 - scheduled refund processor runs every 5 minutes
 - logging and error monitoring are enabled
 - Django admin access confirmed at `https://api.shareverse.in/admin/`
+- deploy logs checked for successful `migrate --noinput` before marking release complete
 
 ## Support and Operations
 

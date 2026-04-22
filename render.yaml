@@ -12,7 +12,7 @@ services:
     name: shareverse-api
     runtime: python
     rootDir: backend
-    buildCommand: bash build.sh
+    buildCommand: bash release.sh
     startCommand: gunicorn mystartup.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120
     healthCheckPath: /api/health/
     autoDeployTrigger: commit

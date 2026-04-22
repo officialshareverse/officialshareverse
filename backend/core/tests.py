@@ -10,7 +10,6 @@ from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import DatabaseError
-from pathlib import Path
 from django.utils import timezone
 from django.test import override_settings
 from rest_framework import status
@@ -44,9 +43,7 @@ from .payments import PaymentGatewayError
 class GroupFlowTests(APITestCase):
     def setUp(self):
         cache.clear()
-        test_media_parent = Path(__file__).resolve().parent / "test-media"
-        test_media_parent.mkdir(exist_ok=True)
-        self.media_root = tempfile.mkdtemp(dir=test_media_parent)
+        self.media_root = tempfile.mkdtemp(prefix="shareverse-test-media-")
         self.media_override = override_settings(MEDIA_ROOT=self.media_root)
         self.media_override.enable()
         self.subscription = Subscription.objects.create(

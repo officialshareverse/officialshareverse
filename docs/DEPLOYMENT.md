@@ -59,19 +59,26 @@ REACT_APP_API_BASE_URL=https://api.shareverse.in/api/
 
 ## 2. Deploy the Backend on the VPS
 
-Use this flow after pulling a new release:
+Use the one-command backend release script after pulling a new release:
 
 ```bash
 cd /var/www/officialshareverse
 git pull origin main
 cd backend
 source .venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py collectstatic --noinput
-python manage.py check
+bash release.sh
 systemctl restart shareverse
 ```
+
+`release.sh` makes the deploy order explicit:
+
+1. install Python dependencies
+2. run `check --deploy`
+3. print the migration plan to logs
+4. apply migrations
+5. collect static files
+
+That avoids the recent class of outage where new code lands before the required migration is applied.
 
 If you changed only frontend code, Vercel will usually redeploy automatically from `main`.
 
@@ -187,3 +194,13 @@ Run this checklist after each production deploy:
 9. Upload purchase proof in a full buy-together group.
 10. Open notifications and chat.
 11. Run the refund processor once manually and confirm it completes cleanly.
+
+## 11. Migration-Safe Backend Checklist
+
+Before marking a backend deploy as complete:
+
+1. confirm the deploy logs show the `showmigrations --plan` step
+2. confirm the `migrate --noinput` step completed successfully
+3. open `https://api.shareverse.in/api/health/`
+4. open at least one route that depends on recent schema changes, not just health
+5. for chat-related releases, check both `/api/group-chats/` and one `/api/groups/<id>/chat/` request in the browser network tab
