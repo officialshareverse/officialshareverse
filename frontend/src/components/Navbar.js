@@ -13,7 +13,6 @@ import {
   HomeIcon,
   LayersIcon,
   PlusIcon,
-  SearchIcon,
   UserIcon,
   WalletIcon,
 } from "./UiIcons";
@@ -66,15 +65,6 @@ function resolveCurrentPath(pathname) {
   return "/home";
 }
 
-function getPlatformModifierLabel() {
-  if (typeof window === "undefined") {
-    return "Ctrl";
-  }
-
-  const platform = window.navigator.platform || window.navigator.userAgent || "";
-  return /Mac|iPhone|iPad/i.test(platform) ? "Cmd" : "Ctrl";
-}
-
 function HamburgerIcon({ open }) {
   return (
     <span className={`sv-hamburger ${open ? "is-open" : ""}`} aria-hidden="true">
@@ -97,7 +87,7 @@ function UserAvatar({ profile, initials, className = "" }) {
   );
 }
 
-export default function Navbar({ setIsAuth, themeMode, toggleTheme, onOpenSpotlight }) {
+export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -111,7 +101,6 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme, onOpenSpotli
   const itemRefs = useRef({});
   const currentPath = resolveCurrentPath(location.pathname);
   const currentItem = navItems.find((item) => item.to === currentPath) || navItems[0];
-  const commandModifierLabel = useMemo(() => getPlatformModifierLabel(), []);
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -277,27 +266,17 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme, onOpenSpotli
     );
   }, [profile]);
 
-  const totalUnreadSignals = unreadChatCount + unreadNotificationCount;
-  const workspaceStatusLabel =
-    totalUnreadSignals > 0
-      ? `${totalUnreadSignals} update${totalUnreadSignals === 1 ? "" : "s"} waiting`
-      : "Everything synced";
-
   return (
     <>
       <header className="sticky top-0 z-40" style={{ padding: "var(--sv-page-px)", paddingBottom: 0 }}>
         <div className="sv-container">
-          <div className="hidden items-center justify-between gap-4 px-3 py-2.5 sm:px-4 sm:py-3 md:px-5 lg:flex sv-brand-shell">
+          <div className="hidden items-center gap-3 px-3 py-2 sm:px-4 sm:py-2.5 md:px-4 lg:flex sv-brand-shell">
             <div className="sv-navbar-desktop">
               <div className="sv-navbar-brand">
                 <BrandMark glow sizeClass="h-10 w-10" />
                 <div className="sv-navbar-brand-copy">
                   <h1 className="sv-navbar-brand-title">ShareVerse</h1>
                   <p className="sv-navbar-brand-subtitle">Split more. Pay less.</p>
-                  <div className="sv-navbar-brand-meta">
-                    <span className="sv-navbar-brand-pill">Personal workspace</span>
-                    <span className="sv-navbar-brand-status">{workspaceStatusLabel}</span>
-                  </div>
                 </div>
               </div>
 
@@ -338,17 +317,6 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme, onOpenSpotli
               </div>
 
               <div className="sv-navbar-actions">
-                {onOpenSpotlight ? (
-                  <button type="button" onClick={onOpenSpotlight} className="sv-spotlight-trigger sv-navbar-search">
-                    <SearchIcon className="h-4 w-4" />
-                    <span className="sv-spotlight-trigger-label">Quick search</span>
-                    <span className="sv-spotlight-trigger-keys" aria-hidden="true">
-                      <span className="sv-spotlight-kbd">{commandModifierLabel}</span>
-                      <span className="sv-spotlight-kbd">K</span>
-                    </span>
-                  </button>
-                ) : null}
-
                 <ThemeToggle themeMode={themeMode} onToggle={toggleTheme} compact className="sv-navbar-theme-toggle" />
 
                 <div ref={profileMenuRef} className="relative">
@@ -362,7 +330,9 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme, onOpenSpotli
                     <UserAvatar profile={profile} initials={profileInitials} className="sv-navbar-profile-avatar" />
                     <span className="sv-navbar-profile-copy">
                       <span className="sv-navbar-profile-name">{profileFirstName}</span>
-                      <span className="sv-navbar-profile-caption">Personal space</span>
+                      <span className="sv-navbar-profile-caption">
+                        {profile?.username ? `@${profile.username}` : "Account"}
+                      </span>
                     </span>
                     <span className={`sv-user-trigger-caret ${isProfileMenuOpen ? "is-open" : ""}`} aria-hidden="true" />
                   </button>

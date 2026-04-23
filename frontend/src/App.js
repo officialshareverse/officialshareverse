@@ -213,7 +213,6 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
           setIsAuth={setIsAuth}
           themeMode={themeMode}
           toggleTheme={toggleTheme}
-          onOpenSpotlight={openSpotlight}
         />
       ) : null}
 
