@@ -1388,16 +1388,16 @@
   }
 
   .sv-signup-stage-card {
-    border-radius: 26px;
+    border-radius: 24px;
     border: 1px solid var(--sv-border);
-    padding: 1rem;
+    padding: 0.95rem;
     background: color-mix(in srgb, var(--sv-paper-solid) 94%, transparent);
-    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.06);
   }
 
   @media (min-width: 640px) {
     .sv-signup-stage-card {
-      padding: 1.35rem;
+      padding: 1.15rem;
     }
   }
 
@@ -1420,10 +1420,10 @@
   .sv-signup-availability,
   .sv-signup-side-note,
   .sv-signup-benefit-card {
-    border-radius: 22px;
+    border-radius: 18px;
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper) 94%, transparent);
-    padding: 1rem;
+    padding: 0.9rem;
   }
 
   .sv-signup-availability.is-available {
@@ -1477,12 +1477,12 @@
     display: flex;
     align-items: flex-start;
     gap: 0.85rem;
-    border-radius: 22px;
+    border-radius: 18px;
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper) 94%, transparent);
-    padding: 1rem;
+    padding: 0.9rem 0.95rem;
     font-size: 13px;
-    line-height: 1.8;
+    line-height: 1.65;
     color: var(--sv-ink);
   }
 
@@ -1495,9 +1495,9 @@
   .sv-signup-summary-pill {
     display: grid;
     gap: 0.3rem;
-    min-width: 8.5rem;
-    padding: 0.85rem 0.95rem;
-    border-radius: 18px;
+    min-width: 7.5rem;
+    padding: 0.72rem 0.85rem;
+    border-radius: 16px;
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper) 94%, transparent);
   }
@@ -1596,10 +1596,10 @@
   .sv-signup-mobile-submit {
     display: grid;
     gap: 0.55rem;
-    border-radius: 22px;
+    border-radius: 18px;
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper) 95%, transparent);
-    padding: 0.95rem 1rem;
+    padding: 0.85rem 0.95rem;
   }
 
   .sv-signup-mobile-note strong,

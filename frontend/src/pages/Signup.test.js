@@ -95,14 +95,10 @@ test("checks username availability, requests OTP, and creates the account after 
     { timeout: 1500 }
   );
 
-  await userEvent.click(screen.getByRole("button", { name: /next step/i }));
   await userEvent.type(screen.getByPlaceholderText(/you@example\.com/i), "pilot@example.com");
-  await userEvent.click(screen.getByRole("button", { name: /next step/i }));
-
   await userEvent.type(screen.getByPlaceholderText(/create a password/i), "Secret123!");
   await userEvent.type(screen.getByPlaceholderText(/confirm your password/i), "Secret123!");
   await userEvent.click(screen.getByRole("checkbox"));
-  await userEvent.click(screen.getByRole("button", { name: /next step/i }));
 
   await act(async () => {
     fireEvent.click(screen.getByRole("button", { name: /send verification code/i }));
