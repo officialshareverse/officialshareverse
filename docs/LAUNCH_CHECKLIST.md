@@ -58,14 +58,17 @@ Use this list before opening ShareVerse to real users.
 - someone is monitoring payment failures and webhook issues
 - someone is monitoring manual payout requests and 24-hour transfer commitments
 - support response targets are defined
+- provider complaint / IP complaint / grievance escalation workflow is documented internally
+- evidence request and payout-hold runbook is documented for support operators
 
 ## Legal and Policy
 
-- terms reviewed by a lawyer
-- privacy policy reviewed by a lawyer
-- refund policy reviewed by a lawyer
-- provider risk labels are in place for high-risk subscription types
-- public messaging does not promise policy-unsafe credential sharing
+- launch gate: external legal review signed off on terms, privacy, refund, wallet, withdrawal, and marketplace flows
+- launch gate: published terms, privacy, refund, and support pages match actual live operations and response targets
+- launch gate: operator identity, registered address, and public compliance / grievance contact are visible on the site
+- launch gate: provider complaint, takedown, and escalation workflow is live and staffed
+- launch gate: provider risk labels or category blocks are in place for high-risk listing types
+- launch gate: public messaging does not promise policy-unsafe credential sharing or provider-rule-breaking access
 
 ## Go-Live Test Accounts
 
