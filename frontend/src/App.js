@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
-import API from "./api/axios";
-import { getAuthToken, setAuthToken } from "./auth/session";
+import { refreshAccessToken } from "./api/axios";
+import { getAuthToken } from "./auth/session";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/Navbar";
 import {
@@ -78,10 +78,8 @@ function App() {
       }
 
       try {
-        const response = await API.post("auth/refresh/", {});
-        const nextAccessToken = response?.data?.access || "";
+        const nextAccessToken = await refreshAccessToken();
         if (nextAccessToken) {
-          setAuthToken(nextAccessToken);
           if (isMounted) {
             setIsAuth(true);
           }

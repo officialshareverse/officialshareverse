@@ -6,26 +6,19 @@ import {
 
 import App from "./App";
 
-const mockApi = {
-  post: jest.fn(),
-};
+const mockRefreshAccessToken = jest.fn();
 
 let currentToken = null;
 const mockGetAuthToken = jest.fn(() => currentToken);
-const mockSetAuthToken = jest.fn((token) => {
-  currentToken = token;
-});
 
 jest.mock("./api/axios", () => ({
   __esModule: true,
-  default: {
-    post: (...args) => mockApi.post(...args),
-  },
+  default: {},
+  refreshAccessToken: (...args) => mockRefreshAccessToken(...args),
 }));
 
 jest.mock("./auth/session", () => ({
   getAuthToken: () => mockGetAuthToken(),
-  setAuthToken: (...args) => mockSetAuthToken(...args),
 }));
 
 jest.mock("./components/ErrorBoundary", () => ({
@@ -132,25 +125,25 @@ jest.mock("./pages/Wallet", () => ({
 
 beforeEach(() => {
   currentToken = null;
+  mockRefreshAccessToken.mockReset();
+  mockGetAuthToken.mockClear();
+  __navigateMock.mockReset();
   __setMockLocation({ pathname: "/login" });
 });
 
 test("refreshes the access token before rendering authenticated routes", async () => {
-  mockApi.post.mockResolvedValue({
-    data: { access: "fresh-access-token" },
-  });
+  mockRefreshAccessToken.mockResolvedValue("fresh-access-token");
 
   render(<App />);
 
   await waitFor(() => {
-    expect(mockApi.post).toHaveBeenCalledWith("auth/refresh/", {});
+    expect(mockRefreshAccessToken).toHaveBeenCalledTimes(1);
   });
 
   await waitFor(() => {
-    expect(mockSetAuthToken).toHaveBeenCalledWith("fresh-access-token");
+    expect(screen.getByText("Mock Navbar")).toBeInTheDocument();
   });
 
-  expect(screen.getByText("Mock Navbar")).toBeInTheDocument();
   expect(screen.queryByText("Login page")).not.toBeInTheDocument();
   expect(__navigateMock).toHaveBeenCalledWith("/home", { replace: false, state: null });
 });
@@ -164,6 +157,4 @@ test("skips refresh and renders private routes when an access token already exis
   await waitFor(() => {
     expect(screen.getByText("Home page")).toBeInTheDocument();
   });
-
-  expect(mockSetAuthToken).not.toHaveBeenCalled();
 });

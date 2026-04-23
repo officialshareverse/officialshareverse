@@ -14,6 +14,9 @@ from django.utils import timezone
 from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 from .models import (
     EscrowLedger,
@@ -442,13 +445,35 @@ class GroupFlowTests(APITestCase):
         self.assertNotIn("refresh", login_response.data)
         self.assertIn("sv_refresh_token", login_response.cookies)
         self.assertTrue(login_response.cookies["sv_refresh_token"]["httponly"])
+        issued_access_token = AccessToken(login_response.data["access"])
+        self.assertEqual(
+            issued_access_token["exp"] - issued_access_token["iat"],
+            int(api_settings.ACCESS_TOKEN_LIFETIME.total_seconds()),
+        )
 
-        self.client.cookies["sv_refresh_token"] = login_response.cookies["sv_refresh_token"].value
+        original_refresh_token = login_response.cookies["sv_refresh_token"].value
+
+        self.client.cookies["sv_refresh_token"] = original_refresh_token
         refresh_response = self.client.post("/api/auth/refresh/", format="json")
 
         self.assertEqual(refresh_response.status_code, status.HTTP_200_OK)
         self.assertIn("access", refresh_response.data)
         self.assertEqual(refresh_response.data["user"]["username"], self.owner.username)
+        self.assertIn("sv_refresh_token", refresh_response.cookies)
+
+        rotated_refresh_token = refresh_response.cookies["sv_refresh_token"].value
+        self.assertNotEqual(rotated_refresh_token, original_refresh_token)
+        self.assertTrue(
+            BlacklistedToken.objects.filter(
+                token__jti=RefreshToken(original_refresh_token, verify=False)["jti"]
+            ).exists()
+        )
+        self.assertTrue(
+            OutstandingToken.objects.filter(
+                user=self.owner,
+                jti=RefreshToken(rotated_refresh_token)["jti"],
+            ).exists()
+        )
 
     def test_login_cors_preflight_allows_credentials(self):
         response = self.client.options(
@@ -517,13 +542,23 @@ class GroupFlowTests(APITestCase):
         )
 
         self.assertEqual(login_response.status_code, status.HTTP_200_OK)
-        self.client.cookies["sv_refresh_token"] = login_response.cookies["sv_refresh_token"].value
+        refresh_token = login_response.cookies["sv_refresh_token"].value
+        self.client.cookies["sv_refresh_token"] = refresh_token
 
         logout_response = self.client.post("/api/auth/logout/", format="json")
 
         self.assertEqual(logout_response.status_code, status.HTTP_200_OK)
         self.assertIn("sv_refresh_token", logout_response.cookies)
         self.assertEqual(logout_response.cookies["sv_refresh_token"].value, "")
+        self.assertTrue(
+            BlacklistedToken.objects.filter(
+                token__jti=RefreshToken(refresh_token, verify=False)["jti"]
+            ).exists()
+        )
+
+        self.client.cookies["sv_refresh_token"] = refresh_token
+        refresh_response = self.client.post("/api/auth/refresh/", format="json")
+        self.assertEqual(refresh_response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     @patch("core.auth_views.verify_google_id_token", side_effect=ValueError("bad token"))
     def test_google_auth_rejects_invalid_credentials(self, verify_google_id_token_mock):
@@ -597,6 +632,18 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(group.end_date, date(2026, 5, 11))
 
     def test_forgot_password_reset_with_otp_flow(self):
+        login_response = self.client.post(
+            "/api/login/",
+            {
+                "username": self.owner.username,
+                "password": "password123",
+            },
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        original_access_token = login_response.data["access"]
+        original_refresh_token = login_response.cookies["sv_refresh_token"].value
+
         request_otp_response = self.client.post(
             "/api/forgot-password/request-otp/",
             {
@@ -624,6 +671,11 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(confirm_response.status_code, status.HTTP_200_OK)
         self.owner.refresh_from_db()
         self.assertTrue(self.owner.check_password("newpass123"))
+        self.assertTrue(
+            BlacklistedToken.objects.filter(
+                token__jti=RefreshToken(original_refresh_token, verify=False)["jti"]
+            ).exists()
+        )
 
         login_response = self.client.post(
             "/api/login/",
@@ -635,6 +687,18 @@ class GroupFlowTests(APITestCase):
         )
         self.assertEqual(login_response.status_code, status.HTTP_200_OK)
         self.assertIn("access", login_response.data)
+
+        old_access_response = self.client.get(
+            "/api/profile/",
+            HTTP_AUTHORIZATION=f"Bearer {original_access_token}",
+        )
+        self.assertEqual(old_access_response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        self.client.cookies["sv_refresh_token"] = original_refresh_token
+        old_refresh_response = self.client.post("/api/auth/refresh/", format="json")
+        self.assertEqual(old_refresh_response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("sv_refresh_token", old_refresh_response.cookies)
+        self.assertEqual(old_refresh_response.cookies["sv_refresh_token"].value, "")
 
     def test_forgot_password_accepts_email_identifier(self):
         request_otp_response = self.client.post(

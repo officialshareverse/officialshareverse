@@ -30,7 +30,7 @@ const AUTH_REDIRECT_EXEMPT_PATHS = [
 let isRedirectingForUnauthorized = false;
 let refreshSessionPromise = null;
 
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
   const response = await axios.post(
     `${API.defaults.baseURL}auth/refresh/`,
     {},

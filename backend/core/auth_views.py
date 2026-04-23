@@ -10,11 +10,16 @@ from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import ExpressionWrapper, F, IntegerField, Q, Sum, Value
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.utils import get_md5_hash_password
 
 from .auth_identity import find_user_by_login_identifier, normalize_login_identifier
 from .models import Notification, PasswordResetOTP, SignupOTP, User
@@ -492,6 +497,49 @@ def clear_refresh_cookie(response):
     return response
 
 
+def build_invalid_refresh_response(message="Refresh session is invalid or expired."):
+    response = Response({"error": message}, status=401)
+    clear_refresh_cookie(response)
+    return response
+
+
+def blacklist_refresh_token_value(refresh_token):
+    if not refresh_token:
+        return False
+
+    try:
+        RefreshToken(refresh_token).blacklist()
+    except (AttributeError, TokenError):
+        return False
+
+    return True
+
+
+def blacklist_user_refresh_tokens(user):
+    outstanding_tokens = OutstandingToken.objects.filter(
+        user=user,
+        expires_at__gt=timezone.now(),
+        blacklistedtoken__isnull=True,
+    )
+    blacklisted_count = 0
+
+    for token in outstanding_tokens.iterator():
+        _, created = BlacklistedToken.objects.get_or_create(token=token)
+        blacklisted_count += int(created)
+
+    return blacklisted_count
+
+
+def is_refresh_token_invalid_for_current_password(refresh_token, user):
+    if not api_settings.CHECK_REVOKE_TOKEN:
+        return False
+
+    revoke_claim = api_settings.REVOKE_TOKEN_CLAIM
+    token_password_hash = refresh_token.get(revoke_claim)
+    current_password_hash = get_md5_hash_password(user.password)
+    return token_password_hash != current_password_hash
+
+
 def build_auth_response(user, *, created=None):
     refresh = RefreshToken.for_user(user)
     payload = {
@@ -718,33 +766,45 @@ class RefreshSessionView(APIView):
     def post(self, request):
         refresh_token = (request.COOKIES.get(settings.AUTH_REFRESH_COOKIE_NAME) or "").strip()
         if not refresh_token:
-            response = Response({"error": "Refresh session missing."}, status=401)
-            clear_refresh_cookie(response)
-            return response
+            return build_invalid_refresh_response("Refresh session missing.")
 
         try:
             refresh = RefreshToken(refresh_token)
             user = User.objects.get(id=refresh["user_id"])
         except (KeyError, TokenError, User.DoesNotExist):
-            response = Response(
-                {"error": "Refresh session is invalid or expired."},
-                status=401,
-            )
-            clear_refresh_cookie(response)
-            return response
+            return build_invalid_refresh_response()
 
-        return Response(
+        if is_refresh_token_invalid_for_current_password(refresh, user):
+            blacklist_refresh_token_value(refresh_token)
+            return build_invalid_refresh_response(
+                "Refresh session is no longer valid. Please sign in again."
+            )
+
+        serializer = TokenRefreshSerializer(data={"refresh": refresh_token})
+        try:
+            serializer.is_valid(raise_exception=True)
+        except RestValidationError:
+            blacklist_refresh_token_value(refresh_token)
+            return build_invalid_refresh_response()
+
+        response = Response(
             {
-                "access": str(refresh.access_token),
+                "access": serializer.validated_data["access"],
                 "user": serialize_auth_user(user),
             }
         )
+        rotated_refresh_token = serializer.validated_data.get("refresh")
+        if rotated_refresh_token:
+            attach_refresh_cookie(response, rotated_refresh_token)
+        return response
 
 
 class LogoutView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        refresh_token = (request.COOKIES.get(settings.AUTH_REFRESH_COOKIE_NAME) or "").strip()
+        blacklist_refresh_token_value(refresh_token)
         response = Response({"message": "Logged out."}, status=200)
         clear_refresh_cookie(response)
         return response
@@ -908,6 +968,7 @@ class ForgotPasswordConfirmOTPView(APIView):
 
             user.set_password(new_password)
             user.save()
+            blacklist_user_refresh_tokens(user)
 
             otp_session.is_used = True
             otp_session.save(update_fields=["is_used"])
