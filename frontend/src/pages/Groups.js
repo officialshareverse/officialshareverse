@@ -45,20 +45,17 @@ function getPlanMeta(name) {
   const normalized = String(name || "").toLowerCase();
 
   if (
-    normalized.includes("netflix") ||
-    normalized.includes("spotify") ||
-    normalized.includes("prime") ||
-    normalized.includes("hotstar") ||
-    normalized.includes("youtube") ||
-    normalized.includes("stream")
+    normalized.includes("family") ||
+    normalized.includes("household") ||
+    normalized.includes("screen") ||
+    normalized.includes("music") ||
+    normalized.includes("video")
   ) {
-    return { badge: "TV", label: "Streaming", toneClass: "is-streaming" };
+    return { badge: "TV", label: "Household plan", toneClass: "is-streaming" };
   }
 
   if (
     normalized.includes("course") ||
-    normalized.includes("udemy") ||
-    normalized.includes("coursera") ||
     normalized.includes("academy") ||
     normalized.includes("class") ||
     normalized.includes("learn")
@@ -67,13 +64,11 @@ function getPlanMeta(name) {
   }
 
   if (
-    normalized.includes("figma") ||
-    normalized.includes("adobe") ||
-    normalized.includes("notion") ||
-    normalized.includes("canva") ||
     normalized.includes("software") ||
-    normalized.includes("chatgpt") ||
-    normalized.includes("github")
+    normalized.includes("workspace") ||
+    normalized.includes("design") ||
+    normalized.includes("tool") ||
+    normalized.includes("seat")
   ) {
     return { badge: "APP", label: "Software", toneClass: "is-software" };
   }
@@ -450,7 +445,7 @@ export default function Groups() {
                   </span>
                   <span className="hidden sm:inline-flex sv-chip-dark">
                     <ShieldIcon className="h-3.5 w-3.5" />
-                    Join review before payment
+                    Provider-safe listings only
                   </span>
                 </div>
 
@@ -512,7 +507,7 @@ export default function Groups() {
                   onBlur={() => {
                     window.setTimeout(() => setSearchFocused(false), 120);
                   }}
-                  placeholder={isMobile ? "Search plan or host..." : "Netflix, Spotify, host name..."}
+                  placeholder={isMobile ? "Search plan or host..." : "Household plan, software, host name..."}
                   className="sv-groups-search-input"
                 />
                 {searchTerm ? (
@@ -567,6 +562,10 @@ export default function Groups() {
                     : option.label}
                 </FilterButton>
               ))}
+            </div>
+
+            <div className="mt-4 rounded-[20px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-7 text-emerald-950">
+              Hosts should publish only provider-permitted listings. ShareVerse does not support password-upload or credential-sharing listings.
             </div>
 
             {!isMobile ? (
@@ -648,7 +647,7 @@ export default function Groups() {
             </p>
 
             <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {(categoryChips.length > 0 ? categoryChips : ["Streaming", "Learning", "Software", "Membership"]).map(
+              {(categoryChips.length > 0 ? categoryChips : ["Digital plan", "Learning", "Software", "Membership"]).map(
                 (item) => (
                   <span key={item} className="sv-group-empty-chip">
                     {item}
@@ -874,17 +873,17 @@ export default function Groups() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="sv-eyebrow">Browse by signal</p>
-                <h2 className="sv-title mt-2">Popular categories worth checking next</h2>
+                  <h2 className="sv-title mt-2">Categories worth checking next</h2>
+                </div>
+                <span className="sv-chip">
+                  Example listing: {spotlightGroup.subscription_name || spotlightGroup.subscription}
+                </span>
               </div>
-              <span className="sv-chip">
-                Spotlight: {spotlightGroup.subscription_name || spotlightGroup.subscription}
-              </span>
-            </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              {(categoryChips.length > 0 ? categoryChips : ["Streaming", "Learning", "Software", "Membership"]).map(
-                (item) => (
-                  <button
+              <div className="mt-4 flex flex-wrap gap-2">
+              {(categoryChips.length > 0 ? categoryChips : ["Digital plan", "Learning", "Software", "Membership"]).map(
+                  (item) => (
+                    <button
                     key={item}
                     type="button"
                     onClick={() => setSearchTerm(item)}

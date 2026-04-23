@@ -8,7 +8,7 @@ const faqSections = [
       {
         question: "What is ShareVerse?",
         answer:
-          "ShareVerse is a platform for coordinating shared-cost participation for subscriptions, courses, memberships, software plans, and similar digital services. It helps people organize splits, track payments, chat with members, and manage the group flow in one place.",
+          "ShareVerse is a platform for coordinating shared-cost participation for provider-permitted digital plans, courses, memberships, software plans, and similar services. It helps people organize groups, track payments, chat with members, and manage the group flow in one place.",
       },
       {
         question: "How do I join a split?",
@@ -18,12 +18,12 @@ const faqSections = [
       {
         question: "Do I need to share my own login credentials?",
         answer:
-          "No. Members should not have to upload their own service passwords to join a split. Hosts coordinate access separately, and platform pages focus on participation, payment, and status updates.",
+          "No. ShareVerse does not support listings that ask members to upload passwords, exchange account credentials, or send secret access details through the platform. Hosts should only coordinate access in provider-permitted ways and should never request member passwords.",
       },
       {
         question: "Can I create splits for courses, software, or memberships too?",
         answer:
-          "Yes. ShareVerse is not limited to streaming plans. It is designed for digital plans such as courses, memberships, software tools, and similar services where users want clearer shared-cost coordination.",
+          "Yes, if the underlying provider allows that arrangement. ShareVerse is designed for digital plans such as courses, memberships, software tools, and similar services where users want clearer shared-cost coordination, but high-risk or policy-breaking listings can be blocked or removed.",
       },
     ],
   },
@@ -58,17 +58,17 @@ const faqSections = [
       {
         question: "Is this legal?",
         answer:
-          "ShareVerse is a software platform for coordinating shared-cost participation, but whether a particular split is allowed depends on the provider's terms, the host's usage, and applicable law. Users are responsible for making sure their activity follows the rules of the underlying service and local requirements. ShareVerse does not provide legal advice.",
+          "ShareVerse is a software platform for coordinating shared-cost participation. Whether a specific listing is allowed depends on the provider's rules, the host's actual setup, and applicable law. Users are responsible for making sure their activity follows those requirements, and ShareVerse does not provide legal advice or guarantee that every provider permits every arrangement.",
       },
       {
         question: "Does ShareVerse guarantee that every provider allows shared access?",
         answer:
-          "No. Different providers have different policies. Some services may allow household or team sharing, while others may restrict transfer, resale, or shared use. Hosts and members should check the provider's rules before participating.",
+          "No. Different providers have different policies. Some services may allow household or team sharing, while others may restrict transfer, resale, or shared use. Hosts and members should check the provider's rules before participating, and ShareVerse may remove listings that appear to depend on prohibited sharing or credential transfer.",
       },
       {
         question: "What if a host or member misuses a split?",
         answer:
-          "The platform can review reports, pause sensitive flows, preserve transaction history, and remove users or content that appears misleading, abusive, or against platform rules. Members should report serious issues through support or the in-product issue flow.",
+          "The platform can review reports, pause sensitive flows, preserve transaction history, freeze payouts or wallet actions when needed, and remove users or content that appears misleading, abusive, or against platform rules. Members should report serious issues through support or the in-product issue flow.",
       },
       {
         question: "Can I get a refund?",
@@ -84,7 +84,7 @@ export default function FaqPage() {
     <PublicPageShell
       eyebrow="Questions and answers"
       title="Common ShareVerse questions, answered clearly."
-      intro="This page gives members, hosts, and verification teams a quick explanation of how ShareVerse works, how payments are handled, and how the platform thinks about safety, policy, and support."
+      intro="This page gives members, hosts, providers, and verification teams a quick explanation of how ShareVerse works, how payments are handled, and how the platform approaches safety, provider compliance, and support."
     >
       <div className="grid gap-6">
         {faqSections.map((section) => (

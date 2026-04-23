@@ -140,56 +140,19 @@ function validateStep(form, stepId) {
   return {};
 }
 
-function getServiceMeta(name) {
-  const normalized = String(name || "").toLowerCase();
-
-  if (
-    normalized.includes("netflix") ||
-    normalized.includes("spotify") ||
-    normalized.includes("prime") ||
-    normalized.includes("hotstar") ||
-    normalized.includes("youtube")
-  ) {
-    return { category: "Streaming", badge: "TV", toneClass: "is-streaming" };
-  }
-
-  if (
-    normalized.includes("course") ||
-    normalized.includes("udemy") ||
-    normalized.includes("coursera") ||
-    normalized.includes("academy") ||
-    normalized.includes("class")
-  ) {
-    return { category: "Education", badge: "EDU", toneClass: "is-learning" };
-  }
-
-  if (
-    normalized.includes("figma") ||
-    normalized.includes("adobe") ||
-    normalized.includes("notion") ||
-    normalized.includes("canva") ||
-    normalized.includes("chatgpt") ||
-    normalized.includes("github")
-  ) {
-    return { category: "Software", badge: "APP", toneClass: "is-software" };
-  }
-
-  return { category: "Memberships", badge: "VIP", toneClass: "is-membership" };
-}
-
 function getModeConfig(mode) {
   if (mode === "group_buy") {
     return {
       eyebrow: "Buy Together",
       title: "Create a funded group before the purchase happens",
       description:
-        "Use this when the group should commit first, then buy the plan, course, or tool after enough members join.",
+        "Use this when the group should commit first, then buy the plan, course, membership, or tool after enough members join.",
       summaryTitle: "Buy-together summary",
       amountLabel: "Contribution per member",
       targetLabel: "Total group target",
       scheduleLabel: "Funding window",
       helper:
-        "Members join first, contributions stay protected, and payout is released only after access confirmation.",
+        "Members join first, contributions stay protected, and payout is released only after access confirmation. Only create listings that the underlying provider allows.",
       accent: "amber",
       badge: "BUY",
       previewSteps: [
@@ -210,7 +173,7 @@ function getModeConfig(mode) {
     targetLabel: "Total cycle value",
     scheduleLabel: "Current cycle window",
     helper:
-      "Late joiners are charged only for the remaining days, and access is coordinated privately by you later.",
+      "Late joiners are charged only for the remaining days. Use this only for provider-permitted arrangements and never for password-sharing requests.",
     accent: "teal",
     badge: "LIVE",
     previewSteps: [
@@ -344,10 +307,8 @@ function WizardTip({ title, body }) {
 export default function CreateGroup() {
   const navigate = useNavigate();
   const [form, setForm] = useState(buildInitialForm);
-  const [subscriptions, setSubscriptions] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [showPreview, setShowPreview] = useState(true);
   const [isMobile, setIsMobile] = useState(() =>
@@ -357,33 +318,6 @@ export default function CreateGroup() {
   const isSharing = form.mode === "sharing";
   const modeConfig = getModeConfig(form.mode);
   const toast = useToast();
-
-  useEffect(() => {
-    let isMounted = true;
-
-    API.get("subscriptions/")
-      .then((res) => {
-        if (!isMounted) {
-          return;
-        }
-        setSubscriptions(Array.isArray(res.data) ? res.data : []);
-      })
-      .catch((err) => {
-        console.error("Failed to load subscriptions:", err);
-        toast.warning("Suggestions could not be loaded. You can still type any plan name manually.", {
-          title: "Suggestions unavailable",
-        });
-      })
-      .finally(() => {
-        if (isMounted) {
-          setLoadingSuggestions(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [toast]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -402,31 +336,6 @@ export default function CreateGroup() {
     mediaQuery.addListener(handleChange);
     return () => mediaQuery.removeListener(handleChange);
   }, []);
-
-  const quickPickGroups = useMemo(() => {
-    const grouped = new Map();
-
-    subscriptions
-      .slice()
-      .sort((left, right) => left.name.localeCompare(right.name))
-      .forEach((subscription) => {
-        const meta = getServiceMeta(subscription.name);
-        if (!grouped.has(meta.category)) {
-          grouped.set(meta.category, { title: meta.category, items: [] });
-        }
-
-        const bucket = grouped.get(meta.category);
-        if (bucket.items.length < 3) {
-          bucket.items.push({
-            id: subscription.id,
-            name: subscription.name,
-            meta,
-          });
-        }
-      });
-
-    return Array.from(grouped.values()).slice(0, 4);
-  }, [subscriptions]);
 
   const durationDays = useMemo(() => {
     if (!form.start_date || !form.end_date || form.end_date < form.start_date) {
@@ -481,18 +390,6 @@ export default function CreateGroup() {
       ...current,
       mode,
     }));
-  };
-
-  const handleQuickPick = (name) => {
-    setForm((current) => ({
-      ...current,
-      subscription_name: name,
-    }));
-    setErrors((current) => {
-      const next = { ...current };
-      delete next.subscription_name;
-      return next;
-    });
   };
 
   const applyPresetWindow = (days) => {
@@ -755,48 +652,20 @@ export default function CreateGroup() {
                     <div className="mt-5 grid gap-5">
                       <div>
                         <label className="text-sm font-semibold text-slate-700">Plan, course, or tool name</label>
-                        <input
-                          type="text"
-                          name="subscription_name"
-                          value={form.subscription_name}
-                          onChange={handleChange}
-                          placeholder="Netflix, Coursera, Canva, ChatGPT Plus"
-                          className="sv-input mt-2"
-                        />
-                        <InputError message={errors.subscription_name} />
-                      </div>
+                          <input
+                            type="text"
+                            name="subscription_name"
+                            value={form.subscription_name}
+                            onChange={handleChange}
+                            placeholder="Household plan, team software, course cohort"
+                            className="sv-input mt-2"
+                          />
+                          <InputError message={errors.subscription_name} />
+                        </div>
 
                         {!isMobile ? (
-                          <div>
-                            <div className="flex items-center justify-between gap-3">
-                              <label className="text-sm font-semibold text-slate-700">Quick picks</label>
-                              {loadingSuggestions ? <span className="text-xs text-slate-500">Loading suggestions...</span> : null}
-                            </div>
-
-                            <div className="sv-create-quickpick-groups mt-3">
-                              {quickPickGroups.length > 0 ? (
-                                quickPickGroups.map((group) => (
-                                  <div key={group.title} className="sv-create-quickpick-group">
-                                    <p className="sv-create-quickpick-title">{group.title}</p>
-                                    <div className="flex flex-wrap gap-2">
-                                      {group.items.map((item) => (
-                                        <button
-                                          key={item.id}
-                                          type="button"
-                                          onClick={() => handleQuickPick(item.name)}
-                                          className={`sv-create-quickpick-chip ${form.subscription_name === item.name ? "is-active" : ""}`}
-                                        >
-                                          <span className={`sv-create-quickpick-badge ${item.meta.toneClass}`}>{item.meta.badge}</span>
-                                          <span>{item.name}</span>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ))
-                              ) : (
-                                <span className="text-sm text-slate-500">Add any plan, course, or tool name manually.</span>
-                              )}
-                            </div>
+                          <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-7 text-emerald-950">
+                            Publish only listings that the underlying provider permits. Do not create listings that require password uploads, credential transfers, or off-platform secret sharing.
                           </div>
                         ) : null}
 
@@ -1146,6 +1015,10 @@ export default function CreateGroup() {
                   body="Use one clean per-member amount that feels easy to trust. You can clarify edge cases later in chat."
                 />
                 <WizardTip
+                  title="Only list provider-permitted plans"
+                  body="Household, team, or membership plans should match the underlying provider rules. If the provider does not allow the arrangement, do not publish it on ShareVerse."
+                />
+                <WizardTip
                   title="Choose realistic timing"
                   body="Match the billing cycle or funding window so members immediately understand what they are paying for."
                 />
@@ -1159,7 +1032,7 @@ export default function CreateGroup() {
                     <div>
                       <h3 className="text-sm font-semibold text-slate-950">Creator guardrails</h3>
                       <p className="mt-2 text-sm leading-7 text-slate-600">
-                        You can edit empty groups later. Once members join, pricing and core details lock to protect active joins.
+                        You can edit empty groups later. Once members join, pricing and core details lock to protect active joins. ShareVerse also expects hosts to avoid credential-sharing or provider-restricted listings.
                       </p>
                     </div>
                   </div>

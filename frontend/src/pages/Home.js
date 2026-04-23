@@ -235,7 +235,16 @@ export default function Home() {
   const responseHealth = activeActionCount > 0 ? Math.max(18, 100 - activeActionCount * 18) : 100;
 
   const logoCloud = useMemo(() => {
-    const fallbackLabels = ["Netflix", "Spotify", "Prime", "Canva", "Notion", "Adobe", "Coursera", "Figma"];
+    const fallbackLabels = [
+      "Team software",
+      "Learning cohort",
+      "Household plan",
+      "Creator toolkit",
+      "Pro membership",
+      "Workspace suite",
+      "Course access",
+      "Design tools",
+    ];
     const labels = [...memberships.map((group) => group.subscription_name), ...groups.map((group) => group.subscription_name || group.name), ...fallbackLabels].filter(Boolean);
     return Array.from(new Set(labels)).slice(0, 9).map((label, index) => ({
       id: `${label}-${index}`,
@@ -366,7 +375,7 @@ export default function Home() {
   ], [activeActionCount, navigate, profileCompletion, responseHealth, walletBalanceValue, walletReadiness]);
 
   const onboardingSteps = [
-    { step: "01", title: "Create a new split", body: "Tap 'Create split' on the home screen to set up a subscription, course, or software plan for others to join.", cta: "Create Split", onClick: () => navigate("/create") },
+    { step: "01", title: "Create a new split", body: "Tap 'Create split' on the home screen to set up a provider-permitted plan, course, membership, or software tool for others to join.", cta: "Create Split", onClick: () => navigate("/create") },
     { step: "02", title: "Pick sharing or buy-together", body: "Choose 'Sharing' if you already own the plan, or 'Buy together' if the group buys it after members join.", cta: "Open Create Flow", onClick: () => navigate("/create") },
     { step: "03", title: "Set the details and publish", body: "Name your split, choose slots, set the price per slot, review dates, and publish when ready.", cta: "Continue Setup", onClick: () => navigate("/create") },
     { step: "04", title: "Manage everything in My Splits", body: "Check members, chat, confirmations, and actions all in one place after creating or joining a split.", cta: "Open My Splits", onClick: () => navigate("/my-shared") },

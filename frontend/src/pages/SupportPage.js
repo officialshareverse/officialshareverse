@@ -1,35 +1,41 @@
-import PublicPageShell from "../components/PublicPageShell";
-import {
+import PublicBusinessIdentity, {
   BUSINESS_OPERATOR_NAME,
+  COMPLIANCE_EMAIL,
   SUPPORT_EMAIL,
   SUPPORT_PHONE,
 } from "../components/PublicBusinessIdentity";
+import PublicPageShell from "../components/PublicPageShell";
 
 const contactCards = [
   {
     title: "General support",
     detail: SUPPORT_EMAIL,
-    helper: "Use this inbox for account help, refunds, payment issues, and launch support requests.",
+    helper: "Use this inbox for account help, refunds, payment issues, and general support requests.",
+  },
+  {
+    title: "Compliance and grievance",
+    detail: COMPLIANCE_EMAIL,
+    helper: "Use this address for formal complaints, provider-rule concerns, payment verification, or unresolved support escalations.",
+  },
+  {
+    title: "Provider or IP complaint",
+    detail: SUPPORT_EMAIL,
+    helper: "Send the listing name, usernames, screenshots, and a short explanation of the policy or rights issue so the team can review it quickly.",
   },
   {
     title: "Phone support",
     detail: SUPPORT_PHONE,
-    helper: "Use this number for urgent contact, onboarding follow-ups, and provider verification requests during business hours.",
+    helper: "Use this number for urgent contact, onboarding follow-ups, and verification requests during business hours.",
   },
   {
     title: "Operator",
     detail: BUSINESS_OPERATOR_NAME,
-    helper: "Use this name consistently when a payment provider or verification team asks who operates the ShareVerse platform.",
-  },
-  {
-    title: "Urgent access problem",
-    detail: "Report from My Splits first",
-    helper: "Buy-together access issues should be reported inside the group flow so payout pauses automatically.",
+    helper: "Use this name when a payment provider, partner, or verification team asks who operates ShareVerse.",
   },
   {
     title: "Expected response",
     detail: "Within 1-2 business days",
-    helper: "For launch, keep this aligned with your actual team capacity and published hours.",
+    helper: "Urgent payment-risk or provider-complaint cases should be raised with supporting details so they can be prioritized.",
   },
 ];
 
@@ -45,9 +51,9 @@ const faqItems = [
       "Wallet-credit problems, duplicate top-ups, and withdrawal concerns should go to support. Buy-together access issues should also be reported inside the group flow so the platform can pause payout immediately.",
   },
   {
-    question: "What happens after a dispute is raised?",
+    question: "How do provider or policy complaints work?",
     answer:
-      "The platform can pause payout, preserve the activity trail, and review payment or access evidence. Next actions depend on whether the issue is a payment failure, missing access, listing problem, or policy breach.",
+      "ShareVerse can review the listing, preserve the activity trail, request proof, pause sensitive flows, and remove or restrict content while the complaint is reviewed. Next actions depend on whether the issue is a payment failure, missing access, misleading listing, or policy breach.",
   },
 ];
 
@@ -56,7 +62,7 @@ export default function SupportPage() {
     <PublicPageShell
       eyebrow="Support"
       title="How members can reach ShareVerse and get issues resolved."
-      intro="Support is part of launch readiness. This page gives members one clear place to find help for accounts, wallet payments, group access, disputes, and policy questions."
+      intro="This page gives members, providers, partners, and verification teams one clear place to find help for accounts, wallet payments, group access, disputes, policy questions, and formal complaints."
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {contactCards.map((card) => (
@@ -79,27 +85,15 @@ export default function SupportPage() {
           <li>Check your wallet page for payment and balance history.</li>
           <li>Use the group chat for normal coordination with hosts and members.</li>
           <li>Use the in-product access issue action for buy-together problems so payout pauses automatically.</li>
-          <li>Include screenshots, payment reference, and timing details when something fails.</li>
+          <li>Include screenshots, payment reference, usernames, and timing details when something fails.</li>
+          <li>For provider or IP complaints, include the listing name and a short explanation of the rule or rights issue.</li>
         </ul>
       </div>
 
-      <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-        <h2 className="text-2xl font-semibold text-slate-950">Public contact summary</h2>
-        <div className="mt-4 space-y-2 text-sm leading-7 text-slate-600 md:text-base">
-          <p>
-            <span className="font-semibold text-slate-900">Operator:</span> {BUSINESS_OPERATOR_NAME}
-          </p>
-          <p>
-            <span className="font-semibold text-slate-900">Support email:</span> {SUPPORT_EMAIL}
-          </p>
-          <p>
-            <span className="font-semibold text-slate-900">Phone:</span> {SUPPORT_PHONE}
-          </p>
-          <p className="text-sm text-slate-500">
-            Registered address is shared only when needed for verification, compliance review, or formal support resolution.
-          </p>
-        </div>
-      </div>
+      <PublicBusinessIdentity
+        title="Public contact summary"
+        intro="Use the same operator, address, and contact details for support, provider review, compliance notices, and payment verification."
+      />
 
       <div className="mt-6 grid gap-4">
         {faqItems.map((item) => (

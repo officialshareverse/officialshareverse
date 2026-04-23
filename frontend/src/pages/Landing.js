@@ -14,7 +14,7 @@ const featureNotes = [
 ];
 
 const heroStats = [
-  { value: 500, suffix: "+", label: "active splits", note: "from streaming plans to software seats" },
+  { value: 500, suffix: "+", label: "active splits", note: "across team tools, learning, and memberships" },
   { value: 12, prefix: "₹", suffix: "L+", label: "saved together", note: "through cleaner shared-cost coordination" },
   { value: 4.9, suffix: "/5", label: "community trust", note: "from repeat hosts and members", decimals: 1 },
 ];
@@ -54,7 +54,7 @@ const modes = [
     ctaTo: "/signup",
     bullets: [
       "Best when you already own the subscription or tool.",
-      "Great for streaming, shared tools, premium memberships, and courses.",
+      "Great for provider-permitted household plans, shared tools, premium memberships, and courses.",
       "Members join a clear flow instead of a casual chat thread.",
     ],
     metrics: [
@@ -130,8 +130,8 @@ const howItWorks = [
 const testimonials = [
   {
     name: "Riya S.",
-    role: "Hosted a streaming split",
-    quote: "ShareVerse made the whole thing feel organized instead of improvised. People joined faster because everything looked clear from the start.",
+    role: "Hosted a household plan group",
+    quote: "ShareVerse made the whole thing feel organized instead of improvised. People joined faster because the listing looked clear from the start.",
   },
   {
     name: "Arjun P.",
@@ -146,8 +146,8 @@ const testimonials = [
 ];
 
 const joinTickerItems = [
-  "A streaming group filled in 18 minutes",
-  "A cohort course split opened with 6 seats",
+  "A household-plan group filled in 18 minutes",
+  "A cohort course group opened with 6 seats",
   "Three teammates started a software buy-together",
   "A wallet top-up cleared before a new group launch",
   "Another membership group just went live",
@@ -203,7 +203,7 @@ export default function Landing() {
                 <span className="sv-gradient-text"> organized from the start.</span>
               </h1>
               <p className="sv-landing-hero-body mt-4 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-sm sm:leading-7 md:text-base md:leading-8">
-                ShareVerse gives subscriptions, courses, software, and memberships a calmer system:
+                ShareVerse gives digital plans, courses, software, and memberships a calmer system:
                 create a split, let people join clearly, keep updates visible, and manage shared payments
                 in one premium-feeling workspace.
               </p>
@@ -268,7 +268,7 @@ export default function Landing() {
                       Live social proof
                     </p>
                     <p className="mt-2 text-sm font-semibold text-slate-950 sm:text-base">
-                      Join 500+ users already splitting costs in a cleaner workflow.
+                      Join 500+ users already coordinating shared costs in a cleaner workflow.
                     </p>
                   </div>
                 </div>
@@ -451,7 +451,7 @@ export default function Landing() {
             <div>
               <p className="sv-eyebrow-on-dark">Ready to start</p>
               <h2 className="sv-display-on-dark mt-3 max-w-3xl">
-                Join 500+ users already splitting costs in a workflow that looks as organized as it feels.
+                Join 500+ users already coordinating shared costs in a workflow that looks as organized as it feels.
               </h2>
               <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-sm sm:leading-7">
                 Create a group, track who joins, keep updates visible, and bring wallet actions into the same polished flow instead of managing everything through scattered conversations.
