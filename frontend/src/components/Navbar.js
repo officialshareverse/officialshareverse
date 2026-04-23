@@ -13,6 +13,7 @@ import {
   HomeIcon,
   LayersIcon,
   PlusIcon,
+  SearchIcon,
   UserIcon,
   WalletIcon,
 } from "./UiIcons";
@@ -65,6 +66,15 @@ function resolveCurrentPath(pathname) {
   return "/home";
 }
 
+function getPlatformModifierLabel() {
+  if (typeof window === "undefined") {
+    return "Ctrl";
+  }
+
+  const platform = window.navigator.platform || window.navigator.userAgent || "";
+  return /Mac|iPhone|iPad/i.test(platform) ? "Cmd" : "Ctrl";
+}
+
 function HamburgerIcon({ open }) {
   return (
     <span className={`sv-hamburger ${open ? "is-open" : ""}`} aria-hidden="true">
@@ -87,7 +97,7 @@ function UserAvatar({ profile, initials, className = "" }) {
   );
 }
 
-export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
+export default function Navbar({ setIsAuth, themeMode, toggleTheme, onOpenSpotlight }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -101,6 +111,7 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
   const itemRefs = useRef({});
   const currentPath = resolveCurrentPath(location.pathname);
   const currentItem = navItems.find((item) => item.to === currentPath) || navItems[0];
+  const commandModifierLabel = useMemo(() => getPlatformModifierLabel(), []);
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -266,6 +277,12 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
     );
   }, [profile]);
 
+  const totalUnreadSignals = unreadChatCount + unreadNotificationCount;
+  const workspaceStatusLabel =
+    totalUnreadSignals > 0
+      ? `${totalUnreadSignals} update${totalUnreadSignals === 1 ? "" : "s"} waiting`
+      : "Everything synced";
+
   return (
     <>
       <header className="sticky top-0 z-40" style={{ padding: "var(--sv-page-px)", paddingBottom: 0 }}>
@@ -277,6 +294,10 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
                 <div className="sv-navbar-brand-copy">
                   <h1 className="sv-navbar-brand-title">ShareVerse</h1>
                   <p className="sv-navbar-brand-subtitle">Split more. Pay less.</p>
+                  <div className="sv-navbar-brand-meta">
+                    <span className="sv-navbar-brand-pill">Personal workspace</span>
+                    <span className="sv-navbar-brand-status">{workspaceStatusLabel}</span>
+                  </div>
                 </div>
               </div>
 
@@ -317,53 +338,76 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
               </div>
 
               <div className="sv-navbar-actions">
+                {onOpenSpotlight ? (
+                  <button type="button" onClick={onOpenSpotlight} className="sv-spotlight-trigger sv-navbar-search">
+                    <SearchIcon className="h-4 w-4" />
+                    <span className="sv-spotlight-trigger-label">Quick search</span>
+                    <span className="sv-spotlight-trigger-keys" aria-hidden="true">
+                      <span className="sv-spotlight-kbd">{commandModifierLabel}</span>
+                      <span className="sv-spotlight-kbd">K</span>
+                    </span>
+                  </button>
+                ) : null}
+
                 <ThemeToggle themeMode={themeMode} onToggle={toggleTheme} compact className="sv-navbar-theme-toggle" />
 
                 <div ref={profileMenuRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsProfileMenuOpen((current) => !current)}
-                  className={`sv-user-trigger sv-navbar-profile ${currentPath === "/profile" || isProfileMenuOpen ? "is-active" : ""}`}
-                  aria-haspopup="menu"
-                  aria-expanded={isProfileMenuOpen}
-                >
-                  <UserAvatar profile={profile} initials={profileInitials} className="sv-navbar-profile-avatar" />
-                  <span className="sv-navbar-profile-copy">
-                    <span className="sv-navbar-profile-name">{profileFirstName}</span>
-                    <span className="sv-navbar-profile-caption">Personal space</span>
-                  </span>
-                  <span className={`sv-user-trigger-caret ${isProfileMenuOpen ? "is-open" : ""}`} aria-hidden="true" />
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileMenuOpen((current) => !current)}
+                    className={`sv-user-trigger sv-navbar-profile ${currentPath === "/profile" || isProfileMenuOpen ? "is-active" : ""}`}
+                    aria-haspopup="menu"
+                    aria-expanded={isProfileMenuOpen}
+                  >
+                    <UserAvatar profile={profile} initials={profileInitials} className="sv-navbar-profile-avatar" />
+                    <span className="sv-navbar-profile-copy">
+                      <span className="sv-navbar-profile-name">{profileFirstName}</span>
+                      <span className="sv-navbar-profile-caption">Personal space</span>
+                    </span>
+                    <span className={`sv-user-trigger-caret ${isProfileMenuOpen ? "is-open" : ""}`} aria-hidden="true" />
+                  </button>
 
-                {isProfileMenuOpen ? (
-                  <div className="sv-user-menu" role="menu">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsProfileMenuOpen(false);
-                        navigate("/profile");
-                      }}
-                      className="sv-user-menu-item"
-                      role="menuitem"
-                    >
-                      <UserIcon className="h-4.5 w-4.5" />
-                      Profile
-                    </button>
-                    <button
-                      type="button"
-                      onClick={logout}
-                      className="sv-user-menu-item text-rose-600"
-                      role="menuitem"
-                    >
-                      <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-100 text-[11px] font-bold text-rose-600">
-                        !
-                      </span>
-                      Logout
-                    </button>
-                  </div>
-                ) : null}
+                  {isProfileMenuOpen ? (
+                    <div className="sv-user-menu" role="menu">
+                      <div className="sv-user-menu-header">
+                        <UserAvatar profile={profile} initials={profileInitials} className="sv-user-menu-avatar" />
+                        <div className="min-w-0">
+                          <p className="sv-user-menu-title">{profileFirstName}</p>
+                          <p className="sv-user-menu-meta">
+                            {profile?.username ? `@${profile.username}` : "Personal workspace"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="sv-user-menu-divider" />
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsProfileMenuOpen(false);
+                          navigate("/profile");
+                        }}
+                        className="sv-user-menu-item"
+                        role="menuitem"
+                      >
+                        <UserIcon className="h-4.5 w-4.5" />
+                        Profile
+                      </button>
+                      <button
+                        type="button"
+                        onClick={logout}
+                        className="sv-user-menu-item text-rose-600"
+                        role="menuitem"
+                      >
+                        <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-100 text-[11px] font-bold text-rose-600">
+                          !
+                        </span>
+                        Logout
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </div>
-            </div>
             </div>
           </div>
 
