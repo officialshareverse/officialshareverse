@@ -34,6 +34,14 @@ function readStoredJson(key) {
   }
 }
 
+function getSafeRedirectTarget(search, fallback = "/home") {
+  const redirectValue = new URLSearchParams(search || "").get("redirect") || "";
+  if (!redirectValue.startsWith("/") || redirectValue.startsWith("//")) {
+    return fallback;
+  }
+  return redirectValue;
+}
+
 
 export default function Login({ setIsAuth, themeMode, toggleTheme }) {
   const navigate = useNavigate();
@@ -58,6 +66,11 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
   const [devOtp, setDevOtp] = useState("");
   const [lastLoginMeta, setLastLoginMeta] = useState(() => readStoredJson(LAST_LOGIN_KEY));
   const [resetForm, setResetForm] = useState(() => createResetForm(rememberedUsername));
+  const redirectTarget = useMemo(() => getSafeRedirectTarget(location.search), [location.search]);
+  const signupHref = useMemo(
+    () => (redirectTarget !== "/home" ? `/signup?redirect=${encodeURIComponent(redirectTarget)}` : "/signup"),
+    [redirectTarget]
+  );
 
   useEffect(() => {
     if (location.state?.message) {
@@ -271,7 +284,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
 
     setLastLoginMeta(nextLastLogin);
     setIsAuth(true);
-    navigate("/home", { replace: true });
+    navigate(redirectTarget, { replace: true });
   };
 
   const handleGoogleSuccess = (payload) => {
@@ -290,7 +303,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
         <div className="space-y-2.5">
           <p className="text-[13px] text-slate-600 sm:text-sm">
             New to ShareVerse?{" "}
-            <Link to="/signup" className="font-semibold text-teal-800 hover:text-teal-700">
+            <Link to={signupHref} className="font-semibold text-teal-800 hover:text-teal-700">
               Create an account
             </Link>
           </p>

@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.db.models import Sum
 from rest_framework import serializers
@@ -11,8 +12,11 @@ from .models import (
     GroupChatMessage,
     GroupChatPresence,
     GroupChatReadState,
+    GroupInviteLink,
     GroupMember,
     PayoutAccount,
+    Referral,
+    ReferralCode,
     Review,
     Subscription,
     Transaction,
@@ -170,10 +174,120 @@ def get_transaction_copy(transaction):
             "description": "Funds were returned to your wallet.",
         }
 
+    if transaction.payment_method == "referral_reward":
+        return {
+            "title": "Referral reward",
+            "description": "Wallet credit earned from a referral.",
+        }
+
     return {
         "title": transaction.type.title(),
         "description": "Wallet transaction recorded.",
     }
+
+
+def normalize_referral_code_value(value):
+    return (value or "").strip().upper()
+
+
+def validate_referral_code_value(value):
+    normalized = normalize_referral_code_value(value)
+    if not normalized:
+        return ""
+
+    if not ReferralCode.objects.filter(code__iexact=normalized).exists():
+        raise serializers.ValidationError("Enter a valid referral code.")
+
+    return normalized
+
+
+def get_frontend_base_url():
+    configured_base_url = (getattr(settings, "FRONTEND_BASE_URL", "") or "").strip()
+    if configured_base_url:
+        return configured_base_url.rstrip("/")
+
+    cors_origins = [origin.strip() for origin in getattr(settings, "CORS_ALLOWED_ORIGINS", []) if origin.strip()]
+    if cors_origins:
+        return cors_origins[0].rstrip("/")
+
+    return "http://localhost:3000"
+
+
+class GenerateGroupInviteLinkSerializer(serializers.Serializer):
+    group_id = serializers.IntegerField(min_value=1)
+    max_uses = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+    expires_in_hours = serializers.IntegerField(required=False, allow_null=True, min_value=1, max_value=720)
+
+
+class GroupInviteLinkSerializer(serializers.ModelSerializer):
+    group_id = serializers.IntegerField(read_only=True)
+    invite_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GroupInviteLink
+        fields = [
+            "id",
+            "token",
+            "group_id",
+            "is_active",
+            "max_uses",
+            "use_count",
+            "expires_at",
+            "created_at",
+            "invite_url",
+        ]
+
+    def get_invite_url(self, obj):
+        return f"{get_frontend_base_url()}/invite/{obj.token}"
+
+
+class AcceptGroupInviteSerializer(serializers.Serializer):
+    token = serializers.UUIDField()
+
+
+class ReferralSerializer(serializers.ModelSerializer):
+    referred_username = serializers.CharField(source="referred_user.username", read_only=True)
+
+    class Meta:
+        model = Referral
+        fields = [
+            "id",
+            "referred_username",
+            "status",
+            "reward_given",
+            "reward_amount",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class ReferralCodeSerializer(serializers.ModelSerializer):
+    referrals = ReferralSerializer(source="user.referrals_made", many=True, read_only=True)
+    total_rewards_earned = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReferralCode
+        fields = [
+            "code",
+            "total_referrals",
+            "successful_referrals",
+            "total_rewards_earned",
+            "referrals",
+        ]
+
+    def get_total_rewards_earned(self, obj):
+        total_rewards = (
+            Referral.objects.filter(referral_code=obj, reward_given=True).aggregate(total=Sum("reward_amount"))["total"]
+            or Decimal("0.00")
+        )
+        return str(total_rewards)
+
+
+class ValidateReferralCodeSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=20)
+
+    def validate_code(self, value):
+        return normalize_referral_code_value(value)
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -181,10 +295,11 @@ class SignupSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     last_name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    referral_code = serializers.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
 
     class Meta:
         model = User
-        fields = ["username", "first_name", "last_name", "email", "phone", "password"]
+        fields = ["username", "first_name", "last_name", "email", "phone", "password", "referral_code"]
 
     def validate_username(self, value):
         normalized = (value or "").strip()
@@ -210,8 +325,12 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("This phone number is already in use.")
         return normalized
 
+    def validate_referral_code(self, value):
+        return validate_referral_code_value(value)
+
     def create(self, validated_data):
         is_verified = validated_data.pop("is_verified", False)
+        validated_data.pop("referral_code", "")
         validated_data["password"] = make_password(validated_data["password"])
         validated_data["email"] = (validated_data.get("email") or "").strip().lower()
         validated_data["phone"] = (validated_data.get("phone") or "").strip() or None
@@ -223,6 +342,7 @@ class SignupRequestOTPSerializer(serializers.Serializer):
     username = serializers.CharField()
     email = serializers.EmailField()
     phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    referral_code = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     def validate_username(self, value):
         normalized = (value or "").strip()
@@ -248,6 +368,9 @@ class SignupRequestOTPSerializer(serializers.Serializer):
             raise serializers.ValidationError("This phone number is already in use.")
         return normalized
 
+    def validate_referral_code(self, value):
+        return validate_referral_code_value(value)
+
     def validate(self, attrs):
         attrs["channel"] = "email"
         return attrs
@@ -272,6 +395,10 @@ class SignupConfirmSerializer(serializers.Serializer):
     email = serializers.EmailField()
     phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     password = serializers.CharField(min_length=8, write_only=True)
+    referral_code = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+    def validate_referral_code(self, value):
+        return validate_referral_code_value(value)
 
     def validate(self, attrs):
         attrs["username"] = (attrs.get("username") or "").strip()
@@ -280,6 +407,7 @@ class SignupConfirmSerializer(serializers.Serializer):
         attrs["otp"] = (attrs.get("otp") or "").strip()
         attrs["first_name"] = (attrs.get("first_name") or "").strip()
         attrs["last_name"] = (attrs.get("last_name") or "").strip()
+        attrs["referral_code"] = normalize_referral_code_value(attrs.get("referral_code"))
 
         if not attrs["username"]:
             raise serializers.ValidationError({"username": "Username is required."})

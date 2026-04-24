@@ -19,6 +19,7 @@ import FaqPage from "./pages/FaqPage";
 import GroupChat from "./pages/GroupChat";
 import Groups from "./pages/Groups";
 import Home from "./pages/Home";
+import InviteLanding from "./pages/InviteLanding";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import MyShared from "./pages/MyShared";
@@ -38,6 +39,14 @@ const isAuthenticated = () => {
   return getAuthToken() !== null;
 };
 
+function getSafeRedirectTarget(search, fallback = "/home") {
+  const redirectValue = new URLSearchParams(search || "").get("redirect") || "";
+  if (!redirectValue.startsWith("/") || redirectValue.startsWith("//")) {
+    return fallback;
+  }
+  return redirectValue;
+}
+
 function getInitialTheme() {
   if (typeof window === "undefined") {
     return "light";
@@ -56,7 +65,8 @@ const PrivateRoute = ({ children }) => {
 };
 
 const PublicRoute = ({ children }) => {
-  return !isAuthenticated() ? children : <Navigate to="/home" />;
+  const location = useLocation();
+  return !isAuthenticated() ? children : <Navigate to={getSafeRedirectTarget(location.search)} replace />;
 };
 
 function App() {
@@ -247,6 +257,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
 
           <Route path="/about" element={<AboutPage />} />
           <Route path="/faq" element={<FaqPage />} />
+          <Route path="/invite/:token" element={<InviteLanding />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/refunds" element={<RefundPolicyPage />} />

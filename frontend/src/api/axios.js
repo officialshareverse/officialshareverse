@@ -23,6 +23,9 @@ const AUTH_REDIRECT_EXEMPT_PATHS = [
   "signup/",
   "signup/check-availability/",
   "signup/request-otp/",
+  "invite/info/",
+  "invite/accept/",
+  "referral/validate/",
   "forgot-password/request-otp/",
   "forgot-password/confirm-otp/",
 ];

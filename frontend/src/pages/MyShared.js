@@ -4,12 +4,14 @@ import API from "../api/axios";
 import { revealGroupCredentials } from "../api/credentials";
 import ActionDialog from "../components/ActionDialog";
 import Drawer from "../components/Drawer";
+import InviteShareModal from "../components/InviteShareModal";
 import { useToast } from "../components/ToastProvider";
 import useIsMobile from "../hooks/useIsMobile";
 import {
   ChatIcon,
   ClockIcon,
   LayersIcon,
+  ShareIcon,
   ShieldIcon,
   SparkIcon,
   WalletIcon,
@@ -154,6 +156,7 @@ export default function MyShared() {
   const [submittingReviewKey, setSubmittingReviewKey] = useState("");
   const [mobileOwnerActionGroupId, setMobileOwnerActionGroupId] = useState(null);
   const [mobileJoinedActionGroupId, setMobileJoinedActionGroupId] = useState(null);
+  const [inviteModalGroup, setInviteModalGroup] = useState(null);
   const [actionDialog, setActionDialog] = useState({
     open: false,
     eyebrow: "Confirm action",
@@ -795,6 +798,12 @@ export default function MyShared() {
   const activeMobileOwnerLifecycleNote = activeMobileOwnerGroup
     ? getLifecycleNote(activeMobileOwnerGroup)
     : null;
+  const activeMobileOwnerHasOpenSlots = activeMobileOwnerGroup
+    ? Number(activeMobileOwnerGroup.total_slots || 0) > Number(activeMobileOwnerGroup.filled_slots || 0)
+    : false;
+  const activeMobileOwnerRemainingSlots = activeMobileOwnerGroup
+    ? Math.max(0, Number(activeMobileOwnerGroup.total_slots || 0) - Number(activeMobileOwnerGroup.filled_slots || 0))
+    : 0;
 
   return (
     <>
@@ -822,6 +831,9 @@ export default function MyShared() {
       multiline={actionDialog.multiline}
       isSubmitting={actionDialog.isSubmitting}
     />
+    {inviteModalGroup ? (
+      <InviteShareModal group={inviteModalGroup} onClose={() => setInviteModalGroup(null)} />
+    ) : null}
     {isMobile && activeMobileOwnerGroup ? (
       <Drawer
         open={Boolean(activeMobileOwnerGroup)}
@@ -836,8 +848,21 @@ export default function MyShared() {
               : "Open Manage on the card first if you need member details or refund controls before acting.")}
           </p>
         )}
-      >
+        >
         <div className="sv-drawer-stack">
+          {activeMobileOwnerGroup.status !== "closed" && activeMobileOwnerHasOpenSlots ? (
+            <MobileDrawerAction
+              icon={ShareIcon}
+              label="Invite members"
+              description="Generate a share link, WhatsApp message, or QR code for this split."
+              meta={`${activeMobileOwnerRemainingSlots} slot${activeMobileOwnerRemainingSlots === 1 ? "" : "s"} open`}
+              onClick={() => {
+                closeMobileOwnerActions();
+                setInviteModalGroup(activeMobileOwnerGroup);
+              }}
+            />
+          ) : null}
+
           {activeMobileOwnerGroup.filled_slots > 0 ? (
             <MobileDrawerAction
               icon={ChatIcon}
@@ -1143,6 +1168,7 @@ export default function MyShared() {
           const detail = details[group.id];
           const isEditing = editingId === group.id;
           const hasMembers = group.filled_slots > 0;
+          const hasOpenSlots = Number(group.total_slots || 0) > Number(group.filled_slots || 0);
           const lifecycleNote = getLifecycleNote(group);
           const proofForm = proofForms[group.id] || getInitialProofForm(detail);
           const showAdvancedOwnerActions = !isMobile || Boolean(detail) || isEditing;
@@ -1236,6 +1262,15 @@ export default function MyShared() {
                   )
                 ) : (
                   <>
+                    {showAdvancedOwnerActions && !isEditing && group.status !== "closed" && hasOpenSlots ? (
+                      <button
+                        style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }}
+                        onClick={() => setInviteModalGroup(group)}
+                      >
+                        Invite members
+                      </button>
+                    ) : null}
+
                     {hasMembers ? (
                       <button
                         style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }}

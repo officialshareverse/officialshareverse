@@ -18,18 +18,22 @@ from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
+from .pricing import get_group_join_pricing
 from .models import (
     EscrowLedger,
     Group,
     GroupChatMessage,
     GroupChatPresence,
     GroupChatReadState,
+    GroupInviteLink,
     GroupMember,
     Notification,
     PasswordResetOTP,
     PayoutAccount,
     RazorpayWebhookEvent,
     RazorpayXPayoutWebhookEvent,
+    Referral,
+    ReferralCode,
     Review,
     SignupOTP,
     Subscription,
@@ -3163,6 +3167,157 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(self.owner.email, "updated@example.com")
         self.assertEqual(self.owner.phone, "9888877777")
         self.assertEqual(response.data["full_name"], "Updated Owner")
+
+    def test_owner_can_generate_and_member_can_accept_group_invite_link(self):
+        group = self.create_group(mode="sharing", total_slots=2, status="forming")
+
+        self.authenticate(self.owner)
+        invite_response = self.client.post(
+            "/api/invite/generate/",
+            {
+                "group_id": group.id,
+                "max_uses": 2,
+                "expires_in_hours": 24,
+            },
+            format="json",
+        )
+
+        self.assertEqual(invite_response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("invite_url", invite_response.data)
+
+        self.client.force_authenticate(user=None)
+        info_response = self.client.get(f"/api/invite/info/?token={invite_response.data['token']}")
+
+        self.assertEqual(info_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(info_response.data["subscription_name"], self.subscription.name)
+        self.assertEqual(info_response.data["owner_username"], self.owner.username)
+        self.assertTrue(info_response.data["is_joinable"])
+
+        member_wallet = Wallet.objects.get(user=self.member_one)
+        starting_balance = member_wallet.balance
+
+        self.authenticate(self.member_one)
+        accept_response = self.client.post(
+            "/api/invite/accept/",
+            {"token": invite_response.data["token"]},
+            format="json",
+        )
+
+        self.assertEqual(accept_response.status_code, status.HTTP_200_OK)
+        self.assertTrue(GroupMember.objects.filter(group=group, user=self.member_one).exists())
+
+        invite_link = GroupInviteLink.objects.get(id=invite_response.data["id"])
+        self.assertEqual(invite_link.use_count, 1)
+
+        member_wallet.refresh_from_db()
+        self.assertEqual(
+            member_wallet.balance,
+            starting_balance - get_group_join_pricing(group)["join_price"],
+        )
+
+    @override_settings(EXPOSE_DEV_OTP=True)
+    @patch("core.auth_views.deliver_otp_code", return_value=True)
+    def test_signup_with_referral_code_creates_referral_record(self, _deliver_otp_code):
+        referral_code = self.owner.referral_code.code
+
+        otp_response = self.client.post(
+            "/api/signup/request-otp/",
+            {
+                "username": "newreferraluser",
+                "email": "newreferraluser@example.com",
+                "phone": "",
+                "referral_code": referral_code,
+            },
+            format="json",
+        )
+
+        self.assertEqual(otp_response.status_code, status.HTTP_200_OK)
+
+        signup_response = self.client.post(
+            "/api/signup/",
+            {
+                "username": "newreferraluser",
+                "first_name": "New",
+                "last_name": "User",
+                "email": "newreferraluser@example.com",
+                "phone": "",
+                "password": "password123",
+                "signup_session_id": otp_response.data["signup_session_id"],
+                "otp": otp_response.data["dev_otp"],
+                "referral_code": referral_code,
+            },
+            format="json",
+        )
+
+        self.assertEqual(signup_response.status_code, status.HTTP_201_CREATED)
+
+        new_user = User.objects.get(username="newreferraluser")
+        referral = Referral.objects.get(referred_user=new_user)
+        referrer_code = ReferralCode.objects.get(user=self.owner)
+
+        self.assertEqual(referral.referrer_id, self.owner.id)
+        self.assertEqual(referral.referral_code_id, referrer_code.id)
+        self.assertEqual(referral.status, "signed_up")
+
+        referrer_code.refresh_from_db()
+        self.assertEqual(referrer_code.total_referrals, 1)
+
+    def test_first_group_join_applies_referral_rewards_to_both_wallets(self):
+        group_owner = self.member_one
+        referred_user = self.outsider
+        referral_code = self.owner.referral_code
+        referral_code.total_referrals = 1
+        referral_code.save(update_fields=["total_referrals"])
+
+        referral = Referral.objects.create(
+            referrer=self.owner,
+            referred_user=referred_user,
+            referral_code=referral_code,
+            status="signed_up",
+        )
+
+        group = Group.objects.create(
+            owner=group_owner,
+            subscription=self.subscription,
+            total_slots=2,
+            price_per_slot=Decimal("200.00"),
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=29),
+            mode="sharing",
+            status="forming",
+        )
+
+        referrer_wallet = Wallet.objects.get(user=self.owner)
+        referred_wallet = Wallet.objects.get(user=referred_user)
+        referrer_starting_balance = referrer_wallet.balance
+        referred_starting_balance = referred_wallet.balance
+
+        self.authenticate(referred_user)
+        response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        referral.refresh_from_db()
+        referral_code.refresh_from_db()
+        referrer_wallet.refresh_from_db()
+        referred_wallet.refresh_from_db()
+        expected_join_price = get_group_join_pricing(group)["join_price"]
+
+        self.assertTrue(referral.reward_given)
+        self.assertEqual(referral.status, "rewarded")
+        self.assertEqual(referral.reward_amount, Decimal("25.00"))
+        self.assertEqual(referral_code.successful_referrals, 1)
+        self.assertEqual(referrer_wallet.balance, referrer_starting_balance + Decimal("25.00"))
+        self.assertEqual(
+            referred_wallet.balance,
+            referred_starting_balance - expected_join_price + Decimal("10.00"),
+        )
+        self.assertTrue(
+            Transaction.objects.filter(user=self.owner, payment_method="referral_reward", type="credit").exists()
+        )
+        self.assertTrue(
+            Transaction.objects.filter(user=referred_user, payment_method="referral_reward", type="credit").exists()
+        )
 
     def test_health_endpoint_reports_service_readiness(self):
         response = self.client.get("/api/health/")

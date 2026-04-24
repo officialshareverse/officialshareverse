@@ -9,11 +9,14 @@ from .models import (
     CredentialRevealToken,
     EscrowLedger,
     Group,
+    GroupInviteLink,
     GroupMember,
     JoinRequest,
     Notification,
     PasswordResetOTP,
     PayoutAccount,
+    Referral,
+    ReferralCode,
     Review,
     Subscription,
     Transaction,
@@ -449,3 +452,6 @@ admin.site.register(JoinRequest)
 admin.site.register(EscrowLedger)
 admin.site.register(CredentialRevealToken)
 admin.site.register(PasswordResetOTP)
+admin.site.register(GroupInviteLink)
+admin.site.register(ReferralCode)
+admin.site.register(Referral)

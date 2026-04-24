@@ -23,7 +23,7 @@ from rest_framework_simplejwt.utils import get_md5_hash_password
 
 from .auth_identity import find_user_by_login_identifier, normalize_login_identifier
 from .consumers import create_notification
-from .models import PasswordResetOTP, SignupOTP, User
+from .models import PasswordResetOTP, Referral, ReferralCode, SignupOTP, User
 from .rate_limit import (
     check_and_increment_rate_limit,
     get_rate_limit_status,
@@ -623,6 +623,7 @@ class SignupView(APIView):
         phone = serializer.validated_data.get("phone", "")
         signup_session_id = serializer.validated_data["signup_session_id"]
         otp = serializer.validated_data["otp"]
+        referral_code_value = serializer.validated_data.get("referral_code", "")
 
         confirm_identity = build_rate_limit_identity(request, f"{username}:{email}")
         confirm_rate_result = check_and_increment_rate_limit(
@@ -698,12 +699,34 @@ class SignupView(APIView):
                     "email": serializer.validated_data["email"],
                     "phone": serializer.validated_data.get("phone") or None,
                     "password": serializer.validated_data["password"],
+                    "referral_code": referral_code_value,
                 }
             )
             if not user_serializer.is_valid():
                 return Response(user_serializer.errors, status=400)
 
             user = user_serializer.save(is_verified=True)
+
+            if referral_code_value:
+                referral_code = (
+                    ReferralCode.objects.select_for_update()
+                    .select_related("user")
+                    .filter(code__iexact=referral_code_value)
+                    .first()
+                )
+                if (
+                    referral_code
+                    and referral_code.user_id != user.id
+                    and not Referral.objects.filter(referred_user=user).exists()
+                ):
+                    Referral.objects.create(
+                        referrer=referral_code.user,
+                        referred_user=user,
+                        referral_code=referral_code,
+                        status="signed_up",
+                    )
+                    referral_code.total_referrals += 1
+                    referral_code.save(update_fields=["total_referrals"])
 
             otp_session.is_used = True
             otp_session.save(update_fields=["is_used"])

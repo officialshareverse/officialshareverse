@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import API from "../api/axios";
 import Drawer from "../components/Drawer";
+import ReferralDashboard from "../components/ReferralDashboard";
 import { useToast } from "../components/ToastProvider";
 import {
   BankIcon,
@@ -1236,6 +1237,8 @@ export default function Wallet() {
           {activeActionPanel}
         </section>
         ) : null}
+
+        <ReferralDashboard />
 
         <section className="grid gap-4 xl:grid-cols-[0.94fr_1.06fr]">
           <section className="sv-card sv-reveal">

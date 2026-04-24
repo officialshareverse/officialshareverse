@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db import DatabaseError, connections, transaction
 from django.db.models import Avg, Count, ExpressionWrapper, F, IntegerField, Max, OuterRef, Prefetch, Q, Subquery, Sum, Value
 from django.utils import timezone
+from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import ListAPIView
@@ -25,11 +26,14 @@ from .models import (
     GroupChatMessage,
     GroupChatPresence,
     GroupChatReadState,
+    GroupInviteLink,
     GroupMember,
     Notification,
     PayoutAccount,
     RazorpayWebhookEvent,
     RazorpayXPayoutWebhookEvent,
+    Referral,
+    ReferralCode,
     Review,
     Subscription,
     Transaction,
@@ -37,6 +41,7 @@ from .models import (
     Wallet,
     WalletPayout,
     WalletTopupOrder,
+    ensure_referral_code_for_user,
 )
 from .payments import (
     PaymentGatewayError,
@@ -71,20 +76,30 @@ from .consumers import (
     push_notification_read_to_user,
     push_notifications_cleared_to_user,
 )
+from .referral_config import (
+    REFERRAL_REWARD_INVITEE,
+    REFERRAL_REWARD_INVITER,
+    REFERRAL_REWARD_TRIGGER,
+)
 from .serializers import (
+    AcceptGroupInviteSerializer,
     CreateGroupSerializer,
+    GenerateGroupInviteLinkSerializer,
     GroupChatPresenceSerializer,
+    GroupInviteLinkSerializer,
     GroupListSerializer,
     GroupChatMessageSerializer,
     GroupUpdateSerializer,
     PayoutAccountSerializer,
     PayoutAccountUpsertSerializer,
     ProfileUpdateSerializer,
+    ReferralCodeSerializer,
     ReviewSerializer,
     SendGroupChatMessageSerializer,
     SubmitReviewSerializer,
     SubmitPurchaseProofSerializer,
     TransactionSerializer,
+    ValidateReferralCodeSerializer,
     WalletPayoutCreateSerializer,
     WalletPayoutSerializer,
     WalletTopupOrderCreateSerializer,
@@ -1472,6 +1487,266 @@ def create_credential_reveal_token(user, group):
     return raw_token, expires_at
 
 
+def get_group_slots_remaining(group):
+    return max(group.total_slots - GroupMember.objects.filter(group=group).count(), 0)
+
+
+def validate_group_join_request(group, user):
+    if group.status == "closed":
+        return {"error": "This group has been closed by the owner"}, 400, None
+
+    if group.status in {"refunding", "refunded", "failed"}:
+        return {"error": "This group is not available for new joins right now"}, 400, None
+
+    if group.owner_id == user.id:
+        return {"error": "You cannot join your own group"}, 400, None
+
+    if GroupMember.objects.filter(group=group, user=user).exists():
+        return {"error": "Already joined"}, 400, None
+
+    if GroupMember.objects.filter(group=group).count() >= group.total_slots:
+        return {"error": "Group is full"}, 400, None
+
+    pricing = get_group_join_pricing(group)
+    if pricing["is_expired"]:
+        return {"error": "This group's billing cycle has already ended"}, 400, None
+
+    return None, None, pricing
+
+
+def award_referral_reward_for_group_join(joined_user, group, invitee_wallet=None):
+    if REFERRAL_REWARD_TRIGGER != "joined_group":
+        return None
+
+    referral = (
+        Referral.objects.select_for_update()
+        .select_related("referrer", "referral_code")
+        .filter(referred_user=joined_user, reward_given=False)
+        .order_by("created_at", "id")
+        .first()
+    )
+
+    if not referral or referral.status != "signed_up":
+        return None
+
+    referral.status = "joined_group"
+    referral.save(update_fields=["status", "updated_at"])
+
+    referrer_wallet, _ = Wallet.objects.select_for_update().get_or_create(user=referral.referrer)
+    active_invitee_wallet = invitee_wallet or Wallet.objects.select_for_update().get_or_create(user=joined_user)[0]
+    referral_code = ReferralCode.objects.select_for_update().get(id=referral.referral_code_id)
+
+    referrer_wallet.balance += REFERRAL_REWARD_INVITER
+    referrer_wallet.save(update_fields=["balance"])
+
+    active_invitee_wallet.balance += REFERRAL_REWARD_INVITEE
+    active_invitee_wallet.save(update_fields=["balance"])
+
+    Transaction.objects.create(
+        user=referral.referrer,
+        group=group,
+        amount=REFERRAL_REWARD_INVITER,
+        type="credit",
+        status="success",
+        payment_method="referral_reward",
+    )
+    Transaction.objects.create(
+        user=joined_user,
+        group=group,
+        amount=REFERRAL_REWARD_INVITEE,
+        type="credit",
+        status="success",
+        payment_method="referral_reward",
+    )
+
+    referral_code.successful_referrals += 1
+    referral_code.save(update_fields=["successful_referrals"])
+
+    referral.status = "rewarded"
+    referral.reward_given = True
+    referral.reward_amount = REFERRAL_REWARD_INVITER
+    referral.save(update_fields=["status", "reward_given", "reward_amount", "updated_at"])
+
+    create_notification(
+        user=referral.referrer,
+        message=(
+            f"You earned Rs {REFERRAL_REWARD_INVITER} because {joined_user.username} joined their first "
+            f"ShareVerse group on {group.subscription.name}."
+        ),
+    )
+    create_notification(
+        user=joined_user,
+        message=(
+            f"You earned Rs {REFERRAL_REWARD_INVITEE} in wallet credit for joining your first "
+            f"ShareVerse group with a referral."
+        ),
+    )
+
+    return {
+        "inviter_reward": str(REFERRAL_REWARD_INVITER),
+        "invitee_reward": str(REFERRAL_REWARD_INVITEE),
+        "referrer_username": referral.referrer.username,
+    }
+
+
+def perform_group_join(joined_user, group):
+    error_payload, error_status, pricing = validate_group_join_request(group, joined_user)
+    if error_payload:
+        return None, error_payload, error_status
+
+    with transaction.atomic():
+        try:
+            locked_group = (
+                Group.objects.select_for_update()
+                .select_related("subscription", "owner")
+                .get(id=group.id)
+            )
+        except Group.DoesNotExist:
+            return None, {"error": "Group not found"}, 404
+
+        error_payload, error_status, pricing = validate_group_join_request(locked_group, joined_user)
+        if error_payload:
+            return None, error_payload, error_status
+
+        wallet, _ = Wallet.objects.select_for_update().get_or_create(user=joined_user)
+        price = pricing["join_price"]
+        contribution_amount = pricing["join_subtotal"]
+        platform_fee_amount = pricing["platform_fee_amount"]
+
+        if wallet.balance < price:
+            return None, {"error": "Insufficient balance"}, 400
+
+        wallet.balance -= price
+        wallet.save(update_fields=["balance"])
+
+        member = GroupMember.objects.create(
+            group=locked_group,
+            user=joined_user,
+            has_paid=True,
+            charged_amount=price,
+            platform_fee_amount=platform_fee_amount,
+            escrow_status="held",
+        )
+
+        Transaction.objects.create(
+            user=joined_user,
+            group=locked_group,
+            amount=price,
+            type="debit",
+            status="success",
+            payment_method="wallet",
+        )
+
+        EscrowLedger.objects.create(
+            user=joined_user,
+            group=locked_group,
+            member=member,
+            amount=contribution_amount,
+            entry_type="hold",
+            status="success",
+        )
+
+        if locked_group.mode == "sharing":
+            if locked_group.status == "forming":
+                locked_group.status = "collecting"
+                locked_group.save(update_fields=["status"])
+            create_notification(
+                user=locked_group.owner,
+                message=(
+                    f"{joined_user.username} joined your {locked_group.subscription.name} sharing group "
+                    f"and paid Rs {price} (including Rs {platform_fee_amount} platform fee). "
+                    "Payout will be released after the member confirms access."
+                ),
+            )
+            create_notification(
+                user=joined_user,
+                message=(
+                    f"You joined {locked_group.subscription.name}. Confirm access after the host gives you access "
+                    "so the host payout can be released."
+                ),
+            )
+        elif locked_group.mode == "group_buy":
+            if locked_group.status == "forming":
+                locked_group.status = "collecting"
+                locked_group.save(update_fields=["status"])
+                create_notification(
+                    user=locked_group.owner,
+                    message=(
+                        f"{joined_user.username} joined your {locked_group.subscription.name} buy-together group. "
+                        "The group is now collecting member contributions."
+                    ),
+                )
+            else:
+                create_notification(
+                    user=locked_group.owner,
+                    message=(
+                        f"{joined_user.username} joined your {locked_group.subscription.name} buy-together group."
+                    ),
+                )
+
+            paid_members = GroupMember.objects.filter(group=locked_group, has_paid=True).count()
+
+            if paid_members >= locked_group.total_slots:
+                deadline = timezone.now() + timedelta(hours=BUY_TOGETHER_PURCHASE_DEADLINE_HOURS)
+                locked_group.status = "awaiting_purchase"
+                locked_group.purchase_deadline_at = deadline
+                locked_group.auto_refund_at = deadline
+                locked_group.save(update_fields=["status", "purchase_deadline_at", "auto_refund_at"])
+                create_notification(
+                    user=locked_group.owner,
+                    message=(
+                        f"Your {locked_group.subscription.name} buy-together group is full. "
+                        "Buy the subscription and upload proof before the deadline."
+                    ),
+                )
+                for joined_member in GroupMember.objects.filter(group=locked_group).select_related("user"):
+                    create_notification(
+                        user=joined_member.user,
+                        message=(
+                            f"{locked_group.subscription.name} is now full. "
+                            "The creator will buy the subscription and upload proof next."
+                        ),
+                    )
+
+        referral_reward = award_referral_reward_for_group_join(
+            joined_user=joined_user,
+            group=locked_group,
+            invitee_wallet=wallet,
+        )
+
+        log_operation_event(
+            "group_join_funds_held",
+            group_id=locked_group.id,
+            group_mode=locked_group.mode,
+            group_status=locked_group.status,
+            member_id=member.id,
+            user_id=joined_user.id,
+            username=joined_user.username,
+            charged_amount=price,
+            contribution_amount=contribution_amount,
+            platform_fee_amount=platform_fee_amount,
+            wallet_balance=wallet.balance,
+        )
+
+        return {
+            "message": "Joined group successfully",
+            "group_id": locked_group.id,
+            "charged_amount": str(price),
+            "join_subtotal": str(contribution_amount),
+            "platform_fee_amount": str(platform_fee_amount),
+            "price_per_slot": str(locked_group.price_per_slot),
+            "is_prorated": pricing["is_prorated"],
+            "remaining_cycle_days": pricing["remaining_cycle_days"],
+            "total_cycle_days": pricing["total_cycle_days"],
+            "pricing_note": pricing["pricing_note"],
+            "remaining_balance": str(wallet.balance),
+            "group_mode": locked_group.mode,
+            "group_status": locked_group.status,
+            "credentials": build_member_sharing_credentials(locked_group) if locked_group.mode == "sharing" else None,
+            "referral_reward": referral_reward,
+        }, None, None
+
+
 class CreateGroupView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1530,161 +1805,11 @@ class JoinGroupView(APIView):
         except Group.DoesNotExist:
             return Response({"error": "Group not found"}, status=404)
 
-        if group.status == "closed":
-            return Response({"error": "This group has been closed by the owner"}, status=400)
+        response_payload, error_payload, error_status = perform_group_join(request.user, group)
+        if error_payload:
+            return Response(error_payload, status=error_status)
 
-        if group.owner == request.user:
-            return Response({"error": "You cannot join your own group"}, status=400)
-
-        if GroupMember.objects.filter(group=group, user=request.user).exists():
-            return Response({"error": "Already joined"}, status=400)
-
-        if GroupMember.objects.filter(group=group).count() >= group.total_slots:
-            return Response({"error": "Group is full"}, status=400)
-
-        pricing = get_group_join_pricing(group)
-        if pricing["is_expired"]:
-            return Response({"error": "This group's billing cycle has already ended"}, status=400)
-
-        with transaction.atomic():
-            wallet, _ = Wallet.objects.select_for_update().get_or_create(user=request.user)
-            price = pricing["join_price"]
-            contribution_amount = pricing["join_subtotal"]
-            platform_fee_amount = pricing["platform_fee_amount"]
-
-            if wallet.balance < price:
-                return Response({"error": "Insufficient balance"}, status=400)
-
-            wallet.balance -= price
-            wallet.save()
-
-            member = GroupMember.objects.create(
-                group=group,
-                user=request.user,
-                has_paid=True,
-                charged_amount=price,
-                platform_fee_amount=platform_fee_amount,
-                escrow_status="held",
-            )
-
-            Transaction.objects.create(
-                user=request.user,
-                group=group,
-                amount=price,
-                type="debit",
-                status="success",
-                payment_method="wallet",
-            )
-
-            if group.mode == "sharing":
-                EscrowLedger.objects.create(
-                    user=request.user,
-                    group=group,
-                    member=member,
-                    amount=contribution_amount,
-                    entry_type="hold",
-                    status="success",
-                )
-
-                if group.status == "forming":
-                    group.status = "collecting"
-                    group.save(update_fields=["status"])
-                create_notification(
-                    user=group.owner,
-                    message=(
-                        f"{request.user.username} joined your {group.subscription.name} sharing group "
-                        f"and paid Rs {price} (including Rs {platform_fee_amount} platform fee). "
-                        "Payout will be released after the member confirms access."
-                    ),
-                )
-                create_notification(
-                    user=request.user,
-                    message=(
-                        f"You joined {group.subscription.name}. Confirm access after the host gives you access "
-                        "so the host payout can be released."
-                    ),
-                )
-            elif group.mode == "group_buy":
-                EscrowLedger.objects.create(
-                    user=request.user,
-                    group=group,
-                    member=member,
-                    amount=contribution_amount,
-                    entry_type="hold",
-                    status="success",
-                )
-
-                if group.status == "forming":
-                    group.status = "collecting"
-                    group.save(update_fields=["status"])
-                    create_notification(
-                        user=group.owner,
-                        message=(
-                            f"{request.user.username} joined your {group.subscription.name} buy-together group. "
-                            "The group is now collecting member contributions."
-                        ),
-                    )
-                else:
-                    create_notification(
-                        user=group.owner,
-                        message=(
-                            f"{request.user.username} joined your {group.subscription.name} buy-together group."
-                        ),
-                    )
-
-                paid_members = GroupMember.objects.filter(group=group, has_paid=True).count()
-
-                if paid_members >= group.total_slots:
-                    deadline = timezone.now() + timedelta(hours=BUY_TOGETHER_PURCHASE_DEADLINE_HOURS)
-                    group.status = "awaiting_purchase"
-                    group.purchase_deadline_at = deadline
-                    group.auto_refund_at = deadline
-                    group.save(update_fields=["status", "purchase_deadline_at", "auto_refund_at"])
-                    create_notification(
-                        user=group.owner,
-                        message=(
-                            f"Your {group.subscription.name} buy-together group is full. "
-                            "Buy the subscription and upload proof before the deadline."
-                        ),
-                    )
-                    for joined_member in GroupMember.objects.filter(group=group).select_related("user"):
-                        create_notification(
-                            user=joined_member.user,
-                            message=(
-                                f"{group.subscription.name} is now full. "
-                                "The creator will buy the subscription and upload proof next."
-                            ),
-                        )
-
-        log_operation_event(
-            "group_join_funds_held",
-            group_id=group.id,
-            group_mode=group.mode,
-            group_status=group.status,
-            member_id=member.id,
-            user_id=request.user.id,
-            username=request.user.username,
-            charged_amount=price,
-            contribution_amount=contribution_amount,
-            platform_fee_amount=platform_fee_amount,
-            wallet_balance=wallet.balance,
-        )
-
-        return Response({
-            "message": "Joined group successfully",
-            "charged_amount": str(price),
-            "join_subtotal": str(contribution_amount),
-            "platform_fee_amount": str(platform_fee_amount),
-            "price_per_slot": str(group.price_per_slot),
-            "is_prorated": pricing["is_prorated"],
-            "remaining_cycle_days": pricing["remaining_cycle_days"],
-            "total_cycle_days": pricing["total_cycle_days"],
-            "pricing_note": pricing["pricing_note"],
-            "remaining_balance": str(wallet.balance),
-            "group_mode": group.mode,
-            "group_status": group.status,
-            "credentials": build_member_sharing_credentials(group) if group.mode == "sharing" else None,
-        })
+        return Response(response_payload, status=status.HTTP_200_OK)
 
 
 class LeaveGroupView(APIView):
@@ -1709,6 +1834,217 @@ class LeaveGroupView(APIView):
         member.delete()
 
         return Response({"message": "Left group successfully"}, status=200)
+
+
+class GenerateGroupInviteLinkView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = GenerateGroupInviteLinkSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            group = Group.objects.select_related("subscription", "owner").get(
+                id=serializer.validated_data["group_id"]
+            )
+        except Group.DoesNotExist:
+            return Response({"error": "Group not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if group.owner_id != request.user.id:
+            return Response(
+                {"error": "Only the group owner can create invite links."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if group.status in {"closed", "refunding", "refunded", "failed"}:
+            return Response(
+                {"error": "Invite links are not available for this group right now."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if get_group_slots_remaining(group) <= 0:
+            return Response(
+                {"error": "This group has no open slots left."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        active_link_count = sum(
+            1 for invite_link in GroupInviteLink.objects.filter(group=group, is_active=True)
+            if invite_link.is_usable()
+        )
+        if active_link_count >= 10:
+            return Response(
+                {"error": "You can only keep 10 active invite links per group."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        expires_in_hours = serializer.validated_data.get("expires_in_hours")
+        invite_link = GroupInviteLink.objects.create(
+            group=group,
+            created_by=request.user,
+            max_uses=serializer.validated_data.get("max_uses"),
+            expires_at=timezone.now() + timedelta(hours=expires_in_hours) if expires_in_hours else None,
+        )
+
+        return Response(
+            GroupInviteLinkSerializer(invite_link, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AcceptGroupInviteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = AcceptGroupInviteSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            try:
+                invite_link = (
+                    GroupInviteLink.objects.select_for_update()
+                    .select_related("group__subscription", "group__owner")
+                    .get(token=serializer.validated_data["token"])
+                )
+            except GroupInviteLink.DoesNotExist:
+                return Response({"error": "Invite link not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            if not invite_link.is_usable():
+                return Response(
+                    {"error": "This invite link is no longer available."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            response_payload, error_payload, error_status = perform_group_join(request.user, invite_link.group)
+            if error_payload:
+                return Response(error_payload, status=error_status)
+
+            invite_link.use_count += 1
+            update_fields = ["use_count"]
+            if invite_link.max_uses is not None and invite_link.use_count >= invite_link.max_uses:
+                invite_link.is_active = False
+                update_fields.append("is_active")
+            invite_link.save(update_fields=update_fields)
+
+        response_payload["invite_link_id"] = invite_link.id
+        return Response(response_payload, status=status.HTTP_200_OK)
+
+
+class GroupInviteInfoView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        serializer = AcceptGroupInviteSerializer(data=request.query_params)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            invite_link = GroupInviteLink.objects.select_related("group__subscription", "group__owner").get(
+                token=serializer.validated_data["token"]
+            )
+        except GroupInviteLink.DoesNotExist:
+            return Response({"error": "Invite link not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not invite_link.is_usable():
+            return Response(
+                {"error": "This invite link is no longer available."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        group = invite_link.group
+        slots_remaining = get_group_slots_remaining(group)
+        pricing = get_group_join_pricing(group)
+        join_disabled_reason = ""
+        if group.status == "closed":
+            join_disabled_reason = "This group has been closed by the owner."
+        elif group.status in {"refunding", "refunded", "failed"}:
+            join_disabled_reason = "This group is not available for new joins right now."
+        elif slots_remaining <= 0:
+            join_disabled_reason = "This group is already full."
+        elif pricing["is_expired"]:
+            join_disabled_reason = "This group's billing cycle has already ended."
+
+        return Response(
+            {
+                "group_id": group.id,
+                "subscription_name": group.subscription.name,
+                "owner_username": group.owner.username,
+                "slots_remaining": slots_remaining,
+                "mode": group.mode,
+                "mode_label": get_mode_copy(group.mode)["label"],
+                "status": group.status,
+                "status_label": get_status_copy(group),
+                "join_price": str(pricing["join_price"]),
+                "join_subtotal": str(pricing["join_subtotal"]),
+                "platform_fee_amount": str(pricing["platform_fee_amount"]),
+                "pricing_note": pricing["pricing_note"],
+                "is_prorated": pricing["is_prorated"],
+                "is_joinable": not bool(join_disabled_reason),
+                "join_disabled_reason": join_disabled_reason,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class DeactivateGroupInviteLinkView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, link_id):
+        try:
+            invite_link = GroupInviteLink.objects.select_related("group").get(id=link_id)
+        except GroupInviteLink.DoesNotExist:
+            return Response({"error": "Invite link not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if invite_link.group.owner_id != request.user.id:
+            return Response(
+                {"error": "Only the group owner can deactivate this invite link."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        invite_link.is_active = False
+        invite_link.save(update_fields=["is_active"])
+
+        return Response(
+            {
+                "message": "Invite link deactivated successfully.",
+                "link": GroupInviteLinkSerializer(invite_link, context={"request": request}).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class MyReferralCodeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        referral_code = ensure_referral_code_for_user(request.user)
+        return Response(
+            ReferralCodeSerializer(referral_code, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class ValidateReferralCodeView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = ValidateReferralCodeSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        referral_code = ReferralCode.objects.select_related("user").filter(
+            code__iexact=serializer.validated_data["code"]
+        ).first()
+
+        return Response(
+            {
+                "valid": bool(referral_code),
+                "referrer_username": referral_code.user.username if referral_code else "",
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class GroupListView(ListAPIView):
@@ -3342,6 +3678,7 @@ class MyGroupDetailView(APIView):
             "end_date": group.end_date,
             "total_slots": group.total_slots,
             "filled_slots": len(member_data),
+            "remaining_slots": max(group.total_slots - len(member_data), 0),
             "paid_members": paid_members,
             "confirmed_members": confirmed_members,
             "remaining_confirmations": max(paid_members - confirmed_members, 0)
@@ -3366,6 +3703,11 @@ class MyGroupDetailView(APIView):
             "can_submit_proof": can_submit_proof,
             "can_activate": can_activate,
             "can_refund": can_refund,
+            "invite_links": GroupInviteLinkSerializer(
+                group.invite_links.filter(is_active=True),
+                many=True,
+                context={"request": request},
+            ).data,
             "credentials": build_owner_sharing_credentials(group),
             "can_rate_members": can_rate_group(group),
             "members": member_data,

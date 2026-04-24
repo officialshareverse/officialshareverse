@@ -97,6 +97,50 @@ export function SearchIcon(props) {
   );
 }
 
+export function LinkIcon(props) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="M10 14 8.5 15.5a3 3 0 1 1-4.2-4.2L7.2 8.4" />
+      <path d="m14 10 1.5-1.5a3 3 0 1 1 4.2 4.2l-2.9 2.9" />
+      <path d="m8.5 15.5 7-7" />
+    </svg>
+  );
+}
+
+export function ShareIcon(props) {
+  return (
+    <svg {...iconProps(props)}>
+      <circle cx="18" cy="5.5" r="2.5" />
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="18" cy="18.5" r="2.5" />
+      <path d="m8.3 11 7.3-4.1" />
+      <path d="m8.3 13 7.3 4.1" />
+    </svg>
+  );
+}
+
+export function QrCodeIcon(props) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="M4 4h6v6H4z" />
+      <path d="M14 4h6v6h-6z" />
+      <path d="M4 14h6v6H4z" />
+      <path d="M14 14h2v2h-2z" />
+      <path d="M18 14h2v6h-6v-2" />
+      <path d="M14 18h2" />
+    </svg>
+  );
+}
+
+export function WhatsAppIcon(props) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="M12 4a7.5 7.5 0 0 0-6.5 11.3L4.8 20l4.9-1.3A7.5 7.5 0 1 0 12 4Z" />
+      <path d="M9.7 9.1c.2-.4.4-.4.6-.4h.5c.2 0 .4 0 .6.4l.5 1.2c.1.3.1.4 0 .6l-.4.6c-.1.1-.2.3-.1.5.3.5.9 1.3 1.9 1.7.2.1.4 0 .5-.1l.6-.5c.2-.1.4-.1.6 0l1.2.6c.3.1.4.3.3.6l-.2.8c-.1.3-.3.5-.6.6-.4.1-.9.2-1.6 0-1.4-.4-2.7-1.6-3.6-3-.4-.6-.6-1.2-.5-1.6 0-.2.1-.4.2-.6l.5-.6c.1-.2.1-.3 0-.5l-.5-1.3Z" />
+    </svg>
+  );
+}
+
 export function SparkIcon(props) {
   return (
     <svg {...iconProps(props)}>

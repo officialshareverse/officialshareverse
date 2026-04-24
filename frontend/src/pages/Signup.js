@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 import { setAuthToken } from "../auth/session";
@@ -16,6 +16,7 @@ import {
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 60;
 const USERNAME_CHECK_DELAY_MS = 380;
+const REFERRAL_CODE_CHECK_DELAY_MS = 420;
 
 function getSignupError(errorData) {
   if (!errorData || typeof errorData !== "object") {
@@ -77,6 +78,23 @@ function validateSecurityStep(form, acceptedTerms) {
   }
   if (!acceptedTerms) {
     return "Please accept the Terms & Conditions before creating your account.";
+  }
+  return "";
+}
+
+function validateReferralStep(form, referralStatus) {
+  const referralCode = normalizeReferralCode(form.referral_code);
+  if (!referralCode) {
+    return "";
+  }
+  if (referralStatus.state === "checking" || referralStatus.state === "idle") {
+    return "We are still validating that referral code. Give it a second.";
+  }
+  if (referralStatus.state === "invalid") {
+    return "That referral code is not valid. Check it or clear the field to continue.";
+  }
+  if (referralStatus.state === "error") {
+    return "We could not validate that referral code right now. Try again or clear it to continue.";
   }
   return "";
 }
@@ -146,10 +164,81 @@ function getSignupButtonLabel(hasVerificationSession) {
   return hasVerificationSession ? "Verify code & create account" : "Send verification code";
 }
 
+function getSafeRedirectTarget(search, fallback = "/home") {
+  const redirectValue = new URLSearchParams(search || "").get("redirect") || "";
+  if (!redirectValue.startsWith("/") || redirectValue.startsWith("//")) {
+    return fallback;
+  }
+  return redirectValue;
+}
+
+function normalizeReferralCode(value) {
+  return String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+}
+
+function getReferralStatusCopy(status, referralCode) {
+  if (!referralCode) {
+    return {
+      className: "is-neutral",
+      title: "Referral rewards are optional",
+      body: "Paste a friend's code if they invited you. We will verify it automatically.",
+    };
+  }
+  if (status.state === "checking") {
+    return {
+      className: "is-checking",
+      title: "Checking referral code",
+      body: "Confirming the code before you finish signup.",
+    };
+  }
+  if (status.state === "valid") {
+    return {
+      className: "is-available",
+      title: "Referral code confirmed",
+      body: status.referrerUsername
+        ? `You are signing up with @${status.referrerUsername}'s referral code.`
+        : "This referral code is valid and ready to use.",
+    };
+  }
+  if (status.state === "invalid") {
+    return {
+      className: "is-taken",
+      title: "Referral code not found",
+      body: "Double-check the code or clear this field if nobody referred you.",
+    };
+  }
+  if (status.state === "error") {
+    return {
+      className: "is-neutral",
+      title: "Could not verify just yet",
+      body: "Retry in a moment or continue without a referral code.",
+    };
+  }
+  return {
+    className: "is-neutral",
+    title: "Referral rewards are optional",
+    body: "Paste a friend's code if they invited you. We will verify it automatically.",
+  };
+}
+
 export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
+  const location = useLocation();
   const navigate = useNavigate();
   const toast = useToast();
-  const [form, setForm] = useState({
+  const redirectTarget = useMemo(() => getSafeRedirectTarget(location.search), [location.search]);
+  const prefilledReferralCode = useMemo(
+    () => normalizeReferralCode(new URLSearchParams(location.search || "").get("ref") || ""),
+    [location.search]
+  );
+  const loginHref = useMemo(
+    () => (redirectTarget !== "/home" ? `/login?redirect=${encodeURIComponent(redirectTarget)}` : "/login"),
+    [redirectTarget]
+  );
+  const loginDestination = useMemo(
+    () => (redirectTarget !== "/home" ? `/login?redirect=${encodeURIComponent(redirectTarget)}` : "/login"),
+    [redirectTarget]
+  );
+  const [form, setForm] = useState(() => ({
     first_name: "",
     last_name: "",
     username: "",
@@ -157,7 +246,8 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
     phone: "",
     password: "",
     confirmPassword: "",
-  });
+    referral_code: prefilledReferralCode,
+  }));
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
@@ -170,10 +260,15 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState({ state: "idle", message: "" });
+  const [referralStatus, setReferralStatus] = useState(() => ({
+    state: prefilledReferralCode ? "checking" : "idle",
+    referrerUsername: "",
+  }));
   const [otpExpiryAt, setOtpExpiryAt] = useState(0);
   const [otpCooldownUntil, setOtpCooldownUntil] = useState(0);
   const [clockTick, setClockTick] = useState(Date.now());
   const usernameRequestSequenceRef = useRef(0);
+  const referralRequestSequenceRef = useRef(0);
   const otpInputsRef = useRef([]);
   const submitSignupRef = useRef(async () => false);
   const lastAutoSubmittedOtpRef = useRef("");
@@ -182,10 +277,22 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
   const passwordStrength = getPasswordStrength(form.password);
   const passwordChecklist = useMemo(() => getPasswordChecklist(form.password), [form.password]);
   const otpCode = otpDigits.join("");
+  const normalizedReferralCode = useMemo(
+    () => normalizeReferralCode(form.referral_code),
+    [form.referral_code]
+  );
   const remainingExpirySeconds = otpExpiryAt ? Math.max(0, Math.ceil((otpExpiryAt - clockTick) / 1000)) : 0;
   const remainingCooldownSeconds = otpCooldownUntil ? Math.max(0, Math.ceil((otpCooldownUntil - clockTick) / 1000)) : 0;
   const usernameStatusCopy = getUsernameStatusCopy(usernameStatus);
-  const submitDisabled = loading || otpLoading || (hasVerificationSession && otpDigits.some((digit) => !digit));
+  const referralStatusCopy = useMemo(
+    () => getReferralStatusCopy(referralStatus, normalizedReferralCode),
+    [normalizedReferralCode, referralStatus]
+  );
+  const submitDisabled =
+    loading ||
+    otpLoading ||
+    Boolean(normalizedReferralCode && referralStatus.state === "checking") ||
+    (hasVerificationSession && otpDigits.some((digit) => !digit));
 
   const resetOtpState = (nextNotice = "") => {
     setSignupSessionId("");
@@ -237,6 +344,45 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
   }, [form.username]);
 
   useEffect(() => {
+    if (!normalizedReferralCode) {
+      setReferralStatus({ state: "idle", referrerUsername: "" });
+      return undefined;
+    }
+
+    const requestId = referralRequestSequenceRef.current + 1;
+    referralRequestSequenceRef.current = requestId;
+    setReferralStatus({ state: "checking", referrerUsername: "" });
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const response = await API.post("referral/validate/", {
+          code: normalizedReferralCode,
+        });
+        if (referralRequestSequenceRef.current !== requestId) {
+          return;
+        }
+        if (response.data?.valid) {
+          setReferralStatus({
+            state: "valid",
+            referrerUsername: response.data?.referrer_username || "",
+          });
+          return;
+        }
+        setReferralStatus({ state: "invalid", referrerUsername: "" });
+      } catch (err) {
+        if (referralRequestSequenceRef.current !== requestId) {
+          return;
+        }
+        setReferralStatus({ state: "error", referrerUsername: "" });
+      }
+    }, REFERRAL_CODE_CHECK_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [normalizedReferralCode]);
+
+  useEffect(() => {
     if (!otpExpiryAt && !otpCooldownUntil) {
       return undefined;
     }
@@ -275,7 +421,10 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
   }, [hasVerificationSession, loading, otpCode, otpDigits, otpLoading]);
 
   const handleChange = (event) => {
-    const { name, value } = event.target;
+    const { name } = event.target;
+    const value = name === "referral_code"
+      ? normalizeReferralCode(event.target.value)
+      : event.target.value;
     setForm((current) => ({ ...current, [name]: value }));
     setError("");
 
@@ -300,6 +449,11 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
       setError(securityError);
       return;
     }
+    const referralError = validateReferralStep(form, referralStatus);
+    if (referralError) {
+      setError(referralError);
+      return;
+    }
 
     try {
       setOtpLoading(true);
@@ -310,6 +464,7 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
         username: form.username.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() || "",
+        referral_code: normalizedReferralCode || undefined,
       });
 
       const nextDeliveryStatus = response.data?.delivery_status || "generated";
@@ -363,10 +518,11 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
         password: form.password,
         signup_session_id: signupSessionId,
         otp: otpCode.trim(),
+        referral_code: normalizedReferralCode || undefined,
       });
 
       toast.success("Account created and verified successfully.", { title: "Welcome to ShareVerse" });
-      navigate("/login", {
+      navigate(loginDestination, {
         replace: true,
         state: {
           message: "Account created and verified successfully. Sign in to start splitting costs or buying together.",
@@ -401,6 +557,11 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
     const securityError = validateSecurityStep(form, acceptedTerms);
     if (securityError) {
       setError(securityError);
+      return;
+    }
+    const referralError = validateReferralStep(form, referralStatus);
+    if (referralError) {
+      setError(referralError);
       return;
     }
 
@@ -480,7 +641,7 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
         : "Signed in with your Google account.",
       { title: payload?.created ? "Welcome to ShareVerse" : "Welcome back" }
     );
-    navigate("/home", { replace: true });
+    navigate(redirectTarget, { replace: true });
   };
 
   return (
@@ -490,7 +651,7 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
       subtitle="Use Google or complete one short form, then enter the 6-digit code we send to your email."
       themeMode={themeMode}
       toggleTheme={toggleTheme}
-      footer={<SignupFooter />}
+      footer={<SignupFooter loginHref={loginHref} />}
       panelWidthClass="max-w-2xl"
       compact
     >
@@ -537,7 +698,12 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <IdentityStep form={form} handleChange={handleChange} usernameStatus={usernameStatus} usernameStatusCopy={usernameStatusCopy} />
-          <ContactStep form={form} handleChange={handleChange} />
+          <ContactStep
+            form={form}
+            handleChange={handleChange}
+            referralStatus={referralStatus}
+            referralStatusCopy={referralStatusCopy}
+          />
           <SecurityStep form={form} handleChange={handleChange} acceptedTerms={acceptedTerms} setAcceptedTerms={setAcceptedTerms} passwordStrength={passwordStrength} passwordChecklist={passwordChecklist} showPassword={showPassword} setShowPassword={setShowPassword} showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword} setError={setError} />
           <VerificationStep form={form} deliveryChannel={deliveryChannel} hasVerificationSession={hasVerificationSession} handleRequestOtp={handleRequestOtp} otpLoading={otpLoading} remainingCooldownSeconds={remainingCooldownSeconds} remainingExpirySeconds={remainingExpirySeconds} devOtp={devOtp} otpDigits={otpDigits} otpInputsRef={otpInputsRef} handleOtpDigitChange={handleOtpDigitChange} handleOtpKeyDown={handleOtpKeyDown} handleOtpPaste={handleOtpPaste} />
 
@@ -569,12 +735,12 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
   );
 }
 
-function SignupFooter() {
+function SignupFooter({ loginHref }) {
   return (
     <div className="space-y-2.5">
       <p className="text-[13px] text-slate-600 sm:text-sm">
         Already have an account?{" "}
-        <Link to="/login" className="font-semibold text-teal-800 hover:text-teal-700">
+        <Link to={loginHref} className="font-semibold text-teal-800 hover:text-teal-700">
           Sign in
         </Link>
       </p>
@@ -673,7 +839,7 @@ function IdentityStep({ form, handleChange, usernameStatus, usernameStatusCopy }
   );
 }
 
-function ContactStep({ form, handleChange }) {
+function ContactStep({ form, handleChange, referralStatus, referralStatusCopy }) {
   return (
     <section className="sv-signup-stage sv-animate-rise">
       <div className="sv-signup-stage-card">
@@ -709,6 +875,38 @@ function ContactStep({ form, handleChange }) {
               className="sv-input"
             />
           </FieldShell>
+        </div>
+
+        <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.72fr)]">
+          <FieldShell label="Referral code" helper="Optional. Use a valid code to unlock referral rewards later.">
+            <input
+              type="text"
+              name="referral_code"
+              autoComplete="off"
+              placeholder="SV-A3F8B2C1"
+              value={form.referral_code}
+              onChange={handleChange}
+              className="sv-input"
+            />
+          </FieldShell>
+
+          <div className={`sv-signup-availability ${referralStatusCopy.className}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-950">{referralStatusCopy.title}</p>
+                <p className="mt-1.5 text-sm leading-6 text-slate-600">{referralStatusCopy.body}</p>
+              </div>
+              {referralStatus.state === "checking" ? (
+                <LoadingSpinner className="h-4.5 w-4.5" />
+              ) : referralStatus.state === "valid" ? (
+                <CheckCircleIcon className="h-5 w-5 text-emerald-600" />
+              ) : referralStatus.state === "invalid" ? (
+                <ShieldIcon className="h-5 w-5 text-rose-600" />
+              ) : (
+                <SparkIcon className="h-5 w-5 text-slate-400" />
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -3,7 +3,7 @@ import hmac
 import uuid
 
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db import IntegrityError, models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -19,6 +19,27 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+def generate_unique_referral_code():
+    while True:
+        candidate = f"SV-{uuid.uuid4().hex[:8].upper()}"
+        if not ReferralCode.objects.filter(code=candidate).exists():
+            return candidate
+
+
+def ensure_referral_code_for_user(user):
+    existing_referral_code = getattr(user, "referral_code", None)
+    if existing_referral_code:
+        return existing_referral_code
+
+    while True:
+        try:
+            return ReferralCode.objects.create(user=user, code=generate_unique_referral_code())
+        except IntegrityError:
+            existing_referral_code = ReferralCode.objects.filter(user=user).first()
+            if existing_referral_code:
+                return existing_referral_code
 
 
 class Subscription(models.Model):
@@ -176,6 +197,70 @@ class GroupMember(models.Model):
 
     def __str__(self):
         return f"{self.user.username} in {self.group.id}"
+
+
+class GroupInviteLink(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="invite_links")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True)
+    is_active = models.BooleanField(default=True)
+    max_uses = models.PositiveIntegerField(null=True, blank=True)
+    use_count = models.PositiveIntegerField(default=0)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"Invite for group {self.group_id}"
+
+    def is_usable(self):
+        if not self.is_active:
+            return False
+        if self.expires_at and self.expires_at <= timezone.now():
+            return False
+        if self.max_uses is not None and self.use_count >= self.max_uses:
+            return False
+        return True
+
+
+class ReferralCode(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="referral_code")
+    code = models.CharField(max_length=20, unique=True, db_index=True)
+    total_referrals = models.PositiveIntegerField(default=0)
+    successful_referrals = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.user.username} referral code"
+
+
+class Referral(models.Model):
+    STATUS_CHOICES = (
+        ("signed_up", "Signed Up"),
+        ("joined_group", "Joined Group"),
+        ("rewarded", "Rewarded"),
+    )
+
+    referrer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="referrals_made")
+    referred_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="referred_by_entry")
+    referral_code = models.ForeignKey(ReferralCode, on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="signed_up")
+    reward_given = models.BooleanField(default=False)
+    reward_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("referrer", "referred_user")
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.referrer.username} referred {self.referred_user.username}"
 
 
 class Wallet(models.Model):
@@ -631,4 +716,5 @@ class SignupOTP(models.Model):
 @receiver(post_save, sender=User)
 def create_wallet(sender, instance, created, **kwargs):
     if created:
-        Wallet.objects.create(user=instance)
+        Wallet.objects.get_or_create(user=instance)
+        ensure_referral_code_for_user(instance)
