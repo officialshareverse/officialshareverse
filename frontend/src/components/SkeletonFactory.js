@@ -1,9 +1,5 @@
-export function Skeleton({ className = "" }) {
-  return <div className={`sv-skeleton ${className}`.trim()} aria-hidden="true" />;
-}
-
 export function SkeletonBlock({ className = "" }) {
-  return <Skeleton className={className} />;
+  return <div className={`sv-skeleton ${className}`.trim()} aria-hidden="true" />;
 }
 
 export function SkeletonCard({ className = "", children }) {
@@ -17,46 +13,46 @@ export function SkeletonTextGroup({
   bodyWidths = ["w-full", "w-5/6"],
 }) {
   return (
-    <div className={`space-y-3 ${className}`.trim()}>
-      <Skeleton className={`h-3 ${eyebrowWidth}`.trim()} />
-      <Skeleton className={`h-7 ${titleWidth}`.trim()} />
+    <div className={`space-y-4 ${className}`.trim()}>
+      <SkeletonBlock className={`h-4 ${eyebrowWidth}`.trim()} />
+      <SkeletonBlock className={`h-10 rounded-[18px] ${titleWidth}`.trim()} />
       {bodyWidths.map((width, index) => (
-        <Skeleton key={`${width}-${index}`} className={`h-3 ${width}`.trim()} />
+        <SkeletonBlock key={`${width}-${index}`} className={`h-4 ${width}`.trim()} />
       ))}
     </div>
   );
 }
 
-export function SkeletonHero({ className = "h-40 rounded-xl" }) {
-  return <Skeleton className={className} />;
-}
-
-export function SkeletonList({
-  count = 4,
-  className = "space-y-3",
-  itemClassName = "h-20 rounded-xl",
-}) {
-  return (
-    <div className={className}>
-      {Array.from({ length: count }).map((_, index) => (
-        <Skeleton key={index} className={itemClassName} />
-      ))}
-    </div>
-  );
+export function SkeletonHero({ className = "h-64 rounded-[24px] sm:h-80" }) {
+  return <SkeletonBlock className={className} />;
 }
 
 export function SkeletonMetricGrid({
   count = 4,
-  className = "grid gap-4 sm:grid-cols-2 xl:grid-cols-4",
-  cardClassName = "space-y-3",
+  className = "grid gap-4 sm:grid-cols-4",
+  cardClassName = "",
+}) {
+  return (
+    <section className={className}>
+      {Array.from({ length: count }).map((_, index) => (
+        <SkeletonCard key={index} className={`space-y-4 ${cardClassName}`.trim()}>
+          <SkeletonBlock className="h-3 w-24" />
+          <SkeletonBlock className="h-8 w-20 rounded-[16px]" />
+        </SkeletonCard>
+      ))}
+    </section>
+  );
+}
+
+export function SkeletonList({
+  count = 4,
+  className = "space-y-4",
+  itemClassName = "h-24 rounded-[22px]",
 }) {
   return (
     <div className={className}>
       {Array.from({ length: count }).map((_, index) => (
-        <SkeletonCard key={index} className={cardClassName}>
-          <Skeleton className="h-3 w-24" />
-          <Skeleton className="h-8 w-20" />
-        </SkeletonCard>
+        <SkeletonBlock key={index} className={itemClassName} />
       ))}
     </div>
   );

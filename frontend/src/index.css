@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -6,29 +6,29 @@
 
 @layer base {
   :root {
-    --sv-bg: #f8fafc;
-    --sv-bg-soft: #f8fafc;
-    --sv-paper: rgba(255, 255, 255, 0.96);
+    --sv-bg: #f5f1e8;
+    --sv-bg-soft: #edf3f5;
+    --sv-paper: rgba(255, 255, 255, 0.82);
     --sv-paper-solid: #ffffff;
-    --sv-ink: #0f172a;
+    --sv-ink: #111827;
     --sv-muted: #64748b;
-    --sv-accent: #0d9488;
-    --sv-accent-secondary: #0d9488;
-    --sv-accent-soft: #ccfbf1;
-    --sv-gold: #f59e0b;
-    --sv-border: rgba(148, 163, 184, 0.25);
-    --sv-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-    --sv-bg-dark: #0f172a;
-    --sv-paper-dark: rgba(15, 23, 42, 0.96);
+    --sv-accent: #0f766e;
+    --sv-accent-secondary: #7c3aed;
+    --sv-accent-soft: #d8f3ee;
+    --sv-gold: #f6c453;
+    --sv-border: rgba(148, 163, 184, 0.2);
+    --sv-shadow: 0 26px 70px rgba(15, 23, 42, 0.09);
+    --sv-bg-dark: #0c0f14;
+    --sv-paper-dark: rgba(22, 27, 38, 0.82);
     --sv-ink-dark: #e2e8f0;
     --sv-muted-dark: #94a3b8;
-    --sv-accent-dark: #14b8a6;
+    --sv-accent-dark: #2dd4bf;
     --sv-border-dark: rgba(148, 163, 184, 0.12);
-    --sv-primary-gradient: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
-    --sv-secondary-gradient: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
-    --sv-gold-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-    --sv-success-gradient: linear-gradient(135deg, #059669 0%, #10b981 100%);
-    --sv-danger-gradient: linear-gradient(135deg, #e11d48 0%, #fb7185 100%);
+    --sv-primary-gradient: linear-gradient(135deg, #083c3a 0%, #0f766e 52%, #2dd4bf 100%);
+    --sv-secondary-gradient: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 48%, #a78bfa 100%);
+    --sv-gold-gradient: linear-gradient(120deg, #f59e0b 0%, #fde68a 45%, #f59e0b 100%);
+    --sv-success-gradient: linear-gradient(135deg, #059669 0%, #34d399 100%);
+    --sv-danger-gradient: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%);
     --sv-body-radial-a: rgba(15, 118, 110, 0.14);
     --sv-body-radial-b: rgba(124, 58, 237, 0.11);
     --sv-page-radial-a: rgba(15, 118, 110, 0.1);
@@ -38,14 +38,11 @@
     --sv-elevated-surface: rgba(255, 255, 255, 0.92);
     --sv-input-surface: rgba(255, 255, 255, 0.9);
     --sv-hero-grid-line: rgba(15, 23, 42, 0.035);
-    --sv-display-font: "Manrope", "Segoe UI", sans-serif;
-    --sv-radius-sm: 8px;
-    --sv-radius-md: 12px;
-    --sv-radius-lg: 16px;
-    --sv-radius-card: 12px;
-    --sv-radius-card-md: 16px;
-    --sv-page-px: 1rem;
-    --sv-page-py: 1.5rem;
+    --sv-display-font: "Outfit", "Manrope", "Segoe UI", sans-serif;
+    --sv-radius-card: 20px;
+    --sv-radius-card-md: 26px;
+    --sv-page-px: 0.75rem;
+    --sv-page-py: 0.75rem;
   }
 
   body.sv-dark {
@@ -72,17 +69,27 @@
     color-scheme: dark;
   }
 
+  @media (min-width: 640px) {
+    :root {
+      --sv-radius-card: 24px;
+      --sv-radius-card-md: 30px;
+      --sv-page-px: 1rem;
+      --sv-page-py: 1.5rem;
+    }
+  }
+
   @media (min-width: 768px) {
     :root {
       --sv-page-px: 1.5rem;
-      --sv-page-py: 2rem;
     }
   }
 
   @media (max-width: 767px) {
     :root {
-      --sv-page-px: 1rem;
-      --sv-page-py: 1.5rem;
+      --sv-radius-card: 18px;
+      --sv-radius-card-md: 22px;
+      --sv-page-px: 0.625rem;
+      --sv-page-py: 0.625rem;
     }
   }
 
@@ -232,7 +239,10 @@
   body {
     margin: 0;
     min-height: 100vh;
-    background: var(--sv-bg);
+    background:
+      radial-gradient(circle at top left, var(--sv-body-radial-a), transparent 30%),
+      radial-gradient(circle at top right, var(--sv-body-radial-b), transparent 24%),
+      linear-gradient(180deg, var(--sv-bg) 0%, var(--sv-bg-soft) 100%);
     color: var(--sv-ink);
     font-family: "Manrope", "Segoe UI", sans-serif;
     text-rendering: optimizeLegibility;
@@ -243,7 +253,10 @@
   }
 
   body.sv-auth-shell-active {
-    background: var(--sv-bg);
+    background:
+      radial-gradient(circle at top left, var(--sv-page-radial-a), transparent 26%),
+      radial-gradient(circle at top right, var(--sv-body-radial-b), transparent 20%),
+      linear-gradient(180deg, color-mix(in srgb, var(--sv-bg) 92%, transparent) 0%, color-mix(in srgb, var(--sv-bg-soft) 96%, transparent) 100%);
   }
 
   * {

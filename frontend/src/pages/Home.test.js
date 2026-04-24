@@ -1,6 +1,9 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { __navigateMock, __setMockLocation } from "react-router-dom";
+import {
+  __navigateMock,
+  __setMockLocation,
+} from "react-router-dom";
 
 import Home from "./Home";
 
@@ -13,6 +16,16 @@ jest.mock("../api/axios", () => ({
   default: {
     get: (...args) => mockApi.get(...args),
   },
+}));
+
+jest.mock("../components/BrandMark", () => ({
+  __esModule: true,
+  default: () => <div>Brand mark</div>,
+}));
+
+jest.mock("../hooks/useIsMobile", () => ({
+  __esModule: true,
+  default: () => false,
 }));
 
 function installHomeDataMocks() {
@@ -41,6 +54,8 @@ function installHomeDataMocks() {
       return Promise.resolve({
         data: {
           first_name: "Chetak",
+          profile_completion: 0,
+          total_spent: 0,
         },
       });
     }
@@ -53,20 +68,35 @@ beforeEach(() => {
   mockApi.get.mockReset();
   __navigateMock.mockReset();
   __setMockLocation({ pathname: "/home", state: null });
+  window.localStorage.clear();
 });
 
-test("renders a simple dashboard and opens create flow from the primary action", async () => {
+test("shows the first-action activation modal and launches buy-together setup with a template", async () => {
   installHomeDataMocks();
 
   render(<Home />);
 
-  expect(await screen.findByText(/Good .*Chetak/i)).toBeInTheDocument();
-  expect(screen.getByText(/wallet balance/i)).toBeInTheDocument();
-  expect(screen.getByText(/create your first split/i)).toBeInTheDocument();
+  expect(
+    await screen.findByRole("heading", { name: /what would you like to do first/i })
+  ).toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole("button", { name: /create split/i }));
+  await userEvent.click(
+    screen.getByRole("button", { name: /start a buy-together/i })
+  );
+  await userEvent.click(
+    screen.getByRole("button", { name: /learning membership/i })
+  );
+  await userEvent.click(
+    screen.getByRole("button", { name: /start buy-together setup/i })
+  );
 
   await waitFor(() => {
-    expect(__navigateMock).toHaveBeenCalledWith("/create");
+    expect(__navigateMock).toHaveBeenCalledWith("/create", {
+      state: {
+        activationEntry: "home-activation",
+        activationPath: "group_buy",
+        activationTemplateId: "learning-membership-buy",
+      },
+    });
   });
 });

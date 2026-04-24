@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 import { useToast } from "../components/ToastProvider";
@@ -12,7 +12,7 @@ import {
   SparkIcon,
   WalletIcon,
 } from "../components/UiIcons";
-import useIsMobile from "../hooks/useIsMobile";
+import { getActivationPrefillFromState } from "./activationOptions";
 
 const WIZARD_STEPS = [
   { id: "mode", label: "Choose mode", helper: "Pick the flow that matches your split" },
@@ -78,13 +78,13 @@ function formatLongDate(value) {
   });
 }
 
-function buildInitialForm() {
+function buildInitialForm(prefill = null) {
   const startDate = formatDateInput(new Date());
   return {
-    subscription_name: "",
-    mode: "sharing",
-    total_slots: "2",
-    price_per_slot: "",
+    subscription_name: prefill?.subscription_name || "",
+    mode: prefill?.mode || "sharing",
+    total_slots: prefill?.total_slots || "2",
+    price_per_slot: prefill?.price_per_slot || "",
     start_date: startDate,
     end_date: addDays(startDate, 29),
   };
@@ -306,17 +306,54 @@ function WizardTip({ title, body }) {
 }
 
 export default function CreateGroup() {
+  const location = useLocation();
   const navigate = useNavigate();
-  const [form, setForm] = useState(buildInitialForm);
+  const activationPrefill = useMemo(
+    () => getActivationPrefillFromState(location.state),
+    [location.state]
+  );
+  const initialForm = useMemo(
+    () =>
+      buildInitialForm(
+        activationPrefill
+          ? {
+              ...activationPrefill.formDefaults,
+              mode: activationPrefill.mode,
+            }
+          : null
+      ),
+    [activationPrefill]
+  );
+  const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [showPreview, setShowPreview] = useState(true);
-  const isMobile = useIsMobile();
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
 
   const isSharing = form.mode === "sharing";
   const modeConfig = getModeConfig(form.mode);
   const toast = useToast();
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
 
   const durationDays = useMemo(() => {
     if (!form.start_date || !form.end_date || form.end_date < form.start_date) {
@@ -337,7 +374,9 @@ export default function CreateGroup() {
   const isSinglePageMobile = isMobile;
   const formHeadTitle = isSinglePageMobile ? "Create your split" : currentStepConfig.label;
   const formHeadHelper = isSinglePageMobile
-    ? "Everything is on one page here. Choose the mode, fill the details, set the dates, and publish when the basics are ready."
+    ? activationPrefill?.template
+      ? `We pre-filled this flow with a ${activationPrefill.template.label.toLowerCase()} starting point. Update anything you want before publishing.`
+      : "Everything is on one page here. Choose the mode, fill the details, set the dates, and publish when the basics are ready."
     : currentStepConfig.helper;
 
   const handleChange = (event) => {
@@ -386,7 +425,7 @@ export default function CreateGroup() {
   };
 
   const resetWizard = () => {
-    setForm(buildInitialForm());
+    setForm(initialForm);
     setErrors({});
     setCurrentStep(0);
     setShowPreview(true);
@@ -533,6 +572,25 @@ export default function CreateGroup() {
                 Reset form
               </button>
             </div>
+
+            {activationPrefill?.template ? (
+              <div className="mt-5 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">
+                      Starting from {activationPrefill.template.label.toLowerCase()}
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">
+                      We filled in a safer default name, slot count, and member pricing so you
+                      can move faster. Review every detail before publishing the split.
+                    </p>
+                  </div>
+                  <span className="sv-chip">
+                    {activationPrefill.mode === "group_buy" ? "Buy-together template" : "Sharing template"}
+                  </span>
+                </div>
+              </div>
+            ) : null}
 
             <div className="sv-create-mobile-summary mt-5">
               <div className="sv-create-mobile-summary-item">

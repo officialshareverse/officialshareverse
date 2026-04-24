@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { refreshAccessToken } from "./api/axios";
@@ -10,6 +10,7 @@ import {
   SkeletonCard,
   SkeletonTextGroup,
 } from "./components/SkeletonFactory";
+import SpotlightSearch from "./components/SpotlightSearch";
 import { ToastProvider } from "./components/ToastProvider";
 import AboutPage from "./pages/AboutPage";
 import ChatsInbox from "./pages/ChatsInbox";
@@ -33,9 +34,9 @@ import Wallet from "./pages/Wallet";
 
 const THEME_STORAGE_KEY = "sv-theme-preference";
 
-function isAuthenticated() {
+const isAuthenticated = () => {
   return getAuthToken() !== null;
-}
+};
 
 function getInitialTheme() {
   if (typeof window === "undefined") {
@@ -50,13 +51,13 @@ function getInitialTheme() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-function PrivateRoute({ children }) {
+const PrivateRoute = ({ children }) => {
   return isAuthenticated() ? children : <Navigate to="/" />;
-}
+};
 
-function PublicRoute({ children }) {
+const PublicRoute = ({ children }) => {
   return !isAuthenticated() ? children : <Navigate to="/home" />;
-}
+};
 
 function App() {
   const [isAuth, setIsAuth] = useState(false);
@@ -66,7 +67,7 @@ function App() {
   useEffect(() => {
     let isMounted = true;
 
-    async function bootstrapAuth() {
+    const bootstrapAuth = async () => {
       const token = getAuthToken();
       if (token) {
         if (isMounted) {
@@ -78,8 +79,12 @@ function App() {
 
       try {
         const nextAccessToken = await refreshAccessToken();
-        if (isMounted) {
-          setIsAuth(Boolean(nextAccessToken));
+        if (nextAccessToken) {
+          if (isMounted) {
+            setIsAuth(true);
+          }
+        } else if (isMounted) {
+          setIsAuth(false);
         }
       } catch {
         if (isMounted) {
@@ -90,7 +95,7 @@ function App() {
           setIsBootstrapping(false);
         }
       }
-    }
+    };
 
     void bootstrapAuth();
 
@@ -101,6 +106,7 @@ function App() {
 
   useEffect(() => {
     document.body.classList.toggle("sv-auth-shell-active", isAuth);
+
     return () => {
       document.body.classList.remove("sv-auth-shell-active");
     };
@@ -117,6 +123,10 @@ function App() {
     };
   }, [themeMode]);
 
+  const toggleTheme = () => {
+    setThemeMode((current) => (current === "dark" ? "light" : "dark"));
+  };
+
   return (
     <ErrorBoundary>
       <BrowserRouter>
@@ -128,9 +138,7 @@ function App() {
               isAuth={isAuth}
               setIsAuth={setIsAuth}
               themeMode={themeMode}
-              toggleTheme={() =>
-                setThemeMode((current) => (current === "dark" ? "light" : "dark"))
-              }
+              toggleTheme={toggleTheme}
             />
           )}
         </ToastProvider>
@@ -141,25 +149,65 @@ function App() {
 
 function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
   const location = useLocation();
+  const [isRouteLoading, setIsRouteLoading] = useState(true);
+  const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
   const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
+  const openSpotlight = useCallback(() => setIsSpotlightOpen(true), []);
+  const closeSpotlight = useCallback(() => setIsSpotlightOpen(false), []);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    setIsRouteLoading(true);
+    const timeoutId = window.setTimeout(() => {
+      setIsRouteLoading(false);
+    }, 380);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [location.pathname]);
 
   useEffect(() => {
-    function handleScroll() {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.documentElement.style.setProperty("--sv-parallax-offset", "0px");
+  }, [location.pathname]);
+
+  useEffect(() => {
+    let animationFrameId = 0;
+
+    const syncScrollUi = () => {
       const scrollY = window.scrollY || window.pageYOffset || 0;
       setIsScrollTopVisible(scrollY > 360);
-    }
+      document.documentElement.style.setProperty(
+        "--sv-parallax-offset",
+        `${Math.min(scrollY * 0.08, 42)}px`
+      );
+      animationFrameId = 0;
+    };
 
-    handleScroll();
+    const handleScroll = () => {
+      if (animationFrameId) {
+        return;
+      }
+      animationFrameId = window.requestAnimationFrame(syncScrollUi);
+    };
+
+    syncScrollUi();
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, []);
 
   return (
     <>
+      <div className={`sv-route-loading ${isRouteLoading ? "is-active" : ""}`} aria-hidden="true">
+        <span className="sv-route-loading-bar" />
+      </div>
+
       {isAuth ? (
         <Navbar
           setIsAuth={setIsAuth}
@@ -178,6 +226,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PublicRoute>
             }
           />
+
           <Route
             path="/login"
             element={
@@ -186,6 +235,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PublicRoute>
             }
           />
+
           <Route
             path="/signup"
             element={
@@ -194,6 +244,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PublicRoute>
             }
           />
+
           <Route path="/about" element={<AboutPage />} />
           <Route path="/faq" element={<FaqPage />} />
           <Route path="/terms" element={<TermsPage />} />
@@ -201,6 +252,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
           <Route path="/refunds" element={<RefundPolicyPage />} />
           <Route path="/shipping" element={<ShippingPolicyPage />} />
           <Route path="/support" element={<SupportPage />} />
+
           <Route
             path="/home"
             element={
@@ -209,6 +261,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PrivateRoute>
             }
           />
+
           <Route
             path="/dashboard"
             element={
@@ -217,6 +270,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PrivateRoute>
             }
           />
+
           <Route
             path="/groups"
             element={
@@ -225,6 +279,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PrivateRoute>
             }
           />
+
           <Route
             path="/notifications"
             element={
@@ -233,6 +288,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PrivateRoute>
             }
           />
+
           <Route
             path="/chats"
             element={
@@ -241,6 +297,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PrivateRoute>
             }
           />
+
           <Route
             path="/create"
             element={
@@ -249,6 +306,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PrivateRoute>
             }
           />
+
           <Route
             path="/my-shared"
             element={
@@ -257,6 +315,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PrivateRoute>
             }
           />
+
           <Route
             path="/profile"
             element={
@@ -265,6 +324,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PrivateRoute>
             }
           />
+
           <Route
             path="/wallet"
             element={
@@ -273,6 +333,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PrivateRoute>
             }
           />
+
           <Route
             path="/groups/:groupId/chat"
             element={
@@ -281,9 +342,19 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               </PrivateRoute>
             }
           />
+
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
+
+      <SpotlightSearch
+        isAuth={isAuth}
+        isOpen={isSpotlightOpen}
+        onOpen={openSpotlight}
+        onClose={closeSpotlight}
+        themeMode={themeMode}
+        toggleTheme={toggleTheme}
+      />
 
       <ScrollTopButton
         isVisible={isScrollTopVisible}
@@ -296,16 +367,18 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
 function AuthBootstrapScreen() {
   return (
     <div className="sv-page">
-      <div className="mx-auto max-w-xl space-y-4 py-8">
-        <SkeletonBlock className="h-10 w-32 rounded-xl" />
-        <SkeletonCard>
-          <SkeletonTextGroup eyebrowWidth="w-20" titleWidth="w-2/3" />
-        </SkeletonCard>
-        <SkeletonCard className="space-y-3">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <SkeletonBlock key={index} className="h-12 w-full rounded-xl" />
-          ))}
-        </SkeletonCard>
+      <div className="sv-auth-bootstrap">
+        <div className="sv-auth-bootstrap-shell">
+          <SkeletonBlock className="h-10 w-40 rounded-full" />
+          <SkeletonCard>
+            <SkeletonTextGroup eyebrowWidth="w-24" titleWidth="w-3/4" />
+          </SkeletonCard>
+          <SkeletonCard className="space-y-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <SkeletonBlock key={index} className="h-12 w-full rounded-[18px]" />
+            ))}
+          </SkeletonCard>
+        </div>
       </div>
     </div>
   );

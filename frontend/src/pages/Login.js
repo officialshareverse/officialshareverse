@@ -4,8 +4,14 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { setAuthToken } from "../auth/session";
 import AuthShell from "../components/AuthShell";
+import BrandMark from "../components/BrandMark";
 import GoogleAuthButton from "../components/GoogleAuthButton";
-import { buildLastLoginNote, createResetForm, extractApiError } from "./loginUtils";
+import { ClockIcon, ShieldIcon, SparkIcon } from "../components/UiIcons";
+import {
+  buildLastLoginNote,
+  createResetForm,
+  extractApiError,
+} from "./loginUtils";
 
 const REMEMBER_KEY = "sv-login-remembered-username";
 const REMEMBER_PREF_KEY = "sv-login-remember-pref";
@@ -27,6 +33,7 @@ function readStoredJson(key) {
     return null;
   }
 }
+
 
 export default function Login({ setIsAuth, themeMode, toggleTheme }) {
   const navigate = useNavigate();
@@ -71,31 +78,41 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
     return buildLastLoginNote(lastLoginMeta, form.username.trim());
   }, [form.username, lastLoginMeta]);
 
-  function handleChange(event) {
+  const handleChange = (event) => {
     setForm((current) => ({
       ...current,
       [event.target.name]: event.target.value,
     }));
     setError("");
-  }
+  };
 
-  function handleResetChange(event) {
+  const handleResetChange = (event) => {
     setResetForm((current) => ({
       ...current,
       [event.target.name]: event.target.value,
     }));
     setResetError("");
-  }
+  };
 
-  function resetForgotPasswordState() {
+  const closeResetModal = () => {
+    setShowReset(false);
+    setResetError("");
     setResetStep("request");
     setResetSessionId("");
     setDevOtp("");
-    setResetError("");
     setResetForm(createResetForm(form.username.trim() || rememberedUsername));
-  }
+  };
 
-  async function requestResetOtp() {
+  const openResetModal = () => {
+    setShowReset(true);
+    setResetError("");
+    setResetForm((current) => ({
+      ...createResetForm(form.username.trim() || rememberedUsername),
+      username: current.username || form.username.trim() || rememberedUsername,
+    }));
+  };
+
+  const requestResetOtp = async () => {
     const username = resetForm.username.trim();
     const phone = resetForm.phone.trim();
     const email = resetForm.email.trim();
@@ -118,19 +135,26 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
         phone,
         email,
       });
+      const nextSessionId = response.data?.reset_session_id || "";
+      const nextDevOtp = response.data?.dev_otp || "";
 
-      setResetSessionId(response.data?.reset_session_id || "");
-      setDevOtp(response.data?.dev_otp || "");
+      setResetSessionId(nextSessionId);
+      setDevOtp(nextDevOtp);
       setResetStep("confirm");
-    } catch (requestError) {
-      console.error(requestError);
-      setResetError(extractApiError(requestError.response?.data, "We could not send OTP right now."));
+      setNotice(
+        nextDevOtp
+          ? `OTP sent. Development OTP: ${nextDevOtp}`
+          : "OTP sent. Enter the code to reset your password."
+      );
+    } catch (err) {
+      console.error(err);
+      setResetError(extractApiError(err.response?.data, "We could not send OTP right now."));
     } finally {
       setResetLoading(false);
     }
-  }
+  };
 
-  async function confirmForgotPassword() {
+  const confirmForgotPassword = async () => {
     const username = resetForm.username.trim();
     const otp = resetForm.otp.trim();
     const newPassword = resetForm.new_password;
@@ -167,26 +191,25 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
         new_password: newPassword,
       });
       setNotice("Password updated successfully. You can sign in with your new password.");
-      setShowReset(false);
-      resetForgotPasswordState();
-    } catch (confirmError) {
-      console.error(confirmError);
-      setResetError(extractApiError(confirmError.response?.data, "We could not reset your password right now."));
+      closeResetModal();
+    } catch (err) {
+      console.error(err);
+      setResetError(extractApiError(err.response?.data, "We could not reset your password right now."));
     } finally {
       setResetLoading(false);
     }
-  }
+  };
 
-  async function handleForgotPassword(event) {
+  const handleForgotPassword = async (event) => {
     event.preventDefault();
     if (resetStep === "request") {
       await requestResetOtp();
       return;
     }
     await confirmForgotPassword();
-  }
+  };
 
-  async function handleLogin(event) {
+  const handleLogin = async (event) => {
     event.preventDefault();
 
     if (!form.username.trim() || !form.password) {
@@ -205,12 +228,12 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
       });
 
       completeSignIn(response.data, username);
-    } catch (loginError) {
-      console.error(loginError);
+    } catch (err) {
+      console.error(err);
       setError(
         extractApiError(
-          loginError.response?.data,
-          loginError.response?.status === 401
+          err.response?.data,
+          err.response?.status === 401
             ? "That username and password combination does not match our records."
             : "We could not sign you in right now. Please try again."
         )
@@ -218,9 +241,9 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  function completeSignIn(payload, fallbackUsername = "") {
+  const completeSignIn = (payload, fallbackUsername = "") => {
     const accessToken = payload?.access || "";
     const resolvedUsername = (payload?.user?.username || fallbackUsername || "").trim();
 
@@ -249,33 +272,82 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
     setLastLoginMeta(nextLastLogin);
     setIsAuth(true);
     navigate("/home", { replace: true });
-  }
+  };
 
-  function handleGoogleSuccess(payload) {
+  const handleGoogleSuccess = (payload) => {
     setError("");
     completeSignIn(payload, payload?.user?.username || "");
-  }
+  };
 
   return (
     <AuthShell
       eyebrow="Welcome back"
-      title="Sign in"
-      subtitle="Access your wallet, splits, chats, and account activity."
+      title="Return to your wallet, groups, and shared-cost plans."
+      subtitle="Log in to manage your group activity, join active digital plans, or complete a buy-together group."
       themeMode={themeMode}
       toggleTheme={toggleTheme}
       footer={
-        <p className="text-sm text-slate-600">
-          New to ShareVerse?{" "}
-          <Link to="/signup" className="font-semibold text-teal-700">
-            Create an account
-          </Link>
-        </p>
+        <div className="space-y-2.5">
+          <p className="text-[13px] text-slate-600 sm:text-sm">
+            New to ShareVerse?{" "}
+            <Link to="/signup" className="font-semibold text-teal-800 hover:text-teal-700">
+              Create an account
+            </Link>
+          </p>
+          <p className="text-[11px] leading-5 text-slate-500 sm:text-xs sm:leading-6">
+            Need the basics before continuing? Review the{" "}
+            <Link to="/terms" className="font-semibold text-teal-800 hover:text-teal-700">
+              Terms
+            </Link>
+            ,{" "}
+            <Link to="/privacy" className="font-semibold text-teal-800 hover:text-teal-700">
+              Privacy Policy
+            </Link>
+            ,{" "}
+            <Link to="/shipping" className="font-semibold text-teal-800 hover:text-teal-700">
+              Shipping Policy
+            </Link>
+            , and{" "}
+            <Link to="/support" className="font-semibold text-teal-800 hover:text-teal-700">
+              Support
+            </Link>
+            .
+          </p>
+        </div>
       }
     >
-      <div className="space-y-5">
+      <div className="sv-login-shell">
+        <div className="sv-login-brand-row">
+          <BrandMark glow sizeClass="h-11 w-11" roundedClass="rounded-[16px]" />
+          <div>
+            <p className="sv-eyebrow">Login</p>
+            <h2 className="mt-2 text-2xl font-bold leading-tight text-slate-950 sm:text-3xl md:text-[2.35rem]">
+              Sign in to ShareVerse
+            </h2>
+          </div>
+        </div>
+
+        <p className="mt-4 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
+          Use the username you created at signup or the email linked to your account. Your wallet, joined groups, and member activity will be waiting for you.
+        </p>
+
         {lastLoginNote ? (
-          <p className="text-xs text-slate-500">{lastLoginNote}</p>
+          <div className="sv-login-activity-chip">
+            <ClockIcon className="h-4 w-4" />
+            {lastLoginNote}
+          </div>
         ) : null}
+
+        <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600">
+          <span className="sv-icon-chip">
+            <ShieldIcon className="h-4 w-4" />
+            Secure login
+          </span>
+          <span className="sv-icon-chip">
+            <SparkIcon className="h-4 w-4" />
+            Wallet and splits in one place
+          </span>
+        </div>
 
         <GoogleAuthButton
           mode="signin"
@@ -284,6 +356,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
           title="Continue with Google"
           description="Use your verified Google email to sign in instantly or match an existing ShareVerse account."
           note="We only use your verified Google email to sign you in safely."
+          className="mt-5"
           onSuccess={handleGoogleSuccess}
           onError={setError}
         />
@@ -293,20 +366,19 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
         </div>
 
         {notice ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-[13px] text-emerald-800 sm:mt-5 sm:px-4 sm:py-3 sm:text-sm">
             {notice}
           </div>
         ) : null}
 
         {error ? (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-[13px] text-rose-800 sm:mt-5 sm:px-4 sm:py-3 sm:text-sm">
             {error}
           </div>
         ) : null}
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700">Username or email</label>
+        <form onSubmit={handleLogin} className="mt-5 space-y-4 sm:mt-6">
+          <FieldShell label="Username or email" helper="Enter the username you created at signup or the email linked to your account.">
             <input
               type="text"
               name="username"
@@ -316,10 +388,9 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
               onChange={handleChange}
               className="sv-input"
             />
-          </div>
+          </FieldShell>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700">Password</label>
+          <FieldShell label="Password" helper="Use the password you set when creating your account.">
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -328,20 +399,20 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
                 placeholder="Enter your password"
                 value={form.password}
                 onChange={handleChange}
-                className="sv-input pr-16"
+                className="sv-input pr-16 sm:pr-20"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((current) => !current)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500"
+                className="sv-login-password-toggle"
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
-          </div>
+          </FieldShell>
 
-          <div className="flex items-center justify-between gap-3">
-            <label className="flex items-center gap-2 text-sm text-slate-600">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label className="sv-login-check">
               <input
                 type="checkbox"
                 checked={rememberMe}
@@ -352,163 +423,203 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
 
             <button
               type="button"
-              onClick={() => {
-                setShowReset((current) => !current);
-                setResetError("");
-                setResetForm((current) => ({
-                  ...createResetForm(form.username.trim() || rememberedUsername),
-                  username: current.username || form.username.trim() || rememberedUsername,
-                }));
-              }}
-              className="text-sm font-semibold text-teal-700"
+              onClick={openResetModal}
+              className="text-[13px] font-semibold text-teal-800 hover:text-teal-700 sm:text-sm"
             >
               Forgot password?
             </button>
           </div>
 
-          <button type="submit" disabled={loading} className="sv-btn-primary w-full">
-            {loading ? "Signing you in..." : "Sign in"}
+          <button type="submit" disabled={loading} className="sv-login-submit">
+            {loading ? <span className="sv-login-submit-bar" aria-hidden="true" /> : null}
+            <span className="relative z-[1]">{loading ? "Signing you in..." : "Sign in"}</span>
           </button>
         </form>
+      </div>
 
-        {showReset ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-950">Reset password</h2>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  {resetStep === "request"
-                    ? "Send an OTP using your username and either phone or email."
-                    : "Enter the OTP and set your new password."}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowReset(false);
-                  resetForgotPasswordState();
-                }}
-                className="text-sm font-medium text-slate-500"
-              >
-                Close
-              </button>
-            </div>
+      {showReset ? (
+        <ResetPasswordModal
+          resetStep={resetStep}
+          resetLoading={resetLoading}
+          resetError={resetError}
+          devOtp={devOtp}
+          resetForm={resetForm}
+          onChange={handleResetChange}
+          onSubmit={handleForgotPassword}
+          onClose={closeResetModal}
+          onRequestNewOtp={() => {
+            setResetStep("request");
+            setResetSessionId("");
+            setDevOtp("");
+            setResetForm((current) => ({
+              ...current,
+              otp: "",
+              new_password: "",
+              confirm_password: "",
+            }));
+          }}
+        />
+      ) : null}
+    </AuthShell>
+  );
+}
 
-            {resetError ? (
-              <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-                {resetError}
-              </div>
-            ) : null}
+function FieldShell({ label, helper, children }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[13px] font-semibold text-slate-800 sm:mb-2 sm:text-sm">{label}</span>
+      {children}
+      <span className="mt-1.5 block text-[11px] text-slate-500 sm:mt-2 sm:text-xs">{helper}</span>
+    </label>
+  );
+}
 
-            {devOtp && resetStep === "confirm" ? (
-              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                Development OTP: <strong>{devOtp}</strong>
-              </div>
-            ) : null}
+function ResetPasswordModal({
+  resetStep,
+  resetLoading,
+  resetError,
+  devOtp,
+  resetForm,
+  onChange,
+  onSubmit,
+  onClose,
+  onRequestNewOtp,
+}) {
+  return (
+    <div className="sv-modal-backdrop">
+      <div className="sv-login-reset-modal">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="sv-eyebrow">Password reset</p>
+            <h3 className="mt-2 text-xl font-bold text-slate-950 sm:text-2xl">
+              {resetStep === "request" ? "Request an OTP" : "Confirm OTP and new password"}
+            </h3>
+          </div>
+          <button type="button" onClick={onClose} className="sv-login-modal-close">
+            Close
+          </button>
+        </div>
 
-            <form onSubmit={handleForgotPassword} className="mt-4 space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-sm font-medium text-slate-700">Username or email</label>
-                  <input
-                    type="text"
-                    name="username"
-                    placeholder="Username or email"
-                    value={resetForm.username}
-                    onChange={handleResetChange}
-                    disabled={resetStep === "confirm"}
-                    className="sv-input"
-                  />
-                </div>
+        <div className="mt-4 flex items-center gap-2">
+          <span className={`sv-auth-dot ${resetStep === "request" ? "is-active" : ""}`} />
+          <span className={`sv-auth-dot ${resetStep === "confirm" ? "is-active" : ""}`} />
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            {resetStep === "request" ? "Step 1 of 2" : "Step 2 of 2"}
+          </span>
+        </div>
 
-                {resetStep === "request" ? (
-                  <>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-slate-700">Phone</label>
-                      <input
-                        type="text"
-                        name="phone"
-                        placeholder="Phone number"
-                        value={resetForm.phone}
-                        onChange={handleResetChange}
-                        className="sv-input"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-slate-700">Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        placeholder="Email address"
-                        value={resetForm.email}
-                        onChange={handleResetChange}
-                        className="sv-input"
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-slate-700">OTP</label>
-                      <input
-                        type="text"
-                        name="otp"
-                        placeholder="6-digit OTP"
-                        value={resetForm.otp}
-                        onChange={handleResetChange}
-                        className="sv-input"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-slate-700">New password</label>
-                      <input
-                        type="password"
-                        name="new_password"
-                        placeholder="New password"
-                        value={resetForm.new_password}
-                        onChange={handleResetChange}
-                        className="sv-input"
-                      />
-                    </div>
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-sm font-medium text-slate-700">Confirm password</label>
-                      <input
-                        type="password"
-                        name="confirm_password"
-                        placeholder="Confirm new password"
-                        value={resetForm.confirm_password}
-                        onChange={handleResetChange}
-                        className="sv-input"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          {resetStep === "request"
+            ? "Verify your account with your username or email, then confirm with phone or email so we can send an OTP."
+            : "Enter the six-digit OTP and set the new password you want to use next."}
+        </p>
 
-              <div className="flex flex-wrap justify-end gap-3">
-                {resetStep === "confirm" ? (
-                  <button
-                    type="button"
-                    onClick={resetForgotPasswordState}
-                    className="sv-btn-secondary"
-                  >
-                    Request new OTP
-                  </button>
-                ) : null}
-                <button type="submit" disabled={resetLoading} className="sv-btn-primary">
-                  {resetLoading
-                    ? resetStep === "request"
-                      ? "Sending OTP..."
-                      : "Resetting password..."
-                    : resetStep === "request"
-                      ? "Send OTP"
-                      : "Reset password"}
-                </button>
-              </div>
-            </form>
+        {resetError ? (
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-[13px] text-rose-800 sm:px-4 sm:py-3 sm:text-sm">
+            {resetError}
           </div>
         ) : null}
+
+        {devOtp && resetStep === "confirm" ? (
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-900 sm:px-4 sm:py-3 sm:text-sm">
+            Development OTP: <strong>{devOtp}</strong>
+          </div>
+        ) : null}
+
+        <form onSubmit={onSubmit} className="mt-5 space-y-3.5">
+          <div className="sv-login-modal-grid">
+            <FieldShell label="Username or email" helper="Use the username or email linked to the account being recovered.">
+              <input
+                type="text"
+                name="username"
+                placeholder="Username or email"
+                value={resetForm.username}
+                onChange={onChange}
+                disabled={resetStep === "confirm"}
+                className="sv-input"
+              />
+            </FieldShell>
+
+            {resetStep === "request" ? (
+              <>
+                <FieldShell label="Phone" helper="Optional if you prefer email.">
+                  <input
+                    type="text"
+                    name="phone"
+                    placeholder="Phone number"
+                    value={resetForm.phone}
+                    onChange={onChange}
+                    className="sv-input"
+                  />
+                </FieldShell>
+                <FieldShell label="Email" helper="Optional if you prefer phone.">
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Email address"
+                    value={resetForm.email}
+                    onChange={onChange}
+                    className="sv-input"
+                  />
+                </FieldShell>
+              </>
+            ) : (
+              <>
+                <FieldShell label="OTP" helper="Enter the six-digit code you received.">
+                  <input
+                    type="text"
+                    name="otp"
+                    placeholder="6-digit OTP"
+                    value={resetForm.otp}
+                    onChange={onChange}
+                    className="sv-input"
+                  />
+                </FieldShell>
+                <FieldShell label="New password" helper="Use at least 8 characters.">
+                  <input
+                    type="password"
+                    name="new_password"
+                    placeholder="New password"
+                    value={resetForm.new_password}
+                    onChange={onChange}
+                    className="sv-input"
+                  />
+                </FieldShell>
+                <FieldShell label="Confirm password" helper="Repeat the new password exactly.">
+                  <input
+                    type="password"
+                    name="confirm_password"
+                    placeholder="Confirm new password"
+                    value={resetForm.confirm_password}
+                    onChange={onChange}
+                    className="sv-input"
+                  />
+                </FieldShell>
+              </>
+            )}
+          </div>
+
+          <div className="flex flex-wrap justify-end gap-3">
+            {resetStep === "confirm" ? (
+              <button type="button" onClick={onRequestNewOtp} className="sv-btn-secondary">
+                Request new OTP
+              </button>
+            ) : null}
+            <button type="button" onClick={onClose} className="sv-btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" disabled={resetLoading} className="sv-btn-primary">
+              {resetLoading
+                ? resetStep === "request"
+                  ? "Sending OTP..."
+                  : "Resetting password..."
+                : resetStep === "request"
+                  ? "Send OTP"
+                  : "Reset password"}
+            </button>
+          </div>
+        </form>
       </div>
-    </AuthShell>
+    </div>
   );
 }
