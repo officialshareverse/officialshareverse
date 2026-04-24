@@ -638,7 +638,9 @@
   .sv-modal-backdrop {
     @apply fixed inset-0 overflow-y-auto;
     z-index: 170;
-    display: block;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
     padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem max(0.75rem, env(safe-area-inset-bottom));
     background: rgba(15, 23, 42, 0.52);
     backdrop-filter: blur(8px);
@@ -1131,6 +1133,10 @@
   .sv-guide-modal {
     @apply mx-auto mt-2 w-full border shadow-[0_40px_120px_rgba(15,23,42,0.28)] backdrop-blur;
     max-width: 42rem;
+    max-height: calc(100dvh - max(1.5rem, env(safe-area-inset-top)) - max(1.5rem, env(safe-area-inset-bottom)));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     border-radius: var(--sv-radius-card);
     padding: 1rem;
     background: color-mix(in srgb, var(--sv-paper-solid) 92%, transparent);
