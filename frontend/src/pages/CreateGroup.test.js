@@ -30,30 +30,13 @@ jest.mock("../components/ToastProvider", () => ({
 }));
 
 beforeEach(() => {
-  mockApi.post.mockReset();
-  __setMockLocation({
-    pathname: "/create",
-    state: {
-      activationEntry: "home-activation",
-      activationPath: "group_buy",
-      activationTemplateId: "learning-membership-buy",
-    },
-  });
+  __setMockLocation({ pathname: "/create", state: null });
 });
 
-test("prefills create flow defaults from the home activation template", async () => {
+test("switches the create flow between sharing and buy-together modes", async () => {
   render(<CreateGroup />);
 
-  expect(
-    screen.getByText(/starting from learning membership/i)
-  ).toBeInTheDocument();
-  expect(screen.getByText(/buy-together template/i)).toBeInTheDocument();
-
-  await userEvent.click(screen.getByRole("button", { name: /next step/i }));
-
-  expect(
-    screen.getByDisplayValue("Learning membership circle")
-  ).toBeInTheDocument();
-  expect(screen.getByDisplayValue("6")).toBeInTheDocument();
-  expect(screen.getByDisplayValue("249")).toBeInTheDocument();
+  expect(screen.getByText(/sharing summary/i)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: /buy together first/i }));
+  expect(screen.getByText(/buy-together summary/i)).toBeInTheDocument();
 });

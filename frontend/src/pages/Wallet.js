@@ -14,7 +14,9 @@ import {
   ShieldIcon,
   WalletIcon as WalletGlyph,
 } from "../components/UiIcons";
+import useIsMobile from "../hooks/useIsMobile";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
+import { formatCurrency } from "../utils/format";
 
 const RAZORPAY_CHECKOUT_URL = "https://checkout.razorpay.com/v1/checkout.js";
 const QUICK_AMOUNTS = ["100", "300", "500", "1000"];
@@ -70,10 +72,6 @@ function loadRazorpayCheckout() {
   }
 
   return razorpayLoaderPromise;
-}
-
-function formatCurrency(value) {
-  return `Rs ${Number(value || 0).toFixed(2)}`;
 }
 
 function formatShortCurrency(value) {
@@ -307,9 +305,7 @@ export default function Wallet() {
   const [workingAction, setWorkingAction] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("topup");
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
-  );
+  const isMobile = useIsMobile();
   const [isMobileActionDrawerOpen, setIsMobileActionDrawerOpen] = useState(false);
   const [isMobileHistoryDrawerOpen, setIsMobileHistoryDrawerOpen] = useState(false);
   const [transactionSearch, setTransactionSearch] = useState("");
@@ -322,24 +318,6 @@ export default function Wallet() {
 
   useEffect(() => {
     fetchDataRef.current?.();
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const handleChange = (event) => setIsMobile(event.matches);
-    setIsMobile(mediaQuery.matches);
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
   }, []);
 
   useEffect(() => {

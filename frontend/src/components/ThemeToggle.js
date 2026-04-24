@@ -1,6 +1,4 @@
-import Tooltip from "./Tooltip";
-
-function SunIcon({ className = "h-4.5 w-4.5" }) {
+function SunIcon({ className = "h-4 w-4" }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <circle cx="12" cy="12" r="4.25" stroke="currentColor" strokeWidth="1.8" />
@@ -14,7 +12,7 @@ function SunIcon({ className = "h-4.5 w-4.5" }) {
   );
 }
 
-function MoonIcon({ className = "h-4.5 w-4.5" }) {
+function MoonIcon({ className = "h-4 w-4" }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path
@@ -33,31 +31,23 @@ export default function ThemeToggle({
   onToggle,
   compact = false,
   className = "",
-  withTooltip,
 }) {
   const isDark = themeMode === "dark";
   const nextModeLabel = isDark ? "light" : "dark";
-  const tooltipContent = `Switch to ${nextModeLabel} mode`;
-  const shouldShowTooltip = typeof withTooltip === "boolean" ? withTooltip : true;
 
-  const button = (
+  return (
     <button
       type="button"
       onClick={onToggle}
-      className={`sv-theme-toggle ${compact ? "sv-theme-toggle-compact" : ""} ${isDark ? "is-dark" : "is-light"} ${className}`.trim()}
-      aria-label={tooltipContent}
+      title={`Switch to ${nextModeLabel} mode`}
+      className={`sv-theme-toggle ${compact ? "sv-theme-toggle-compact" : ""} ${className}`.trim()}
+      aria-label={`Switch to ${nextModeLabel} mode`}
       aria-pressed={isDark}
     >
       <span className="sv-theme-toggle-icon">
         {isDark ? <SunIcon /> : <MoonIcon />}
       </span>
-      {compact ? null : <span className="sv-theme-toggle-label">{isDark ? "Light" : "Dark"}</span>}
+      {compact ? null : <span>{isDark ? "Light" : "Dark"}</span>}
     </button>
   );
-
-  if (!shouldShowTooltip) {
-    return button;
-  }
-
-  return <Tooltip content={tooltipContent}>{button}</Tooltip>;
 }

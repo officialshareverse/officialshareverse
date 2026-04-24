@@ -14,7 +14,9 @@ import {
   SparkIcon,
   WalletIcon,
 } from "../components/UiIcons";
+import useIsMobile from "../hooks/useIsMobile";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
+import { formatCurrency, formatDate, formatRelativeTime, getInitials } from "../utils/format";
 
 const SORT_OPTIONS = [
   { value: "popular", label: "Most popular" },
@@ -102,65 +104,6 @@ function getStatusTone(status) {
   return { className: "is-neutral", dotClass: "is-neutral" };
 }
 
-function formatCurrency(value) {
-  return `Rs ${Number(value || 0).toFixed(2)}`;
-}
-
-function formatRelativeTime(value) {
-  if (!value) {
-    return "Updated recently";
-  }
-
-  const timestamp = new Date(value).getTime();
-  if (Number.isNaN(timestamp)) {
-    return "Updated recently";
-  }
-
-  const deltaMs = Date.now() - timestamp;
-  const minutes = Math.max(1, Math.round(deltaMs / 60000));
-
-  if (minutes < 60) {
-    return `Updated ${minutes}m ago`;
-  }
-
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) {
-    return `Updated ${hours}h ago`;
-  }
-
-  const days = Math.round(hours / 24);
-  if (days < 7) {
-    return `Updated ${days}d ago`;
-  }
-
-  return `Updated ${new Date(value).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-  })}`;
-}
-
-function formatDate(value) {
-  if (!value) {
-    return null;
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return null;
-  }
-
-  return parsed.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-}
-
-function getInitials(value) {
-  return String(value || "ShareVerse Host")
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() || "")
-    .join("");
-}
-
 function compareGroups(sortBy, left, right) {
   if (sortBy === "newest") {
     return new Date(right.created_at || 0).getTime() - new Date(left.created_at || 0).getTime();
@@ -192,9 +135,7 @@ export default function Groups() {
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState(null);
   const [filter, setFilter] = useState("all");
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
-  );
+  const isMobile = useIsMobile();
   const [sortBy, setSortBy] = useState("popular");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -221,24 +162,6 @@ export default function Groups() {
 
   useEffect(() => {
     fetchGroupsRef.current?.();
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const handleChange = (event) => setIsMobile(event.matches);
-    setIsMobile(mediaQuery.matches);
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
   }, []);
 
   useEffect(() => {
