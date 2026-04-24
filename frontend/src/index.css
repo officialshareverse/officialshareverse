@@ -2217,9 +2217,12 @@
     flex-shrink: 0;
   }
 
-  .sv-group-chat-thread-card {
-    overflow: hidden;
-  }
+.sv-group-chat-thread-card {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
 
   .sv-group-chat-thread-header {
     display: flex;
@@ -2228,21 +2231,34 @@
     gap: 1rem;
   }
 
-  .sv-group-chat-thread {
-    display: grid;
-    gap: 1rem;
-  }
+.sv-group-chat-thread {
+  display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
+  gap: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.35rem;
+  scrollbar-gutter: stable;
+}
 
   .sv-group-chat-drawer-stack {
     display: grid;
     gap: 1rem;
   }
 
-  .sv-group-chat-composer {
-    margin-top: 1.5rem;
-    border-top: 1px solid var(--sv-border);
-    padding-top: 1.25rem;
+.sv-group-chat-composer {
+  flex-shrink: 0;
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--sv-border);
+  padding-top: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .sv-group-chat-thread-card {
+    height: clamp(30rem, calc(100vh - 21rem), 42rem);
   }
+}
 
   .sv-group-chat-textarea {
     width: 100%;
