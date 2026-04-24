@@ -2270,13 +2270,13 @@
   }
 }
 
-  .sv-group-chat-textarea {
-    width: 100%;
-    margin-top: 0.5rem;
-    min-height: 120px;
-    border-radius: 24px;
-    border: 1px solid var(--sv-border);
-    background: color-mix(in srgb, var(--sv-paper) 94%, transparent);
+.sv-group-chat-textarea {
+  width: 100%;
+  margin-top: 0.5rem;
+  min-height: 88px;
+  border-radius: 24px;
+  border: 1px solid var(--sv-border);
+  background: color-mix(in srgb, var(--sv-paper) 94%, transparent);
     padding: 0.95rem 1rem;
     color: var(--sv-ink);
     font-size: 14px;
