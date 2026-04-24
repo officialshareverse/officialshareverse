@@ -16,6 +16,10 @@ import {
   WalletIcon,
 } from "../components/UiIcons";
 import useIsMobile from "../hooks/useIsMobile";
+import {
+  HOME_ACTIVATION_VERSION,
+  getActivationTemplatesForPath,
+} from "./activationOptions";
 
 function formatCurrency(value) {
   const numeric = Number(value || 0);
@@ -101,6 +105,11 @@ export default function Home() {
   const [error, setError] = useState("");
   const [showGuide, setShowGuide] = useState(false);
   const [guideStep, setGuideStep] = useState(0);
+  const [showActivation, setShowActivation] = useState(false);
+  const [activationPath, setActivationPath] = useState("sharing");
+  const [activationTemplateId, setActivationTemplateId] = useState(
+    () => getActivationTemplatesForPath("sharing")[0]?.id || ""
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -140,16 +149,9 @@ export default function Home() {
   const onboardingStorageKey = currentUserId
     ? `sv-home-guide-seen-${onboardingGuideVersion}-${currentUserId}`
     : "";
-
-  useEffect(() => {
-    if (!onboardingStorageKey) {
-      return;
-    }
-    const hasSeenGuide = window.localStorage.getItem(onboardingStorageKey) === "1";
-    if (!hasSeenGuide) {
-      setShowGuide(true);
-    }
-  }, [onboardingStorageKey]);
+  const activationStorageKey = currentUserId
+    ? `sv-home-activation-seen-${HOME_ACTIVATION_VERSION}-${currentUserId}`
+    : "";
 
   const ownerSummary = dashboard?.owner_summary || {};
   const notifications = useMemo(
@@ -164,6 +166,9 @@ export default function Home() {
   const membershipNeedsAttention = memberships.filter(
     (group) => group.access_confirmation_required || group.has_reported_access_issue
   ).length;
+  const hostedGroupsCount = Number(ownerSummary.total_groups_created || 0);
+  const joinedGroupsCount = memberships.length;
+  const shouldShowFirstActionActivation = hostedGroupsCount === 0 && joinedGroupsCount === 0;
   const greetingMeta = getGreetingMeta();
   const currentUserFirstName =
     profileSnapshot?.first_name?.trim() || dashboard?.current_user?.username || "there";
@@ -175,6 +180,16 @@ export default function Home() {
   const marketplaceGroups = groups.slice(0, isMobile ? 2 : 4);
   const activeActionCount =
     membershipNeedsAttention + Number(ownerSummary.buy_together_waiting || 0);
+  const activationTemplates = useMemo(
+    () => getActivationTemplatesForPath(activationPath),
+    [activationPath]
+  );
+  const selectedActivationTemplate =
+    activationPath === "join"
+      ? null
+      : activationTemplates.find((item) => item.id === activationTemplateId) ||
+        activationTemplates[0] ||
+        null;
   const heroSummary =
     totalSpent > 0
       ? `${formatCurrency(totalSpent)} has moved through your ShareVerse activity so far.`
@@ -183,6 +198,41 @@ export default function Home() {
         : groups.length > 0
           ? "Everything looks calm right now. You can browse new splits or open the next one."
           : "You are ready to create your first split whenever you want.";
+
+  useEffect(() => {
+    if (activationPath === "join") {
+      return;
+    }
+
+    if (!activationTemplates.some((item) => item.id === activationTemplateId)) {
+      setActivationTemplateId(activationTemplates[0]?.id || "");
+    }
+  }, [activationPath, activationTemplateId, activationTemplates]);
+
+  useEffect(() => {
+    if (!currentUserId) {
+      return;
+    }
+
+    const hasSeenActivation = window.localStorage.getItem(activationStorageKey) === "1";
+    const hasSeenGuide = window.localStorage.getItem(onboardingStorageKey) === "1";
+
+    if (shouldShowFirstActionActivation && !hasSeenActivation) {
+      setShowActivation(true);
+      setShowGuide(false);
+      return;
+    }
+
+    setShowActivation(false);
+    if (!hasSeenGuide) {
+      setShowGuide(true);
+    }
+  }, [
+    activationStorageKey,
+    currentUserId,
+    onboardingStorageKey,
+    shouldShowFirstActionActivation,
+  ]);
 
   const primaryCard = useMemo(() => {
     if (ownerSummary.buy_together_waiting > 0) {
@@ -366,11 +416,45 @@ export default function Home() {
     },
   ];
 
-  const dismissGuide = () => {
+  const markGuideSeen = () => {
     if (onboardingStorageKey) {
       window.localStorage.setItem(onboardingStorageKey, "1");
     }
+  };
+
+  const dismissGuide = () => {
+    markGuideSeen();
     setShowGuide(false);
+  };
+
+  const dismissActivation = () => {
+    if (activationStorageKey) {
+      window.localStorage.setItem(activationStorageKey, "1");
+    }
+    markGuideSeen();
+    setShowActivation(false);
+  };
+
+  const continueFromActivation = () => {
+    dismissActivation();
+
+    if (activationPath === "join") {
+      navigate("/groups", {
+        state: {
+          activationEntry: "home-activation",
+          activationPath: "join",
+        },
+      });
+      return;
+    }
+
+    navigate("/create", {
+      state: {
+        activationEntry: "home-activation",
+        activationPath,
+        activationTemplateId: selectedActivationTemplate?.id || null,
+      },
+    });
   };
 
   const openGuide = () => {
@@ -404,7 +488,127 @@ export default function Home() {
 
   return (
     <div className="sv-page">
-      {showGuide ? (
+      {showActivation ? (
+        <div className="sv-modal-backdrop">
+          <div className="sv-guide-modal">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="sv-eyebrow">First step</p>
+                <h2 className="mt-2 text-xl font-bold leading-tight text-slate-950 sm:text-2xl">
+                  What would you like to do first?
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={dismissActivation}
+                className="min-h-[44px] px-1 py-2 text-[13px] font-semibold text-slate-500 transition hover:text-slate-800 sm:text-sm"
+              >
+                Maybe later
+              </button>
+            </div>
+
+            <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
+              Pick the fastest path into ShareVerse. You can share something you already
+              manage, join an open split, or start a buy-together with safer category
+              defaults already prepared for you.
+            </p>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <ActivationPathCard
+                active={activationPath === "sharing"}
+                eyebrow="Share first"
+                title="Share a plan you already pay for"
+                body="Best when you already manage the plan and just want paid slots to go live."
+                icon={<PlusIcon className="h-5 w-5" />}
+                onClick={() => setActivationPath("sharing")}
+              />
+              <ActivationPathCard
+                active={activationPath === "join"}
+                eyebrow="Join first"
+                title="Join an open split"
+                body="Browse live listings and jump into something that already fits your stack."
+                icon={<CompassIcon className="h-5 w-5" />}
+                onClick={() => setActivationPath("join")}
+              />
+              <ActivationPathCard
+                active={activationPath === "group_buy"}
+                eyebrow="Buy together"
+                title="Start a buy-together"
+                body="Collect member commitments first, then buy after the group is aligned."
+                icon={<LayersIcon className="h-5 w-5" />}
+                onClick={() => setActivationPath("group_buy")}
+              />
+            </div>
+
+            {activationPath === "join" ? (
+              <div className="mt-5 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="text-sm font-semibold text-slate-950">Fastest path to value</p>
+                <p className="mt-2 text-sm leading-7 text-slate-600">
+                  We&apos;ll take you straight to Explore so you can compare open splits,
+                  pricing, and availability before you commit.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">
+                      Start with a safer category template
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">
+                      We&apos;ll prefill the name, slot count, and starting price. You can
+                      adjust everything before publishing.
+                    </p>
+                  </div>
+                  <span className="sv-chip">
+                    {activationPath === "sharing" ? "Share path" : "Buy-together path"}
+                  </span>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {activationTemplates.map((template) => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      onClick={() => setActivationTemplateId(template.id)}
+                      className={`rounded-[20px] border px-4 py-4 text-left transition ${
+                        selectedActivationTemplate?.id === template.id
+                          ? "border-slate-900 bg-white shadow-sm"
+                          : "border-slate-200 bg-white/80 hover:border-slate-300"
+                      }`}
+                    >
+                      <p className="text-sm font-semibold text-slate-950">{template.label}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        {template.description}
+                      </p>
+                      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                        {template.totalSlots} slots • Rs {template.pricePerSlot} each
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[12px] leading-6 text-slate-500 sm:text-sm">
+                This only sets your starting point. Nothing gets published until you review it.
+              </p>
+              <button
+                type="button"
+                onClick={continueFromActivation}
+                className="sv-btn-primary w-full justify-center sm:w-auto"
+              >
+                {activationPath === "join"
+                  ? "Explore open splits"
+                  : activationPath === "group_buy"
+                    ? "Start buy-together setup"
+                    : "Start sharing setup"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : showGuide ? (
         <div className="sv-modal-backdrop">
           <div className="sv-guide-modal">
             <div className="flex items-center justify-between gap-3">
@@ -779,6 +983,39 @@ function QuickActionButton({ icon, title, note, onClick }) {
           <span className="mt-0.5 block text-xs font-normal text-slate-500">{note}</span>
         ) : null}
       </span>
+    </button>
+  );
+}
+
+function ActivationPathCard({ active, eyebrow, title, body, icon, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-[24px] border px-4 py-4 text-left transition ${
+        active
+          ? "border-slate-900 bg-slate-950 text-white shadow-sm"
+          : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
+      }`}
+    >
+      <span
+        className={`inline-flex h-10 w-10 items-center justify-center rounded-[16px] ${
+          active ? "bg-white/12 text-white" : "bg-slate-100 text-slate-700"
+        }`}
+      >
+        {icon}
+      </span>
+      <p
+        className={`mt-4 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+          active ? "text-white/70" : "text-slate-500"
+        }`}
+      >
+        {eyebrow}
+      </p>
+      <h3 className="mt-2 text-base font-semibold leading-tight">{title}</h3>
+      <p className={`mt-3 text-sm leading-6 ${active ? "text-white/80" : "text-slate-600"}`}>
+        {body}
+      </p>
     </button>
   );
 }
