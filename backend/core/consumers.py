@@ -23,6 +23,20 @@ def _badge_group_name(user_id):
     return f"badges_{user_id}"
 
 
+def serialize_presence_payload(presence):
+    if not isinstance(presence, dict):
+        return {}
+
+    return {
+        **presence,
+        "last_seen_at": (
+            presence.get("last_seen_at").isoformat()
+            if presence.get("last_seen_at")
+            else None
+        ),
+    }
+
+
 def build_group_chat_message_payload(message):
     return {
         "id": message.id,
@@ -82,6 +96,8 @@ def push_group_chat_presence_to_group(group_id, event_name, username, presence):
     if not channel_layer:
         return
 
+    serialized_presence = serialize_presence_payload(presence)
+
     async_to_sync(channel_layer.group_send)(
         _chat_group_name(group_id),
         {
@@ -89,7 +105,7 @@ def push_group_chat_presence_to_group(group_id, event_name, username, presence):
             "payload": {
                 "type": event_name,
                 "username": username,
-                "presence": presence,
+                "presence": serialized_presence,
             },
         },
     )
@@ -216,7 +232,7 @@ class GroupChatConsumer(AsyncJsonWebsocketConsumer):
                 "payload": {
                     "type": "user_joined",
                     "username": self.user.username,
-                    "presence": presence,
+                    "presence": serialize_presence_payload(presence),
                 },
             },
         )
@@ -233,7 +249,7 @@ class GroupChatConsumer(AsyncJsonWebsocketConsumer):
                 "payload": {
                     "type": "user_left",
                     "username": self.user.username,
-                    "presence": presence,
+                    "presence": serialize_presence_payload(presence),
                 },
             },
         )
