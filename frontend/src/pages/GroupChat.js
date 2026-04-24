@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import API from "../api/axios";
 import Drawer from "../components/Drawer";
 import { CheckCircleIcon, ClockIcon } from "../components/UiIcons";
+import useWebSocket from "../hooks/useWebSocket";
 
 function formatRelativeTime(value) {
   if (!value) {
@@ -70,6 +71,53 @@ function getAvatarToken(name) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() || "")
     .join("");
+}
+
+function mergeChatMessage(messages, nextMessage) {
+  const currentMessages = Array.isArray(messages) ? messages : [];
+  if (!nextMessage?.id) {
+    return currentMessages;
+  }
+  if (currentMessages.some((item) => item.id === nextMessage.id)) {
+    return currentMessages;
+  }
+  return [...currentMessages, nextMessage].sort(
+    (left, right) => new Date(left.created_at).getTime() - new Date(right.created_at).getTime()
+  );
+}
+
+function updateChatPresenceState(currentChat, username, nextPresence) {
+  if (!currentChat || !Array.isArray(currentChat.participants)) {
+    return currentChat;
+  }
+
+  const nextParticipants = currentChat.participants.map((participant) =>
+    participant.username === username
+      ? {
+          ...participant,
+          presence: {
+            ...(participant.presence || {}),
+            ...nextPresence,
+          },
+        }
+      : participant
+  );
+
+  const activeTypingUsers = nextParticipants
+    .filter((participant) => participant.presence?.is_typing && !participant.is_self)
+    .map((participant) => participant.username);
+
+  const onlineParticipantCount = nextParticipants.filter(
+    (participant) => participant.presence?.is_online
+  ).length;
+
+  return {
+    ...currentChat,
+    participants: nextParticipants,
+    active_typing_users: activeTypingUsers,
+    has_someone_typing: activeTypingUsers.length > 0,
+    online_participant_count: onlineParticipantCount,
+  };
 }
 
 function ParticipantsSection({ participants }) {
@@ -149,6 +197,7 @@ function QuickReadSection() {
 export default function GroupChat() {
   const navigate = useNavigate();
   const { groupId } = useParams();
+  const threadEndRef = useRef(null);
   const typingTimerRef = useRef(null);
   const isTypingRef = useRef(false);
   const [chat, setChat] = useState(null);
@@ -160,6 +209,55 @@ export default function GroupChat() {
     typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
   );
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
+  const handleWebSocketMessage = useCallback((event) => {
+    if (!event?.type) {
+      return;
+    }
+
+    if (event.type === "chat_message") {
+      setChat((current) => {
+        if (!current) {
+          return current;
+        }
+
+        let nextChat = {
+          ...current,
+          messages: mergeChatMessage(current.messages, event),
+        };
+
+        if (event.sender_username) {
+          nextChat = updateChatPresenceState(nextChat, event.sender_username, {
+            is_typing: false,
+          });
+        }
+
+        return nextChat;
+      });
+      return;
+    }
+
+    if (event.type === "typing_update" && event.username) {
+      setChat((current) =>
+        updateChatPresenceState(current, event.username, {
+          is_typing: Boolean(event.is_typing),
+        })
+      );
+      return;
+    }
+
+    if ((event.type === "user_joined" || event.type === "user_left") && event.username) {
+      setChat((current) => updateChatPresenceState(current, event.username, event.presence || {}));
+    }
+  }, []);
+
+  const { status: webSocketStatus, sendMessage: sendWebSocketMessage } = useWebSocket(
+    `ws/chat/${groupId}/`,
+    {
+      enabled: Boolean(groupId),
+      onMessage: handleWebSocketMessage,
+    }
+  );
 
   const fetchChat = useCallback(async (showLoader = false) => {
     try {
@@ -181,15 +279,27 @@ export default function GroupChat() {
 
   const syncPresence = useCallback(async (isTyping) => {
     try {
+      if (webSocketStatus === "connected" && sendWebSocketMessage({ type: "typing", is_typing: isTyping })) {
+        isTypingRef.current = isTyping;
+        return;
+      }
+
       await API.patch(`groups/${groupId}/chat/`, { is_typing: isTyping });
       isTypingRef.current = isTyping;
     } catch (err) {
       console.error("Failed to sync group chat presence:", err);
     }
-  }, [groupId]);
+  }, [groupId, sendWebSocketMessage, webSocketStatus]);
 
   useEffect(() => {
     void fetchChat(true);
+  }, [fetchChat]);
+
+  useEffect(() => {
+    if (webSocketStatus === "connected") {
+      sendWebSocketMessage({ type: "mark_read" });
+      return undefined;
+    }
 
     const intervalId = window.setInterval(() => {
       void fetchChat(false);
@@ -198,16 +308,20 @@ export default function GroupChat() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [fetchChat]);
+  }, [fetchChat, sendWebSocketMessage, webSocketStatus]);
 
   useEffect(() => {
     return () => {
       window.clearTimeout(typingTimerRef.current);
       if (isTypingRef.current) {
-        void API.patch(`groups/${groupId}/chat/`, { is_typing: false }).catch(() => {});
+        if (webSocketStatus === "connected") {
+          sendWebSocketMessage({ type: "typing", is_typing: false });
+        } else {
+          void API.patch(`groups/${groupId}/chat/`, { is_typing: false }).catch(() => {});
+        }
       }
     };
-  }, [groupId]);
+  }, [groupId, sendWebSocketMessage, webSocketStatus]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -266,27 +380,32 @@ export default function GroupChat() {
         void syncPresence(false);
       }
 
-      const response = await API.post(`groups/${groupId}/chat/`, {
-        message: trimmedMessage,
-      });
+      if (webSocketStatus === "connected" && sendWebSocketMessage({ type: "chat_message", message: trimmedMessage })) {
+        setMessage("");
+        setError("");
+      } else {
+        const response = await API.post(`groups/${groupId}/chat/`, {
+          message: trimmedMessage,
+        });
 
-      setChat((current) => {
-        const existingMessages = current?.messages || [];
-        const nextMessage = response.data.chat_message;
-        const nextMessages = existingMessages.some((item) => item.id === nextMessage.id)
-          ? existingMessages
-          : [...existingMessages, nextMessage];
+        setChat((current) => {
+          const existingMessages = current?.messages || [];
+          const nextMessage = response.data.chat_message;
+          const nextMessages = existingMessages.some((item) => item.id === nextMessage.id)
+            ? existingMessages
+            : [...existingMessages, nextMessage];
 
-        return {
-          ...(current || {}),
-          messages: nextMessages,
-          active_typing_users: [],
-          has_someone_typing: false,
-        };
-      });
-      setMessage("");
-      setError("");
-      void fetchChat(false);
+          return {
+            ...(current || {}),
+            messages: nextMessages,
+            active_typing_users: [],
+            has_someone_typing: false,
+          };
+        });
+        setMessage("");
+        setError("");
+        void fetchChat(false);
+      }
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || "Failed to send chat message.");
@@ -310,10 +429,34 @@ export default function GroupChat() {
     () => participants.filter((participant) => participant.presence?.is_online && !participant.is_self),
     [participants]
   );
+  const connectionMeta = useMemo(() => {
+    if (webSocketStatus === "connected") {
+      return { dot: "bg-emerald-500", label: "Live updates on" };
+    }
+    if (webSocketStatus === "connecting") {
+      return { dot: "bg-amber-500", label: "Connecting live updates" };
+    }
+    return { dot: "bg-rose-500", label: "Polling fallback active" };
+  }, [webSocketStatus]);
   const mobileDrawerSummary = typingLabel
     || (onlineParticipants.length > 0
       ? `${onlineParticipants.length} active right now`
       : `${participants.length} participant${participants.length === 1 ? "" : "s"} in this chat`);
+
+  useEffect(() => {
+    if (webSocketStatus !== "connected" || messages.length === 0) {
+      return;
+    }
+
+    const latestMessage = messages[messages.length - 1];
+    if (!latestMessage?.is_own) {
+      sendWebSocketMessage({ type: "mark_read" });
+    }
+  }, [messages, sendWebSocketMessage, webSocketStatus]);
+
+  useEffect(() => {
+    threadEndRef.current?.scrollIntoView?.({ block: "end" });
+  }, [messages]);
 
   if (loading) {
     return (
@@ -384,6 +527,10 @@ export default function GroupChat() {
             <span className="sv-group-chat-meta-chip">{group.mode_label}</span>
             <span className="sv-group-chat-meta-chip">{group.status_label}</span>
             <span className="sv-group-chat-meta-chip">Host: {group.owner_name}</span>
+            <span className="sv-group-chat-meta-chip">
+              <span className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${connectionMeta.dot}`} />
+              {connectionMeta.label}
+            </span>
             {typingLabel ? <span className="sv-chat-typing-pill">{typingLabel}</span> : null}
             {!typingLabel && onlineParticipants.length > 0 ? (
               <span className="sv-chat-live-pill">{onlineParticipants.length} active now</span>
@@ -455,6 +602,7 @@ export default function GroupChat() {
                   </div>
                 ))
               )}
+              <div ref={threadEndRef} />
             </div>
 
             <div className="sv-group-chat-composer">

@@ -22,7 +22,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.utils import get_md5_hash_password
 
 from .auth_identity import find_user_by_login_identifier, normalize_login_identifier
-from .models import Notification, PasswordResetOTP, SignupOTP, User
+from .consumers import create_notification
+from .models import PasswordResetOTP, SignupOTP, User
 from .rate_limit import (
     check_and_increment_rate_limit,
     get_rate_limit_status,
@@ -711,7 +712,7 @@ class SignupView(APIView):
                 id=otp_session.id
             ).update(is_used=True)
 
-        Notification.objects.create(
+        create_notification(
             user=user,
             message="Your account was created and verified successfully.",
         )
@@ -862,7 +863,7 @@ class ForgotPasswordRequestOTPView(APIView):
         except Exception:
             delivered = False
 
-        Notification.objects.create(
+        create_notification(
             user=user,
             message=f"Password reset OTP generated for {channel}.",
         )

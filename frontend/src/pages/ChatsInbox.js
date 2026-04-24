@@ -24,8 +24,10 @@ import {
 } from "../components/UiIcons";
 import usePullToRefresh from "../hooks/usePullToRefresh";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
+import useWebSocket from "../hooks/useWebSocket";
 
 const PINNED_CHATS_STORAGE_KEY = "sv-pinned-chats-v1";
+const CHAT_BADGE_REFRESH_REASONS = new Set(["chat_message", "chat_read", "initial", "refresh"]);
 
 function pulseDevice() {
   if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
@@ -230,6 +232,31 @@ export default function ChatsInbox() {
 
   useEffect(() => {
     void fetchInbox(true);
+  }, [fetchInbox]);
+
+  const handleBadgeSocketMessage = useCallback((event) => {
+    if (event?.type !== "badge_update") {
+      return;
+    }
+
+    const nextUnreadCount = Number(event.unread_chats);
+    if (
+      CHAT_BADGE_REFRESH_REASONS.has(event.reason)
+      || (!Number.isNaN(nextUnreadCount) && nextUnreadCount !== previousUnreadCountRef.current)
+    ) {
+      void fetchInbox(false);
+    }
+  }, [fetchInbox]);
+
+  const { status: badgeSocketStatus } = useWebSocket("ws/badges/", {
+    onMessage: handleBadgeSocketMessage,
+  });
+
+  useEffect(() => {
+    if (badgeSocketStatus === "connected") {
+      return undefined;
+    }
+
     const intervalId = window.setInterval(() => {
       void fetchInbox(false);
     }, 10000);
@@ -237,7 +264,7 @@ export default function ChatsInbox() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [fetchInbox]);
+  }, [badgeSocketStatus, fetchInbox]);
 
   const stats = useMemo(() => {
     const chats = chatInbox.chats || [];

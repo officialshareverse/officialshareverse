@@ -27,6 +27,7 @@ import {
 } from "../components/UiIcons";
 import usePullToRefresh from "../hooks/usePullToRefresh";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
+import useWebSocket from "../hooks/useWebSocket";
 
 const SOUND_TOGGLE_STORAGE_KEY = "sv-notification-sound-enabled";
 const HAPTICS_TOGGLE_STORAGE_KEY = "sv-notification-haptics-enabled";
@@ -191,6 +192,28 @@ function getNotificationIcon(iconName) {
   return BellIcon;
 }
 
+function countUnreadNotifications(items) {
+  return (Array.isArray(items) ? items : []).filter((notification) => !notification.is_read).length;
+}
+
+function upsertNotification(current, nextNotification) {
+  if (!nextNotification?.id) {
+    return Array.isArray(current) ? current : [];
+  }
+
+  const existingItems = Array.isArray(current) ? current : [];
+  const nextItems = existingItems.filter((item) => item.id !== nextNotification.id);
+  return [nextNotification, ...nextItems];
+}
+
+function markNotificationsRead(current, notificationIds) {
+  const existingItems = Array.isArray(current) ? current : [];
+  const ids = new Set(notificationIds);
+  return existingItems.map((item) =>
+    ids.has(item.id) ? { ...item, is_read: true } : item
+  );
+}
+
 export default function NotificationsInbox() {
   const navigate = useNavigate();
   const toast = useToast();
@@ -221,6 +244,9 @@ export default function NotificationsInbox() {
   });
   const previousUnreadCountRef = useRef(null);
   const isMountedRef = useRef(true);
+  const soundEnabledRef = useRef(soundEnabled);
+  const hapticsEnabledRef = useRef(hapticsEnabled);
+  const notificationsRef = useRef([]);
 
   useRevealOnScroll();
 
@@ -249,12 +275,18 @@ export default function NotificationsInbox() {
   }, []);
 
   useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
     window.localStorage.setItem(SOUND_TOGGLE_STORAGE_KEY, soundEnabled ? "1" : "0");
   }, [soundEnabled]);
 
   useEffect(() => {
+    hapticsEnabledRef.current = hapticsEnabled;
     window.localStorage.setItem(HAPTICS_TOGGLE_STORAGE_KEY, hapticsEnabled ? "1" : "0");
   }, [hapticsEnabled]);
+
+  useEffect(() => {
+    notificationsRef.current = notifications;
+  }, [notifications]);
 
   const fetchNotifications = useCallback(async (showLoader = false) => {
     try {
@@ -272,15 +304,16 @@ export default function NotificationsInbox() {
       const previousUnreadCount = previousUnreadCountRef.current;
 
       if (previousUnreadCount !== null && nextUnreadCount > previousUnreadCount) {
-        if (soundEnabled) {
+        if (soundEnabledRef.current) {
           playNotificationChime();
         }
-        if (hapticsEnabled) {
+        if (hapticsEnabledRef.current) {
           pulseDevice();
         }
       }
 
       previousUnreadCountRef.current = nextUnreadCount;
+      notificationsRef.current = nextNotifications;
       setNotifications(nextNotifications);
       setError("");
     } catch (err) {
@@ -293,10 +326,68 @@ export default function NotificationsInbox() {
         setLoading(false);
       }
     }
-  }, [hapticsEnabled, soundEnabled]);
+  }, []);
 
   useEffect(() => {
     void fetchNotifications(true);
+  }, [fetchNotifications]);
+
+  const handleNotificationSocketMessage = useCallback((event) => {
+    if (!event?.type) {
+      return;
+    }
+
+    if (event.type === "new_notification") {
+      const { type: _type, ...nextNotification } = event;
+      const currentNotifications = notificationsRef.current;
+      const alreadyExists = currentNotifications.some((item) => item.id === nextNotification.id);
+      const nextNotifications = upsertNotification(currentNotifications, nextNotification);
+
+      if (!alreadyExists && !nextNotification.is_read) {
+        if (soundEnabledRef.current) {
+          playNotificationChime();
+        }
+        if (hapticsEnabledRef.current) {
+          pulseDevice();
+        }
+      }
+
+      notificationsRef.current = nextNotifications;
+      previousUnreadCountRef.current = countUnreadNotifications(nextNotifications);
+      setNotifications(nextNotifications);
+      setError("");
+      return;
+    }
+
+    if (event.type === "notification_read" && event.notification_id) {
+      const nextNotifications = markNotificationsRead(notificationsRef.current, [event.notification_id]);
+      notificationsRef.current = nextNotifications;
+      previousUnreadCountRef.current =
+        typeof event.unread_count === "number" ? event.unread_count : countUnreadNotifications(nextNotifications);
+      setNotifications(nextNotifications);
+      return;
+    }
+
+    if (event.type === "notifications_cleared") {
+      const nextNotifications = (notificationsRef.current || []).map((item) => ({ ...item, is_read: true }));
+      notificationsRef.current = nextNotifications;
+      previousUnreadCountRef.current = 0;
+      setNotifications(nextNotifications);
+    }
+  }, []);
+
+  const {
+    status: notificationSocketStatus,
+    sendMessage: sendNotificationSocketMessage,
+  } = useWebSocket("ws/notifications/", {
+    onMessage: handleNotificationSocketMessage,
+  });
+
+  useEffect(() => {
+    if (notificationSocketStatus === "connected") {
+      return undefined;
+    }
+
     const intervalId = window.setInterval(() => {
       void fetchNotifications(false);
     }, 10000);
@@ -304,7 +395,7 @@ export default function NotificationsInbox() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [fetchNotifications]);
+  }, [fetchNotifications, notificationSocketStatus]);
 
   const counts = useMemo(() => {
     return notifications.reduce(
@@ -348,14 +439,24 @@ export default function NotificationsInbox() {
   const markAsRead = async (notificationId) => {
     try {
       setWorkingId(`single-${notificationId}`);
-      const response = await API.post(`notifications/${notificationId}/read/`);
-      const nextNotification = response.data?.notification;
-      setNotifications((current) =>
-        current.map((item) =>
+      if (
+        notificationSocketStatus === "connected"
+        && sendNotificationSocketMessage({ type: "mark_read", notification_id: notificationId })
+      ) {
+        const nextNotifications = markNotificationsRead(notificationsRef.current, [notificationId]);
+        notificationsRef.current = nextNotifications;
+        previousUnreadCountRef.current = countUnreadNotifications(nextNotifications);
+        setNotifications(nextNotifications);
+      } else {
+        const response = await API.post(`notifications/${notificationId}/read/`);
+        const nextNotification = response.data?.notification;
+        const nextNotifications = (notificationsRef.current || []).map((item) =>
           item.id === notificationId ? nextNotification || { ...item, is_read: true } : item
-        )
-      );
-      previousUnreadCountRef.current = Math.max(0, (previousUnreadCountRef.current ?? 1) - 1);
+        );
+        notificationsRef.current = nextNotifications;
+        previousUnreadCountRef.current = countUnreadNotifications(nextNotifications);
+        setNotifications(nextNotifications);
+      }
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.error || "Failed to mark this notification as read.", {
@@ -369,16 +470,19 @@ export default function NotificationsInbox() {
   const markBundleRead = async (notificationIds, bundleId) => {
     try {
       setWorkingId(bundleId);
-      await Promise.all(notificationIds.map((notificationId) => API.post(`notifications/${notificationId}/read/`)));
-      setNotifications((current) =>
-        current.map((item) =>
-          notificationIds.includes(item.id) ? { ...item, is_read: true } : item
-        )
-      );
-      previousUnreadCountRef.current = Math.max(
-        0,
-        (previousUnreadCountRef.current ?? notificationIds.length) - notificationIds.length
-      );
+      const usedSocket = notificationSocketStatus === "connected"
+        && notificationIds.every((notificationId) =>
+          sendNotificationSocketMessage({ type: "mark_read", notification_id: notificationId })
+        );
+
+      if (!usedSocket) {
+        await Promise.all(notificationIds.map((notificationId) => API.post(`notifications/${notificationId}/read/`)));
+      }
+
+      const nextNotifications = markNotificationsRead(notificationsRef.current, notificationIds);
+      notificationsRef.current = nextNotifications;
+      previousUnreadCountRef.current = countUnreadNotifications(nextNotifications);
+      setNotifications(nextNotifications);
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.error || "Failed to mark this bundle as read.", {
@@ -392,9 +496,17 @@ export default function NotificationsInbox() {
   const markAllRead = useCallback(async () => {
     try {
       setMarkingAll(true);
-      await API.post("notifications/mark-all-read/");
-      setNotifications((current) => current.map((item) => ({ ...item, is_read: true })));
+      const usedSocket = notificationSocketStatus === "connected"
+        && sendNotificationSocketMessage({ type: "mark_all_read" });
+
+      if (!usedSocket) {
+        await API.post("notifications/mark-all-read/");
+      }
+
+      const nextNotifications = (notificationsRef.current || []).map((item) => ({ ...item, is_read: true }));
+      notificationsRef.current = nextNotifications;
       previousUnreadCountRef.current = 0;
+      setNotifications(nextNotifications);
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.error || "Failed to mark all notifications as read.", {
@@ -403,7 +515,7 @@ export default function NotificationsInbox() {
     } finally {
       setMarkingAll(false);
     }
-  }, [toast]);
+  }, [notificationSocketStatus, sendNotificationSocketMessage, toast]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {

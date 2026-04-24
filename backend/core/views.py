@@ -63,6 +63,14 @@ from .pricing import (
     get_member_platform_fee_amount,
     sum_member_contribution_amounts,
 )
+from .consumers import (
+    create_notification,
+    push_badge_update_to_user,
+    push_group_chat_message_to_group,
+    push_group_chat_typing_to_group,
+    push_notification_read_to_user,
+    push_notifications_cleared_to_user,
+)
 from .serializers import (
     CreateGroupSerializer,
     GroupChatPresenceSerializer,
@@ -236,9 +244,9 @@ def release_group_buy_held_funds(group_id, allow_timeout_release=False):
             if not allow_timeout_release
             else f"The confirmation window for {group.subscription.name} ended without disputes. Held funds were released automatically.{fee_note}"
         )
-        Notification.objects.create(user=group.owner, message=owner_message)
+        create_notification(user=group.owner, message=owner_message)
         for member in GroupMember.objects.filter(group=group).select_related("user"):
-            Notification.objects.create(
+            create_notification(
                 user=member.user,
                 message=(
                     f"{group.subscription.name} is now active and the buy-together payout has been released."
@@ -310,14 +318,14 @@ def release_sharing_member_funds(member_id):
         member.group.status = "active"
         member.group.save(update_fields=["status"])
 
-        Notification.objects.create(
+        create_notification(
             user=member.group.owner,
             message=(
                 f"{member.user.username} confirmed receiving access for {member.group.subscription.name}. "
                 f"Your payout was released to your wallet after a 5% platform fee of Rs {creator_platform_fee_amount}."
             ),
         )
-        Notification.objects.create(
+        create_notification(
             user=member.user,
             message=(
                 f"You confirmed access for {member.group.subscription.name}. "
@@ -402,7 +410,7 @@ def refund_group_buy_held_funds(group_id, reason="manual"):
             else:
                 message = f"Your held contribution for {group.subscription.name} has been refunded."
 
-            Notification.objects.create(
+            create_notification(
                 user=member.user,
                 message=message,
             )
@@ -421,7 +429,7 @@ def refund_group_buy_held_funds(group_id, reason="manual"):
             if reason == "deadline_expired"
             else f"You refunded held member contributions for {group.subscription.name}."
         )
-        Notification.objects.create(
+        create_notification(
             user=group.owner,
             message=owner_message,
         )
@@ -901,7 +909,7 @@ def build_notification_payload(notification):
         "id": notification.id,
         "message": notification.message,
         "is_read": notification.is_read,
-        "created_at": notification.created_at,
+        "created_at": notification.created_at.isoformat() if notification.created_at else None,
         "category": metadata["category"],
         "category_label": metadata["category_label"],
         "kind": metadata["kind"],
@@ -1581,7 +1589,7 @@ class JoinGroupView(APIView):
                 if group.status == "forming":
                     group.status = "collecting"
                     group.save(update_fields=["status"])
-                Notification.objects.create(
+                create_notification(
                     user=group.owner,
                     message=(
                         f"{request.user.username} joined your {group.subscription.name} sharing group "
@@ -1589,7 +1597,7 @@ class JoinGroupView(APIView):
                         "Payout will be released after the member confirms access."
                     ),
                 )
-                Notification.objects.create(
+                create_notification(
                     user=request.user,
                     message=(
                         f"You joined {group.subscription.name}. Confirm access after the host gives you access "
@@ -1609,7 +1617,7 @@ class JoinGroupView(APIView):
                 if group.status == "forming":
                     group.status = "collecting"
                     group.save(update_fields=["status"])
-                    Notification.objects.create(
+                    create_notification(
                         user=group.owner,
                         message=(
                             f"{request.user.username} joined your {group.subscription.name} buy-together group. "
@@ -1617,7 +1625,7 @@ class JoinGroupView(APIView):
                         ),
                     )
                 else:
-                    Notification.objects.create(
+                    create_notification(
                         user=group.owner,
                         message=(
                             f"{request.user.username} joined your {group.subscription.name} buy-together group."
@@ -1632,7 +1640,7 @@ class JoinGroupView(APIView):
                     group.purchase_deadline_at = deadline
                     group.auto_refund_at = deadline
                     group.save(update_fields=["status", "purchase_deadline_at", "auto_refund_at"])
-                    Notification.objects.create(
+                    create_notification(
                         user=group.owner,
                         message=(
                             f"Your {group.subscription.name} buy-together group is full. "
@@ -1640,7 +1648,7 @@ class JoinGroupView(APIView):
                         ),
                     )
                     for joined_member in GroupMember.objects.filter(group=group).select_related("user"):
-                        Notification.objects.create(
+                        create_notification(
                             user=joined_member.user,
                             message=(
                                 f"{group.subscription.name} is now full. "
@@ -2667,6 +2675,9 @@ class MarkNotificationReadView(APIView):
         if not notification.is_read:
             notification.is_read = True
             notification.save(update_fields=["is_read"])
+            unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
+            push_notification_read_to_user(request.user.id, notification.id, unread_count)
+            push_badge_update_to_user(request.user.id, reason="notification_read")
 
         return Response({"message": "Notification marked as read", "notification": build_notification_payload(notification)})
 
@@ -2676,6 +2687,8 @@ class MarkAllNotificationsReadView(APIView):
 
     def post(self, request):
         updated_count = Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        push_notifications_cleared_to_user(request.user.id, updated_count)
+        push_badge_update_to_user(request.user.id, reason="notifications_cleared")
         return Response({"message": "All notifications marked as read", "updated_count": updated_count})
 
 
@@ -2744,6 +2757,7 @@ class GroupChatView(APIView):
                 serialized_messages = []
 
             mark_group_chat_read(request.user, group)
+            push_badge_update_to_user(request.user.id, reason="chat_read")
             touch_group_chat_presence(request.user, group)
             try:
                 presence_map = {
@@ -2820,7 +2834,7 @@ class GroupChatView(APIView):
         for participant_id in get_group_chat_participants(group):
             if participant_id == request.user.id:
                 continue
-            Notification.objects.create(
+            create_notification(
                 user_id=participant_id,
                 message=(
                     f"New group chat message in {group.subscription.name} from {request.user.username}."
@@ -2831,6 +2845,14 @@ class GroupChatView(APIView):
             message,
             context={"request": request},
         ).data
+        push_group_chat_message_to_group(
+            group.id,
+            {
+                **serialized_message,
+                "sender_id": request.user.id,
+            },
+        )
+        push_badge_update_to_user(request.user.id, reason="chat_message")
 
         return Response({
             "message": "Chat message sent successfully.",
@@ -2850,6 +2872,11 @@ class GroupChatView(APIView):
             request.user,
             group,
             is_typing=serializer.validated_data["is_typing"],
+        )
+        push_group_chat_typing_to_group(
+            group.id,
+            request.user.username,
+            serializer.validated_data["is_typing"],
         )
 
         return Response(
@@ -3407,7 +3434,7 @@ class CloseGroupView(APIView):
             group.save(update_fields=["status"])
 
             for member in members:
-                Notification.objects.create(
+                create_notification(
                     user=member.user,
                     message=f"{group.subscription.name} has been closed by the group owner.",
                 )
@@ -3480,7 +3507,7 @@ class SubmitPurchaseProofView(APIView):
             )
 
             for member in GroupMember.objects.filter(group=locked_group).select_related("user"):
-                Notification.objects.create(
+                create_notification(
                     user=member.user,
                     message=(
                         f"{locked_group.subscription.name} purchase proof was uploaded. "
@@ -3569,7 +3596,7 @@ class ConfirmGroupAccessView(APIView):
                 dispute_cleared = True
 
             if locked_group.mode == "group_buy":
-                Notification.objects.create(
+                create_notification(
                     user=locked_group.owner,
                     message=(
                         f"{request.user.username} confirmed receiving access for {locked_group.subscription.name}. "
@@ -3701,14 +3728,14 @@ class ReportGroupAccessIssueView(APIView):
             locked_group.auto_refund_at = None
             locked_group.save(update_fields=["status", "purchase_deadline_at", "auto_refund_at"])
 
-            Notification.objects.create(
+            create_notification(
                 user=locked_group.owner,
                 message=(
                     f"{request.user.username} reported an access issue for {locked_group.subscription.name}. "
                     "Payout is paused until this is resolved or refunded."
                 ),
             )
-            Notification.objects.create(
+            create_notification(
                 user=request.user,
                 message=(
                     f"Your access issue for {locked_group.subscription.name} was recorded. "
@@ -3825,7 +3852,7 @@ class GroupReviewView(APIView):
         )
 
         if reviewed_user.id != request.user.id:
-            Notification.objects.create(
+            create_notification(
                 user=reviewed_user,
                 message=(
                     f"{request.user.username} left a {review.rating}-star rating for your "

@@ -7,7 +7,8 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from .models import Notification, PayoutAccount, Transaction, Wallet, WalletPayout
+from .consumers import create_notification
+from .models import PayoutAccount, Transaction, Wallet, WalletPayout
 from .operation_logging import log_operation_event
 
 
@@ -143,7 +144,7 @@ def create_manual_wallet_payout(
         payout.refund_transaction = None
         payout.save()
 
-        Notification.objects.create(
+        create_notification(
             user=user,
             message=(
                 f"Support marked a manual withdrawal of Rs. {amount} to {normalized_destination} as completed."
@@ -277,7 +278,7 @@ def create_manual_wallet_payout_request(
         provider_status_source="user_manual_request",
     )
 
-    Notification.objects.create(
+    create_notification(
         user=user,
         message=(
             f"Your withdrawal request for Rs. {amount} to {normalized_destination} was submitted for manual review."

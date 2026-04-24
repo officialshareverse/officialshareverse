@@ -13,7 +13,7 @@ services:
     runtime: python
     rootDir: backend
     buildCommand: bash release.sh
-    startCommand: gunicorn mystartup.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120
+    startCommand: daphne -b 0.0.0.0 -p $PORT mystartup.asgi:application
     healthCheckPath: /api/health/
     autoDeployTrigger: commit
     domains:

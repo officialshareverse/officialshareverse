@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 import { clearAuthSession } from "../auth/session";
+import useWebSocket from "../hooks/useWebSocket";
 import BrandMark from "./BrandMark";
 import ThemeToggle from "./ThemeToggle";
 import Tooltip from "./Tooltip";
@@ -107,34 +108,54 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
     setIsProfileMenuOpen(false);
   }, [location.pathname]);
 
+  const fetchUnreadCounts = useCallback(async () => {
+    try {
+      const [chatResponse, notificationResponse] = await Promise.all([
+        API.get("group-chats/"),
+        API.get("notifications/"),
+      ]);
+      setUnreadChatCount(chatResponse.data?.total_unread_count || 0);
+      const notifications = Array.isArray(notificationResponse.data) ? notificationResponse.data : [];
+      setUnreadNotificationCount(notifications.filter((item) => !item.is_read).length);
+    } catch (err) {
+      console.error("Failed to load navbar badge counts:", err);
+    }
+  }, []);
+
+  const handleBadgeSocketMessage = useCallback((event) => {
+    if (event?.type !== "badge_update") {
+      return;
+    }
+
+    if (typeof event.unread_chats === "number") {
+      setUnreadChatCount(event.unread_chats);
+    }
+    if (typeof event.unread_notifications === "number") {
+      setUnreadNotificationCount(event.unread_notifications);
+    }
+  }, []);
+
+  const { status: badgeSocketStatus } = useWebSocket("ws/badges/", {
+    onMessage: handleBadgeSocketMessage,
+  });
+
   useEffect(() => {
-    let isMounted = true;
+    void fetchUnreadCounts();
+  }, [fetchUnreadCounts]);
 
-    const fetchUnreadCounts = async () => {
-      try {
-        const [chatResponse, notificationResponse] = await Promise.all([
-          API.get("group-chats/"),
-          API.get("notifications/"),
-        ]);
-        if (!isMounted) {
-          return;
-        }
-        setUnreadChatCount(chatResponse.data?.total_unread_count || 0);
-        const notifications = Array.isArray(notificationResponse.data) ? notificationResponse.data : [];
-        setUnreadNotificationCount(notifications.filter((item) => !item.is_read).length);
-      } catch (err) {
-        console.error("Failed to load navbar badge counts:", err);
-      }
-    };
+  useEffect(() => {
+    if (badgeSocketStatus === "connected") {
+      return undefined;
+    }
 
-    fetchUnreadCounts();
-    const intervalId = window.setInterval(fetchUnreadCounts, 10000);
+    const intervalId = window.setInterval(() => {
+      void fetchUnreadCounts();
+    }, 15000);
 
     return () => {
-      isMounted = false;
       window.clearInterval(intervalId);
     };
-  }, [location.pathname]);
+  }, [badgeSocketStatus, fetchUnreadCounts]);
 
   useEffect(() => {
     let isMounted = true;

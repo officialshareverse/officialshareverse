@@ -22,6 +22,8 @@ from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = Path(__file__).resolve().parent.parent
 _HAS_DJ_DATABASE_URL = importlib.util.find_spec("dj_database_url") is not None
 _HAS_WHITENOISE = importlib.util.find_spec("whitenoise") is not None
+_HAS_CHANNELS = importlib.util.find_spec("channels") is not None
+_HAS_DAPHNE = importlib.util.find_spec("daphne") is not None
 
 if _HAS_DJ_DATABASE_URL:
     import dj_database_url
@@ -119,6 +121,12 @@ if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
 # Application definition
 
 INSTALLED_APPS = [
+]
+
+if _HAS_DAPHNE:
+    INSTALLED_APPS.append('daphne')
+
+INSTALLED_APPS += [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -131,6 +139,9 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
 ]
+
+if _HAS_CHANNELS:
+    INSTALLED_APPS.append('channels')
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -187,6 +198,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'mystartup.wsgi.application'
+ASGI_APPLICATION = 'mystartup.asgi.application'
 
 
 # Database
@@ -344,6 +356,22 @@ else:
         }
     }
     RATE_LIMIT_CACHE_BACKEND = 'locmem'
+
+if DJANGO_REDIS_URL:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [DJANGO_REDIS_URL],
+            },
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        }
+    }
 
 RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '').strip()
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '').strip()
