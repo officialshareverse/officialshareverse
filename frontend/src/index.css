@@ -2174,9 +2174,9 @@
     padding: 0.9rem 1rem 0;
   }
 
-  .sv-group-chat-hero {
-    position: relative;
-  }
+.sv-group-chat-hero {
+  position: relative;
+}
 
   .sv-group-chat-meta {
     display: flex;
@@ -2255,8 +2255,18 @@
 }
 
 @media (min-width: 1024px) {
+  .sv-group-chat-hero {
+    padding: 1.6rem 1.8rem;
+  }
+
   .sv-group-chat-thread-card {
-    height: clamp(30rem, calc(100vh - 21rem), 42rem);
+    height: clamp(38rem, calc(100vh - 16.5rem), 54rem);
+  }
+
+  .sv-group-chat-sidebar {
+    position: sticky;
+    top: 1.5rem;
+    align-self: start;
   }
 }
 

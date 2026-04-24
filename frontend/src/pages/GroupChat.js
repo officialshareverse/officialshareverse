@@ -461,7 +461,7 @@ export default function GroupChat() {
   if (loading) {
     return (
       <div className="sv-page">
-        <div className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-600">
+        <div className="mx-auto max-w-6xl rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-600">
           Loading group chat...
         </div>
       </div>
@@ -471,7 +471,7 @@ export default function GroupChat() {
   if (error && !chat) {
     return (
       <div className="sv-page">
-        <div className="mx-auto max-w-5xl rounded-3xl border border-rose-200 bg-white p-8 text-center text-rose-700">
+        <div className="mx-auto max-w-6xl rounded-3xl border border-rose-200 bg-white p-8 text-center text-rose-700">
           <p>{error}</p>
           <button
             type="button"
@@ -502,7 +502,7 @@ export default function GroupChat() {
         </Drawer>
       ) : null}
 
-      <div className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
+      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
         <section className="sv-dark-hero sv-group-chat-hero">
           <div className="sv-group-chat-hero-top flex flex-wrap items-start justify-between gap-4">
             <div className="sv-group-chat-hero-copy">
@@ -552,7 +552,7 @@ export default function GroupChat() {
           </button>
         ) : null}
 
-        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[0.7fr_0.3fr]">
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_21rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="sv-card sv-group-chat-thread-card">
             <div className="sv-group-chat-thread-header flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
               <div>
@@ -647,7 +647,7 @@ export default function GroupChat() {
             </div>
           </div>
 
-          <aside className="hidden space-y-6 lg:block">
+          <aside className="sv-group-chat-sidebar hidden space-y-6 lg:block">
             <ParticipantsSection participants={participants} />
             <QuickReadSection />
           </aside>
