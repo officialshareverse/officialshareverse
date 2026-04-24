@@ -31,6 +31,11 @@ jest.mock("./components/Navbar", () => ({
   default: () => <div>Mock Navbar</div>,
 }));
 
+jest.mock("./components/SpotlightSearch", () => ({
+  __esModule: true,
+  default: () => null,
+}));
+
 jest.mock("./components/ToastProvider", () => ({
   ToastProvider: ({ children }) => <>{children}</>,
 }));

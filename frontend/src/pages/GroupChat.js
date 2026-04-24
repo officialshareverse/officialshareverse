@@ -4,8 +4,34 @@ import { useNavigate, useParams } from "react-router-dom";
 import API from "../api/axios";
 import Drawer from "../components/Drawer";
 import { CheckCircleIcon, ClockIcon } from "../components/UiIcons";
-import useIsMobile from "../hooks/useIsMobile";
-import { formatRelativeTime, getInitials } from "../utils/format";
+
+function formatRelativeTime(value) {
+  if (!value) {
+    return "Just now";
+  }
+
+  const timestamp = new Date(value).getTime();
+  if (Number.isNaN(timestamp)) {
+    return "Just now";
+  }
+
+  const deltaMinutes = Math.max(1, Math.round((Date.now() - timestamp) / 60000));
+  if (deltaMinutes < 60) {
+    return `${deltaMinutes}m ago`;
+  }
+
+  const deltaHours = Math.round(deltaMinutes / 60);
+  if (deltaHours < 24) {
+    return `${deltaHours}h ago`;
+  }
+
+  const deltaDays = Math.round(deltaHours / 24);
+  if (deltaDays < 7) {
+    return `${deltaDays}d ago`;
+  }
+
+  return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
 
 function formatTypingLabel(usernames) {
   if (!Array.isArray(usernames) || usernames.length === 0) {
@@ -26,15 +52,24 @@ function formatTypingLabel(usernames) {
 function getPresenceMeta(presence) {
   const status = presence?.status || "offline";
   if (presence?.is_typing) {
-    return { className: "is-typing", label: "Typing now", dotClassName: "bg-emerald-500" };
+    return { className: "is-typing", label: "Typing now" };
   }
   if (status === "online") {
-    return { className: "is-online", label: "Online", dotClassName: "bg-emerald-500" };
+    return { className: "is-online", label: "Online" };
   }
   if (status === "recent") {
-    return { className: "is-recent", label: "Active recently", dotClassName: "bg-amber-400" };
+    return { className: "is-recent", label: "Active recently" };
   }
-  return { className: "is-offline", label: "Offline", dotClassName: "bg-slate-300" };
+  return { className: "is-offline", label: "Offline" };
+}
+
+function getAvatarToken(name) {
+  return String(name || "ShareVerse")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
 }
 
 function ParticipantsSection({ participants }) {
@@ -50,8 +85,8 @@ function ParticipantsSection({ participants }) {
             <div key={`${participant.role}-${participant.username}`} className="sv-group-chat-participant">
               <div className="flex items-center gap-3">
                 <span className={`sv-group-chat-participant-avatar ${presenceMeta.className}`}>
-                  {participant.initials || getInitials(participant.username)}
-                  <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${presenceMeta.dotClassName}`} />
+                  {participant.initials || getAvatarToken(participant.username)}
+                  <span className={`sv-chat-avatar-chip-dot ${presenceMeta.className}`} />
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-slate-900">
@@ -72,9 +107,9 @@ function ParticipantsSection({ participants }) {
                   {participant.role}
                 </span>
                 {participant.presence?.is_typing ? (
-                  <StatusPill tone="teal">Typing</StatusPill>
+                  <span className="sv-chat-typing-pill">Typing</span>
                 ) : participant.presence?.is_online ? (
-                  <StatusPill tone="emerald">Live</StatusPill>
+                  <span className="sv-chat-live-pill">Live</span>
                 ) : null}
               </div>
             </div>
@@ -116,12 +151,14 @@ export default function GroupChat() {
   const { groupId } = useParams();
   const typingTimerRef = useRef(null);
   const isTypingRef = useRef(false);
-  const isMobile = useIsMobile();
   const [chat, setChat] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   const fetchChat = useCallback(async (showLoader = false) => {
@@ -171,6 +208,24 @@ export default function GroupChat() {
       }
     };
   }, [groupId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
 
   useEffect(() => {
     if (!isMobile) {
@@ -329,9 +384,9 @@ export default function GroupChat() {
             <span className="sv-group-chat-meta-chip">{group.mode_label}</span>
             <span className="sv-group-chat-meta-chip">{group.status_label}</span>
             <span className="sv-group-chat-meta-chip">Host: {group.owner_name}</span>
-            {typingLabel ? <StatusPill tone="teal">{typingLabel}</StatusPill> : null}
+            {typingLabel ? <span className="sv-chat-typing-pill">{typingLabel}</span> : null}
             {!typingLabel && onlineParticipants.length > 0 ? (
-              <StatusPill tone="emerald">{onlineParticipants.length} active now</StatusPill>
+              <span className="sv-chat-live-pill">{onlineParticipants.length} active now</span>
             ) : null}
           </div>
         </section>
@@ -342,9 +397,9 @@ export default function GroupChat() {
             onClick={() => setIsMobileDrawerOpen(true)}
             className="sv-group-chat-mobile-trigger"
           >
-            <span className="grid min-w-0 gap-1">
+            <span className="sv-chat-mobile-trigger-copy">
               <strong>{participants.length} people in this split</strong>
-              <span className="text-xs text-slate-500">{mobileDrawerSummary}</span>
+              <span>{mobileDrawerSummary}</span>
             </span>
             <span className="sv-group-chat-mobile-trigger-badge">Open</span>
           </button>
@@ -369,16 +424,16 @@ export default function GroupChat() {
             </div>
 
             {typingLabel || onlineParticipants.length > 0 ? (
-            <div className="sv-group-chat-live-strip">
-              {typingLabel ? (
-                <StatusPill tone="teal">{typingLabel}</StatusPill>
-              ) : (
-                <StatusPill tone="emerald">
-                  {onlineParticipants.length} participant{onlineParticipants.length === 1 ? "" : "s"} active now
-                </StatusPill>
-              )}
-            </div>
-          ) : null}
+              <div className="sv-group-chat-live-strip">
+                {typingLabel ? (
+                  <span className="sv-chat-typing-pill">{typingLabel}</span>
+                ) : (
+                  <span className="sv-chat-live-pill">
+                    {onlineParticipants.length} participant{onlineParticipants.length === 1 ? "" : "s"} active now
+                  </span>
+                )}
+              </div>
+            ) : null}
 
             <div className="sv-group-chat-thread mt-5 space-y-4">
               {messages.length === 0 ? (
@@ -451,16 +506,5 @@ export default function GroupChat() {
         </section>
       </div>
     </div>
-  );
-}
-
-function StatusPill({ children, tone = "teal" }) {
-  const toneClassName =
-    tone === "emerald" ? "bg-emerald-100 text-emerald-700" : "bg-teal-100 text-teal-700";
-
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${toneClassName}`}>
-      {children}
-    </span>
   );
 }

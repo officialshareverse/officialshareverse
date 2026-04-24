@@ -2,13 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import AvatarStack from "../components/AvatarStack";
+import CountUp from "../components/CountUp";
+import Drawer from "../components/Drawer";
 import EmptyState from "../components/EmptyState";
+import PullToRefreshIndicator from "../components/PullToRefreshIndicator";
 import {
   SkeletonCard,
   SkeletonList,
   SkeletonMetricGrid,
   SkeletonTextGroup,
 } from "../components/SkeletonFactory";
+import Tabs from "../components/Tabs";
+import Tooltip from "../components/Tooltip";
 import {
   ChatIcon,
   CheckCircleIcon,
@@ -16,83 +22,173 @@ import {
   SearchIcon,
   StarIcon,
 } from "../components/UiIcons";
-import useIsMobile from "../hooks/useIsMobile";
-import { formatRelativeTime, getInitials } from "../utils/format";
+import usePullToRefresh from "../hooks/usePullToRefresh";
+import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
 const PINNED_CHATS_STORAGE_KEY = "sv-pinned-chats-v1";
 
-const FILTERS = [
-  { value: "all", label: "All" },
-  { value: "unread", label: "Unread" },
-  { value: "pinned", label: "Pinned" },
-  { value: "hosted", label: "Hosted" },
-];
-
-function getStatusLabel(status) {
-  if (status === "active") return "Active";
-  if (["proof_submitted", "awaiting_purchase", "forming", "collecting", "purchasing"].includes(status)) {
-    return "In progress";
+function pulseDevice() {
+  if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+    navigator.vibrate(12);
   }
-  if (["closed", "refunded", "refunding"].includes(status)) {
-    return "Closed";
-  }
-  if (status === "disputed") {
-    return "Needs attention";
-  }
-  return "Open";
 }
 
-function getModeTone(mode) {
-  if (mode === "group_buy") {
-    return "bg-violet-100 text-violet-700";
+function getPresenceMeta(presence) {
+  const status = presence?.status || "offline";
+  if (presence?.is_typing) {
+    return { className: "is-typing", label: "Typing now" };
   }
-  return "bg-teal-100 text-teal-700";
+  if (status === "online") {
+    return { className: "is-online", label: "Online" };
+  }
+  if (status === "recent") {
+    return { className: "is-recent", label: "Active recently" };
+  }
+  return { className: "is-offline", label: "Offline" };
 }
 
-function getStatusTone(status) {
-  if (status === "active") return "bg-emerald-100 text-emerald-700";
-  if (["closed", "refunded", "refunding"].includes(status)) return "bg-slate-100 text-slate-600";
-  if (status === "disputed") return "bg-rose-100 text-rose-700";
-  return "bg-amber-100 text-amber-700";
+function formatTypingLabel(usernames) {
+  if (!Array.isArray(usernames) || usernames.length === 0) {
+    return "";
+  }
+
+  if (usernames.length === 1) {
+    return `${usernames[0]} is typing...`;
+  }
+
+  if (usernames.length === 2) {
+    return `${usernames[0]} and ${usernames[1]} are typing...`;
+  }
+
+  return `${usernames[0]} and ${usernames.length - 1} others are typing...`;
 }
 
-function MetricCard({ label, value, tone = "text-slate-900" }) {
+function SummaryCard({ label, value, tone = "text-slate-900", className = "" }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
-      <p className={`mt-2 text-2xl font-bold ${tone}`}>{value}</p>
+    <div className={`sv-stat-card ${className}`}>
+      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className={`mt-3 text-2xl font-bold ${tone}`}>
+        <CountUp value={value} />
+      </p>
     </div>
   );
 }
 
+function formatRelativeTime(value) {
+  if (!value) {
+    return "Just now";
+  }
+
+  const timestamp = new Date(value).getTime();
+  if (Number.isNaN(timestamp)) {
+    return "Just now";
+  }
+
+  const deltaMinutes = Math.max(1, Math.round((Date.now() - timestamp) / 60000));
+  if (deltaMinutes < 60) {
+    return `${deltaMinutes}m ago`;
+  }
+
+  const deltaHours = Math.round(deltaMinutes / 60);
+  if (deltaHours < 24) {
+    return `${deltaHours}h ago`;
+  }
+
+  const deltaDays = Math.round(deltaHours / 24);
+  if (deltaDays < 7) {
+    return `${deltaDays}d ago`;
+  }
+
+  return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+function getStatusBucket(status) {
+  if (status === "active") {
+    return { className: "is-active", label: "Active" };
+  }
+  if (["proof_submitted", "awaiting_purchase", "forming", "collecting", "purchasing"].includes(status)) {
+    return { className: "is-pending", label: "In progress" };
+  }
+  if (["closed", "refunded", "refunding"].includes(status)) {
+    return { className: "is-closed", label: "Closed" };
+  }
+  if (status === "disputed") {
+    return { className: "is-alert", label: "Needs attention" };
+  }
+  return { className: "is-neutral", label: "Open" };
+}
+
+function getModeTone(mode) {
+  return mode === "group_buy" ? "is-buy" : "is-sharing";
+}
+
+function getAvatarToken(name) {
+  return String(name || "ShareVerse")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
+}
+
 export default function ChatsInbox() {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
-  const isMountedRef = useRef(true);
   const [chatInbox, setChatInbox] = useState({ chats: [], total_chats: 0, total_unread_count: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const previousUnreadCountRef = useRef(null);
+  const isMountedRef = useRef(true);
   const [pinnedChatIds, setPinnedChatIds] = useState(() => {
     if (typeof window === "undefined") {
       return [];
     }
 
     try {
-      const stored = window.localStorage.getItem(PINNED_CHATS_STORAGE_KEY);
-      const parsed = stored ? JSON.parse(stored) : [];
+      const storedValue = window.localStorage.getItem(PINNED_CHATS_STORAGE_KEY);
+      const parsed = storedValue ? JSON.parse(storedValue) : [];
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
   });
 
+  useRevealOnScroll();
+
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileDrawerOpen(false);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     window.localStorage.setItem(PINNED_CHATS_STORAGE_KEY, JSON.stringify(pinnedChatIds));
@@ -109,9 +205,19 @@ export default function ChatsInbox() {
         return;
       }
 
-      setChatInbox(response.data || { chats: [], total_chats: 0, total_unread_count: 0 });
+      const nextInbox = response.data || { chats: [], total_chats: 0, total_unread_count: 0 };
+      const nextUnreadCount = Number(nextInbox.total_unread_count) || 0;
+      const previousUnreadCount = previousUnreadCountRef.current;
+
+      if (previousUnreadCount !== null && nextUnreadCount > previousUnreadCount) {
+        pulseDevice();
+      }
+
+      previousUnreadCountRef.current = nextUnreadCount;
+      setChatInbox(nextInbox);
       setError("");
     } catch (err) {
+      console.error(err);
       if (isMountedRef.current) {
         setError(err.response?.data?.error || "We could not load your chats right now.");
       }
@@ -126,7 +232,7 @@ export default function ChatsInbox() {
     void fetchInbox(true);
     const intervalId = window.setInterval(() => {
       void fetchInbox(false);
-    }, 15000);
+    }, 10000);
 
     return () => {
       window.clearInterval(intervalId);
@@ -138,7 +244,7 @@ export default function ChatsInbox() {
     return {
       total: chatInbox.total_chats || 0,
       unreadMessages: chatInbox.total_unread_count || 0,
-      unreadThreads: chats.filter((chat) => Number(chat.unread_chat_count) > 0).length,
+      unreadThreads: chats.filter((chat) => chat.unread_chat_count > 0).length,
       pinned: chats.filter((chat) => pinnedChatIds.includes(chat.group.id)).length,
       hosted: chats.filter((chat) => chat.is_owner).length,
     };
@@ -153,7 +259,7 @@ export default function ChatsInbox() {
           filter === "all"
             ? true
             : filter === "unread"
-              ? Number(chat.unread_chat_count) > 0
+              ? chat.unread_chat_count > 0
               : filter === "pinned"
                 ? pinnedChatIds.includes(chat.group.id)
                 : chat.is_owner;
@@ -170,6 +276,7 @@ export default function ChatsInbox() {
           chat.group.subscription_name,
           chat.group.owner_name,
           chat.group.mode_label,
+          chat.group.status_label,
           chat.last_message?.message,
           chat.last_message?.sender_username,
           ...(chat.participant_preview || []).map((participant) => participant.username),
@@ -190,22 +297,27 @@ export default function ChatsInbox() {
       });
   }, [chatInbox.chats, filter, pinnedChatIds, searchTerm]);
 
-  function togglePinnedChat(groupId) {
+  const togglePinnedChat = (groupId) => {
     setPinnedChatIds((current) =>
       current.includes(groupId) ? current.filter((id) => id !== groupId) : [...current, groupId]
     );
-  }
+  };
+
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: () => fetchInbox(false),
+    disabled: loading,
+  });
 
   if (loading) {
     return (
       <div className="sv-page">
-        <div className="mx-auto max-w-6xl space-y-4">
+        <div className="mx-auto max-w-6xl space-y-6">
           <SkeletonCard>
-            <SkeletonTextGroup eyebrowWidth="w-16" titleWidth="w-72" />
+            <SkeletonTextGroup eyebrowWidth="w-16" titleWidth="w-80" />
           </SkeletonCard>
-          <SkeletonMetricGrid count={4} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" />
+          <SkeletonMetricGrid count={4} />
           <SkeletonCard>
-            <SkeletonList count={4} itemClassName="h-28 rounded-xl" />
+            <SkeletonList count={4} itemClassName="h-32 rounded-[22px]" />
           </SkeletonCard>
         </div>
       </div>
@@ -213,240 +325,319 @@ export default function ChatsInbox() {
   }
 
   return (
-    <div className="sv-page">
-      <div className="mx-auto max-w-6xl space-y-4">
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="sv-page" {...pullToRefresh.bind}>
+      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
+        <PullToRefreshIndicator
+          progress={pullToRefresh.progress}
+          isRefreshing={pullToRefresh.isRefreshing}
+          loadingLabel="Refreshing chats..."
+        />
+
+        <section className="sv-dark-hero sv-reveal">
+          <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Chats</p>
-              <h1 className="mt-2 text-2xl font-bold text-slate-950">
-                {isMobile ? "Your conversations" : "Keep important group chats easy to find"}
+              <p className="sv-eyebrow-on-dark">Chats</p>
+              <h1 className="sv-display-on-dark mt-2 max-w-4xl sm:mt-3">
+                {isMobile ? "Find the right thread fast." : "Pinned threads, faster scans, and clearer group context"}
               </h1>
-              <p className="mt-2 text-sm leading-7 text-slate-600">
-                Search threads, pin the ones that matter, and jump back into the right split fast.
+              <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-4 sm:text-base sm:leading-8">
+                {isMobile
+                  ? "Open one control sheet for search and filters, then scan a much simpler chat list."
+                  : "Separate hosted chats from joined ones, keep important threads pinned, and jump in with a clearer sense of status and who is inside the conversation."}
+              </p>
+              <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+                Pull down on mobile to refresh this inbox quickly.
               </p>
             </div>
-
-            <button type="button" onClick={() => navigate("/my-shared")} className="sv-btn-secondary">
+            <button type="button" onClick={() => navigate("/my-shared")} className="sv-btn-ghost-dark">
               Back to My Splits
             </button>
           </div>
         </section>
 
         {!isMobile ? (
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="Total chats" value={stats.total} />
-            <MetricCard label="Unread messages" value={stats.unreadMessages} tone="text-emerald-700" />
-            <MetricCard label="Pinned" value={stats.pinned} tone="text-amber-700" />
-            <MetricCard label="Hosted by you" value={stats.hosted} tone="text-violet-700" />
+          <section className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
+            <SummaryCard label="Total chats" value={stats.total} className="col-span-2 md:col-span-1" />
+            <SummaryCard label="Unread messages" value={stats.unreadMessages} tone={stats.unreadMessages > 0 ? "text-emerald-700" : "text-slate-900"} />
+            <SummaryCard label="Pinned" value={stats.pinned} tone="text-amber-700" />
+            <SummaryCard label="Hosted by you" value={stats.hosted} tone="text-violet-700" />
           </section>
         ) : null}
 
-        <section className="sv-card">
-          <div className="space-y-4">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <label className="flex min-h-[44px] w-full items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600 md:max-w-sm">
-                <SearchIcon className="h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search groups, hosts, or messages"
-                  className="w-full border-0 bg-transparent py-2.5 text-sm text-slate-900 outline-none"
-                />
-              </label>
-
-              <div className="flex flex-wrap gap-2">
-                {FILTERS.map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => setFilter(item.value)}
-                    className={`rounded-md border px-3 py-2 text-sm font-medium transition ${
-                      filter === item.value
-                        ? "border-slate-900 bg-slate-900 text-white"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950"
-                    }`}
-                  >
-                    {item.label}
-                    {item.value === "unread"
-                      ? ` (${stats.unreadThreads})`
-                      : item.value === "pinned"
-                        ? ` (${stats.pinned})`
-                        : item.value === "hosted"
-                          ? ` (${stats.hosted})`
-                          : ` (${stats.total})`}
-                  </button>
-                ))}
+        <section className="sv-card sv-reveal">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Inbox</p>
+                <h2 className="mt-2 text-2xl font-bold text-slate-900">{isMobile ? "Chat list" : "Your conversations"}</h2>
               </div>
-            </div>
 
-            {error ? (
-              <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                {error}
-              </div>
-            ) : null}
-
-            <div className="space-y-3">
-              {visibleChats.length === 0 ? (
-                <EmptyState
-                  icon={ChatIcon}
-                  title="Nothing matches this view yet."
-                  description="Try another filter or clear the search to bring back the rest of your conversations."
-                />
+              {isMobile ? (
+                <button
+                  type="button"
+                  onClick={() => setIsMobileDrawerOpen(true)}
+                  className="sv-chat-mobile-trigger"
+                >
+                  <span className="sv-chat-mobile-trigger-copy">
+                    <span>Search &amp; filters</span>
+                    <strong>{searchTerm ? `Searching "${searchTerm}"` : filter === "all" ? "All chats" : filter.charAt(0).toUpperCase() + filter.slice(1)}</strong>
+                  </span>
+                  <SearchIcon className="h-4 w-4" />
+                </button>
               ) : (
-                visibleChats.map((chat) => (
-                  <ChatRow
-                    key={chat.group.id}
-                    chat={chat}
-                    pinned={pinnedChatIds.includes(chat.group.id)}
-                    onTogglePinned={() => togglePinnedChat(chat.group.id)}
-                    onOpen={() => navigate(`/groups/${chat.group.id}/chat`)}
+                <label className="sv-chat-search">
+                  <SearchIcon className="h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Search groups, hosts, or messages"
+                    className="sv-chat-search-input"
                   />
-                ))
+                </label>
               )}
             </div>
+
+            {!isMobile ? (
+              <Tabs
+                tabs={[
+                  { value: "all", label: "All chats", count: stats.total },
+                  { value: "unread", label: "Unread", count: stats.unreadThreads },
+                  { value: "pinned", label: "Pinned", count: stats.pinned },
+                  { value: "hosted", label: "Hosted", count: stats.hosted },
+                ]}
+                value={filter}
+                onChange={setFilter}
+              />
+            ) : null}
+          </div>
+
+          {error ? (
+            <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="mt-5 space-y-4">
+            {visibleChats.length === 0 ? (
+              <EmptyState
+                icon={ChatIcon}
+                title="Nothing matches this chat view yet."
+                description="Try another filter or clear the search to bring back the rest of your conversations."
+              />
+            ) : (
+              visibleChats.map((chat) => (
+                <ChatCard
+                  key={chat.group.id}
+                  chat={chat}
+                  pinned={pinnedChatIds.includes(chat.group.id)}
+                  onTogglePinned={() => togglePinnedChat(chat.group.id)}
+                  onOpen={() => navigate(`/groups/${chat.group.id}/chat`)}
+                  compact={isMobile}
+                />
+              ))
+            )}
           </div>
         </section>
       </div>
+
+      <Drawer
+        open={isMobile && isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        eyebrow="Chat controls"
+        title="Find the right thread"
+        description="Search chats, narrow the list, and then jump back to the compact inbox."
+        footer={(
+          <button
+            type="button"
+            onClick={() => setIsMobileDrawerOpen(false)}
+            className="sv-btn-secondary w-full justify-center"
+          >
+            Done
+          </button>
+        )}
+      >
+        <label className="sv-chat-search sv-chat-search-drawer">
+          <SearchIcon className="h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search groups, hosts, or messages"
+            className="sv-chat-search-input"
+          />
+        </label>
+
+        <Tabs
+          tabs={[
+            { value: "all", label: "All chats", count: stats.total },
+            { value: "unread", label: "Unread", count: stats.unreadThreads },
+            { value: "pinned", label: "Pinned", count: stats.pinned },
+            { value: "hosted", label: "Hosted", count: stats.hosted },
+          ]}
+          value={filter}
+          onChange={setFilter}
+          className="sv-drawer-tabs"
+        />
+
+        <div className="sv-drawer-stack">
+          <button type="button" onClick={() => navigate("/my-shared")} className="sv-drawer-action">
+            <span className="sv-drawer-action-icon">
+              <ChatIcon className="h-4.5 w-4.5" />
+            </span>
+            <span className="sv-drawer-action-copy">
+              <strong>Back to My Splits</strong>
+              <span>Return to the dashboard for the groups behind these chats.</span>
+            </span>
+          </button>
+        </div>
+      </Drawer>
     </div>
   );
 }
 
-function ChatRow({ chat, pinned, onTogglePinned, onOpen }) {
-  const statusLabel = getStatusLabel(chat.group.status);
+function ChatCard({ chat, pinned, onTogglePinned, onOpen, compact = false }) {
+  const statusMeta = getStatusBucket(chat.group.status);
+  const tone = getModeTone(chat.group.mode);
   const typingLabel = formatTypingLabel(chat.active_typing_users);
+  const hasTyping = Boolean(typingLabel);
   const onlineCount = Math.max(0, Number(chat.online_participant_count) || 0);
-  const messageLabel = typingLabel || chat.last_message?.message || "No messages yet";
-  const previewPeople = (chat.participant_preview || []).slice(0, 3);
 
   return (
-    <article
-      className={`rounded-md border p-4 shadow-sm ${
-        Number(chat.unread_chat_count) > 0
-          ? "border-emerald-200 bg-emerald-50/50"
-          : "border-slate-200 bg-white"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold text-slate-950">{chat.group.subscription_name}</h2>
-            <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getModeTone(chat.group.mode)}`}>
-              {chat.group.mode_label}
-            </span>
-            <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getStatusTone(chat.group.status)}`}>
-              {statusLabel}
-            </span>
-            {pinned ? (
-              <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">
-                Pinned
-              </span>
-            ) : null}
+    <article className={`sv-chat-card ${chat.unread_chat_count > 0 ? "is-unread" : ""}`}>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className={`sv-chat-group-avatar ${tone} ${onlineCount > 0 ? "has-online" : ""}`}>
+            <span>{getAvatarToken(chat.group.subscription_name)}</span>
+            <span className={`sv-chat-group-avatar-dot ${hasTyping || onlineCount > 0 ? "is-online" : ""}`} />
           </div>
 
-          <p className="mt-2 text-sm text-slate-500">
-            {chat.is_owner ? "Hosted by you" : `Hosted by ${chat.group.owner_name}`} •{" "}
-            {chat.participant_count} participant{chat.participant_count === 1 ? "" : "s"} •{" "}
-            {formatRelativeTime(chat.last_activity_at)}
-          </p>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-lg font-semibold text-slate-900">{chat.group.subscription_name}</h3>
+              {!compact ? <span className={`sv-chat-status-pill ${statusMeta.className}`}>{statusMeta.label}</span> : null}
+              {!compact ? <span className="sv-chat-mode-pill">{chat.group.mode_label}</span> : null}
+              {pinned ? <span className="sv-chat-pinned-pill">Pinned</span> : null}
+            </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {previewPeople.map((participant) => (
-              <span
-                key={`${chat.group.id}-${participant.username}`}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700"
-                title={participant.username}
-              >
-                {participant.initials || getInitials(participant.username)}
-              </span>
-            ))}
-            {previewPeople.length === 0 ? (
-              <span className="text-xs text-slate-500">No participant preview yet</span>
-            ) : null}
-            {Number(chat.unread_chat_count) > 0 ? (
-              <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
-                {chat.unread_chat_count} unread
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
-                <CheckCircleIcon className="h-3.5 w-3.5" />
-                Read
-              </span>
-            )}
-            {!typingLabel && onlineCount > 0 ? (
-              <span className="rounded-full bg-teal-100 px-2 py-1 text-xs font-semibold text-teal-700">
-                {onlineCount} active
-              </span>
-            ) : null}
+            <p className="mt-2 text-sm text-slate-500">
+              {compact
+                ? chat.is_owner
+                  ? "Hosted by you"
+                  : `Host: ${chat.group.owner_name}`
+                : `${chat.is_owner ? "Hosted by you" : `Hosted by ${chat.group.owner_name}`} | ${chat.participant_count} participant${chat.participant_count === 1 ? "" : "s"}`}
+            </p>
+            {!compact ? <div className="mt-2 flex flex-wrap items-center gap-2">
+              {hasTyping ? <span className="sv-chat-typing-pill">{typingLabel}</span> : null}
+              {!hasTyping && onlineCount > 0 ? (
+                <span className="sv-chat-live-pill">
+                  {onlineCount} active now
+                </span>
+              ) : null}
+            </div> : null}
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onTogglePinned}
-          aria-label={pinned ? "Unpin chat" : "Pin chat"}
-          className={`rounded-md border p-2 transition ${
-            pinned
-              ? "border-amber-200 bg-amber-100 text-amber-700"
-              : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
-          }`}
-        >
-          <StarIcon className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="sv-chat-time">{formatRelativeTime(chat.last_activity_at)}</span>
+          <Tooltip content={pinned ? "Unpin chat" : "Pin chat"}>
+            <button
+              type="button"
+              onClick={onTogglePinned}
+              className={`sv-chat-pin ${pinned ? "is-active" : ""}`}
+              aria-label={pinned ? "Unpin chat" : "Pin chat"}
+            >
+              <StarIcon className="h-4 w-4" />
+            </button>
+          </Tooltip>
+        </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onOpen}
-        className="mt-4 block w-full rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-300 hover:bg-slate-100"
-      >
-        {typingLabel ? (
-          <div className="space-y-2">
-            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
-              <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-              Typing now
-            </p>
-            <p className="text-sm font-semibold text-teal-700">{typingLabel}</p>
-          </div>
+      {!compact ? (
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <AvatarStack
+            className="sv-chat-avatar-stack"
+            chipClassName="sv-chat-avatar-chip"
+            items={(chat.participant_preview || []).map((participant) => {
+              const presenceMeta = getPresenceMeta(participant.presence);
+              return {
+                id: `${chat.group.id}-${participant.username}`,
+                initials: participant.initials || getAvatarToken(participant.username),
+                label: participant.username,
+                title: `${participant.username} - ${presenceMeta.label}`,
+                className: presenceMeta.className,
+                indicatorClassName: presenceMeta.className,
+              };
+            })}
+          />
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            {chat.message_count} message{chat.message_count === 1 ? "" : "s"}
+          </span>
+          {chat.unread_chat_count > 0 ? (
+            <span className="sv-chat-unread-badge">
+              {chat.unread_chat_count} unread
+            </span>
+          ) : (
+            <span className="sv-chat-read-badge">
+              <CheckCircleIcon className="h-3.5 w-3.5" />
+              Read
+            </span>
+          )}
+        </div>
+      ) : null}
+
+      <button type="button" onClick={onOpen} className={`sv-chat-card-body ${compact ? "is-compact" : ""}`}>
+        {hasTyping ? (
+          <>
+            {!compact ? (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                  <span className="sv-chat-inline-dot is-online" />
+                  Live right now
+                </p>
+                <span className="text-xs text-slate-400">{formatRelativeTime(chat.last_activity_at)}</span>
+              </div>
+            ) : null}
+            <p className={`mt-2 text-sm font-semibold ${compact ? "sv-chat-message-compact text-emerald-700" : "leading-7 text-emerald-700"}`}>{typingLabel}</p>
+          </>
         ) : chat.last_message ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 {chat.last_message.is_own ? "You" : chat.last_message.sender_username}
               </p>
-              <span className="text-xs text-slate-400">
-                {formatRelativeTime(chat.last_message.created_at)}
-              </span>
+              {!compact ? <span className="text-xs text-slate-400">{formatRelativeTime(chat.last_message.created_at)}</span> : null}
             </div>
-            <p
-              className={`text-sm ${
-                Number(chat.unread_chat_count) > 0 ? "font-semibold text-slate-900" : "text-slate-700"
-              }`}
-            >
-              {messageLabel}
+            <p className={`mt-2 text-sm ${compact ? "sv-chat-message-compact leading-6" : "leading-7"} ${chat.unread_chat_count > 0 ? "font-semibold text-slate-900" : "text-slate-700"}`}>
+              {chat.last_message.message}
             </p>
-          </div>
+          </>
         ) : (
-          <p className="inline-flex items-center gap-2 text-sm text-slate-500">
-            <ClockIcon className="h-4 w-4" />
-            No messages yet
-          </p>
+          <>
+            <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <ClockIcon className="h-3.5 w-3.5" />
+              No messages yet
+            </p>
+            <p className="mt-2 text-sm leading-7 text-slate-600">Open this chat to start coordinating with the group.</p>
+          </>
         )}
       </button>
+
+      {compact ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {chat.unread_chat_count > 0 ? (
+            <span className="sv-chat-unread-badge">
+              {chat.unread_chat_count} unread
+            </span>
+          ) : (
+            <span className="sv-chat-read-badge">
+              <CheckCircleIcon className="h-3.5 w-3.5" />
+              Read
+            </span>
+          )}
+          {!hasTyping && onlineCount > 0 ? <span className="sv-chat-live-pill">{onlineCount} active</span> : null}
+        </div>
+      ) : null}
     </article>
   );
-}
-
-function formatTypingLabel(usernames) {
-  if (!Array.isArray(usernames) || usernames.length === 0) {
-    return "";
-  }
-  if (usernames.length === 1) {
-    return `${usernames[0]} is typing...`;
-  }
-  if (usernames.length === 2) {
-    return `${usernames[0]} and ${usernames[1]} are typing...`;
-  }
-  return `${usernames[0]} and ${usernames.length - 1} others are typing...`;
 }

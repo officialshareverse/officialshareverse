@@ -20,8 +20,8 @@ const footerLinks = [
 export default function PublicFooter({ compact = false }) {
   return (
     <footer
-      className={`border border-slate-200 bg-white ${
-        compact ? "mt-8 rounded-lg px-4 py-4 shadow-sm sm:px-5" : "mt-10 rounded-lg px-4 py-5 shadow-sm sm:mt-12 sm:px-6 sm:py-6"
+      className={`border border-white/60 bg-white/78 backdrop-blur ${
+        compact ? "mt-8 rounded-[24px] px-4 py-4 shadow-[0_18px_48px_rgba(15,23,42,0.07)] sm:px-5" : "mt-10 rounded-[24px] px-4 py-5 shadow-[0_24px_60px_rgba(15,23,42,0.08)] sm:mt-16 sm:rounded-[30px] sm:px-6 sm:py-8"
       }`}
     >
       <div
@@ -31,10 +31,12 @@ export default function PublicFooter({ compact = false }) {
       >
         <div className="max-w-xl">
           <div className="flex items-center gap-3">
-            <BrandMark sizeClass="h-10 w-10 sm:h-11 sm:w-11" roundedClass="rounded-[12px]" />
+            <BrandMark glow sizeClass="h-10 w-10 sm:h-11 sm:w-11" />
             <div>
-              <p className="text-lg font-bold leading-none text-slate-950 sm:text-xl">ShareVerse</p>
-              <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-slate-500 sm:text-xs">
+              <p className="text-xl font-bold leading-none text-slate-950 sm:text-2xl">
+                ShareVerse
+              </p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-slate-500 sm:text-sm">
                 Split more. Pay less.
               </p>
             </div>
@@ -51,9 +53,10 @@ export default function PublicFooter({ compact = false }) {
             <Link
               key={item.to}
               to={item.to}
-              className="font-medium transition hover:text-slate-950"
+              className="group relative font-medium transition hover:text-slate-950"
             >
               {item.label}
+              <span className="absolute -bottom-1 left-0 h-[2px] w-full origin-left scale-x-0 rounded-full bg-slate-900 transition-transform duration-300 group-hover:scale-x-100" />
             </Link>
           ))}
         </nav>

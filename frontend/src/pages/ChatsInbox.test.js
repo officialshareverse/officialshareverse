@@ -15,6 +15,21 @@ jest.mock("../api/axios", () => ({
   },
 }));
 
+jest.mock("../hooks/useRevealOnScroll", () => ({
+  __esModule: true,
+  default: () => {},
+}));
+
+jest.mock("../hooks/usePullToRefresh", () => ({
+  __esModule: true,
+  default: () => ({
+    bind: {},
+    isRefreshing: false,
+    isPulling: false,
+    progress: 0,
+  }),
+}));
+
 function buildChat(id, overrides = {}) {
   const { group: groupOverrides = {}, ...chatOverrides } = overrides;
 
