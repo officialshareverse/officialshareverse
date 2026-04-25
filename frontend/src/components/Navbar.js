@@ -14,6 +14,7 @@ import {
   HomeIcon,
   LayersIcon,
   PlusIcon,
+  SparkIcon,
   UserIcon,
   WalletIcon,
 } from "./UiIcons";
@@ -49,6 +50,9 @@ function resolveCurrentPath(pathname) {
     return "/chats";
   }
   if (pathname.startsWith("/wallet")) {
+    return "/wallet";
+  }
+  if (pathname.startsWith("/referrals")) {
     return "/wallet";
   }
   if (pathname.startsWith("/profile")) {
@@ -383,6 +387,18 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
                       >
                         <UserIcon className="sv-user-menu-icon" />
                         Profile
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsProfileMenuOpen(false);
+                          navigate("/referrals");
+                        }}
+                        className="sv-user-menu-item"
+                        role="menuitem"
+                      >
+                        <SparkIcon className="sv-user-menu-icon" />
+                        Refer and earn
                       </button>
                       <button
                         type="button"
