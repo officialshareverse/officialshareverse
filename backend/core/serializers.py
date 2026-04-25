@@ -104,13 +104,13 @@ def get_transaction_copy(transaction):
     if transaction.payment_method == "wallet_topup":
         return {
             "title": "Wallet top-up",
-            "description": "Money added to your wallet balance.",
+            "description": "Money added to your withdrawable wallet balance.",
         }
 
     if transaction.payment_method == "wallet_withdrawal":
         return {
             "title": "Wallet withdrawal",
-            "description": "Money withdrawn from your wallet balance.",
+            "description": "Money withdrawn from your cash wallet balance.",
         }
 
     if transaction.payment_method == "wallet_payout":
@@ -134,13 +134,13 @@ def get_transaction_copy(transaction):
 
         return {
             "title": "Wallet payout",
-            "description": "Money moved from your wallet to your payout account.",
+            "description": "Money moved from your cash wallet balance to your payout account.",
         }
 
     if transaction.payment_method == "wallet_payout_reversal":
         return {
             "title": "Payout returned",
-            "description": "A failed or reversed payout was returned to your wallet.",
+            "description": "A failed or reversed payout was returned to your cash wallet balance.",
         }
 
     if transaction.payment_method == "group_share_payout":
@@ -159,25 +159,43 @@ def get_transaction_copy(transaction):
         if transaction.group and transaction.group.mode == "group_buy":
             return {
                 "title": "Buy-together contribution",
-                "description": f"You contributed to buy {transaction.group.subscription.name} with the group.",
+                "description": f"You used cash wallet balance to contribute toward {transaction.group.subscription.name}.",
             }
 
         if transaction.group:
             return {
                 "title": "Shared subscription payment",
-                "description": f"You paid to join {transaction.group.subscription.name}.",
+                "description": f"You used cash wallet balance to join {transaction.group.subscription.name}.",
             }
+
+    if transaction.payment_method == "wallet_bonus":
+        if transaction.group and transaction.group.mode == "group_buy":
+            return {
+                "title": "Bonus credit used",
+                "description": f"Referral bonus credit was used toward {transaction.group.subscription.name}.",
+            }
+
+        if transaction.group:
+            return {
+                "title": "Bonus credit used",
+                "description": f"Referral bonus credit was used to join {transaction.group.subscription.name}.",
+            }
+
+        return {
+            "title": "Bonus credit used",
+            "description": "Referral bonus credit was used inside your wallet.",
+        }
 
     if transaction.payment_method == "refund":
         return {
             "title": "Refund received",
-            "description": "Funds were returned to your wallet.",
+            "description": "Funds were returned to your cash wallet balance.",
         }
 
     if transaction.payment_method == "referral_reward":
         return {
             "title": "Referral reward",
-            "description": "Wallet credit earned from a referral.",
+            "description": "Non-withdrawable bonus credit earned from a referral. Use it to join groups.",
         }
 
     return {

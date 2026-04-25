@@ -22,7 +22,7 @@ const REFERRAL_STEPS = [
   {
     icon: WalletIcon,
     title: "Rewards land in both wallets",
-    body: "When that first valid join is completed at Rs 150 or more, the inviter earns Rs 25 and the invitee earns Rs 10 as wallet credit.",
+    body: "When that first valid join is completed at Rs 150 or more, the inviter earns Rs 25 and the invitee earns Rs 10 as bonus credit that can only be used to join groups.",
   },
 ];
 
@@ -31,7 +31,7 @@ const REFERRAL_TERMS = [
   "The inviter reward is Rs 25 and the invitee reward is Rs 10 for each successful first join, unless ShareVerse announces a different promotional amount on an official page.",
   "Only one referral reward is available per referred user. Repeat joins, duplicate accounts, or repeat claims for the same person are not eligible.",
   "Self-referrals, fake accounts, misleading promotion, or any fraudulent or abusive activity can result in the referral being rejected, reversed, or removed from wallet balances.",
-  "Rewards are issued as wallet credit and are subject to the platform's normal wallet, payout, fraud review, and account verification rules.",
+  "Rewards are issued as non-withdrawable bonus credit and can be used only for joining eligible groups on ShareVerse.",
   "If a referred signup is cancelled, refunded, reversed, banned, or found to violate ShareVerse policies, ShareVerse may withhold or reverse related referral rewards.",
   "Referral rewards may take time to appear while account activity and the first joined group are verified.",
   "ShareVerse may update, pause, or end the referral program at any time. Continued use of referral links or codes means you agree to the latest referral terms.",
@@ -47,7 +47,7 @@ export default function ReferralPage() {
           <div className="sv-referral-page-hero-copy">
             <div>
               <p className="sv-eyebrow">Referral program</p>
-              <h1 className="sv-title mt-2">Give friends a cleaner signup path and earn wallet credit.</h1>
+              <h1 className="sv-title mt-2">Give friends a cleaner signup path and earn join-only bonus credit.</h1>
               <p className="sv-referral-page-subtitle">
                 This page keeps your referral code, shareable signup link, reward tracking, and referral rules in one place.
               </p>
@@ -56,6 +56,7 @@ export default function ReferralPage() {
                 <span className="sv-chip">Rs 25 for inviter</span>
                 <span className="sv-chip">Rs 10 for invitee</span>
                 <span className="sv-chip">Minimum qualifying join subtotal: Rs 150</span>
+                <span className="sv-chip">Bonus credit cannot be withdrawn</span>
               </div>
             </div>
           </div>

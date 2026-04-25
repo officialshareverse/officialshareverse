@@ -3307,11 +3307,10 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(referral.status, "rewarded")
         self.assertEqual(referral.reward_amount, Decimal("25.00"))
         self.assertEqual(referral_code.successful_referrals, 1)
-        self.assertEqual(referrer_wallet.balance, referrer_starting_balance + Decimal("25.00"))
-        self.assertEqual(
-            referred_wallet.balance,
-            referred_starting_balance - expected_join_price + Decimal("10.00"),
-        )
+        self.assertEqual(referrer_wallet.balance, referrer_starting_balance)
+        self.assertEqual(referrer_wallet.bonus_balance, Decimal("25.00"))
+        self.assertEqual(referred_wallet.balance, referred_starting_balance - expected_join_price)
+        self.assertEqual(referred_wallet.bonus_balance, Decimal("10.00"))
         self.assertTrue(
             Transaction.objects.filter(user=self.owner, payment_method="referral_reward", type="credit").exists()
         )
@@ -3373,6 +3372,82 @@ class GroupFlowTests(APITestCase):
         self.assertFalse(
             Transaction.objects.filter(user=referred_user, payment_method="referral_reward", type="credit").exists()
         )
+
+    def test_group_join_uses_bonus_balance_before_cash_balance(self):
+        group = self.create_group(mode="sharing", total_slots=2, status="forming")
+        expected_join_price = get_group_join_pricing(group)["join_price"]
+        bonus_credit = Decimal("150.00")
+        cash_needed = expected_join_price - bonus_credit
+
+        wallet = Wallet.objects.get(user=self.outsider)
+        wallet.balance = cash_needed
+        wallet.bonus_balance = bonus_credit
+        wallet.save(update_fields=["balance", "bonus_balance"])
+
+        self.authenticate(self.outsider)
+        response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        wallet.refresh_from_db()
+        self.assertEqual(wallet.balance, Decimal("0.00"))
+        self.assertEqual(wallet.bonus_balance, Decimal("0.00"))
+        self.assertEqual(response.data["remaining_balance"], "0.00")
+        self.assertEqual(response.data["remaining_cash_balance"], "0.00")
+        self.assertEqual(response.data["remaining_bonus_balance"], "0.00")
+        self.assertTrue(
+            Transaction.objects.filter(
+                user=self.outsider,
+                payment_method="wallet",
+                type="debit",
+                amount=cash_needed,
+            ).exists()
+        )
+        self.assertTrue(
+            Transaction.objects.filter(
+                user=self.outsider,
+                payment_method="wallet_bonus",
+                type="debit",
+                amount=bonus_credit,
+            ).exists()
+        )
+
+    def test_user_cannot_withdraw_bonus_balance(self):
+        wallet = Wallet.objects.get(user=self.owner)
+        wallet.balance = Decimal("100.00")
+        wallet.bonus_balance = Decimal("250.00")
+        wallet.save(update_fields=["balance", "bonus_balance"])
+        self.create_local_bank_payout_account(self.owner)
+
+        self.authenticate(self.owner)
+        response = self.client.post(
+            "/api/withdraw-money/",
+            {"amount": "120.00", "payout_mode": "IMPS"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Insufficient wallet balance", response.data["error"])
+
+        wallet.refresh_from_db()
+        self.assertEqual(wallet.balance, Decimal("100.00"))
+        self.assertEqual(wallet.bonus_balance, Decimal("250.00"))
+
+    def test_dashboard_returns_cash_bonus_and_spendable_balances(self):
+        wallet = Wallet.objects.get(user=self.owner)
+        wallet.balance = Decimal("400.00")
+        wallet.bonus_balance = Decimal("25.00")
+        wallet.save(update_fields=["balance", "bonus_balance"])
+
+        self.authenticate(self.owner)
+        response = self.client.get("/api/dashboard/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["balance"], "400.00")
+        self.assertEqual(response.data["bonus_balance"], "25.00")
+        self.assertEqual(response.data["withdrawable_balance"], "400.00")
+        self.assertEqual(response.data["spendable_balance"], "425.00")
+        self.assertEqual(response.data["wallet_balance"], "425.00")
 
     def test_health_endpoint_reports_service_readiness(self):
         response = self.client.get("/api/health/")

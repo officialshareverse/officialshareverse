@@ -298,6 +298,8 @@ function getEstimatedPayoutLabel(payout, payoutsLive) {
 export default function Wallet() {
   const navigate = useNavigate();
   const [balance, setBalance] = useState("0.00");
+  const [bonusBalance, setBonusBalance] = useState("0.00");
+  const [spendableBalance, setSpendableBalance] = useState("0.00");
   const [transactions, setTransactions] = useState([]);
   const [topupConfig, setTopupConfig] = useState(null);
   const [payoutConfig, setPayoutConfig] = useState(null);
@@ -424,11 +426,6 @@ export default function Wallet() {
     [payouts]
   );
 
-  const pendingPayoutCount = useMemo(
-    () => sortedPayouts.filter((payout) => ["pending", "queued", "processing"].includes(payout.status)).length,
-    [sortedPayouts]
-  );
-
   const payoutFormState = useMemo(() => {
     const contactReady =
       Boolean(payoutForm.contact_name.trim()) &&
@@ -505,7 +502,7 @@ export default function Wallet() {
           <p className="sv-eyebrow">Top Up</p>
           <h3 className="sv-title mt-2">Add money with Razorpay and credit the wallet after verification</h3>
           <p className="mt-3 text-sm leading-7 text-slate-600">
-            Use UPI, cards, or netbanking. The wallet updates only after the payment is verified successfully.
+            Use UPI, cards, or netbanking. Top-ups add real cash balance after the payment is verified successfully.
           </p>
 
           <div className="sv-wallet-inline-grid sv-wallet-mobile-secondary mt-4">
@@ -739,6 +736,10 @@ export default function Wallet() {
               : "Manual withdrawal requests do not deduct the wallet immediately. They are reviewed first, then settled manually."}
           </p>
 
+          <div className="sv-feedback-banner mt-4">
+            Bonus credit cannot be withdrawn. Only your real cash balance can move to a payout method.
+          </div>
+
           <div className="sv-wallet-helper-card sv-wallet-mobile-secondary mt-4">
             <p className="sv-wallet-helper-title">Destination</p>
             <p className="sv-wallet-helper-body">
@@ -777,7 +778,7 @@ export default function Wallet() {
           </label>
 
           <div className="sv-wallet-inline-grid sv-wallet-mobile-secondary">
-            <WalletOverviewStat label="Available" value={formatCurrency(balance)} note="wallet balance now" />
+            <WalletOverviewStat label="Withdrawable cash" value={formatCurrency(balance)} note="real cash available now" />
             <WalletOverviewStat
               label="ETA"
               value={payoutsLive ? "Fast" : "24h"}
@@ -832,6 +833,8 @@ export default function Wallet() {
 
       const dashboard = dashboardResponse.data || {};
       setBalance(dashboard.balance || "0.00");
+      setBonusBalance(dashboard.bonus_balance || "0.00");
+      setSpendableBalance(dashboard.spendable_balance || dashboard.wallet_balance || dashboard.balance || "0.00");
       setTransactions(Array.isArray(transactionsResponse.data) ? transactionsResponse.data : []);
       setTopupConfig(dashboard.wallet_payments || null);
       setPayoutConfig(dashboard.wallet_payouts_config || null);
@@ -1075,22 +1078,37 @@ export default function Wallet() {
 
               <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-300">Available balance</p>
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-300">Spendable balance</p>
                   <div className="mt-2 flex items-center gap-3">
                     <span className="sv-wallet-glyph">
                       <WalletGlyph className="h-5 w-5 sm:h-6 sm:w-6" />
                     </span>
                     <h2 className="sv-count-up text-3xl font-bold text-white sm:text-5xl">
-                      <AnimatedValue value={formatCurrency(balance)} />
+                      <AnimatedValue value={formatCurrency(spendableBalance)} />
                     </h2>
                   </div>
                   <p className={`mt-3 text-sm font-semibold ${walletDelta.tone === "is-up" ? "text-emerald-200" : "text-rose-200"}`}>
                     {walletDelta.label}
                   </p>
+                  <div className="sv-wallet-balance-splits mt-4">
+                    <div className="sv-wallet-balance-split">
+                      <span>Cash balance</span>
+                      <strong>{formatCurrency(balance)}</strong>
+                    </div>
+                    <div className="sv-wallet-balance-split">
+                      <span>Bonus credit</span>
+                      <strong>{formatCurrency(bonusBalance)}</strong>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs leading-6 text-slate-300">
+                    Referral rewards go into bonus credit. Bonus can only be used to join groups and cannot be withdrawn.
+                  </p>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   {topupConfig ? <span className="sv-wallet-info-pill">{topupConfig.mode_label}</span> : null}
+                  <span className="sv-wallet-info-pill is-light">Cash {formatCurrency(balance)}</span>
+                  <span className="sv-wallet-info-pill is-bonus">Bonus {formatCurrency(bonusBalance)}</span>
                   <span className={`sv-wallet-info-pill ${payoutsLive ? "is-light" : "is-warning"}`}>
                     {payoutConfig?.mode_label || (payoutsLive ? "Payouts live" : "Manual review")}
                   </span>
@@ -1149,19 +1167,19 @@ export default function Wallet() {
 
             <div className="sv-wallet-overview-stats mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
               <WalletOverviewStat
-                label="Total credits"
-                value={formatShortCurrency(transactionSummary.credit)}
-                note="top-ups and refunds"
+                label="Spendable"
+                value={formatCurrency(spendableBalance)}
+                note="cash plus bonus usable for joins"
               />
               <WalletOverviewStat
-                label="Total debits"
-                value={formatShortCurrency(transactionSummary.debit)}
-                note="joins and payouts"
+                label="Withdrawable cash"
+                value={formatCurrency(balance)}
+                note="the only balance available for payouts"
               />
               <WalletOverviewStat
-                label="Pending payouts"
-                value={pendingPayoutCount}
-                note={payoutsLive ? "provider updates pending" : "under manual review"}
+                label="Bonus credit"
+                value={formatCurrency(bonusBalance)}
+                note="referral rewards for joining groups only"
               />
             </div>
 
@@ -1179,6 +1197,13 @@ export default function Wallet() {
                   {payoutsLive
                     ? payoutConfig?.helper_text || "Withdrawals move to your saved payout method through the live payout rail."
                     : "Automated payouts are pending activation. Save a destination and manual withdrawal requests are usually reviewed within 24 hours."}
+                </p>
+              </div>
+
+              <div className="sv-wallet-helper-card">
+                <p className="sv-wallet-helper-title">Bonus credit policy</p>
+                <p className="sv-wallet-helper-body">
+                  Referral rewards go into bonus credit. It can be used only for joining groups and cannot be withdrawn or paid out.
                 </p>
               </div>
             </div>
@@ -1249,13 +1274,13 @@ export default function Wallet() {
               <p className="sv-eyebrow">Referrals</p>
               <h2 className="sv-title mt-2">Manage referrals on a dedicated page</h2>
               <p className="sv-referral-wallet-subtitle">
-                Open your referral page to copy your code, share the signup link, track rewards, and read the referral terms and conditions.
+                Open your referral page to copy your code, share the signup link, track rewards, and read the referral terms and bonus-credit rules.
               </p>
             </div>
           </div>
 
           <div className="sv-referral-wallet-actions">
-            <span className="sv-chip">Rs 25 + Rs 10 wallet credit</span>
+            <span className="sv-chip">Referral rewards become join-only bonus credit</span>
             <button type="button" className="sv-btn-primary" onClick={() => navigate("/referrals")}>
               Open referrals
             </button>

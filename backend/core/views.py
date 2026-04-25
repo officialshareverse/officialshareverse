@@ -1540,11 +1540,11 @@ def award_referral_reward_for_group_join(joined_user, group, join_subtotal, invi
     active_invitee_wallet = invitee_wallet or Wallet.objects.select_for_update().get_or_create(user=joined_user)[0]
     referral_code = ReferralCode.objects.select_for_update().get(id=referral.referral_code_id)
 
-    referrer_wallet.balance += REFERRAL_REWARD_INVITER
-    referrer_wallet.save(update_fields=["balance"])
+    referrer_wallet.bonus_balance += REFERRAL_REWARD_INVITER
+    referrer_wallet.save(update_fields=["bonus_balance"])
 
-    active_invitee_wallet.balance += REFERRAL_REWARD_INVITEE
-    active_invitee_wallet.save(update_fields=["balance"])
+    active_invitee_wallet.bonus_balance += REFERRAL_REWARD_INVITEE
+    active_invitee_wallet.save(update_fields=["bonus_balance"])
 
     Transaction.objects.create(
         user=referral.referrer,
@@ -1574,15 +1574,16 @@ def award_referral_reward_for_group_join(joined_user, group, join_subtotal, invi
     create_notification(
         user=referral.referrer,
         message=(
-            f"You earned Rs {REFERRAL_REWARD_INVITER} because {joined_user.username} joined their first "
-            f"ShareVerse group on {group.subscription.name}."
+            f"You earned Rs {REFERRAL_REWARD_INVITER} in bonus credit because {joined_user.username} joined "
+            f"their first eligible ShareVerse group on {group.subscription.name}. Bonus credit can be used "
+            "to join groups and cannot be withdrawn."
         ),
     )
     create_notification(
         user=joined_user,
         message=(
-            f"You earned Rs {REFERRAL_REWARD_INVITEE} in wallet credit for joining your first "
-            f"ShareVerse group with a referral."
+            f"You earned Rs {REFERRAL_REWARD_INVITEE} in bonus credit for joining your first eligible "
+            "ShareVerse group with a referral. Bonus credit can be used to join groups and cannot be withdrawn."
         ),
     )
 
@@ -1617,11 +1618,11 @@ def perform_group_join(joined_user, group):
         contribution_amount = pricing["join_subtotal"]
         platform_fee_amount = pricing["platform_fee_amount"]
 
-        if wallet.balance < price:
+        if wallet.get_spendable_balance() < price:
             return None, {"error": "Insufficient balance"}, 400
 
-        wallet.balance -= price
-        wallet.save(update_fields=["balance"])
+        cash_used, bonus_used = wallet.consume_for_group_join(price)
+        wallet.save(update_fields=["balance", "bonus_balance"])
 
         member = GroupMember.objects.create(
             group=locked_group,
@@ -1632,14 +1633,25 @@ def perform_group_join(joined_user, group):
             escrow_status="held",
         )
 
-        Transaction.objects.create(
-            user=joined_user,
-            group=locked_group,
-            amount=price,
-            type="debit",
-            status="success",
-            payment_method="wallet",
-        )
+        if cash_used > 0:
+            Transaction.objects.create(
+                user=joined_user,
+                group=locked_group,
+                amount=cash_used,
+                type="debit",
+                status="success",
+                payment_method="wallet",
+            )
+
+        if bonus_used > 0:
+            Transaction.objects.create(
+                user=joined_user,
+                group=locked_group,
+                amount=bonus_used,
+                type="debit",
+                status="success",
+                payment_method="wallet_bonus",
+            )
 
         EscrowLedger.objects.create(
             user=joined_user,
@@ -1730,7 +1742,9 @@ def perform_group_join(joined_user, group):
             charged_amount=price,
             contribution_amount=contribution_amount,
             platform_fee_amount=platform_fee_amount,
-            wallet_balance=wallet.balance,
+            wallet_cash_balance=wallet.balance,
+            wallet_bonus_balance=wallet.bonus_balance,
+            wallet_spendable_balance=wallet.get_spendable_balance(),
         )
 
         return {
@@ -1744,7 +1758,9 @@ def perform_group_join(joined_user, group):
             "remaining_cycle_days": pricing["remaining_cycle_days"],
             "total_cycle_days": pricing["total_cycle_days"],
             "pricing_note": pricing["pricing_note"],
-            "remaining_balance": str(wallet.balance),
+            "remaining_balance": str(wallet.get_spendable_balance()),
+            "remaining_cash_balance": str(wallet.get_withdrawable_balance()),
+            "remaining_bonus_balance": str(wallet.get_bonus_balance()),
             "group_mode": locked_group.mode,
             "group_status": locked_group.status,
             "credentials": build_member_sharing_credentials(locked_group) if locked_group.mode == "sharing" else None,
@@ -2970,7 +2986,10 @@ class DashboardView(APIView):
                 "username": user.username,
             },
             "balance": str(wallet.balance),
-            "wallet_balance": str(wallet.balance),
+            "bonus_balance": str(wallet.bonus_balance),
+            "withdrawable_balance": str(wallet.get_withdrawable_balance()),
+            "spendable_balance": str(wallet.get_spendable_balance()),
+            "wallet_balance": str(wallet.get_spendable_balance()),
             "wallet_payments": build_wallet_payment_config(),
             "wallet_payouts_config": build_wallet_payout_config(),
             "wallet_payout_account": PayoutAccountSerializer(payout_account).data if payout_account else None,
@@ -3516,7 +3535,9 @@ def build_profile_response(user, request=None):
         "trust_score": user.trust_score,
         "is_verified": user.is_verified,
         "is_staff": user.is_staff,
-        "wallet_balance": str(wallet.balance),
+        "wallet_balance": str(wallet.get_spendable_balance()),
+        "wallet_cash_balance": str(wallet.get_withdrawable_balance()),
+        "wallet_bonus_balance": str(wallet.get_bonus_balance()),
         "groups_joined": joined_groups.count(),
         "groups_created": created_groups.count(),
         "active_memberships": joined_groups.filter(group__status="active").count(),

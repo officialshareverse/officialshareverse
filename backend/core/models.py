@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import uuid
+from decimal import Decimal
 
 from django.contrib.auth.models import AbstractUser
 from django.db import IntegrityError, models
@@ -266,6 +267,31 @@ class Referral(models.Model):
 class Wallet(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    bonus_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def get_withdrawable_balance(self):
+        return Decimal(self.balance or 0).quantize(Decimal("0.01"))
+
+    def get_bonus_balance(self):
+        return Decimal(self.bonus_balance or 0).quantize(Decimal("0.01"))
+
+    def get_spendable_balance(self):
+        return self.get_withdrawable_balance() + self.get_bonus_balance()
+
+    def consume_for_group_join(self, amount):
+        normalized_amount = Decimal(amount or 0).quantize(Decimal("0.01"))
+        if normalized_amount <= 0:
+            return Decimal("0.00"), Decimal("0.00")
+
+        if self.get_spendable_balance() < normalized_amount:
+            raise ValueError("Insufficient wallet balance")
+
+        bonus_used = min(self.get_bonus_balance(), normalized_amount)
+        cash_used = normalized_amount - bonus_used
+
+        self.bonus_balance = self.get_bonus_balance() - bonus_used
+        self.balance = self.get_withdrawable_balance() - cash_used
+        return cash_used, bonus_used
 
     def __str__(self):
         return f"{self.user.username} Wallet"
