@@ -74,8 +74,6 @@ export function buildLastLoginNote(lastLoginMeta, activeUsername, now = Date.now
 export function createResetForm(username = "") {
   return {
     username,
-    phone: "",
-    email: "",
     otp: "",
     new_password: "",
     confirm_password: "",

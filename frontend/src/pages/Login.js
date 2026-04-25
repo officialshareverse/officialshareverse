@@ -133,16 +133,9 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
 
   const requestResetOtp = async () => {
     const username = resetForm.username.trim();
-    const phone = resetForm.phone.trim();
-    const email = resetForm.email.trim();
 
     if (!username) {
       setResetError("Enter your username or email.");
-      return;
-    }
-
-    if (!phone && !email) {
-      setResetError("Add phone or email so we can verify your account.");
       return;
     }
 
@@ -151,12 +144,10 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
       setResetError("");
       const response = await API.post("forgot-password/request-otp/", {
         username,
-        phone,
-        email,
       });
       const nextSessionId = response.data?.reset_session_id || "";
       const nextDevOtp = response.data?.dev_otp || "";
-      const nextDeliveryChannel = response.data?.delivery_channel || (phone ? "phone" : "email");
+      const nextDeliveryChannel = response.data?.delivery_channel || "email";
 
       setResetSessionId(nextSessionId);
       setResetDeliveryChannel(nextDeliveryChannel);
@@ -165,9 +156,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
       setNotice(
         nextDevOtp
           ? `OTP prepared for ${getOtpChannelLabel(nextDeliveryChannel)} delivery. Development OTP: ${nextDevOtp}`
-          : nextDeliveryChannel === "phone"
-            ? "OTP sent by SMS. Enter the code to reset your password."
-            : "OTP sent to your email. Enter the code to reset your password."
+          : "OTP sent to your email. Enter the code to reset your password."
       );
     } catch (err) {
       console.error(err);
@@ -535,7 +524,7 @@ function ResetPasswordModal({
 
         <p className="mt-3 text-sm leading-7 text-slate-600">
           {resetStep === "request"
-            ? "Verify your account with your username or email, then confirm with your 10-digit mobile number for SMS delivery or use email instead."
+            ? "Enter your username or email and we will send the reset code to the email address on your account."
             : `Enter the six-digit OTP we sent by ${getOtpChannelLabel(resetDeliveryChannel)} and set the new password you want to use next.`}
         </p>
 
@@ -566,28 +555,9 @@ function ResetPasswordModal({
             </FieldShell>
 
             {resetStep === "request" ? (
-              <>
-                <FieldShell label="Phone" helper="Optional. Use the 10-digit mobile number linked to your account if you want OTP by SMS.">
-                  <input
-                    type="text"
-                    name="phone"
-                    placeholder="Phone number"
-                    value={resetForm.phone}
-                    onChange={onChange}
-                    className="sv-input"
-                  />
-                </FieldShell>
-                <FieldShell label="Email" helper="Optional if you prefer email delivery instead of SMS.">
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Email address"
-                    value={resetForm.email}
-                    onChange={onChange}
-                    className="sv-input"
-                  />
-                </FieldShell>
-              </>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                We will send the password reset OTP to the verified email address already saved on this account.
+              </div>
             ) : (
               <>
                 <FieldShell label="OTP" helper="Enter the six-digit code you received.">

@@ -180,8 +180,8 @@ function getOtpDeliveryChannelLabel(channel) {
   return channel === "phone" ? "SMS" : "email";
 }
 
-function getPreferredSignupOtpChannel(form) {
-  return form.phone.trim() ? "phone" : "email";
+function getPreferredSignupOtpChannel() {
+  return "email";
 }
 
 function getMaskedPhoneTarget(phone) {
@@ -674,7 +674,7 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
     <AuthShell
       eyebrow="Create account"
       title="Set up your ShareVerse account."
-      subtitle="Use Google or complete one short form, then enter the 6-digit code we send by SMS or email."
+      subtitle="Use Google or complete one short form, then enter the 6-digit code we send to your email."
       themeMode={themeMode}
       toggleTheme={toggleTheme}
       footer={<SignupFooter loginHref={loginHref} />}
@@ -688,7 +688,7 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
             Create your account in one short flow
           </h2>
           <p className="mt-2 max-w-2xl text-[13px] leading-6 text-slate-600 sm:mt-3 sm:text-sm sm:leading-7">
-            Choose a username, add your email, optionally add a mobile number for SMS verification, then confirm the code from this same page.
+            Choose a username, add your email, optionally add a mobile number to your profile, then confirm the code from this same page.
           </p>
         </div>
 
@@ -739,9 +739,7 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
               <span>
                 {hasVerificationSession
                   ? "Enter all 6 digits to create the account right away."
-                  : getPreferredSignupOtpChannel(form) === "phone"
-                    ? "We will send the code by SMS and keep you on this same page."
-                    : "We will send the code to your email and keep you on this same page."}
+                  : "We will send the code to your email and keep you on this same page."}
               </span>
             </div>
             <button
@@ -875,12 +873,12 @@ function ContactStep({ form, handleChange, referralStatus, referralStatusCopy })
           <p className="sv-eyebrow">Verification details</p>
           <h3 className="sv-title mt-2">Where should we send your code?</h3>
           <p className="mt-2 text-sm leading-7 text-slate-600">
-            Add a mobile number to receive your signup OTP by SMS. If you leave phone blank, we will send it by email.
+            Signup OTPs are sent to your email. Phone is optional and only helps complete your profile.
           </p>
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <FieldShell label="Email" helper="We use this when you prefer email delivery or skip phone.">
+          <FieldShell label="Email" helper="We send your verification code here.">
             <input
               type="email"
               name="email"
@@ -892,7 +890,7 @@ function ContactStep({ form, handleChange, referralStatus, referralStatusCopy })
             />
           </FieldShell>
 
-          <FieldShell label="Phone" helper="Optional. Add your 10-digit Indian mobile number to get your signup OTP by SMS.">
+          <FieldShell label="Phone" helper="Optional. Add your 10-digit Indian mobile number to your profile.">
             <input
               type="text"
               name="phone"
@@ -1145,9 +1143,7 @@ function VerificationStep({
                 ? remainingCooldownSeconds > 0
                   ? `You can resend another code in ${formatDuration(remainingCooldownSeconds)}.`
                   : "Need another code? You can request a fresh one here."
-                : activeDeliveryChannel === "phone"
-                  ? "Tap the main button below and we will send the verification code by SMS."
-                  : "Tap the main button below and we will send the verification code to your email."}
+                : "Tap the main button below and we will send the verification code to your email."}
             </p>
           </div>
 

@@ -407,7 +407,7 @@ class SignupRequestOTPSerializer(serializers.Serializer):
         return validate_referral_code_value(value)
 
     def validate(self, attrs):
-        attrs["channel"] = "phone" if attrs.get("phone") else "email"
+        attrs["channel"] = "email"
         return attrs
 
 
@@ -471,27 +471,27 @@ class ForgotPasswordRequestSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         username = normalize_login_identifier(attrs.get("username"))
-        phone = normalize_indian_phone_value(attrs.get("phone"))
         email = (attrs.get("email") or "").strip().lower()
 
         if not username:
             raise serializers.ValidationError({"username": "Username or email is required."})
 
-        if not phone and not email:
-            raise serializers.ValidationError({"phone": "Provide phone or email to verify your account."})
-
         user = find_user_by_login_identifier(username)
         if not user:
             raise serializers.ValidationError({"username": "Account verification failed."})
 
-        if phone and normalize_indian_phone_value(user.phone) != phone:
-            raise serializers.ValidationError({"phone": "Account verification failed."})
-
         if email and (user.email or "").strip().lower() != email:
             raise serializers.ValidationError({"email": "Account verification failed."})
 
+        destination_email = (user.email or "").strip().lower()
+        if not destination_email:
+            raise serializers.ValidationError(
+                {"email": "This account does not have an email address available for password reset."}
+            )
+
         attrs["user"] = user
-        attrs["channel"] = "phone" if phone else "email"
+        attrs["email"] = destination_email
+        attrs["channel"] = "email"
         return attrs
 
 

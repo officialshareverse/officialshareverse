@@ -341,7 +341,7 @@ class GroupFlowTests(APITestCase):
         self.assertTrue(created_user.is_verified)
 
     @patch("core.auth_views.deliver_otp_code", return_value=True)
-    def test_signup_request_otp_defaults_to_sms_when_phone_is_provided(self, mocked_deliver_otp):
+    def test_signup_request_otp_stays_on_email_when_phone_is_provided(self, mocked_deliver_otp):
         response = self.client.post(
             "/api/signup/request-otp/",
             {
@@ -353,15 +353,15 @@ class GroupFlowTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["delivery_channel"], "phone")
+        self.assertEqual(response.data["delivery_channel"], "email")
 
         otp_session = SignupOTP.objects.get(username="smssignup")
-        self.assertEqual(otp_session.channel, "phone")
+        self.assertEqual(otp_session.channel, "email")
         self.assertEqual(otp_session.phone, "9111111111")
 
         deliver_args = mocked_deliver_otp.call_args.args
-        self.assertEqual(deliver_args[0], "phone")
-        self.assertEqual(deliver_args[1], "9111111111")
+        self.assertEqual(deliver_args[0], "email")
+        self.assertEqual(deliver_args[1], "smssignup@example.com")
         self.assertEqual(deliver_args[3], "Signup verification")
         self.assertEqual(len(deliver_args[2]), 6)
 
@@ -678,7 +678,6 @@ class GroupFlowTests(APITestCase):
             "/api/forgot-password/request-otp/",
             {
                 "username": self.owner.username,
-                "phone": self.owner.phone,
             },
             format="json",
         )
@@ -760,7 +759,7 @@ class GroupFlowTests(APITestCase):
         self.assertTrue(self.owner.check_password("emailpass123"))
 
     @patch("core.auth_views.deliver_otp_code", return_value=True)
-    def test_forgot_password_request_otp_uses_sms_when_phone_is_provided(self, mocked_deliver_otp):
+    def test_forgot_password_request_otp_uses_email_even_when_phone_is_provided(self, mocked_deliver_otp):
         response = self.client.post(
             "/api/forgot-password/request-otp/",
             {
@@ -771,14 +770,14 @@ class GroupFlowTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["delivery_channel"], "phone")
+        self.assertEqual(response.data["delivery_channel"], "email")
 
         otp_session = PasswordResetOTP.objects.get(user=self.owner)
-        self.assertEqual(otp_session.channel, "phone")
+        self.assertEqual(otp_session.channel, "email")
 
         deliver_args = mocked_deliver_otp.call_args.args
-        self.assertEqual(deliver_args[0], "phone")
-        self.assertEqual(deliver_args[1], self.owner.phone)
+        self.assertEqual(deliver_args[0], "email")
+        self.assertEqual(deliver_args[1], self.owner.email)
         self.assertEqual(deliver_args[3], "Password reset")
         self.assertEqual(len(deliver_args[2]), 6)
 
