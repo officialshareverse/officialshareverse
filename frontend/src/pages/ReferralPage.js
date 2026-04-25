@@ -17,17 +17,17 @@ const REFERRAL_STEPS = [
   {
     icon: CheckCircleIcon,
     title: "Your friend signs up and joins",
-    body: "A referral becomes successful after the invited user signs up with your code and joins their first eligible group.",
+    body: "A referral becomes successful after the invited user signs up with your code and completes their first eligible group join with a join subtotal of at least Rs 150.",
   },
   {
     icon: WalletIcon,
     title: "Rewards land in both wallets",
-    body: "When that first valid join is completed, the inviter earns Rs 25 and the invitee earns Rs 10 as wallet credit.",
+    body: "When that first valid join is completed at Rs 150 or more, the inviter earns Rs 25 and the invitee earns Rs 10 as wallet credit.",
   },
 ];
 
 const REFERRAL_TERMS = [
-  "Referral rewards apply only when a new user signs up with a valid referral code or referral signup link and completes their first eligible group join on ShareVerse.",
+  "Referral rewards apply only when a new user signs up with a valid referral code or referral signup link and completes their first eligible group join on ShareVerse with a join subtotal of at least Rs 150.",
   "The inviter reward is Rs 25 and the invitee reward is Rs 10 for each successful first join, unless ShareVerse announces a different promotional amount on an official page.",
   "Only one referral reward is available per referred user. Repeat joins, duplicate accounts, or repeat claims for the same person are not eligible.",
   "Self-referrals, fake accounts, misleading promotion, or any fraudulent or abusive activity can result in the referral being rejected, reversed, or removed from wallet balances.",
@@ -55,7 +55,7 @@ export default function ReferralPage() {
               <div className="sv-referral-page-chips">
                 <span className="sv-chip">Rs 25 for inviter</span>
                 <span className="sv-chip">Rs 10 for invitee</span>
-                <span className="sv-chip">Reward after first joined group</span>
+                <span className="sv-chip">Minimum qualifying join subtotal: Rs 150</span>
               </div>
             </div>
           </div>

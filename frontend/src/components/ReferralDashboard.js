@@ -123,7 +123,7 @@ export default function ReferralDashboard() {
           <p className="sv-eyebrow">Referrals</p>
           <h2 className="sv-title mt-2">Invite friends and earn wallet credit</h2>
           <p className="sv-referral-subtitle">
-            Share your code or signup link. Rewards land after your referral signs up and joins their first group.
+            Share your code or signup link. Rewards land after your referral signs up and completes their first eligible join with a join subtotal of at least Rs 150.
           </p>
         </div>
         <span className="sv-chip">
@@ -169,7 +169,7 @@ export default function ReferralDashboard() {
           <ShareActions
             url={signupUrl}
             title="ShareVerse referral signup"
-            text={`Sign up on ShareVerse using my referral code and we both get wallet credit! ${signupUrl}`}
+            text={`Sign up on ShareVerse using my referral code. Rewards apply after your first eligible join of Rs 150 or more. ${signupUrl}`}
             copyLabel="Copy signup link"
             copySuccessMessage="Signup link copied!"
             qrTitle="Scan this code to open the ShareVerse signup page with your referral code already filled in."

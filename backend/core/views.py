@@ -79,6 +79,7 @@ from .consumers import (
 from .referral_config import (
     REFERRAL_REWARD_INVITEE,
     REFERRAL_REWARD_INVITER,
+    REFERRAL_REWARD_MINIMUM_JOIN_SUBTOTAL,
     REFERRAL_REWARD_TRIGGER,
 )
 from .serializers import (
@@ -1514,8 +1515,11 @@ def validate_group_join_request(group, user):
     return None, None, pricing
 
 
-def award_referral_reward_for_group_join(joined_user, group, invitee_wallet=None):
+def award_referral_reward_for_group_join(joined_user, group, join_subtotal, invitee_wallet=None):
     if REFERRAL_REWARD_TRIGGER != "joined_group":
+        return None
+
+    if Decimal(join_subtotal or "0") < REFERRAL_REWARD_MINIMUM_JOIN_SUBTOTAL:
         return None
 
     referral = (
@@ -1711,6 +1715,7 @@ def perform_group_join(joined_user, group):
         referral_reward = award_referral_reward_for_group_join(
             joined_user=joined_user,
             group=locked_group,
+            join_subtotal=contribution_amount,
             invitee_wallet=wallet,
         )
 

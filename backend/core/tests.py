@@ -3319,6 +3319,61 @@ class GroupFlowTests(APITestCase):
             Transaction.objects.filter(user=referred_user, payment_method="referral_reward", type="credit").exists()
         )
 
+    def test_referral_reward_requires_minimum_join_subtotal(self):
+        group_owner = self.member_one
+        referred_user = self.outsider
+        referral_code = self.owner.referral_code
+        referral_code.total_referrals = 1
+        referral_code.save(update_fields=["total_referrals"])
+
+        referral = Referral.objects.create(
+            referrer=self.owner,
+            referred_user=referred_user,
+            referral_code=referral_code,
+            status="signed_up",
+        )
+
+        group = Group.objects.create(
+            owner=group_owner,
+            subscription=self.subscription,
+            total_slots=2,
+            price_per_slot=Decimal("149.00"),
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=29),
+            mode="sharing",
+            status="forming",
+        )
+
+        referrer_wallet = Wallet.objects.get(user=self.owner)
+        referred_wallet = Wallet.objects.get(user=referred_user)
+        referrer_starting_balance = referrer_wallet.balance
+        referred_starting_balance = referred_wallet.balance
+
+        self.authenticate(referred_user)
+        response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data["referral_reward"])
+
+        referral.refresh_from_db()
+        referral_code.refresh_from_db()
+        referrer_wallet.refresh_from_db()
+        referred_wallet.refresh_from_db()
+        expected_join_price = get_group_join_pricing(group)["join_price"]
+
+        self.assertFalse(referral.reward_given)
+        self.assertEqual(referral.status, "signed_up")
+        self.assertEqual(referral.reward_amount, Decimal("0.00"))
+        self.assertEqual(referral_code.successful_referrals, 0)
+        self.assertEqual(referrer_wallet.balance, referrer_starting_balance)
+        self.assertEqual(referred_wallet.balance, referred_starting_balance - expected_join_price)
+        self.assertFalse(
+            Transaction.objects.filter(user=self.owner, payment_method="referral_reward", type="credit").exists()
+        )
+        self.assertFalse(
+            Transaction.objects.filter(user=referred_user, payment_method="referral_reward", type="credit").exists()
+        )
+
     def test_health_endpoint_reports_service_readiness(self):
         response = self.client.get("/api/health/")
 
