@@ -18,6 +18,7 @@ from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
+from . import auth_views
 from .pricing import get_group_join_pricing
 from .models import (
     EscrowLedger,
@@ -338,6 +339,31 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(created_user.first_name, "New")
         self.assertEqual(created_user.last_name, "Member")
         self.assertTrue(created_user.is_verified)
+
+    @patch("core.auth_views.deliver_otp_code", return_value=True)
+    def test_signup_request_otp_defaults_to_sms_when_phone_is_provided(self, mocked_deliver_otp):
+        response = self.client.post(
+            "/api/signup/request-otp/",
+            {
+                "username": "smssignup",
+                "email": "smssignup@example.com",
+                "phone": "+91 9111111111",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["delivery_channel"], "phone")
+
+        otp_session = SignupOTP.objects.get(username="smssignup")
+        self.assertEqual(otp_session.channel, "phone")
+        self.assertEqual(otp_session.phone, "9111111111")
+
+        deliver_args = mocked_deliver_otp.call_args.args
+        self.assertEqual(deliver_args[0], "phone")
+        self.assertEqual(deliver_args[1], "9111111111")
+        self.assertEqual(deliver_args[3], "Signup verification")
+        self.assertEqual(len(deliver_args[2]), 6)
 
     def test_signup_rejects_invalid_otp(self):
         request_response = self.client.post(
@@ -732,6 +758,49 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(confirm_response.status_code, status.HTTP_200_OK)
         self.owner.refresh_from_db()
         self.assertTrue(self.owner.check_password("emailpass123"))
+
+    @patch("core.auth_views.deliver_otp_code", return_value=True)
+    def test_forgot_password_request_otp_uses_sms_when_phone_is_provided(self, mocked_deliver_otp):
+        response = self.client.post(
+            "/api/forgot-password/request-otp/",
+            {
+                "username": self.owner.username,
+                "phone": "+91 9000000001",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["delivery_channel"], "phone")
+
+        otp_session = PasswordResetOTP.objects.get(user=self.owner)
+        self.assertEqual(otp_session.channel, "phone")
+
+        deliver_args = mocked_deliver_otp.call_args.args
+        self.assertEqual(deliver_args[0], "phone")
+        self.assertEqual(deliver_args[1], self.owner.phone)
+        self.assertEqual(deliver_args[3], "Password reset")
+        self.assertEqual(len(deliver_args[2]), 6)
+
+    @override_settings(
+        TWILIO_ACCOUNT_SID="",
+        TWILIO_AUTH_TOKEN="",
+        TWILIO_PHONE_NUMBER="",
+    )
+    @patch("builtins.print")
+    def test_deliver_otp_code_prints_sms_otp_when_twilio_is_not_configured(self, mocked_print):
+        delivered = auth_views.deliver_otp_code(
+            "phone",
+            "9000000001",
+            "123456",
+            "Signup verification",
+        )
+
+        self.assertFalse(delivered)
+        mocked_print.assert_called_once()
+        printed_message = mocked_print.call_args.args[0]
+        self.assertIn("+919000000001", printed_message)
+        self.assertIn("123456", printed_message)
 
     def test_login_is_rate_limited_after_repeated_failures(self):
         with patch("core.auth_views.LOGIN_FAILED_ATTEMPT_LIMIT", 2), patch(

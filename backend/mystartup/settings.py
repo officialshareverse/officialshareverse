@@ -99,6 +99,9 @@ EMAIL_HOST_PASSWORD = os.environ.get('DJANGO_EMAIL_HOST_PASSWORD', '').strip()
 EMAIL_USE_TLS = _get_env_bool('DJANGO_EMAIL_USE_TLS', True)
 EMAIL_USE_SSL = _get_env_bool('DJANGO_EMAIL_USE_SSL', False)
 DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_DEFAULT_FROM_EMAIL', 'ShareVerse <no-reply@shareverse.in>').strip()
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '').strip()
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '').strip()
+TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '').strip()
 GOOGLE_OAUTH_CLIENT_IDS = [
     value.strip()
     for value in os.environ.get(

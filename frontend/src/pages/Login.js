@@ -42,6 +42,10 @@ function getSafeRedirectTarget(search, fallback = "/home") {
   return redirectValue;
 }
 
+function getOtpChannelLabel(channel) {
+  return channel === "phone" ? "SMS" : "email";
+}
+
 
 export default function Login({ setIsAuth, themeMode, toggleTheme }) {
   const navigate = useNavigate();
@@ -63,6 +67,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
   const [showReset, setShowReset] = useState(false);
   const [resetStep, setResetStep] = useState("request");
   const [resetSessionId, setResetSessionId] = useState("");
+  const [resetDeliveryChannel, setResetDeliveryChannel] = useState("email");
   const [devOtp, setDevOtp] = useState("");
   const [lastLoginMeta, setLastLoginMeta] = useState(() => readStoredJson(LAST_LOGIN_KEY));
   const [resetForm, setResetForm] = useState(() => createResetForm(rememberedUsername));
@@ -112,6 +117,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
     setResetError("");
     setResetStep("request");
     setResetSessionId("");
+    setResetDeliveryChannel("email");
     setDevOtp("");
     setResetForm(createResetForm(form.username.trim() || rememberedUsername));
   };
@@ -150,14 +156,18 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
       });
       const nextSessionId = response.data?.reset_session_id || "";
       const nextDevOtp = response.data?.dev_otp || "";
+      const nextDeliveryChannel = response.data?.delivery_channel || (phone ? "phone" : "email");
 
       setResetSessionId(nextSessionId);
+      setResetDeliveryChannel(nextDeliveryChannel);
       setDevOtp(nextDevOtp);
       setResetStep("confirm");
       setNotice(
         nextDevOtp
-          ? `OTP sent. Development OTP: ${nextDevOtp}`
-          : "OTP sent. Enter the code to reset your password."
+          ? `OTP prepared for ${getOtpChannelLabel(nextDeliveryChannel)} delivery. Development OTP: ${nextDevOtp}`
+          : nextDeliveryChannel === "phone"
+            ? "OTP sent by SMS. Enter the code to reset your password."
+            : "OTP sent to your email. Enter the code to reset your password."
       );
     } catch (err) {
       console.error(err);
@@ -453,6 +463,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
       {showReset ? (
         <ResetPasswordModal
           resetStep={resetStep}
+          resetDeliveryChannel={resetDeliveryChannel}
           resetLoading={resetLoading}
           resetError={resetError}
           devOtp={devOtp}
@@ -489,6 +500,7 @@ function FieldShell({ label, helper, children }) {
 
 function ResetPasswordModal({
   resetStep,
+  resetDeliveryChannel,
   resetLoading,
   resetError,
   devOtp,
@@ -523,8 +535,8 @@ function ResetPasswordModal({
 
         <p className="mt-3 text-sm leading-7 text-slate-600">
           {resetStep === "request"
-            ? "Verify your account with your username or email, then confirm with phone or email so we can send an OTP."
-            : "Enter the six-digit OTP and set the new password you want to use next."}
+            ? "Verify your account with your username or email, then confirm with your 10-digit mobile number for SMS delivery or use email instead."
+            : `Enter the six-digit OTP we sent by ${getOtpChannelLabel(resetDeliveryChannel)} and set the new password you want to use next.`}
         </p>
 
         {resetError ? (
@@ -555,7 +567,7 @@ function ResetPasswordModal({
 
             {resetStep === "request" ? (
               <>
-                <FieldShell label="Phone" helper="Optional if you prefer email.">
+                <FieldShell label="Phone" helper="Optional. Use the 10-digit mobile number linked to your account if you want OTP by SMS.">
                   <input
                     type="text"
                     name="phone"
@@ -565,7 +577,7 @@ function ResetPasswordModal({
                     className="sv-input"
                   />
                 </FieldShell>
-                <FieldShell label="Email" helper="Optional if you prefer phone.">
+                <FieldShell label="Email" helper="Optional if you prefer email delivery instead of SMS.">
                   <input
                     type="email"
                     name="email"

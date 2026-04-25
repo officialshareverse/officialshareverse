@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 
 from django.conf import settings
@@ -208,6 +209,22 @@ def normalize_referral_code_value(value):
     return (value or "").strip().upper()
 
 
+def normalize_indian_phone_value(value):
+    digits = re.sub(r"\D+", "", (value or "").strip())
+    if not digits:
+        return ""
+
+    if len(digits) == 12 and digits.startswith("91"):
+        digits = digits[2:]
+    elif len(digits) == 11 and digits.startswith("0"):
+        digits = digits[1:]
+
+    if len(digits) != 10 or digits[0] not in "6789":
+        raise serializers.ValidationError("Enter a valid 10-digit Indian mobile number.")
+
+    return digits
+
+
 def validate_referral_code_value(value):
     normalized = normalize_referral_code_value(value)
     if not normalized:
@@ -336,7 +353,7 @@ class SignupSerializer(serializers.ModelSerializer):
         return normalized
 
     def validate_phone(self, value):
-        normalized = (value or "").strip()
+        normalized = normalize_indian_phone_value(value)
         if not normalized:
             return None
         if User.objects.filter(phone=normalized).exists():
@@ -379,7 +396,7 @@ class SignupRequestOTPSerializer(serializers.Serializer):
         return normalized
 
     def validate_phone(self, value):
-        normalized = (value or "").strip()
+        normalized = normalize_indian_phone_value(value)
         if not normalized:
             return ""
         if User.objects.filter(phone=normalized).exists():
@@ -390,7 +407,7 @@ class SignupRequestOTPSerializer(serializers.Serializer):
         return validate_referral_code_value(value)
 
     def validate(self, attrs):
-        attrs["channel"] = "email"
+        attrs["channel"] = "phone" if attrs.get("phone") else "email"
         return attrs
 
 
@@ -421,7 +438,7 @@ class SignupConfirmSerializer(serializers.Serializer):
     def validate(self, attrs):
         attrs["username"] = (attrs.get("username") or "").strip()
         attrs["email"] = (attrs.get("email") or "").strip().lower()
-        attrs["phone"] = (attrs.get("phone") or "").strip()
+        attrs["phone"] = normalize_indian_phone_value(attrs.get("phone"))
         attrs["otp"] = (attrs.get("otp") or "").strip()
         attrs["first_name"] = (attrs.get("first_name") or "").strip()
         attrs["last_name"] = (attrs.get("last_name") or "").strip()
@@ -454,7 +471,7 @@ class ForgotPasswordRequestSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         username = normalize_login_identifier(attrs.get("username"))
-        phone = (attrs.get("phone") or "").strip()
+        phone = normalize_indian_phone_value(attrs.get("phone"))
         email = (attrs.get("email") or "").strip().lower()
 
         if not username:
@@ -467,7 +484,7 @@ class ForgotPasswordRequestSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError({"username": "Account verification failed."})
 
-        if phone and (user.phone or "").strip() != phone:
+        if phone and normalize_indian_phone_value(user.phone) != phone:
             raise serializers.ValidationError({"phone": "Account verification failed."})
 
         if email and (user.email or "").strip().lower() != email:

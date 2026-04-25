@@ -211,21 +211,60 @@ def issue_password_reset_otp(user, channel):
     return otp_session, otp_code
 
 
+def format_phone_destination_for_sms(destination):
+    normalized = re.sub(r"\D+", "", (destination or "").strip())
+    if not normalized:
+        raise ValueError("A valid phone number is required for SMS delivery.")
+    if len(normalized) != 10:
+        raise ValueError("Phone number must be a valid 10-digit Indian mobile number.")
+    return f"+91{normalized}"
+
+
 def deliver_otp_code(channel, destination, otp_code, purpose):
-    if channel != "email" or not destination:
+    if channel == "email" and destination:
+        send_mail(
+            subject=f"Your ShareVerse {purpose} OTP",
+            message=(
+                f"Your ShareVerse {purpose.lower()} code is {otp_code}.\n\n"
+                f"It expires in 10 minutes."
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[destination],
+            fail_silently=False,
+        )
+        return True
+
+    if channel != "phone" or not destination:
         return False
 
-    send_mail(
-        subject=f"Your ShareVerse {purpose} OTP",
-        message=(
-            f"Your ShareVerse {purpose.lower()} code is {otp_code}.\n\n"
-            f"It expires in 10 minutes."
-        ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[destination],
-        fail_silently=False,
+    sms_destination = format_phone_destination_for_sms(destination)
+    sms_body = (
+        f"Your ShareVerse {purpose.lower()} code is {otp_code}. "
+        f"It expires in 10 minutes."
     )
-    return True
+
+    if not (
+        getattr(settings, "TWILIO_ACCOUNT_SID", "").strip()
+        and getattr(settings, "TWILIO_AUTH_TOKEN", "").strip()
+        and getattr(settings, "TWILIO_PHONE_NUMBER", "").strip()
+    ):
+        print(
+            f"[ShareVerse SMS OTP] To: {sms_destination} | Purpose: {purpose} | OTP: {otp_code}"
+        )
+        return False
+
+    try:
+        from twilio.rest import Client
+    except ImportError as exc:
+        raise ImproperlyConfigured("twilio package is not installed.") from exc
+
+    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+    message = client.messages.create(
+        body=sms_body,
+        from_=settings.TWILIO_PHONE_NUMBER,
+        to=sms_destination,
+    )
+    return bool(getattr(message, "sid", ""))
 
 
 def issue_signup_otp(username, email, phone, channel):
@@ -572,8 +611,9 @@ class SignupRequestOTPView(APIView):
 
         otp_session, otp_code = issue_signup_otp(username, email, phone, channel)
         delivered = False
+        destination = phone if channel == "phone" else email
         try:
-            delivered = deliver_otp_code(channel, email, otp_code, "Signup verification")
+            delivered = deliver_otp_code(channel, destination, otp_code, "Signup verification")
         except Exception:
             delivered = False
 
@@ -880,7 +920,7 @@ class ForgotPasswordRequestOTPView(APIView):
 
         otp_session, otp_code = issue_password_reset_otp(user, channel)
         delivered = False
-        destination = user.email if channel == "email" else ""
+        destination = user.phone if channel == "phone" else user.email
         try:
             delivered = deliver_otp_code(channel, destination, otp_code, "Password reset")
         except Exception:
@@ -895,6 +935,7 @@ class ForgotPasswordRequestOTPView(APIView):
             "message": "OTP sent for password reset.",
             "reset_session_id": str(otp_session.id),
             "expires_in_seconds": PASSWORD_RESET_OTP_TTL_MINUTES * 60,
+            "delivery_channel": channel,
             "delivery_status": "sent" if delivered else "generated",
         }
 
