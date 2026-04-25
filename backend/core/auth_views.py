@@ -3,6 +3,7 @@ import re
 import secrets
 from datetime import timedelta
 
+import requests
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.core.exceptions import ImproperlyConfigured
@@ -220,6 +221,14 @@ def format_phone_destination_for_sms(destination):
     return f"+91{normalized}"
 
 
+def get_msg91_flow_id_for_purpose(purpose):
+    if purpose == "Signup verification":
+        return getattr(settings, "MSG91_SIGNUP_FLOW_ID", "").strip()
+    if purpose == "Password reset":
+        return getattr(settings, "MSG91_PASSWORD_RESET_FLOW_ID", "").strip()
+    return ""
+
+
 def deliver_otp_code(channel, destination, otp_code, purpose):
     if channel == "email" and destination:
         send_mail(
@@ -238,33 +247,40 @@ def deliver_otp_code(channel, destination, otp_code, purpose):
         return False
 
     sms_destination = format_phone_destination_for_sms(destination)
-    sms_body = (
-        f"Your ShareVerse {purpose.lower()} code is {otp_code}. "
-        f"It expires in 10 minutes."
-    )
-
-    if not (
-        getattr(settings, "TWILIO_ACCOUNT_SID", "").strip()
-        and getattr(settings, "TWILIO_AUTH_TOKEN", "").strip()
-        and getattr(settings, "TWILIO_PHONE_NUMBER", "").strip()
-    ):
+    msg91_auth_key = getattr(settings, "MSG91_AUTH_KEY", "").strip()
+    msg91_flow_id = get_msg91_flow_id_for_purpose(purpose)
+    otp_variable_name = getattr(settings, "MSG91_OTP_VARIABLE_NAME", "OTP").strip() or "OTP"
+    if not (msg91_auth_key and msg91_flow_id):
         print(
             f"[ShareVerse SMS OTP] To: {sms_destination} | Purpose: {purpose} | OTP: {otp_code}"
         )
         return False
 
-    try:
-        from twilio.rest import Client
-    except ImportError as exc:
-        raise ImproperlyConfigured("twilio package is not installed.") from exc
+    recipient_payload = {
+        "mobiles": sms_destination.lstrip("+"),
+        otp_variable_name: otp_code,
+    }
+    payload = {
+        "flow_id": msg91_flow_id,
+        "recipients": [recipient_payload],
+    }
+    sender_id = getattr(settings, "MSG91_SENDER_ID", "").strip()
+    if sender_id:
+        payload["sender"] = sender_id
 
-    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-    message = client.messages.create(
-        body=sms_body,
-        from_=settings.TWILIO_PHONE_NUMBER,
-        to=sms_destination,
+    response = requests.post(
+        getattr(settings, "MSG91_SMS_FLOW_API_URL", "").strip(),
+        json=payload,
+        headers={
+            "authkey": msg91_auth_key,
+            "content-type": "application/json",
+        },
+        timeout=15,
     )
-    return bool(getattr(message, "sid", ""))
+    response.raise_for_status()
+
+    response_data = response.json()
+    return response_data.get("type") == "success"
 
 
 def issue_signup_otp(username, email, phone, channel):

@@ -99,9 +99,12 @@ EMAIL_HOST_PASSWORD = os.environ.get('DJANGO_EMAIL_HOST_PASSWORD', '').strip()
 EMAIL_USE_TLS = _get_env_bool('DJANGO_EMAIL_USE_TLS', True)
 EMAIL_USE_SSL = _get_env_bool('DJANGO_EMAIL_USE_SSL', False)
 DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_DEFAULT_FROM_EMAIL', 'ShareVerse <no-reply@shareverse.in>').strip()
-TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '').strip()
-TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '').strip()
-TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '').strip()
+MSG91_AUTH_KEY = os.environ.get('MSG91_AUTH_KEY', '').strip()
+MSG91_SIGNUP_FLOW_ID = os.environ.get('MSG91_SIGNUP_FLOW_ID', '').strip()
+MSG91_PASSWORD_RESET_FLOW_ID = os.environ.get('MSG91_PASSWORD_RESET_FLOW_ID', '').strip()
+MSG91_SENDER_ID = os.environ.get('MSG91_SENDER_ID', '').strip()
+MSG91_OTP_VARIABLE_NAME = os.environ.get('MSG91_OTP_VARIABLE_NAME', 'OTP').strip() or 'OTP'
+MSG91_SMS_FLOW_API_URL = os.environ.get('MSG91_SMS_FLOW_API_URL', 'https://api.msg91.com/api/v5/flow/').strip() or 'https://api.msg91.com/api/v5/flow/'
 GOOGLE_OAUTH_CLIENT_IDS = [
     value.strip()
     for value in os.environ.get(

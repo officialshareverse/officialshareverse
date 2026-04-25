@@ -783,12 +783,12 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(len(deliver_args[2]), 6)
 
     @override_settings(
-        TWILIO_ACCOUNT_SID="",
-        TWILIO_AUTH_TOKEN="",
-        TWILIO_PHONE_NUMBER="",
+        MSG91_AUTH_KEY="",
+        MSG91_SIGNUP_FLOW_ID="",
+        MSG91_PASSWORD_RESET_FLOW_ID="",
     )
     @patch("builtins.print")
-    def test_deliver_otp_code_prints_sms_otp_when_twilio_is_not_configured(self, mocked_print):
+    def test_deliver_otp_code_prints_sms_otp_when_msg91_is_not_configured(self, mocked_print):
         delivered = auth_views.deliver_otp_code(
             "phone",
             "9000000001",
@@ -801,6 +801,38 @@ class GroupFlowTests(APITestCase):
         printed_message = mocked_print.call_args.args[0]
         self.assertIn("+919000000001", printed_message)
         self.assertIn("123456", printed_message)
+
+    @override_settings(
+        MSG91_AUTH_KEY="msg91-test-key",
+        MSG91_SIGNUP_FLOW_ID="signup-flow-id",
+        MSG91_PASSWORD_RESET_FLOW_ID="reset-flow-id",
+        MSG91_SENDER_ID="SHARVR",
+        MSG91_SMS_FLOW_API_URL="https://api.msg91.com/api/v5/flow/",
+        MSG91_OTP_VARIABLE_NAME="OTP",
+    )
+    @patch("core.auth_views.requests.post")
+    def test_deliver_otp_code_uses_msg91_flow_api(self, mocked_post):
+        mocked_response = mocked_post.return_value
+        mocked_response.json.return_value = {
+            "type": "success",
+            "message": "request-id-123",
+        }
+
+        delivered = auth_views.deliver_otp_code(
+            "phone",
+            "9000000001",
+            "123456",
+            "Signup verification",
+        )
+
+        self.assertTrue(delivered)
+        mocked_post.assert_called_once()
+        _, kwargs = mocked_post.call_args
+        self.assertEqual(kwargs["headers"]["authkey"], "msg91-test-key")
+        self.assertEqual(kwargs["json"]["flow_id"], "signup-flow-id")
+        self.assertEqual(kwargs["json"]["sender"], "SHARVR")
+        self.assertEqual(kwargs["json"]["recipients"][0]["mobiles"], "919000000001")
+        self.assertEqual(kwargs["json"]["recipients"][0]["OTP"], "123456")
 
     def test_login_is_rate_limited_after_repeated_failures(self):
         with patch("core.auth_views.LOGIN_FAILED_ATTEMPT_LIMIT", 2), patch(
