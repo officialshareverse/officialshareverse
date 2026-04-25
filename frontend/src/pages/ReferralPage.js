@@ -37,6 +37,21 @@ const REFERRAL_TERMS = [
   "ShareVerse may update, pause, or end the referral program at any time. Continued use of referral links or codes means you agree to the latest referral terms.",
 ];
 
+const REFERRAL_TERMS_HIGHLIGHTS = [
+  {
+    title: "Qualifying join",
+    body: "Only the referred user's first eligible group join counts, and the subtotal must be at least Rs 150.",
+  },
+  {
+    title: "Reward format",
+    body: "Referral earnings are released as non-withdrawable bonus credit that can only be used for joining groups.",
+  },
+  {
+    title: "Review protection",
+    body: "Fraud checks, reversals, refunds, and policy violations can pause or remove a referral reward.",
+  },
+];
+
 export default function ReferralPage() {
   const navigate = useNavigate();
 
@@ -96,33 +111,46 @@ export default function ReferralPage() {
                 ))}
               </div>
             </section>
+          </div>
+        </div>
 
-            <section className="sv-card sv-reveal sv-referral-terms-card">
-              <div className="sv-referral-terms-header">
-                <div>
-                  <p className="sv-eyebrow">Terms and conditions</p>
-                  <h2 className="sv-title mt-2">Referral rewards are subject to review</h2>
-                </div>
-                <span className="sv-referral-terms-shield" aria-hidden="true">
-                  <ShieldIcon className="h-5 w-5" />
-                </span>
-              </div>
+        <section className="sv-card sv-reveal sv-referral-terms-shell">
+          <div className="sv-referral-terms-header">
+            <div>
+              <p className="sv-eyebrow">Terms and conditions</p>
+              <h2 className="sv-title mt-2">Referral rewards are subject to review</h2>
+            </div>
+            <span className="sv-referral-terms-shield" aria-hidden="true">
+              <ShieldIcon className="h-5 w-5" />
+            </span>
+          </div>
 
+          <div className="sv-referral-terms-layout">
+            <aside className="sv-referral-terms-summary">
               <p className="sv-referral-page-subtitle">
                 By sharing your referral code or referral signup link, you agree to the following referral terms.
               </p>
 
-              <ol className="sv-referral-terms-list">
-                {REFERRAL_TERMS.map((term, index) => (
-                  <li key={term} className="sv-referral-terms-item">
-                    <span className="sv-referral-terms-index">{index + 1}</span>
-                    <span>{term}</span>
-                  </li>
+              <div className="sv-referral-terms-highlights">
+                {REFERRAL_TERMS_HIGHLIGHTS.map(({ title, body }) => (
+                  <article key={title} className="sv-referral-terms-highlight">
+                    <h3>{title}</h3>
+                    <p>{body}</p>
+                  </article>
                 ))}
-              </ol>
-            </section>
+              </div>
+            </aside>
+
+            <ol className="sv-referral-terms-list">
+              {REFERRAL_TERMS.map((term, index) => (
+                <li key={term} className="sv-referral-terms-item">
+                  <span className="sv-referral-terms-index">{index + 1}</span>
+                  <span>{term}</span>
+                </li>
+              ))}
+            </ol>
           </div>
-        </div>
+        </section>
       </div>
     </main>
   );

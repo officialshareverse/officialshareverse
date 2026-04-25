@@ -9808,9 +9808,15 @@
   }
 
   .sv-referral-guide-card,
-  .sv-referral-terms-card {
+  .sv-referral-terms-shell {
     display: grid;
     gap: 1rem;
+  }
+
+  .sv-referral-terms-shell {
+    background:
+      radial-gradient(circle at top right, rgba(15, 118, 110, 0.1), transparent 32%),
+      color-mix(in srgb, var(--sv-paper-solid) 97%, transparent);
   }
 
   .sv-referral-steps {
@@ -9870,12 +9876,54 @@
     gap: 1rem;
   }
 
+  .sv-referral-terms-layout {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(15rem, 0.52fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .sv-referral-terms-summary {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+  }
+
+  .sv-referral-terms-highlights {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .sv-referral-terms-highlight {
+    border-radius: 20px;
+    border: 1px solid var(--sv-border);
+    background:
+      linear-gradient(135deg, rgba(15, 118, 110, 0.07) 0%, rgba(255, 255, 255, 0) 100%),
+      color-mix(in srgb, var(--sv-paper-solid) 96%, transparent);
+    padding: 1rem;
+  }
+
+  .sv-referral-terms-highlight h3 {
+    margin: 0;
+    color: var(--sv-ink);
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .sv-referral-terms-highlight p {
+    margin: 0.45rem 0 0;
+    color: var(--sv-muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
   .sv-referral-terms-list {
     display: grid;
     gap: 0.85rem;
     margin: 0;
     padding: 0;
     list-style: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .sv-referral-terms-index {
@@ -9893,12 +9941,21 @@
     line-height: 1.75;
   }
 
+  .sv-referral-terms-item {
+    min-height: 100%;
+  }
+
   @media (max-width: 1023px) {
     .sv-invite-landing-shell {
       grid-template-columns: minmax(0, 1fr);
     }
 
     .sv-referral-page-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sv-referral-terms-layout,
+    .sv-referral-terms-list {
       grid-template-columns: minmax(0, 1fr);
     }
   }
@@ -9991,6 +10048,11 @@
 
   body.sv-dark .sv-referral-step,
   body.sv-dark .sv-referral-terms-item {
+    background: rgba(15, 23, 42, 0.86);
+    border-color: rgba(148, 163, 184, 0.14);
+  }
+
+  body.sv-dark .sv-referral-terms-highlight {
     background: rgba(15, 23, 42, 0.86);
     border-color: rgba(148, 163, 184, 0.14);
   }
