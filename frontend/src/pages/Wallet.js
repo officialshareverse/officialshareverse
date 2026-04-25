@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 import Drawer from "../components/Drawer";
-import ReferralDashboard from "../components/ReferralDashboard";
 import { useToast } from "../components/ToastProvider";
 import {
   BankIcon,
@@ -13,6 +13,7 @@ import {
   LoadingSpinner,
   SearchIcon,
   ShieldIcon,
+  SparkIcon,
   WalletIcon as WalletGlyph,
 } from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
@@ -295,6 +296,7 @@ function getEstimatedPayoutLabel(payout, payoutsLive) {
 }
 
 export default function Wallet() {
+  const navigate = useNavigate();
   const [balance, setBalance] = useState("0.00");
   const [transactions, setTransactions] = useState([]);
   const [topupConfig, setTopupConfig] = useState(null);
@@ -1238,7 +1240,27 @@ export default function Wallet() {
         </section>
         ) : null}
 
-        <ReferralDashboard />
+        <section className="sv-card sv-reveal sv-referral-wallet-card">
+          <div className="sv-referral-wallet-copy">
+            <span className="sv-referral-wallet-icon" aria-hidden="true">
+              <SparkIcon className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="sv-eyebrow">Referrals</p>
+              <h2 className="sv-title mt-2">Manage referrals on a dedicated page</h2>
+              <p className="sv-referral-wallet-subtitle">
+                Open your referral page to copy your code, share the signup link, track rewards, and read the referral terms and conditions.
+              </p>
+            </div>
+          </div>
+
+          <div className="sv-referral-wallet-actions">
+            <span className="sv-chip">Rs 25 + Rs 10 wallet credit</span>
+            <button type="button" className="sv-btn-primary" onClick={() => navigate("/referrals")}>
+              Open referrals
+            </button>
+          </div>
+        </section>
 
         <section className="grid gap-4 xl:grid-cols-[0.94fr_1.06fr]">
           <section className="sv-card sv-reveal">

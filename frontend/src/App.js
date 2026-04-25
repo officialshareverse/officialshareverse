@@ -26,6 +26,7 @@ import MyShared from "./pages/MyShared";
 import NotificationsInbox from "./pages/NotificationsInbox";
 import PrivacyPage from "./pages/PrivacyPage";
 import Profile from "./pages/Profile";
+import ReferralPage from "./pages/ReferralPage";
 import RefundPolicyPage from "./pages/RefundPolicyPage";
 import ShippingPolicyPage from "./pages/ShippingPolicyPage";
 import Signup from "./pages/Signup";
@@ -341,6 +342,15 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
             element={
               <PrivateRoute>
                 <Wallet />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/referrals"
+            element={
+              <PrivateRoute>
+                <ReferralPage />
               </PrivateRoute>
             }
           />

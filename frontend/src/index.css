@@ -9703,8 +9703,157 @@
     color: #047857;
   }
 
+  .sv-referral-page-hero,
+  .sv-referral-wallet-card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.25rem;
+  }
+
+  .sv-referral-page-hero {
+    background:
+      radial-gradient(circle at top right, rgba(20, 184, 166, 0.12), transparent 32%),
+      color-mix(in srgb, var(--sv-paper-solid) 96%, transparent);
+  }
+
+  .sv-referral-page-hero-copy,
+  .sv-referral-wallet-copy {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .sv-referral-page-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 1rem;
+  }
+
+  .sv-referral-page-subtitle,
+  .sv-referral-wallet-subtitle {
+    margin: 0.75rem 0 0;
+    max-width: 48rem;
+    color: var(--sv-muted);
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .sv-referral-page-actions,
+  .sv-referral-wallet-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .sv-referral-page-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+    align-items: start;
+  }
+
+  .sv-referral-page-sidebar {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .sv-referral-guide-card,
+  .sv-referral-terms-card {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .sv-referral-steps {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .sv-referral-step,
+  .sv-referral-terms-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.95rem 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--sv-border);
+    background:
+      linear-gradient(135deg, rgba(15, 118, 110, 0.06) 0%, rgba(255, 255, 255, 0) 100%),
+      color-mix(in srgb, var(--sv-paper-solid) 96%, transparent);
+  }
+
+  .sv-referral-step-icon,
+  .sv-referral-wallet-icon,
+  .sv-referral-terms-shield,
+  .sv-referral-terms-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    border-radius: 999px;
+  }
+
+  .sv-referral-step-icon,
+  .sv-referral-wallet-icon,
+  .sv-referral-terms-shield {
+    width: 2.4rem;
+    height: 2.4rem;
+    background: rgba(13, 148, 136, 0.12);
+    color: #0f766e;
+  }
+
+  .sv-referral-step h3,
+  .sv-referral-terms-header h2 {
+    margin: 0;
+  }
+
+  .sv-referral-step p {
+    margin: 0.35rem 0 0;
+    color: var(--sv-muted);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .sv-referral-terms-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .sv-referral-terms-list {
+    display: grid;
+    gap: 0.85rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sv-referral-terms-index {
+    width: 1.85rem;
+    height: 1.85rem;
+    background: rgba(15, 23, 42, 0.08);
+    color: var(--sv-ink);
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .sv-referral-terms-item span:last-child {
+    color: var(--sv-muted);
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
   @media (max-width: 1023px) {
     .sv-invite-landing-shell {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sv-referral-page-grid {
       grid-template-columns: minmax(0, 1fr);
     }
   }
@@ -9715,6 +9864,12 @@
     .sv-invite-link-row,
     .sv-referral-code-card,
     .sv-referral-header,
+    .sv-referral-page-hero,
+    .sv-referral-wallet-card,
+    .sv-referral-wallet-copy,
+    .sv-referral-page-actions,
+    .sv-referral-wallet-actions,
+    .sv-referral-terms-header,
     .sv-invite-modal-header,
     .sv-referral-item {
       flex-direction: column;
@@ -9787,6 +9942,24 @@
     background: rgba(76, 5, 25, 0.58);
     border-color: rgba(251, 113, 133, 0.22);
     color: #fecdd3;
+  }
+
+  body.sv-dark .sv-referral-step,
+  body.sv-dark .sv-referral-terms-item {
+    background: rgba(15, 23, 42, 0.86);
+    border-color: rgba(148, 163, 184, 0.14);
+  }
+
+  body.sv-dark .sv-referral-step-icon,
+  body.sv-dark .sv-referral-wallet-icon,
+  body.sv-dark .sv-referral-terms-shield {
+    background: rgba(13, 148, 136, 0.22);
+    color: #99f6e4;
+  }
+
+  body.sv-dark .sv-referral-terms-index {
+    background: rgba(148, 163, 184, 0.14);
+    color: #f8fafc;
   }
 
   body.sv-dark .sv-invite-empty,
