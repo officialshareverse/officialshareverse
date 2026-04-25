@@ -381,7 +381,7 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
                         className="sv-user-menu-item"
                         role="menuitem"
                       >
-                        <UserIcon className="h-4.5 w-4.5" />
+                        <UserIcon className="sv-user-menu-icon" />
                         Profile
                       </button>
                       <button
@@ -390,7 +390,7 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
                         className="sv-user-menu-item text-rose-600"
                         role="menuitem"
                       >
-                        <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-100 text-[11px] font-bold text-rose-600">
+                        <span className="sv-user-menu-badge">
                           !
                         </span>
                         Logout
