@@ -766,7 +766,7 @@ export default function Home() {
                 {!isMobile ? <span className="sv-chip">{activeGroups} active groups</span> : null}
               </div>
               <p className="sv-eyebrow mt-5">
-                {greetingMeta.text}, {currentUserFirstName} {greetingMeta.emoji}
+                {greetingMeta.text}, {currentUserFirstName}.
               </p>
               <h1 className="mt-3 max-w-3xl text-3xl font-bold leading-tight text-slate-950 sm:text-4xl">
                 {isMobile
