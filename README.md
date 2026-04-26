@@ -108,6 +108,17 @@ EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:8000/api/
 
 For a phone on the same Wi-Fi, use your machine's LAN IP instead of `127.0.0.1`.
 
+For production builds, set:
+
+```text
+EXPO_PUBLIC_API_BASE_URL=https://api.shareverse.in/api/
+```
+
+The mobile app now includes [mobile/eas.json](mobile/eas.json) for Expo Application Services builds:
+
+- `preview` creates an internal Android APK
+- `production` creates an Android App Bundle for Google Play
+
 ## Environment Files
 
 Backend env example: [backend/.env.example](backend/.env.example)

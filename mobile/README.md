@@ -40,6 +40,51 @@ For a physical device on the same Wi-Fi, use your laptop's LAN IP:
 EXPO_PUBLIC_API_BASE_URL=http://192.168.x.x:8000/api/
 ```
 
+## Production mobile env
+
+For release builds, point the app at your live backend:
+
+```env
+EXPO_PUBLIC_API_BASE_URL=https://api.shareverse.in/api/
+```
+
+## Play Store build flow
+
+1. Install Expo Application Services CLI:
+
+```powershell
+npm install -g eas-cli
+```
+
+2. Sign in to Expo:
+
+```powershell
+eas login
+```
+
+3. Build the production Android App Bundle:
+
+```powershell
+cd mobile
+eas build --platform android --profile production
+```
+
+4. Download the generated `.aab` from Expo and upload it in Google Play Console.
+
+Useful build profiles in [eas.json](./eas.json):
+
+- `development`: development client build
+- `preview`: internal APK build for quick testing
+- `production`: Play Store `.aab` build
+
+Before the first Play Store release, make sure you have:
+
+- final package name: currently `com.shareverse.mobile`
+- live API URL in `.env`
+- privacy policy URL
+- Play Store screenshots and listing copy
+- Google Play testing track ready
+
 ## Backend routes used
 
 - `POST /api/mobile/login/`
