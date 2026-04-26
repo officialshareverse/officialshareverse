@@ -104,3 +104,8 @@ __marimo__/
 # Frontend build artifacts
 /frontend/build/
 /frontend/node_modules/
+/mobile/.env
+/mobile/.expo/
+/mobile/dist/
+/mobile/node_modules/
+/mobile/web-build/

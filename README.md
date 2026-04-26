@@ -43,6 +43,9 @@ mystartup/
 |   |-- public/
 |   |-- src/
 |   `-- .env.example
+|-- mobile/
+|   |-- src/
+|   `-- .env.example
 |-- render.yaml
 `-- README.md
 ```
@@ -80,11 +83,38 @@ npm start
 
 The frontend runs at `http://localhost:3000/`.
 
+### Mobile App Setup
+
+```powershell
+cd mobile
+npm install
+Copy-Item .env.example .env
+npm start
+```
+
+The Expo app can then open in Expo Go, an Android emulator, or an iOS simulator depending on your local setup.
+
+Current mobile v1 includes:
+
+- native login, signup, and forgot-password flows
+- dashboard, marketplace, group detail, wallet, profile, and referral screens
+- secure token storage backed by Django mobile auth endpoints
+
+For Android emulator local API access, use:
+
+```text
+EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:8000/api/
+```
+
+For a phone on the same Wi-Fi, use your machine's LAN IP instead of `127.0.0.1`.
+
 ## Environment Files
 
 Backend env example: [backend/.env.example](backend/.env.example)
 
 Frontend env example: [frontend/.env.example](frontend/.env.example)
+
+Mobile env example: [mobile/.env.example](mobile/.env.example)
 
 Important backend values for the live setup:
 
@@ -148,6 +178,13 @@ If you return to Render later, the blueprint provisions:
 - `shareverse-redis` for Redis
 
 The backend exposes a health check at `/api/health/` for deployment monitoring.
+
+The mobile app uses token-based native endpoints so it can store refresh tokens in secure storage instead of relying on browser cookies:
+
+- `POST /api/mobile/login/`
+- `POST /api/mobile/signup/`
+- `POST /api/mobile/auth/refresh/`
+- `POST /api/mobile/auth/logout/`
 
 During the first Render deploy, the frontend is configured to call the temporary backend URL:
 

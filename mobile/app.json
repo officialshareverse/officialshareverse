@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "ShareVerse",
+    "slug": "shareverse-mobile",
+    "scheme": "shareverse",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shareverse.mobile"
+    },
+    "android": {
+      "package": "com.shareverse.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#0f766e"
+      }
+    },
+    "extra": {
+      "apiBaseUrl": "http://127.0.0.1:8000/api/"
+    }
+  }
+}

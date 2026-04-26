@@ -596,18 +596,226 @@ def is_refresh_token_invalid_for_current_password(refresh_token, user):
     return token_password_hash != current_password_hash
 
 
-def build_auth_response(user, *, created=None):
-    refresh = RefreshToken.for_user(user)
+def build_auth_payload(user, *, created=None, refresh=None, include_refresh=False):
+    resolved_refresh = refresh or RefreshToken.for_user(user)
     payload = {
-        "access": str(refresh.access_token),
+        "access": str(resolved_refresh.access_token),
         "user": serialize_auth_user(user),
     }
+    if include_refresh:
+        payload["refresh"] = str(resolved_refresh)
     if created is not None:
         payload["created"] = created
+    return payload, resolved_refresh
 
+
+def build_auth_response(user, *, created=None):
+    payload, refresh = build_auth_payload(user, created=created)
     response = Response(payload)
     attach_refresh_cookie(response, refresh)
     return response
+
+
+def build_mobile_auth_response(user, *, created=None, status_code=200):
+    payload, _ = build_auth_payload(user, created=created, include_refresh=True)
+    return Response(payload, status=status_code)
+
+
+def create_user_from_verified_signup(request, serializer):
+    username = serializer.validated_data["username"]
+    email = serializer.validated_data["email"]
+    phone = serializer.validated_data.get("phone", "")
+    signup_session_id = serializer.validated_data["signup_session_id"]
+    otp = serializer.validated_data["otp"]
+    referral_code_value = serializer.validated_data.get("referral_code", "")
+
+    confirm_identity = build_rate_limit_identity(request, f"{username}:{email}")
+    confirm_rate_result = check_and_increment_rate_limit(
+        scope="signup_otp_confirm",
+        identity=confirm_identity,
+        limit=SIGNUP_OTP_CONFIRM_RATE_LIMIT,
+        window_seconds=SIGNUP_OTP_CONFIRM_RATE_WINDOW_SECONDS,
+    )
+    if not confirm_rate_result["allowed"]:
+        return Response(
+            {
+                "error": "Too many OTP verification attempts. Try again later.",
+                "retry_after_seconds": confirm_rate_result["retry_after_seconds"],
+            },
+            status=429,
+        )
+
+    with transaction.atomic():
+        try:
+            otp_session = SignupOTP.objects.select_for_update().get(id=signup_session_id)
+        except SignupOTP.DoesNotExist:
+            return None, Response({"error": "Invalid verification session."}, status=400)
+
+        if otp_session.is_used:
+            return None, Response(
+                {"error": "This verification session has already been used."},
+                status=400,
+            )
+
+        if otp_session.expires_at <= timezone.now():
+            return None, Response({"error": "OTP expired. Request a new code."}, status=400)
+
+        if otp_session.attempts_remaining <= 0:
+            return None, Response(
+                {"error": "OTP attempts exceeded. Request a new code."},
+                status=400,
+            )
+
+        if otp_session.username.strip().lower() != username.lower():
+            return None, Response(
+                {"error": "Verification session does not match this username."},
+                status=400,
+            )
+
+        if otp_session.email.strip().lower() != email.lower():
+            return None, Response(
+                {"error": "Verification session does not match this email."},
+                status=400,
+            )
+
+        if (otp_session.phone or "").strip() != (phone or "").strip():
+            return None, Response(
+                {"error": "Verification session does not match this phone number."},
+                status=400,
+            )
+
+        if not otp_session.verify_otp(otp):
+            otp_session.attempts_remaining = max(otp_session.attempts_remaining - 1, 0)
+            otp_session.save(update_fields=["attempts_remaining"])
+            return None, Response(
+                {
+                    "error": "Invalid OTP.",
+                    "attempts_remaining": otp_session.attempts_remaining,
+                },
+                status=400,
+            )
+
+        user_serializer = SignupSerializer(
+            data={
+                "username": serializer.validated_data["username"],
+                "first_name": serializer.validated_data.get("first_name", ""),
+                "last_name": serializer.validated_data.get("last_name", ""),
+                "email": serializer.validated_data["email"],
+                "phone": serializer.validated_data.get("phone") or None,
+                "password": serializer.validated_data["password"],
+                "referral_code": referral_code_value,
+            }
+        )
+        if not user_serializer.is_valid():
+            return None, Response(user_serializer.errors, status=400)
+
+        user = user_serializer.save(is_verified=True)
+
+        if referral_code_value:
+            referral_code = (
+                ReferralCode.objects.select_for_update()
+                .select_related("user")
+                .filter(code__iexact=referral_code_value)
+                .first()
+            )
+            if (
+                referral_code
+                and referral_code.user_id != user.id
+                and not Referral.objects.filter(referred_user=user).exists()
+            ):
+                Referral.objects.create(
+                    referrer=referral_code.user,
+                    referred_user=user,
+                    referral_code=referral_code,
+                    status="signed_up",
+                )
+                referral_code.total_referrals += 1
+                referral_code.save(update_fields=["total_referrals"])
+
+        otp_session.is_used = True
+        otp_session.save(update_fields=["is_used"])
+
+        get_signup_otp_request_queryset(username, email, phone).exclude(
+            id=otp_session.id
+        ).update(is_used=True)
+
+    create_notification(
+        user=user,
+        message="Your account was created and verified successfully.",
+    )
+    return user, None
+
+
+def authenticate_login_request(request):
+    login_identifier = normalize_login_identifier(request.data.get("username"))
+    password = request.data.get("password")
+    login_user = find_user_by_login_identifier(login_identifier)
+    rate_limit_identity_seed = login_user.username if login_user else login_identifier
+
+    login_identity = build_rate_limit_identity(request, rate_limit_identity_seed)
+    current_lockout = get_rate_limit_status("login_failed", login_identity)
+    if current_lockout["count"] >= LOGIN_FAILED_ATTEMPT_LIMIT:
+        return None, Response(
+            {
+                "error": "Too many failed login attempts.",
+                "retry_after_seconds": current_lockout["retry_after_seconds"],
+            },
+            status=429,
+        )
+
+    authenticate_username = login_user.username if login_user else login_identifier
+    user = authenticate(username=authenticate_username, password=password)
+
+    if user is None:
+        rate_result = check_and_increment_rate_limit(
+            scope="login_failed",
+            identity=login_identity,
+            limit=LOGIN_FAILED_ATTEMPT_LIMIT,
+            window_seconds=LOGIN_FAILED_ATTEMPT_WINDOW_SECONDS,
+        )
+        if not rate_result["allowed"]:
+            return None, Response(
+                {
+                    "error": "Too many failed login attempts.",
+                    "retry_after_seconds": rate_result["retry_after_seconds"],
+                },
+                status=429,
+            )
+        return None, Response({"error": "Invalid credentials"}, status=401)
+
+    reset_rate_limit("login_failed", login_identity)
+    return user, None
+
+
+def build_mobile_refresh_response(refresh_token):
+    try:
+        refresh = RefreshToken(refresh_token)
+        user = User.objects.get(id=refresh["user_id"])
+    except (KeyError, TokenError, User.DoesNotExist):
+        return None, Response({"error": "Refresh token is invalid or expired."}, status=401)
+
+    if is_refresh_token_invalid_for_current_password(refresh, user):
+        blacklist_refresh_token_value(refresh_token)
+        return None, Response(
+            {"error": "Refresh session is no longer valid. Please sign in again."},
+            status=401,
+        )
+
+    serializer = TokenRefreshSerializer(data={"refresh": refresh_token})
+    try:
+        serializer.is_valid(raise_exception=True)
+    except RestValidationError:
+        blacklist_refresh_token_value(refresh_token)
+        return None, Response({"error": "Refresh token is invalid or expired."}, status=401)
+
+    rotated_refresh_token = serializer.validated_data.get("refresh") or refresh_token
+    return Response(
+        {
+            "access": serializer.validated_data["access"],
+            "refresh": rotated_refresh_token,
+            "user": serialize_auth_user(user),
+        }
+    ), None
 
 
 class SignupRequestOTPView(APIView):
@@ -674,170 +882,46 @@ class SignupView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
 
-        username = serializer.validated_data["username"]
-        email = serializer.validated_data["email"]
-        phone = serializer.validated_data.get("phone", "")
-        signup_session_id = serializer.validated_data["signup_session_id"]
-        otp = serializer.validated_data["otp"]
-        referral_code_value = serializer.validated_data.get("referral_code", "")
+        user, error_response = create_user_from_verified_signup(request, serializer)
+        if error_response:
+            return error_response
 
-        confirm_identity = build_rate_limit_identity(request, f"{username}:{email}")
-        confirm_rate_result = check_and_increment_rate_limit(
-            scope="signup_otp_confirm",
-            identity=confirm_identity,
-            limit=SIGNUP_OTP_CONFIRM_RATE_LIMIT,
-            window_seconds=SIGNUP_OTP_CONFIRM_RATE_WINDOW_SECONDS,
-        )
-        if not confirm_rate_result["allowed"]:
-            return Response(
-                {
-                    "error": "Too many OTP verification attempts. Try again later.",
-                    "retry_after_seconds": confirm_rate_result["retry_after_seconds"],
-                },
-                status=429,
-            )
-
-        with transaction.atomic():
-            try:
-                otp_session = SignupOTP.objects.select_for_update().get(id=signup_session_id)
-            except SignupOTP.DoesNotExist:
-                return Response({"error": "Invalid verification session."}, status=400)
-
-            if otp_session.is_used:
-                return Response(
-                    {"error": "This verification session has already been used."},
-                    status=400,
-                )
-
-            if otp_session.expires_at <= timezone.now():
-                return Response({"error": "OTP expired. Request a new code."}, status=400)
-
-            if otp_session.attempts_remaining <= 0:
-                return Response(
-                    {"error": "OTP attempts exceeded. Request a new code."},
-                    status=400,
-                )
-
-            if otp_session.username.strip().lower() != username.lower():
-                return Response(
-                    {"error": "Verification session does not match this username."},
-                    status=400,
-                )
-
-            if otp_session.email.strip().lower() != email.lower():
-                return Response(
-                    {"error": "Verification session does not match this email."},
-                    status=400,
-                )
-
-            if (otp_session.phone or "").strip() != (phone or "").strip():
-                return Response(
-                    {"error": "Verification session does not match this phone number."},
-                    status=400,
-                )
-
-            if not otp_session.verify_otp(otp):
-                otp_session.attempts_remaining = max(otp_session.attempts_remaining - 1, 0)
-                otp_session.save(update_fields=["attempts_remaining"])
-                return Response(
-                    {
-                        "error": "Invalid OTP.",
-                        "attempts_remaining": otp_session.attempts_remaining,
-                    },
-                    status=400,
-                )
-
-            user_serializer = SignupSerializer(
-                data={
-                    "username": serializer.validated_data["username"],
-                    "first_name": serializer.validated_data.get("first_name", ""),
-                    "last_name": serializer.validated_data.get("last_name", ""),
-                    "email": serializer.validated_data["email"],
-                    "phone": serializer.validated_data.get("phone") or None,
-                    "password": serializer.validated_data["password"],
-                    "referral_code": referral_code_value,
-                }
-            )
-            if not user_serializer.is_valid():
-                return Response(user_serializer.errors, status=400)
-
-            user = user_serializer.save(is_verified=True)
-
-            if referral_code_value:
-                referral_code = (
-                    ReferralCode.objects.select_for_update()
-                    .select_related("user")
-                    .filter(code__iexact=referral_code_value)
-                    .first()
-                )
-                if (
-                    referral_code
-                    and referral_code.user_id != user.id
-                    and not Referral.objects.filter(referred_user=user).exists()
-                ):
-                    Referral.objects.create(
-                        referrer=referral_code.user,
-                        referred_user=user,
-                        referral_code=referral_code,
-                        status="signed_up",
-                    )
-                    referral_code.total_referrals += 1
-                    referral_code.save(update_fields=["total_referrals"])
-
-            otp_session.is_used = True
-            otp_session.save(update_fields=["is_used"])
-
-            get_signup_otp_request_queryset(username, email, phone).exclude(
-                id=otp_session.id
-            ).update(is_used=True)
-
-        create_notification(
-            user=user,
-            message="Your account was created and verified successfully.",
-        )
         return Response({"message": "User created and verified."}, status=201)
+
+
+class MobileSignupView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = SignupConfirmSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        user, error_response = create_user_from_verified_signup(request, serializer)
+        if error_response:
+            return error_response
+
+        return build_mobile_auth_response(user, status_code=201)
 
 
 class LoginView(APIView):
     def post(self, request):
-        login_identifier = normalize_login_identifier(request.data.get("username"))
-        password = request.data.get("password")
-        login_user = find_user_by_login_identifier(login_identifier)
-        rate_limit_identity_seed = login_user.username if login_user else login_identifier
+        user, error_response = authenticate_login_request(request)
+        if error_response:
+            return error_response
 
-        login_identity = build_rate_limit_identity(request, rate_limit_identity_seed)
-        current_lockout = get_rate_limit_status("login_failed", login_identity)
-        if current_lockout["count"] >= LOGIN_FAILED_ATTEMPT_LIMIT:
-            return Response(
-                {
-                    "error": "Too many failed login attempts.",
-                    "retry_after_seconds": current_lockout["retry_after_seconds"],
-                },
-                status=429,
-            )
-
-        authenticate_username = login_user.username if login_user else login_identifier
-        user = authenticate(username=authenticate_username, password=password)
-
-        if user is None:
-            rate_result = check_and_increment_rate_limit(
-                scope="login_failed",
-                identity=login_identity,
-                limit=LOGIN_FAILED_ATTEMPT_LIMIT,
-                window_seconds=LOGIN_FAILED_ATTEMPT_WINDOW_SECONDS,
-            )
-            if not rate_result["allowed"]:
-                return Response(
-                    {
-                        "error": "Too many failed login attempts.",
-                        "retry_after_seconds": rate_result["retry_after_seconds"],
-                    },
-                    status=429,
-                )
-            return Response({"error": "Invalid credentials"}, status=401)
-
-        reset_rate_limit("login_failed", login_identity)
         return build_auth_response(user)
+
+
+class MobileLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        user, error_response = authenticate_login_request(request)
+        if error_response:
+            return error_response
+
+        return build_mobile_auth_response(user)
 
 
 class RefreshSessionView(APIView):
@@ -879,6 +963,20 @@ class RefreshSessionView(APIView):
         return response
 
 
+class MobileRefreshSessionView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        refresh_token = (request.data.get("refresh") or "").strip()
+        if not refresh_token:
+            return Response({"error": "Refresh token is required."}, status=400)
+
+        response, error_response = build_mobile_refresh_response(refresh_token)
+        if error_response:
+            return error_response
+        return response
+
+
 class LogoutView(APIView):
     permission_classes = [AllowAny]
 
@@ -888,6 +986,15 @@ class LogoutView(APIView):
         response = Response({"message": "Logged out."}, status=200)
         clear_refresh_cookie(response)
         return response
+
+
+class MobileLogoutView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        refresh_token = (request.data.get("refresh") or "").strip()
+        blacklist_refresh_token_value(refresh_token)
+        return Response({"message": "Logged out."}, status=200)
 
 
 class GoogleAuthView(APIView):

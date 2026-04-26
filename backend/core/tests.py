@@ -505,6 +505,114 @@ class GroupFlowTests(APITestCase):
             ).exists()
         )
 
+    def test_mobile_login_returns_refresh_token_in_response_body(self):
+        response = self.client.post(
+            "/api/mobile/login/",
+            {
+                "username": self.owner.username,
+                "password": "password123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+        self.assertEqual(response.data["user"]["username"], self.owner.username)
+        self.assertNotIn("sv_refresh_token", response.cookies)
+
+    def test_mobile_signup_returns_tokens_after_otp_verification(self):
+        request_response = self.client.post(
+            "/api/signup/request-otp/",
+            {
+                "username": "mobileuser",
+                "email": "mobileuser@example.com",
+                "phone": "9222222222",
+            },
+            format="json",
+        )
+
+        self.assertEqual(request_response.status_code, status.HTTP_200_OK)
+
+        response = self.client.post(
+            "/api/mobile/signup/",
+            {
+                "username": "mobileuser",
+                "first_name": "Mobile",
+                "last_name": "Member",
+                "email": "mobileuser@example.com",
+                "phone": "9222222222",
+                "password": "password123",
+                "signup_session_id": request_response.data["signup_session_id"],
+                "otp": request_response.data["dev_otp"],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+        self.assertEqual(response.data["user"]["username"], "mobileuser")
+        self.assertNotIn("sv_refresh_token", response.cookies)
+        self.assertTrue(User.objects.get(username="mobileuser").is_verified)
+
+    def test_mobile_refresh_uses_request_body_refresh_token(self):
+        login_response = self.client.post(
+            "/api/mobile/login/",
+            {
+                "username": self.owner.username,
+                "password": "password123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        original_refresh_token = login_response.data["refresh"]
+
+        refresh_response = self.client.post(
+            "/api/mobile/auth/refresh/",
+            {"refresh": original_refresh_token},
+            format="json",
+        )
+
+        self.assertEqual(refresh_response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", refresh_response.data)
+        self.assertIn("refresh", refresh_response.data)
+        self.assertEqual(refresh_response.data["user"]["username"], self.owner.username)
+        self.assertNotIn("sv_refresh_token", refresh_response.cookies)
+
+        rotated_refresh_token = refresh_response.data["refresh"]
+        self.assertNotEqual(rotated_refresh_token, original_refresh_token)
+        self.assertTrue(
+            BlacklistedToken.objects.filter(
+                token__jti=RefreshToken(original_refresh_token, verify=False)["jti"]
+            ).exists()
+        )
+
+    def test_mobile_logout_blacklists_refresh_token(self):
+        login_response = self.client.post(
+            "/api/mobile/login/",
+            {
+                "username": self.owner.username,
+                "password": "password123",
+            },
+            format="json",
+        )
+
+        refresh_token = login_response.data["refresh"]
+        logout_response = self.client.post(
+            "/api/mobile/auth/logout/",
+            {"refresh": refresh_token},
+            format="json",
+        )
+
+        self.assertEqual(logout_response.status_code, status.HTTP_200_OK)
+        self.assertTrue(
+            BlacklistedToken.objects.filter(
+                token__jti=RefreshToken(refresh_token, verify=False)["jti"]
+            ).exists()
+        )
+
     def test_login_cors_preflight_allows_credentials(self):
         response = self.client.options(
             "/api/login/",
