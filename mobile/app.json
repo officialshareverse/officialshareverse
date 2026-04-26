@@ -24,7 +24,6 @@
       "buildNumber": "1"
     },
     "android": {
-      "versionCode": 1,
       "package": "com.shareverse.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -35,7 +34,10 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiBaseUrl": "http://127.0.0.1:8000/api/"
+      "apiBaseUrl": "https://api.shareverse.in/api/",
+      "eas": {
+        "projectId": "54d96ada-a7f7-440f-992a-e471580462d1"
+      }
     }
   }
 }
