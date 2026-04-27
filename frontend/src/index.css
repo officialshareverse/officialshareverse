@@ -6318,7 +6318,7 @@
     }
 
     .sv-create-wizard.is-mobile-single {
-      padding-bottom: calc(6.25rem + env(safe-area-inset-bottom));
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom));
     }
 
     .sv-create-wizard.is-mobile-single .sv-create-stage + .sv-create-stage {
@@ -6421,12 +6421,10 @@
     }
 
     .sv-create-wizard.is-mobile-single .sv-create-nav {
-      position: fixed;
-      left: max(0.75rem, env(safe-area-inset-left));
-      right: max(0.75rem, env(safe-area-inset-right));
-      bottom: max(0.75rem, env(safe-area-inset-bottom));
+      position: sticky;
+      bottom: calc(5.75rem + env(safe-area-inset-bottom));
       z-index: 30;
-      margin-top: 0;
+      margin-top: 1rem;
       padding: 0.75rem;
       border-radius: 22px;
       border: 1px solid var(--sv-border);
