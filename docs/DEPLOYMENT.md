@@ -57,6 +57,14 @@ Frontend production values:
 REACT_APP_API_BASE_URL=https://api.shareverse.in/api/
 ```
 
+If you also use a Vercel project domain or preview URL during live testing, add it explicitly:
+
+```env
+DJANGO_CORS_ALLOWED_ORIGINS=https://shareverse.in,https://www.shareverse.in,https://your-project.vercel.app
+DJANGO_CORS_ALLOWED_ORIGIN_REGEXES=^https://.*\\.vercel\\.app$
+DJANGO_CSRF_TRUSTED_ORIGINS=https://shareverse.in,https://www.shareverse.in,https://api.shareverse.in,https://*.vercel.app
+```
+
 ## 2. Deploy the Backend on the VPS
 
 Use the one-command backend release script after pulling a new release:

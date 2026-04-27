@@ -43,6 +43,19 @@ def _get_env_bool(name, default=False):
     return _parse_env_value(value).lower() == "true"
 
 
+def _get_env_list(name, default_values=None):
+    value = os.environ.get(name)
+    if value is None:
+        return list(default_values or [])
+
+    values = []
+    for raw_item in value.split(','):
+        normalized = _parse_env_value(raw_item).strip()
+        if normalized and normalized not in values:
+            values.append(normalized)
+    return values
+
+
 def _load_env_file(env_path):
     if not env_path.exists():
         return
@@ -71,6 +84,19 @@ IS_TEST_ENV = any(arg == "test" or "pytest" in arg for arg in sys.argv)
 ENVIRONMENT = os.environ.get("DJANGO_ENV", "test" if IS_TEST_ENV else "production").strip().lower() or ("test" if IS_TEST_ENV else "production")
 IS_DEV_ENV = ENVIRONMENT in {"dev", "development", "local"}
 IS_PRODUCTION_ENV = not IS_DEV_ENV and not IS_TEST_ENV
+
+DEFAULT_ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+DEFAULT_PRODUCTION_ALLOWED_HOSTS = ["api.shareverse.in"]
+DEFAULT_CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+DEFAULT_PRODUCTION_CORS_ALLOWED_ORIGINS = [
+    "https://shareverse.in",
+    "https://www.shareverse.in",
+]
+DEFAULT_PRODUCTION_CSRF_TRUSTED_ORIGINS = [
+    "https://shareverse.in",
+    "https://www.shareverse.in",
+    "https://api.shareverse.in",
+]
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '').strip()
@@ -114,11 +140,10 @@ GOOGLE_OAUTH_CLIENT_IDS = [
     if value.strip()
 ]
 
-ALLOWED_HOSTS = []
-for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(','):
-    normalized_host = host.strip()
-    if normalized_host and normalized_host not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(normalized_host)
+ALLOWED_HOSTS = _get_env_list(
+    'DJANGO_ALLOWED_HOSTS',
+    DEFAULT_PRODUCTION_ALLOWED_HOSTS if IS_PRODUCTION_ENV else DEFAULT_ALLOWED_HOSTS,
+)
 
 if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
@@ -169,22 +194,15 @@ MIDDLEWARE += [
 
 CORS_ALLOW_ALL_ORIGINS = _get_env_bool('DJANGO_CORS_ALLOW_ALL_ORIGINS', False)
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in os.environ.get(
-        'DJANGO_CORS_ALLOWED_ORIGINS',
-        'http://localhost:3000,http://127.0.0.1:3000'
-    ).split(',')
-    if origin.strip()
-]
-CSRF_TRUSTED_ORIGINS = [
-    origin.strip()
-    for origin in os.environ.get(
-        'DJANGO_CSRF_TRUSTED_ORIGINS',
-        ','.join(CORS_ALLOWED_ORIGINS),
-    ).split(',')
-    if origin.strip()
-]
+CORS_ALLOWED_ORIGINS = _get_env_list(
+    'DJANGO_CORS_ALLOWED_ORIGINS',
+    DEFAULT_PRODUCTION_CORS_ALLOWED_ORIGINS if IS_PRODUCTION_ENV else DEFAULT_CORS_ALLOWED_ORIGINS,
+)
+CORS_ALLOWED_ORIGIN_REGEXES = _get_env_list('DJANGO_CORS_ALLOWED_ORIGIN_REGEXES', [])
+CSRF_TRUSTED_ORIGINS = _get_env_list(
+    'DJANGO_CSRF_TRUSTED_ORIGINS',
+    DEFAULT_PRODUCTION_CSRF_TRUSTED_ORIGINS if IS_PRODUCTION_ENV else CORS_ALLOWED_ORIGINS,
+)
 ROOT_URLCONF = 'mystartup.urls'
 
 TEMPLATES = [
