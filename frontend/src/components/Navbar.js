@@ -25,6 +25,7 @@ const navItems = [
   { to: "/create", label: "Create", mobileLabel: "Create", icon: PlusIcon, mobileTab: true, desktopGroup: "primary" },
   { to: "/my-shared", label: "My Splits", mobileLabel: "Splits", icon: LayersIcon, mobileTab: true, desktopGroup: "workspace" },
   { to: "/wallet", label: "Wallet", mobileLabel: "Wallet", icon: WalletIcon, mobileTab: false, desktopGroup: "workspace" },
+  { to: "/referrals", label: "Refer and earn", mobileLabel: "Refer", icon: SparkIcon, mobileMenu: true },
   { to: "/notifications", label: "Notifications", mobileLabel: "Alerts", icon: BellIcon, badgeKey: "notification", desktopGroup: "signals" },
   { to: "/chats", label: "Chats", mobileLabel: "Chats", icon: ChatIcon, badgeKey: "chat", desktopGroup: "signals" },
   { to: "/profile", label: "Profile", mobileLabel: "Profile", icon: UserIcon },
@@ -37,7 +38,7 @@ const desktopNavGroups = [
 ];
 
 const mobileTabItems = navItems.filter((item) => item.mobileTab);
-const mobileMenuItems = navItems.filter((item) => !item.mobileTab);
+const mobileMenuItems = navItems.filter((item) => item.mobileMenu || !item.mobileTab);
 
 function resolveCurrentPath(pathname) {
   if (/^\/groups\/[^/]+\/chat/.test(pathname)) {
@@ -53,7 +54,7 @@ function resolveCurrentPath(pathname) {
     return "/wallet";
   }
   if (pathname.startsWith("/referrals")) {
-    return "/wallet";
+    return "/referrals";
   }
   if (pathname.startsWith("/profile")) {
     return "/profile";
