@@ -1,4 +1,10 @@
 const DEFAULT_API_BASE_PATH = "/api/";
+const LOCAL_BROWSER_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+
+function isLocalBrowserHost(hostname) {
+  const normalized = String(hostname || "").trim().toLowerCase();
+  return LOCAL_BROWSER_HOSTS.has(normalized) || normalized.endsWith(".local");
+}
 
 export function normalizeApiBaseUrl(value) {
   const normalized = String(value || "").trim();
@@ -9,6 +15,9 @@ export function normalizeApiBaseUrl(value) {
 }
 
 export function getApiBaseUrl() {
+  if (typeof window !== "undefined" && !isLocalBrowserHost(window.location.hostname)) {
+    return DEFAULT_API_BASE_PATH;
+  }
   return normalizeApiBaseUrl(process.env.REACT_APP_API_BASE_URL);
 }
 
