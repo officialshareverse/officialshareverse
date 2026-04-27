@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { refreshAccessToken } from "../api/axios";
+import { getWebSocketBaseUrl } from "../api/baseUrl";
 import { getAuthToken } from "../auth/session";
 
-const WS_BASE_URL = (process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000/api/")
-  .replace(/^http/i, (protocol) => (protocol.toLowerCase() === "https" ? "wss" : "ws"))
-  .replace(/\/api\/?$/, "");
+const WS_BASE_URL = getWebSocketBaseUrl();
 
 export default function useWebSocket(path, { onMessage, enabled = true } = {}) {
   const [status, setStatus] = useState("disconnected");

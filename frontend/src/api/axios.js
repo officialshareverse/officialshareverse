@@ -1,9 +1,12 @@
 import axios from "axios";
 
 import { clearAuthSession, getAuthToken, setAuthToken } from "../auth/session";
+import { getApiBaseUrl } from "./baseUrl";
+
+const API_BASE_URL = getApiBaseUrl();
 
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000/api/",
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
 
@@ -35,7 +38,7 @@ let refreshSessionPromise = null;
 
 export async function refreshAccessToken() {
   const response = await axios.post(
-    `${API.defaults.baseURL}auth/refresh/`,
+    `${API_BASE_URL}auth/refresh/`,
     {},
     { withCredentials: true }
   );
