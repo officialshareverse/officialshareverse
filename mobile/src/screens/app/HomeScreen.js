@@ -3,7 +3,7 @@ import { RefreshControl, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
-import { Bell, Compass, WalletCards } from "../../components/Icons";
+import { Bell, Compass, MessageSquare, WalletCards } from "../../components/Icons";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors, spacing } from "../../theme/tokens";
 import { formatCurrency, formatRelativeTime, getGreetingLabel } from "../../utils/formatters";
@@ -102,6 +102,20 @@ export default function HomeScreen({ navigation }) {
           fullWidth={false}
           icon={WalletCards}
         />
+        <AppButton
+          title="Notifications"
+          onPress={() => navigation.navigate("Notifications")}
+          variant="secondary"
+          fullWidth={false}
+          icon={Bell}
+        />
+        <AppButton
+          title="Chats"
+          onPress={() => navigation.navigate("Chats")}
+          variant="secondary"
+          fullWidth={false}
+          icon={MessageSquare}
+        />
       </View>
 
       <SectionCard>
@@ -138,8 +152,13 @@ export default function HomeScreen({ navigation }) {
 
       <SectionCard>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Latest notifications</Text>
-          <Bell color={colors.primary} size={18} strokeWidth={2.1} />
+        <Text style={styles.sectionTitle}>Latest notifications</Text>
+          <View style={styles.sectionHeaderRight}>
+            <Bell color={colors.primary} size={18} strokeWidth={2.1} />
+            <Text style={styles.sectionLink} onPress={() => navigation.navigate("Notifications")}>
+              Open inbox
+            </Text>
+          </View>
         </View>
         {notifications.length ? (
           notifications.slice(0, 4).map((notification) => (
@@ -155,6 +174,21 @@ export default function HomeScreen({ navigation }) {
             Nothing urgent. Your notifications will land here.
           </Text>
         )}
+      </SectionCard>
+
+      <SectionCard>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Messages</Text>
+          <View style={styles.sectionHeaderRight}>
+            <MessageSquare color={colors.primary} size={18} strokeWidth={2.1} />
+            <Text style={styles.sectionLink} onPress={() => navigation.navigate("Chats")}>
+              Open chats
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.emptyCopy}>
+          Open your hosted and joined group threads from the new mobile chat inbox.
+        </Text>
       </SectionCard>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -254,6 +288,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  sectionHeaderRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  sectionLink: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "700",
   },
   notificationItem: {
     gap: 6,

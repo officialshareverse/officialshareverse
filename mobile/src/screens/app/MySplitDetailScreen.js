@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, RefreshControl, Share, StyleSheet, Text, View
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
+import { MessageSquare } from "../../components/Icons";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors, spacing } from "../../theme/tokens";
 import { formatCurrency, formatRelativeTime, formatShortDate } from "../../utils/formatters";
@@ -293,6 +294,12 @@ export default function MySplitDetailScreen({ route, navigation }) {
           onPress={() => void handleGenerateInvite()}
           variant="secondary"
           loading={inviteLoading}
+        />
+        <AppButton
+          title="Open split chat"
+          onPress={() => navigation.navigate("GroupChat", { groupId })}
+          variant="secondary"
+          icon={MessageSquare}
         />
         {latestInvite?.invite_url ? (
           <AppButton

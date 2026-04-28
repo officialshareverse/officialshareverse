@@ -18,6 +18,7 @@ export const api = axios.create({
 
 const AUTH_EXEMPT_PATHS = [
   "mobile/login/",
+  "mobile/auth/google/",
   "mobile/signup/",
   "mobile/auth/refresh/",
   "mobile/auth/logout/",

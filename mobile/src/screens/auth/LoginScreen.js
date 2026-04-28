@@ -3,13 +3,33 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
+import GoogleAuthButton from "../../components/GoogleAuthButton";
 import { ArrowRight, ShieldCheck } from "../../components/Icons";
 import AppTextField from "../../components/AppTextField";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors } from "../../theme/tokens";
 
+function extractAuthError(error) {
+  const errorData = error?.response?.data;
+  if (errorData && typeof errorData === "object") {
+    if (typeof errorData.error === "string" && errorData.error.trim()) {
+      return errorData.error;
+    }
+
+    const firstField = Object.values(errorData)[0];
+    if (Array.isArray(firstField) && firstField[0]) {
+      return firstField[0];
+    }
+    if (typeof firstField === "string" && firstField.trim()) {
+      return firstField;
+    }
+  }
+
+  return "We could not sign you in right now.";
+}
+
 export default function LoginScreen({ navigation }) {
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -27,7 +47,19 @@ export default function LoginScreen({ navigation }) {
       setError("");
       await signIn({ username: username.trim(), password });
     } catch (requestError) {
-      setError(requestError?.response?.data?.error || "We could not sign you in right now.");
+      setError(extractAuthError(requestError));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async (credential) => {
+    try {
+      setLoading(true);
+      setError("");
+      await signInWithGoogle(credential);
+    } catch (requestError) {
+      setError(extractAuthError(requestError));
     } finally {
       setLoading(false);
     }
@@ -46,6 +78,15 @@ export default function LoginScreen({ navigation }) {
         <Text style={styles.heroCopy}>
           Your groups, joins, and referral bonuses pick up right where the web app leaves off.
         </Text>
+      </SectionCard>
+
+      <SectionCard>
+        <GoogleAuthButton
+          mode="signin"
+          disabled={loading}
+          onCredential={handleGoogleAuth}
+          onError={setError}
+        />
       </SectionCard>
 
       <SectionCard>

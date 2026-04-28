@@ -10,11 +10,14 @@ import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
 import SignupScreen from "../screens/auth/SignupScreen";
 import CreateSplitScreen from "../screens/app/CreateSplitScreen";
+import ChatsScreen from "../screens/app/ChatsScreen";
 import GroupDetailScreen from "../screens/app/GroupDetailScreen";
+import GroupChatScreen from "../screens/app/GroupChatScreen";
 import HomeScreen from "../screens/app/HomeScreen";
 import MarketplaceScreen from "../screens/app/MarketplaceScreen";
 import MySplitDetailScreen from "../screens/app/MySplitDetailScreen";
 import MySplitsScreen from "../screens/app/MySplitsScreen";
+import NotificationsScreen from "../screens/app/NotificationsScreen";
 import ProfileScreen from "../screens/app/ProfileScreen";
 import ReferralScreen from "../screens/app/ReferralScreen";
 import WalletScreen from "../screens/app/WalletScreen";
@@ -81,6 +84,9 @@ function AppStack() {
       <Stack.Screen name="MySplits" component={MySplitsScreen} options={{ title: "My splits" }} />
       <Stack.Screen name="MySplitDetail" component={MySplitDetailScreen} options={{ title: "Split details" }} />
       <Stack.Screen name="GroupDetail" component={GroupDetailScreen} options={{ title: "Group" }} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: "Notifications" }} />
+      <Stack.Screen name="Chats" component={ChatsScreen} options={{ title: "Chats" }} />
+      <Stack.Screen name="GroupChat" component={GroupChatScreen} options={{ title: "Group chat" }} />
       <Stack.Screen
         name="Referral"
         component={ReferralScreen}

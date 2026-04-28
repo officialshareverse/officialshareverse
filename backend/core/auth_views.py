@@ -924,6 +924,38 @@ class MobileLoginView(APIView):
         return build_mobile_auth_response(user)
 
 
+class MobileGoogleAuthView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = GoogleAuthSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        try:
+            claims = verify_google_id_token(serializer.validated_data["credential"])
+        except ImproperlyConfigured:
+            return Response(
+                {"error": "Google sign-in is not configured right now."},
+                status=503,
+            )
+        except ValueError:
+            return Response({"error": "Google sign-in could not be verified."}, status=400)
+
+        email = (claims.get("email") or "").strip().lower()
+        if not email:
+            return Response({"error": "Google account email is missing."}, status=400)
+
+        if not claims.get("email_verified"):
+            return Response(
+                {"error": "Please use a Google account with a verified email."},
+                status=400,
+            )
+
+        user, created = get_or_create_google_user(claims)
+        return build_mobile_auth_response(user, created=created)
+
+
 class RefreshSessionView(APIView):
     permission_classes = [AllowAny]
 

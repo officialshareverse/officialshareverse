@@ -108,6 +108,12 @@ export function AuthProvider({ children }) {
     return response.data;
   }, []);
 
+  const signInWithGoogle = useCallback(async (credential) => {
+    const response = await api.post("mobile/auth/google/", { credential });
+    await applySessionPayload(response.data, setSession, setUser);
+    return response.data;
+  }, []);
+
   const finishSignup = useCallback(async (payload) => {
     const response = await api.post("mobile/signup/", payload);
     await applySessionPayload(response.data, setSession, setUser);
@@ -143,6 +149,7 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(session?.accessToken),
       isBootstrapping,
       signIn,
+      signInWithGoogle,
       finishSignup,
       requestSignupOtp,
       requestPasswordResetOtp,
@@ -155,6 +162,7 @@ export function AuthProvider({ children }) {
       session,
       isBootstrapping,
       signIn,
+      signInWithGoogle,
       finishSignup,
       requestSignupOtp,
       requestPasswordResetOtp,

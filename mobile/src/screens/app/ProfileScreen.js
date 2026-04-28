@@ -3,7 +3,7 @@ import { RefreshControl, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
-import { LogOut, TicketPercent, UserRound } from "../../components/Icons";
+import { Bell, LogOut, MessageSquare, TicketPercent, UserRound } from "../../components/Icons";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors, spacing } from "../../theme/tokens";
 import { getInitials } from "../../utils/formatters";
@@ -76,6 +76,18 @@ export default function ProfileScreen({ navigation }) {
           title="Create split"
           onPress={() => navigation.navigate("CreateSplit")}
           variant="secondary"
+        />
+        <AppButton
+          title="Notifications"
+          onPress={() => navigation.navigate("Notifications")}
+          variant="secondary"
+          icon={Bell}
+        />
+        <AppButton
+          title="Chats"
+          onPress={() => navigation.navigate("Chats")}
+          variant="secondary"
+          icon={MessageSquare}
         />
         <AppButton
           title="Refer and earn"

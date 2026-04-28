@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
 import AppTextField from "../../components/AppTextField";
+import GoogleAuthButton from "../../components/GoogleAuthButton";
 import { CheckCircle2, MailCheck } from "../../components/Icons";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors } from "../../theme/tokens";
@@ -29,7 +30,7 @@ function extractError(error) {
 }
 
 export default function SignupScreen() {
-  const { requestSignupOtp, finishSignup } = useAuth();
+  const { requestSignupOtp, finishSignup, signInWithGoogle } = useAuth();
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -126,11 +127,32 @@ export default function SignupScreen() {
     }
   };
 
+  const handleGoogleAuth = async (credential) => {
+    try {
+      setFinishing(true);
+      setError("");
+      await signInWithGoogle(credential);
+    } catch (requestError) {
+      setError(extractError(requestError));
+    } finally {
+      setFinishing(false);
+    }
+  };
+
   return (
     <Screen
       title="Create account"
       subtitle="Start with email verification, then carry the same ShareVerse account into mobile."
     >
+      <SectionCard>
+        <GoogleAuthButton
+          mode="signup"
+          disabled={otpLoading || finishing}
+          onCredential={handleGoogleAuth}
+          onError={setError}
+        />
+      </SectionCard>
+
       <SectionCard>
         <Text style={styles.sectionTitle}>Account details</Text>
         <View style={styles.twoUp}>

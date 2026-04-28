@@ -17,7 +17,8 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-asset"
+      "expo-asset",
+      "expo-web-browser"
     ],
     "ios": {
       "supportsTablet": true,

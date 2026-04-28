@@ -460,6 +460,68 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.data["user"]["username"], existing_user.username)
         self.assertIn("sv_refresh_token", response.cookies)
 
+    @patch("core.auth_views.verify_google_id_token")
+    def test_mobile_google_auth_returns_refresh_token_payload(self, verify_google_id_token_mock):
+        verify_google_id_token_mock.return_value = {
+            "iss": "accounts.google.com",
+            "sub": "google-sub-mobile-1",
+            "email": "google-mobile@example.com",
+            "email_verified": True,
+            "given_name": "Mobile",
+            "family_name": "Member",
+            "name": "Mobile Member",
+        }
+
+        response = self.client.post(
+            "/api/mobile/auth/google/",
+            {"credential": "google-id-token"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["created"])
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+        self.assertEqual(response.data["user"]["email"], "google-mobile@example.com")
+        self.assertNotIn("sv_refresh_token", response.cookies)
+
+    @patch("core.auth_views.verify_google_id_token")
+    def test_mobile_google_auth_logs_in_existing_user(self, verify_google_id_token_mock):
+        existing_user = User.objects.create_user(
+            username="existingmobilegoogle",
+            password="password123",
+            email="google-mobile-existing@example.com",
+            first_name="",
+            last_name="",
+            is_verified=False,
+        )
+
+        verify_google_id_token_mock.return_value = {
+            "iss": "accounts.google.com",
+            "sub": "google-sub-mobile-2",
+            "email": "google-mobile-existing@example.com",
+            "email_verified": True,
+            "given_name": "Mobile",
+            "family_name": "Existing",
+            "name": "Mobile Existing",
+        }
+
+        response = self.client.post(
+            "/api/mobile/auth/google/",
+            {"credential": "google-id-token"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data["created"])
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+        existing_user.refresh_from_db()
+        self.assertEqual(existing_user.first_name, "Mobile")
+        self.assertEqual(existing_user.last_name, "Existing")
+        self.assertTrue(existing_user.is_verified)
+        self.assertEqual(response.data["user"]["username"], existing_user.username)
+
     def test_login_sets_refresh_cookie_and_refresh_endpoint_restores_access(self):
         login_response = self.client.post(
             "/api/login/",
