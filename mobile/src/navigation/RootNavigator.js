@@ -9,9 +9,12 @@ import { colors } from "../theme/tokens";
 import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
 import SignupScreen from "../screens/auth/SignupScreen";
+import CreateSplitScreen from "../screens/app/CreateSplitScreen";
 import GroupDetailScreen from "../screens/app/GroupDetailScreen";
 import HomeScreen from "../screens/app/HomeScreen";
 import MarketplaceScreen from "../screens/app/MarketplaceScreen";
+import MySplitDetailScreen from "../screens/app/MySplitDetailScreen";
+import MySplitsScreen from "../screens/app/MySplitsScreen";
 import ProfileScreen from "../screens/app/ProfileScreen";
 import ReferralScreen from "../screens/app/ReferralScreen";
 import WalletScreen from "../screens/app/WalletScreen";
@@ -74,6 +77,9 @@ function AppStack() {
       }}
     >
       <Stack.Screen name="Tabs" component={AppTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="CreateSplit" component={CreateSplitScreen} options={{ title: "Create split" }} />
+      <Stack.Screen name="MySplits" component={MySplitsScreen} options={{ title: "My splits" }} />
+      <Stack.Screen name="MySplitDetail" component={MySplitDetailScreen} options={{ title: "Split details" }} />
       <Stack.Screen name="GroupDetail" component={GroupDetailScreen} options={{ title: "Group" }} />
       <Stack.Screen
         name="Referral"

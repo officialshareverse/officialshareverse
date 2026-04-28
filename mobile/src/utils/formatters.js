@@ -33,6 +33,23 @@ export function formatRelativeTime(value) {
   });
 }
 
+export function formatShortDate(value) {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 export function getGreetingLabel(date = new Date()) {
   const hour = date.getHours();
   if (hour < 12) {

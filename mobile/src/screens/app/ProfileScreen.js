@@ -68,6 +68,16 @@ export default function ProfileScreen({ navigation }) {
       <SectionCard>
         <Text style={styles.sectionTitle}>Account actions</Text>
         <AppButton
+          title="My splits"
+          onPress={() => navigation.navigate("MySplits")}
+          variant="secondary"
+        />
+        <AppButton
+          title="Create split"
+          onPress={() => navigation.navigate("CreateSplit")}
+          variant="secondary"
+        />
+        <AppButton
           title="Refer and earn"
           onPress={() => navigation.navigate("Referral")}
           variant="secondary"

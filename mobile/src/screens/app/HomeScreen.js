@@ -75,13 +75,25 @@ export default function HomeScreen({ navigation }) {
         </View>
       </SectionCard>
 
-      <View style={styles.actionRow}>
+      <View style={styles.actionGrid}>
         <AppButton
           title="Browse groups"
           onPress={() => navigation.navigate("MarketplaceTab")}
           variant="secondary"
           fullWidth={false}
           icon={Compass}
+        />
+        <AppButton
+          title="Create split"
+          onPress={() => navigation.navigate("CreateSplit")}
+          variant="secondary"
+          fullWidth={false}
+        />
+        <AppButton
+          title="My splits"
+          onPress={() => navigation.navigate("MySplits")}
+          variant="secondary"
+          fullWidth={false}
         />
         <AppButton
           title="Open wallet"
@@ -198,8 +210,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
-  actionRow: {
+  actionGrid: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.md,
   },
   sectionTitle: {

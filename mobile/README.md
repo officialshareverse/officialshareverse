@@ -10,6 +10,8 @@ This is the native mobile client for ShareVerse, built with `Expo` and `React Na
 - Native token-based mobile auth using the new Django mobile endpoints
 - Home dashboard
 - Marketplace browse and join flow
+- Native create split flow
+- Hosted split list and split detail view
 - Wallet balances and transaction history
 - Profile and referral screens
 
@@ -100,6 +102,10 @@ Before the first Play Store release, make sure you have:
 - `GET /api/profile/`
 - `GET /api/transactions/`
 - `GET /api/referral/my-code/`
+- `POST /api/create-group/`
+- `GET /api/my-groups/`
+- `GET /api/my-groups/<id>/`
+- `POST /api/invite/generate/`
 
 ## Next mobile upgrades
 
@@ -107,4 +113,4 @@ Before the first Play Store release, make sure you have:
 - Google sign-in for Expo / native
 - Push notifications
 - Group chat screens
-- Owner tools for creating and managing groups
+- Richer owner tools for proof upload, refunds, and activation
