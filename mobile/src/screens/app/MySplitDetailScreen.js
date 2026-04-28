@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, RefreshControl, Share, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors, spacing } from "../../theme/tokens";
 import { formatCurrency, formatRelativeTime, formatShortDate } from "../../utils/formatters";
+import {
+  canCloseSplit,
+  canDeleteSplit,
+  getActionError,
+  getLifecycleNote,
+} from "../../utils/mySplits";
 
 function KeyValue({ label, value, tone = "default" }) {
   return (
@@ -40,6 +46,9 @@ export default function MySplitDetailScreen({ route, navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [actionState, setActionState] = useState("");
+  const [revealingCredentials, setRevealingCredentials] = useState(false);
+  const [revealedCredentials, setRevealedCredentials] = useState(null);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -68,6 +77,8 @@ export default function MySplitDetailScreen({ route, navigation }) {
 
   const inviteLinks = useMemo(() => group?.invite_links || [], [group?.invite_links]);
   const members = useMemo(() => group?.members || [], [group?.members]);
+  const latestInvite = useMemo(() => inviteLinks[0] || null, [inviteLinks]);
+  const lifecycleNote = useMemo(() => getLifecycleNote(group), [group]);
 
   const handleGenerateInvite = async () => {
     try {
@@ -88,6 +99,149 @@ export default function MySplitDetailScreen({ route, navigation }) {
     } finally {
       setInviteLoading(false);
     }
+  };
+
+  const confirmHostAction = (title, message, onConfirm, destructive = false) => {
+    Alert.alert(title, message, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: destructive ? "Continue" : "Confirm",
+        style: destructive ? "destructive" : "default",
+        onPress: () => {
+          void onConfirm();
+        },
+      },
+    ]);
+  };
+
+  const runHostAction = async (busyKey, request, fallbackMessage, options = {}) => {
+    try {
+      setActionState(busyKey);
+      const response = await request();
+      setError("");
+
+      if (options.goBackOnSuccess) {
+        Alert.alert("Done", response?.data?.message || fallbackMessage, [
+          {
+            text: "OK",
+            onPress: () => navigation.goBack(),
+          },
+        ]);
+        return;
+      }
+
+      if (options.afterSuccess) {
+        options.afterSuccess(response);
+      }
+
+      await load();
+      Alert.alert("Done", response?.data?.message || fallbackMessage);
+    } catch (requestError) {
+      const message = getActionError(requestError?.response?.data, fallbackMessage);
+      setError(message);
+      Alert.alert("Could not complete action", message);
+    } finally {
+      setActionState("");
+    }
+  };
+
+  const handleShareLatestInvite = async () => {
+    if (!latestInvite?.invite_url) {
+      Alert.alert("Invite link not ready", "Generate an invite link first, then share it.");
+      return;
+    }
+
+    try {
+      await Share.share({
+        title: `${group?.subscription_name || "ShareVerse"} invite`,
+        message: latestInvite.invite_url,
+      });
+    } catch {
+      // Native share sheets can be dismissed normally.
+    }
+  };
+
+  const handleRevealCredentials = async () => {
+    try {
+      setRevealingCredentials(true);
+      const tokenResponse = await api.post("credentials/request-reveal/", {
+        group_id: groupId,
+      });
+      const revealResponse = await api.post("credentials/reveal/", {
+        reveal_token: tokenResponse.data?.reveal_token,
+      });
+      setRevealedCredentials(revealResponse.data || null);
+      setError("");
+      Alert.alert("Credentials revealed", "The current login details are now shown on this screen.");
+    } catch (requestError) {
+      const message = getActionError(
+        requestError?.response?.data,
+        "We could not reveal the credentials right now."
+      );
+      setError(message);
+      Alert.alert("Reveal failed", message);
+    } finally {
+      setRevealingCredentials(false);
+    }
+  };
+
+  const handleActivateGroup = () => {
+    confirmHostAction(
+      "Release held funds?",
+      "This activates the split and releases the held member contributions.",
+      async () => {
+        await runHostAction(
+          "activate",
+          () => api.post(`my-groups/${groupId}/activate/`),
+          "The split is now active."
+        );
+      }
+    );
+  };
+
+  const handleRefundGroup = () => {
+    confirmHostAction(
+      "Refund held funds?",
+      "This returns all held contributions to members and cannot be undone.",
+      async () => {
+        await runHostAction(
+          "refund",
+          () => api.post(`my-groups/${groupId}/refund/`),
+          "Held member funds were refunded successfully."
+        );
+      },
+      true
+    );
+  };
+
+  const handleCloseGroup = () => {
+    confirmHostAction(
+      "Close this split?",
+      "Closing stops new joins but keeps the split in your records.",
+      async () => {
+        await runHostAction(
+          "close",
+          () => api.post(`my-groups/${groupId}/close/`),
+          "The split was closed successfully."
+        );
+      }
+    );
+  };
+
+  const handleDeleteGroup = () => {
+    confirmHostAction(
+      "Delete this split?",
+      "Only empty splits can be deleted, and this permanently removes it.",
+      async () => {
+        await runHostAction(
+          "delete",
+          () => api.delete(`my-groups/${groupId}/`),
+          "The split was deleted successfully.",
+          { goBackOnSuccess: true }
+        );
+      },
+      true
+    );
   };
 
   if (loading && !group) {
@@ -127,6 +281,11 @@ export default function MySplitDetailScreen({ route, navigation }) {
         />
       </SectionCard>
 
+      <SectionCard style={styles.noteCard}>
+        <Text style={styles.noteEyebrow}>Lifecycle note</Text>
+        <Text style={styles.supportingCopy}>{lifecycleNote}</Text>
+      </SectionCard>
+
       <SectionCard>
         <Text style={styles.sectionTitle}>Host actions</Text>
         <AppButton
@@ -135,6 +294,57 @@ export default function MySplitDetailScreen({ route, navigation }) {
           variant="secondary"
           loading={inviteLoading}
         />
+        {latestInvite?.invite_url ? (
+          <AppButton
+            title="Share latest invite link"
+            onPress={() => void handleShareLatestInvite()}
+            variant="secondary"
+          />
+        ) : null}
+        {group?.mode === "sharing" && group?.credentials?.available ? (
+          <AppButton
+            title={revealingCredentials ? "Revealing..." : "Reveal credentials once"}
+            onPress={() => void handleRevealCredentials()}
+            variant="secondary"
+            loading={revealingCredentials}
+          />
+        ) : null}
+        {group?.can_activate ? (
+          <AppButton
+            title={actionState === "activate" ? "Releasing..." : "Release held funds"}
+            onPress={handleActivateGroup}
+            loading={actionState === "activate"}
+          />
+        ) : null}
+        {group?.can_refund ? (
+          <AppButton
+            title={actionState === "refund" ? "Refunding..." : "Refund held member funds"}
+            onPress={handleRefundGroup}
+            variant="secondary"
+            loading={actionState === "refund"}
+          />
+        ) : null}
+        {canCloseSplit(group) ? (
+          <AppButton
+            title={actionState === "close" ? "Closing..." : "Close split"}
+            onPress={handleCloseGroup}
+            variant="secondary"
+            loading={actionState === "close"}
+          />
+        ) : null}
+        {canDeleteSplit(group) ? (
+          <AppButton
+            title={actionState === "delete" ? "Deleting..." : "Delete split"}
+            onPress={handleDeleteGroup}
+            variant="secondary"
+            loading={actionState === "delete"}
+          />
+        ) : null}
+        {group?.can_submit_proof ? (
+          <Text style={styles.helperCallout}>
+            Purchase proof upload still needs the web dashboard for now.
+          </Text>
+        ) : null}
         <AppButton
           title="Back to my splits"
           onPress={() => navigation.navigate("MySplits")}
@@ -161,6 +371,26 @@ export default function MySplitDetailScreen({ route, navigation }) {
         <SectionCard>
           <Text style={styles.sectionTitle}>Access setup</Text>
           <Text style={styles.supportingCopy}>{group.credentials.message}</Text>
+        </SectionCard>
+      ) : null}
+
+      {revealedCredentials ? (
+        <SectionCard>
+          <Text style={styles.sectionTitle}>Current credentials</Text>
+          <View style={styles.credentialCard}>
+            <Text style={styles.credentialLabel}>Login</Text>
+            <Text style={styles.credentialValue}>
+              {revealedCredentials.login_identifier || "-"}
+            </Text>
+            <Text style={styles.credentialLabel}>Password</Text>
+            <Text style={styles.credentialValue}>{revealedCredentials.password || "-"}</Text>
+            {revealedCredentials.notes ? (
+              <>
+                <Text style={styles.credentialLabel}>Notes</Text>
+                <Text style={styles.supportingCopy}>{revealedCredentials.notes}</Text>
+              </>
+            ) : null}
+          </View>
         </SectionCard>
       ) : null}
 
@@ -206,6 +436,16 @@ const styles = StyleSheet.create({
   loadingCopy: {
     color: colors.textMuted,
     fontSize: 14,
+  },
+  noteCard: {
+    backgroundColor: "#eefaf7",
+  },
+  noteEyebrow: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
   sectionTitle: {
     fontSize: 18,
@@ -253,6 +493,31 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 14,
     lineHeight: 22,
+  },
+  helperCallout: {
+    color: colors.textMuted,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  credentialCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    padding: spacing.md,
+    gap: 6,
+    backgroundColor: colors.surfaceMuted,
+  },
+  credentialLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  credentialValue: {
+    color: colors.night,
+    fontSize: 14,
+    fontWeight: "800",
   },
   memberRow: {
     flexDirection: "row",

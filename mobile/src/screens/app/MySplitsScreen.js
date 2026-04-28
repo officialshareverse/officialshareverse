@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
@@ -65,9 +66,11 @@ export default function MySplitsScreen({ navigation }) {
     }
   }, [api]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load])
+  );
 
   const stats = useMemo(() => {
     const totalGroups = groups.length;
