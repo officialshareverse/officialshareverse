@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Constants from "expo-constants";
+import * as AuthSession from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 
@@ -25,6 +26,11 @@ const GOOGLE_IOS_CLIENT_ID = (
   appExtra.googleIosClientId ||
   ""
 ).trim();
+const IS_EXPO_GO = Constants.executionEnvironment === "storeClient";
+const REDIRECT_URI = AuthSession.makeRedirectUri({
+  scheme: "shareverse",
+  path: "oauthredirect",
+});
 
 export default function GoogleAuthButton({
   onCredential,
@@ -33,18 +39,25 @@ export default function GoogleAuthButton({
   mode = "signin",
 }) {
   const [authenticating, setAuthenticating] = useState(false);
+  const needsNativeClient =
+    (Platform.OS === "android" && !GOOGLE_ANDROID_CLIENT_ID) ||
+    (Platform.OS === "ios" && !GOOGLE_IOS_CLIENT_ID);
+  const blockedByExpoGo = IS_EXPO_GO && Platform.OS !== "web";
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: GOOGLE_WEB_CLIENT_ID || GOOGLE_ANDROID_CLIENT_ID || GOOGLE_IOS_CLIENT_ID || undefined,
     webClientId: GOOGLE_WEB_CLIENT_ID || undefined,
     androidClientId: GOOGLE_ANDROID_CLIENT_ID || GOOGLE_WEB_CLIENT_ID || undefined,
     iosClientId: GOOGLE_IOS_CLIENT_ID || GOOGLE_WEB_CLIENT_ID || undefined,
+    redirectUri: blockedByExpoGo ? undefined : REDIRECT_URI,
     scopes: ["openid", "profile", "email"],
     selectAccount: true,
   });
 
   const isConfigured = useMemo(
-    () => Boolean(GOOGLE_WEB_CLIENT_ID || GOOGLE_ANDROID_CLIENT_ID || GOOGLE_IOS_CLIENT_ID),
-    []
+    () =>
+      Boolean(GOOGLE_WEB_CLIENT_ID || GOOGLE_ANDROID_CLIENT_ID || GOOGLE_IOS_CLIENT_ID) &&
+      !blockedByExpoGo,
+    [blockedByExpoGo]
   );
 
   useEffect(() => {
@@ -143,9 +156,13 @@ export default function GoogleAuthButton({
       </Pressable>
 
       <Text style={styles.note}>
-        {isConfigured
-          ? "Tip: add dedicated Android and iOS Google client IDs in mobile env for the smoothest native sign-in."
-          : "Add EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID to mobile/.env to enable Google sign-in."}
+        {blockedByExpoGo
+          ? "Google sign-in is blocked inside Expo Go because Google rejects the exp:// redirect. Test it in a development build with native Google client IDs."
+          : !isConfigured
+            ? "Add EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID to mobile/.env to enable Google sign-in."
+            : needsNativeClient
+              ? `Add EXPO_PUBLIC_GOOGLE_${Platform.OS === "android" ? "ANDROID" : "IOS"}_CLIENT_ID for the smoothest native sign-in on ${Platform.OS}.`
+              : "Google sign-in is configured for this device."}
       </Text>
     </View>
   );
