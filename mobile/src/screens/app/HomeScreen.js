@@ -96,6 +96,12 @@ export default function HomeScreen({ navigation }) {
           fullWidth={false}
         />
         <AppButton
+          title="Joined groups"
+          onPress={() => navigation.navigate("JoinedGroups")}
+          variant="secondary"
+          fullWidth={false}
+        />
+        <AppButton
           title="Open wallet"
           onPress={() => navigation.navigate("WalletTab")}
           variant="secondary"

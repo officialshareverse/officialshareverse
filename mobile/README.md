@@ -13,10 +13,12 @@ This is the native mobile client for ShareVerse, built with `Expo` and `React Na
 - Marketplace browse and join flow
 - Native create split flow
 - Hosted split list and split detail view
+- Joined groups list with confirm-access, issue-report, and host rating actions
 - Notifications inbox
 - Chats inbox and group chat thread
-- Wallet balances and transaction history
+- Wallet balances, payout destination setup, withdrawal requests, and transaction history
 - Profile and referral screens
+- Buy-together purchase-proof upload from mobile host detail
 
 ## Setup
 
@@ -45,13 +47,15 @@ For a physical device on the same Wi-Fi, use your laptop's LAN IP:
 EXPO_PUBLIC_API_BASE_URL=http://192.168.x.x:8000/api/
 ```
 
-To test Google sign-in in Expo Go or native builds, add your client IDs too:
+To test Google sign-in in native builds, add your client IDs too:
 
 ```env
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
 EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=your-google-android-client-id.apps.googleusercontent.com
 EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=your-google-ios-client-id.apps.googleusercontent.com
 ```
+
+Note: Android Google sign-in is intentionally blocked inside Expo Go. Use a development build for the real native Google flow.
 
 ## Production mobile env
 
@@ -120,6 +124,7 @@ Before the first Play Store release, make sure you have:
 - `POST /api/create-group/`
 - `GET /api/my-groups/`
 - `GET /api/my-groups/<id>/`
+- `POST /api/my-groups/<id>/submit-proof/`
 - `POST /api/invite/generate/`
 - `GET /api/notifications/`
 - `POST /api/notifications/mark-all-read/`
@@ -128,10 +133,14 @@ Before the first Play Store release, make sure you have:
 - `GET /api/groups/<id>/chat/`
 - `POST /api/groups/<id>/chat/`
 - `PATCH /api/groups/<id>/chat/`
+- `POST /api/groups/<id>/confirm-access/`
+- `POST /api/groups/<id>/report-access-issue/`
+- `PUT /api/wallet/payout-account/`
+- `POST /api/withdraw-money/`
+- `POST /api/wallet/payouts/<id>/sync/`
 
 ## Next mobile upgrades
 
 - Native Razorpay top-up flow
 - Push notifications
-- Richer owner tools for proof upload, refunds, and activation
-- Joined-member mobile management for access confirm / issue reports
+- Deeper marketplace filtering and split moderation tools

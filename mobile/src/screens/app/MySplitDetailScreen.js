@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, RefreshControl, Share, StyleSheet, Text, View } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
+import AppTextField from "../../components/AppTextField";
 import { MessageSquare } from "../../components/Icons";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors, spacing } from "../../theme/tokens";
@@ -50,6 +52,9 @@ export default function MySplitDetailScreen({ route, navigation }) {
   const [actionState, setActionState] = useState("");
   const [revealingCredentials, setRevealingCredentials] = useState(false);
   const [revealedCredentials, setRevealedCredentials] = useState(null);
+  const [proofDocument, setProofDocument] = useState(null);
+  const [proofReference, setProofReference] = useState("");
+  const [proofNotes, setProofNotes] = useState("");
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -245,6 +250,74 @@ export default function MySplitDetailScreen({ route, navigation }) {
     );
   };
 
+  const handlePickProof = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        copyToCacheDirectory: true,
+        multiple: false,
+        type: ["image/*", "application/pdf"],
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      setProofDocument(result.assets[0]);
+      setError("");
+    } catch {
+      setError("We could not open the file picker right now.");
+    }
+  };
+
+  const handleSubmitProof = async () => {
+    if (!proofDocument) {
+      setError("Pick an image or PDF proof file first.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("purchase_proof", {
+      uri: proofDocument.uri,
+      name: proofDocument.name || "purchase-proof",
+      type: proofDocument.mimeType || "application/octet-stream",
+    });
+
+    if (proofReference.trim()) {
+      formData.append("purchase_reference", proofReference.trim());
+    }
+
+    if (proofNotes.trim()) {
+      formData.append("purchase_notes", proofNotes.trim());
+    }
+
+    try {
+      setActionState("submit_proof");
+      const response = await api.post(`my-groups/${groupId}/submit-proof/`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setProofDocument(null);
+      setProofReference("");
+      setProofNotes("");
+      setError("");
+      Alert.alert(
+        "Proof uploaded",
+        response.data?.message || "Purchase proof was uploaded successfully."
+      );
+      await load();
+    } catch (requestError) {
+      const message = getActionError(
+        requestError?.response?.data,
+        "We could not upload proof right now."
+      );
+      setError(message);
+      Alert.alert("Upload failed", message);
+    } finally {
+      setActionState("");
+    }
+  };
+
   if (loading && !group) {
     return (
       <Screen scroll={false}>
@@ -347,11 +420,6 @@ export default function MySplitDetailScreen({ route, navigation }) {
             loading={actionState === "delete"}
           />
         ) : null}
-        {group?.can_submit_proof ? (
-          <Text style={styles.helperCallout}>
-            Purchase proof upload still needs the web dashboard for now.
-          </Text>
-        ) : null}
         <AppButton
           title="Back to my splits"
           onPress={() => navigation.navigate("MySplits")}
@@ -415,6 +483,52 @@ export default function MySplitDetailScreen({ route, navigation }) {
               ? `Proof submitted ${formatRelativeTime(group.purchase_proof.submitted_at)}`
               : "Purchase proof has not been submitted yet."}
           </Text>
+          {group?.purchase_proof?.file_name ? (
+            <Text style={styles.supportingMeta}>Latest file: {group.purchase_proof.file_name}</Text>
+          ) : null}
+          {group?.purchase_proof?.purchase_reference ? (
+            <Text style={styles.supportingCopy}>
+              Reference: {group.purchase_proof.purchase_reference}
+            </Text>
+          ) : null}
+          {group?.purchase_proof?.purchase_notes ? (
+            <Text style={styles.supportingCopy}>{group.purchase_proof.purchase_notes}</Text>
+          ) : null}
+        </SectionCard>
+      ) : null}
+
+      {group?.can_submit_proof ? (
+        <SectionCard>
+          <Text style={styles.sectionTitle}>Upload purchase proof</Text>
+          <Text style={styles.supportingCopy}>
+            Add the purchase invoice, screenshot, or PDF once you complete the buy-together purchase.
+          </Text>
+          <AppButton
+            title={proofDocument ? "Change proof file" : "Pick proof file"}
+            onPress={() => void handlePickProof()}
+            variant="secondary"
+          />
+          {proofDocument ? (
+            <Text style={styles.supportingMeta}>Selected file: {proofDocument.name}</Text>
+          ) : null}
+          <AppTextField
+            label="Reference"
+            value={proofReference}
+            onChangeText={setProofReference}
+            placeholder="Optional order id or UTR"
+          />
+          <AppTextField
+            label="Notes"
+            value={proofNotes}
+            onChangeText={setProofNotes}
+            placeholder="Optional setup notes for members"
+            multiline
+          />
+          <AppButton
+            title={actionState === "submit_proof" ? "Uploading..." : "Upload proof"}
+            onPress={() => void handleSubmitProof()}
+            loading={actionState === "submit_proof"}
+          />
         </SectionCard>
       ) : null}
 
@@ -501,10 +615,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
   },
-  helperCallout: {
-    color: colors.textMuted,
+  supportingMeta: {
+    color: colors.night,
     fontSize: 13,
-    lineHeight: 20,
+    fontWeight: "700",
   },
   credentialCard: {
     borderWidth: 1,

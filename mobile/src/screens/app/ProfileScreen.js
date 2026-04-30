@@ -73,6 +73,11 @@ export default function ProfileScreen({ navigation }) {
           variant="secondary"
         />
         <AppButton
+          title="Joined groups"
+          onPress={() => navigation.navigate("JoinedGroups")}
+          variant="secondary"
+        />
+        <AppButton
           title="Create split"
           onPress={() => navigation.navigate("CreateSplit")}
           variant="secondary"
