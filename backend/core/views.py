@@ -1843,7 +1843,7 @@ class LeaveGroupView(APIView):
         group_id = request.data.get("group_id")
 
         try:
-            group = Group.objects.get(id=group_id)
+            group = Group.objects.select_related("subscription", "owner").get(id=group_id)
         except Group.DoesNotExist:
             return Response({"error": "Group not found"}, status=404)
 
@@ -1855,9 +1855,87 @@ class LeaveGroupView(APIView):
         if group.owner == request.user:
             return Response({"error": "Owner cannot leave the group"}, status=400)
 
-        member.delete()
+        if group.mode == "group_buy" and group.status in {"awaiting_purchase", "proof_submitted", "purchasing"}:
+            return Response(
+                {"error": "You cannot leave this group while the purchase is in progress."},
+                status=400,
+            )
 
-        return Response({"message": "Left group successfully"}, status=200)
+        refunded_amount = Decimal("0.00")
+
+        with transaction.atomic():
+            locked_member = (
+                GroupMember.objects.select_for_update()
+                .select_related("user", "group", "group__subscription")
+                .get(id=member.id)
+            )
+            locked_group = Group.objects.select_for_update().select_related("subscription", "owner").get(id=group.id)
+
+            if locked_member.has_paid and locked_member.escrow_status == "held":
+                refund_amount = get_member_charged_amount(locked_member)
+                contribution_amount = get_member_contribution_amount(locked_member)
+
+                wallet, _ = Wallet.objects.select_for_update().get_or_create(user=request.user)
+                wallet.balance += refund_amount
+                wallet.save(update_fields=["balance"])
+
+                Transaction.objects.create(
+                    user=request.user,
+                    group=locked_group,
+                    amount=refund_amount,
+                    type="credit",
+                    status="success",
+                    payment_method="refund",
+                )
+
+                locked_member.escrow_status = "refunded"
+                locked_member.refund_amount = refund_amount
+                locked_member.refund_processed_at = timezone.now()
+                locked_member.save(update_fields=["escrow_status", "refund_amount", "refund_processed_at"])
+
+                EscrowLedger.objects.create(
+                    user=request.user,
+                    group=locked_group,
+                    member=locked_member,
+                    amount=contribution_amount,
+                    entry_type="refund",
+                    status="success",
+                )
+
+                refunded_amount = refund_amount
+
+            locked_member.delete()
+
+        create_notification(
+            user=group.owner,
+            message=f"{request.user.username} left your {group.subscription.name} group.",
+        )
+
+        if refunded_amount > Decimal("0.00"):
+            create_notification(
+                user=request.user,
+                message=(
+                    f"You left {group.subscription.name} and your held contribution "
+                    f"of Rs {refunded_amount} was refunded to your wallet."
+                ),
+            )
+            log_operation_event(
+                "group_leave_refund",
+                group_id=group.id,
+                group_mode=group.mode,
+                user_id=request.user.id,
+                username=request.user.username,
+                refunded_amount=refunded_amount,
+                subscription_name=group.subscription.name,
+            )
+
+        return Response(
+            {
+                "message": "Left group successfully",
+                "refunded_amount": str(refunded_amount),
+            },
+            status=200,
+        )
 
 
 class GenerateGroupInviteLinkView(APIView):
