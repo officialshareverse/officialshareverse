@@ -4,9 +4,15 @@ import { Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
 import { Bell, CheckCircle2 } from "../../components/Icons";
+import {
+  getPushRegistrationStatusAsync,
+  registerForPushNotificationsAsync,
+  unregisterPushTokenAsync,
+} from "../../notifications/push";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors, spacing } from "../../theme/tokens";
 import { formatRelativeTime } from "../../utils/formatters";
+import { getActionError } from "../../utils/mySplits";
 
 const FILTERS = [
   { key: "all", label: "All" },
@@ -33,7 +39,32 @@ export default function NotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState("all");
   const [workingId, setWorkingId] = useState(null);
+  const [pushState, setPushState] = useState({
+    checking: true,
+    granted: false,
+    permissionStatus: "unknown",
+    hasStoredToken: false,
+    isDevice: true,
+  });
   const [error, setError] = useState("");
+
+  const refreshPushState = useCallback(async () => {
+    try {
+      const status = await getPushRegistrationStatusAsync();
+      setPushState({
+        checking: false,
+        granted: status.granted,
+        permissionStatus: status.permissionStatus,
+        hasStoredToken: status.hasStoredToken,
+        isDevice: status.isDevice,
+      });
+    } catch {
+      setPushState((current) => ({
+        ...current,
+        checking: false,
+      }));
+    }
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -51,6 +82,10 @@ export default function NotificationsScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    void refreshPushState();
+  }, [refreshPushState]);
 
   const counts = useMemo(
     () =>
@@ -118,6 +153,49 @@ export default function NotificationsScreen() {
     }
   };
 
+  const enablePushNotifications = async () => {
+    try {
+      setWorkingId("push_enable");
+      const result = await registerForPushNotificationsAsync(api, { requestPermission: true });
+      await refreshPushState();
+      if (!result.ok) {
+        const message =
+          result.message ||
+          "We could not enable push notifications on this device right now.";
+        setError(message);
+        return;
+      }
+      setError("");
+    } catch (requestError) {
+      setError(
+        getActionError(
+          requestError?.response?.data,
+          "We could not enable push notifications on this device right now."
+        )
+      );
+    } finally {
+      setWorkingId(null);
+    }
+  };
+
+  const disconnectPushNotifications = async () => {
+    try {
+      setWorkingId("push_disconnect");
+      await unregisterPushTokenAsync(api);
+      await refreshPushState();
+      setError("");
+    } catch (requestError) {
+      setError(
+        getActionError(
+          requestError?.response?.data,
+          "We could not disconnect this device from push notifications right now."
+        )
+      );
+    } finally {
+      setWorkingId(null);
+    }
+  };
+
   return (
     <Screen
       title="Notifications"
@@ -149,6 +227,43 @@ export default function NotificationsScreen() {
           variant="secondary"
           icon={CheckCircle2}
         />
+      </SectionCard>
+
+      <SectionCard>
+        <Text style={styles.sectionTitle}>Push notifications</Text>
+        <Text style={styles.sectionCopy}>
+          {pushState.checking
+            ? "Checking whether this device is connected for live wallet and split updates."
+            : !pushState.isDevice
+              ? "Expo Go on a simulator cannot receive device push alerts. Use a physical phone to enable them."
+              : pushState.hasStoredToken
+                ? `This device is connected. Permission status: ${pushState.permissionStatus}.`
+                : `This device is not connected yet. Permission status: ${pushState.permissionStatus}.`}
+        </Text>
+        <View style={styles.metricGrid}>
+          <SummaryMetric label="Device" value={pushState.isDevice ? "Phone" : "Simulator"} />
+          <SummaryMetric label="Permission" value={pushState.permissionStatus || "unknown"} />
+          <SummaryMetric
+            label="Connected"
+            value={pushState.hasStoredToken ? "Yes" : "No"}
+            tone={pushState.hasStoredToken ? "highlight" : "default"}
+          />
+        </View>
+        <AppButton
+          title={workingId === "push_enable" ? "Connecting..." : "Enable push notifications"}
+          onPress={() => void enablePushNotifications()}
+          loading={workingId === "push_enable"}
+          disabled={pushState.checking}
+          variant="secondary"
+        />
+        {pushState.hasStoredToken ? (
+          <AppButton
+            title={workingId === "push_disconnect" ? "Disconnecting..." : "Disconnect this device"}
+            onPress={() => void disconnectPushNotifications()}
+            loading={workingId === "push_disconnect"}
+            variant="secondary"
+          />
+        ) : null}
       </SectionCard>
 
       <View style={styles.filterRow}>

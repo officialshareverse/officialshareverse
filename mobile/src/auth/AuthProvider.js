@@ -6,6 +6,7 @@ import {
   registerUnauthorizedHandler,
   setSessionTokens,
 } from "../api/client";
+import { syncPushRegistrationAsync, unregisterPushTokenAsync } from "../notifications/push";
 import { clearStoredSession, readStoredSession, writeStoredSession } from "./session";
 
 const AuthContext = createContext(null);
@@ -30,6 +31,7 @@ export function AuthProvider({ children }) {
   const signOut = useCallback(async () => {
     const refresh = session?.refreshToken || "";
     try {
+      await unregisterPushTokenAsync(api);
       if (refresh) {
         await api.post("mobile/auth/logout/", { refresh });
       }
@@ -101,6 +103,14 @@ export function AuthProvider({ children }) {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!session?.accessToken) {
+      return;
+    }
+
+    void syncPushRegistrationAsync(api);
+  }, [session?.accessToken]);
 
   const signIn = useCallback(async ({ username, password }) => {
     const response = await api.post("mobile/login/", { username, password });

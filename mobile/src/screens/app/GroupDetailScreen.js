@@ -10,6 +10,7 @@ import { formatCurrency } from "../../utils/formatters";
 export default function GroupDetailScreen({ route, navigation }) {
   const { api } = useAuth();
   const { group } = route.params;
+  const progressPercent = Math.max(0, Math.min(100, Number(group.progress_percent || 0)));
 
   const handleJoin = async () => {
     try {
@@ -43,6 +44,12 @@ export default function GroupDetailScreen({ route, navigation }) {
           <Coins color={colors.primary} size={18} strokeWidth={2.1} />
           <Text style={styles.rowText}>Join price: {formatCurrency(group.join_price || group.price_per_slot)}</Text>
         </View>
+        {group.join_subtotal ? (
+          <View style={styles.row}>
+            <Coins color={colors.secondary} size={18} strokeWidth={2.1} />
+            <Text style={styles.rowText}>Plan subtotal: {formatCurrency(group.join_subtotal)}</Text>
+          </View>
+        ) : null}
         <View style={styles.row}>
           <Users color={colors.secondary} size={18} strokeWidth={2.1} />
           <Text style={styles.rowText}>
@@ -53,6 +60,10 @@ export default function GroupDetailScreen({ route, navigation }) {
           <ShieldCheck color={colors.success} size={18} strokeWidth={2.1} />
           <Text style={styles.rowText}>{group.status_label || group.status}</Text>
         </View>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+        </View>
+        <Text style={styles.progressCopy}>{progressPercent}% full</Text>
       </SectionCard>
 
       {group.mode_description ? (
@@ -60,6 +71,10 @@ export default function GroupDetailScreen({ route, navigation }) {
           <Text style={styles.sectionTitle}>About this group</Text>
           <Text style={styles.copy}>{group.mode_description}</Text>
           {group.pricing_note ? <Text style={styles.note}>{group.pricing_note}</Text> : null}
+          {group.remaining_cycle_days ? (
+            <Text style={styles.copy}>Cycle remaining: {group.remaining_cycle_days} day(s)</Text>
+          ) : null}
+          {group.next_action ? <Text style={styles.note}>{group.next_action}</Text> : null}
         </SectionCard>
       ) : null}
 
@@ -94,5 +109,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     fontWeight: "600",
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "#dbe6ef",
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: colors.primary,
+  },
+  progressCopy: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
   },
 });

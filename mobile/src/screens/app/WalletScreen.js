@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
@@ -28,6 +29,8 @@ const PAYOUT_MODES = [
   { key: "NEFT", label: "NEFT" },
   { key: "RTGS", label: "RTGS" },
 ];
+
+const NATIVE_TOPUP_PRESETS = ["100", "300", "500", "1000"];
 
 function BalanceCard({ label, value, tone = "primary" }) {
   return (
@@ -103,6 +106,7 @@ export default function WalletScreen({ navigation }) {
   const [vpaAddress, setVpaAddress] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [payoutMode, setPayoutMode] = useState("IMPS");
+  const [topupAmount, setTopupAmount] = useState("500");
 
   const load = useCallback(async () => {
     try {
@@ -130,9 +134,11 @@ export default function WalletScreen({ navigation }) {
     }
   }, [api]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load])
+  );
 
   useEffect(() => {
     if (!payoutAccount) {
@@ -160,6 +166,33 @@ export default function WalletScreen({ navigation }) {
         "Open web wallet",
         "Use the ShareVerse web wallet page if this device cannot open it automatically."
       );
+    }
+  };
+
+  const handleNativeTopup = async () => {
+    try {
+      setActionState("topup");
+      const response = await api.post("payments/razorpay/create-order/", {
+        amount: topupAmount.trim(),
+      });
+      const checkout = response.data?.checkout;
+      if (!checkout) {
+        throw new Error("Checkout payload missing from the server response.");
+      }
+      setError("");
+      navigation.navigate("WalletTopupCheckout", {
+        checkout,
+        topup: response.data?.topup || { amount: topupAmount.trim() },
+      });
+    } catch (requestError) {
+      const message = getActionError(
+        requestError?.response?.data,
+        requestError?.message || "We could not start the native wallet top-up right now."
+      );
+      setError(message);
+      Alert.alert("Top-up unavailable", message);
+    } finally {
+      setActionState("");
     }
   };
 
@@ -273,6 +306,30 @@ export default function WalletScreen({ navigation }) {
         <Text style={styles.supportingCopy}>
           {walletPayments?.helper_text || "Top up on the web wallet and manage withdrawals here."}
         </Text>
+        <View style={styles.chipRow}>
+          {NATIVE_TOPUP_PRESETS.map((amount) => (
+            <FilterChip
+              key={amount}
+              label={`Rs ${amount}`}
+              active={topupAmount === amount}
+              onPress={() => setTopupAmount(amount)}
+            />
+          ))}
+        </View>
+        <AppTextField
+          label="Top-up amount"
+          value={topupAmount}
+          onChangeText={setTopupAmount}
+          placeholder="Enter amount in INR"
+          keyboardType="decimal-pad"
+          helper="Start a secure Razorpay checkout directly inside the app."
+        />
+        <AppButton
+          title={actionState === "topup" ? "Starting Razorpay..." : "Top up natively"}
+          onPress={() => void handleNativeTopup()}
+          loading={actionState === "topup"}
+          disabled={!walletPayments?.topup_enabled}
+        />
         <AppButton title="Open web wallet" onPress={() => void openWebWallet()} variant="secondary" />
         <Text style={styles.supportingMeta}>
           Payout mode: {walletPayoutsConfig?.mode_label || "Manual review payouts"}

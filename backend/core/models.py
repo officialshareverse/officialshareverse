@@ -576,6 +576,36 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+class MobilePushDevice(models.Model):
+    PLATFORM_CHOICES = (
+        ("android", "Android"),
+        ("ios", "iOS"),
+        ("web", "Web"),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="mobile_push_devices")
+    expo_push_token = models.CharField(max_length=255, unique=True, db_index=True)
+    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES, default="android")
+    project_id = models.CharField(max_length=120, blank=True, default="")
+    device_name = models.CharField(max_length=120, blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    last_registered_at = models.DateTimeField(default=timezone.now)
+    last_notified_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at", "-id"]
+        indexes = [
+            models.Index(fields=["user", "is_active"]),
+            models.Index(fields=["platform", "is_active"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} push device ({self.platform})"
+
+
 class JoinRequest(models.Model):
     STATUS_CHOICES = (
         ("pending", "Pending"),

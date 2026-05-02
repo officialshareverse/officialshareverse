@@ -3,9 +3,11 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.layers import get_channel_layer
 from django.contrib.auth.models import AnonymousUser
+from django.db import transaction
 from django.db.models import Q
 
 from .models import Group, GroupChatMessage, Notification, User
+from .push import send_push_notification_to_user
 
 WS_CLOSE_TOKEN_EXPIRED = 4001
 WS_CLOSE_FORBIDDEN = 4003
@@ -202,8 +204,14 @@ def create_notification(*, user=None, user_id=None, message):
         raise ValueError("create_notification requires either user or user_id.")
 
     notification = Notification.objects.create(**create_kwargs)
-    push_notification_to_user(notification.user_id, build_notification_payload(notification))
-    push_badge_update_to_user(notification.user_id, reason="notification")
+
+    def dispatch_notification():
+        payload = build_notification_payload(notification)
+        push_notification_to_user(notification.user_id, payload)
+        push_badge_update_to_user(notification.user_id, reason="notification")
+        send_push_notification_to_user(notification.user_id, payload)
+
+    transaction.on_commit(dispatch_notification)
     return notification
 
 

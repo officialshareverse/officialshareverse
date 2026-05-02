@@ -7,6 +7,15 @@ import AppButton from "../../components/AppButton";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors, radius, shadows, spacing } from "../../theme/tokens";
 import { formatCurrency, formatRelativeTime } from "../../utils/formatters";
+import { hasActionRequired, matchesHostedSplitFilter } from "../../utils/mySplits";
+
+const FILTERS = [
+  { key: "all", label: "All" },
+  { key: "action_needed", label: "Action needed" },
+  { key: "sharing", label: "Sharing" },
+  { key: "group_buy", label: "Buy together" },
+  { key: "closed", label: "Closed" },
+];
 
 function SmallStat({ label, value, tone = "primary" }) {
   return (
@@ -51,6 +60,7 @@ export default function MySplitsScreen({ navigation }) {
   const { api } = useAuth();
   const [groups, setGroups] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState("all");
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -77,12 +87,18 @@ export default function MySplitsScreen({ navigation }) {
     const openGroups = groups.filter(
       (group) => !["closed", "refunded", "failed"].includes(group.status)
     ).length;
+    const actionNeeded = groups.filter((group) => hasActionRequired(group)).length;
     const remainingSlots = groups.reduce(
       (sum, group) => sum + Number(group.remaining_slots || 0),
       0
     );
-    return { totalGroups, openGroups, remainingSlots };
+    return { totalGroups, openGroups, remainingSlots, actionNeeded };
   }, [groups]);
+
+  const filteredGroups = useMemo(
+    () => groups.filter((group) => matchesHostedSplitFilter(group, filter)),
+    [filter, groups]
+  );
 
   return (
     <Screen
@@ -95,8 +111,11 @@ export default function MySplitsScreen({ navigation }) {
         <View style={styles.statsRow}>
           <SmallStat label="Total" value={String(stats.totalGroups)} />
           <SmallStat label="Open" value={String(stats.openGroups)} />
-          <SmallStat label="Slots left" value={String(stats.remainingSlots)} tone="warm" />
+          <SmallStat label="Action" value={String(stats.actionNeeded)} tone="warm" />
         </View>
+        <Text style={styles.supportingCopy}>
+          {stats.remainingSlots} member slot(s) are still open across your hosted plans.
+        </Text>
         <AppButton
           title="Create another split"
           onPress={() => navigation.navigate("CreateSplit")}
@@ -104,8 +123,23 @@ export default function MySplitsScreen({ navigation }) {
         />
       </SectionCard>
 
-      {groups.length ? (
-        groups.map((group) => (
+      <View style={styles.filterRow}>
+        {FILTERS.map((item) => {
+          const active = item.key === filter;
+          return (
+            <Text
+              key={item.key}
+              onPress={() => setFilter(item.key)}
+              style={[styles.filterChip, active ? styles.filterChipActive : null]}
+            >
+              {item.label}
+            </Text>
+          );
+        })}
+      </View>
+
+      {filteredGroups.length ? (
+        filteredGroups.map((group) => (
           <SplitCard
             key={group.id}
             group={group}
@@ -114,9 +148,13 @@ export default function MySplitsScreen({ navigation }) {
         ))
       ) : (
         <SectionCard>
-          <Text style={styles.emptyTitle}>No hosted splits yet.</Text>
+          <Text style={styles.emptyTitle}>
+            {groups.length ? "No hosted splits match this filter." : "No hosted splits yet."}
+          </Text>
           <Text style={styles.emptyCopy}>
-            Create your first sharing or buy-together plan to start inviting members.
+            {groups.length
+              ? "Switch the filter above to bring the rest of your hosted groups back."
+              : "Create your first sharing or buy-together plan to start inviting members."}
           </Text>
           <AppButton title="Create split" onPress={() => navigation.navigate("CreateSplit")} />
         </SectionCard>
@@ -136,6 +174,33 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     gap: spacing.md,
+  },
+  supportingCopy: {
+    color: colors.textMuted,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  filterChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    color: colors.textMuted,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    overflow: "hidden",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    color: "#ffffff",
   },
   smallStat: {
     flex: 1,

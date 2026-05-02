@@ -1,10 +1,13 @@
+import React, { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import { createNavigationContainerRef, NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import * as Notifications from "expo-notifications";
 
 import { useAuth } from "../auth/AuthProvider";
 import { Compass, House, TicketPercent, UserRound, Wallet } from "../components/Icons";
+import { configurePushNotifications } from "../notifications/push";
 import { colors } from "../theme/tokens";
 import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
@@ -23,9 +26,36 @@ import NotificationsScreen from "../screens/app/NotificationsScreen";
 import ProfileScreen from "../screens/app/ProfileScreen";
 import ReferralScreen from "../screens/app/ReferralScreen";
 import WalletScreen from "../screens/app/WalletScreen";
+import WalletTopupCheckoutScreen from "../screens/app/WalletTopupCheckoutScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+export const navigationRef = createNavigationContainerRef();
+
+function PushNotificationBridge() {
+  useEffect(() => {
+    configurePushNotifications();
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response?.notification?.request?.content?.data || {};
+      if (!navigationRef.isReady()) {
+        return;
+      }
+
+      if (data?.category === "groups" || data?.kind === "chat") {
+        navigationRef.navigate("Notifications");
+        return;
+      }
+
+      navigationRef.navigate("Notifications");
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  return null;
+}
 
 function AuthStack() {
   return (
@@ -88,6 +118,11 @@ function AppStack() {
       <Stack.Screen name="JoinedGroups" component={JoinedGroupsScreen} options={{ title: "Joined groups" }} />
       <Stack.Screen name="JoinedGroupDetail" component={JoinedGroupDetailScreen} options={{ title: "Joined group" }} />
       <Stack.Screen name="GroupDetail" component={GroupDetailScreen} options={{ title: "Group" }} />
+      <Stack.Screen
+        name="WalletTopupCheckout"
+        component={WalletTopupCheckoutScreen}
+        options={{ title: "Wallet top-up" }}
+      />
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: "Notifications" }} />
       <Stack.Screen name="Chats" component={ChatsScreen} options={{ title: "Chats" }} />
       <Stack.Screen name="GroupChat" component={GroupChatScreen} options={{ title: "Group chat" }} />
@@ -120,7 +155,8 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
+      {isAuthenticated ? <PushNotificationBridge /> : null}
       {isAuthenticated ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );

@@ -16,6 +16,7 @@
       "backgroundColor": "#0f766e"
     },
     "plugins": [
+      "expo-notifications",
       "expo-secure-store",
       "expo-asset",
       "expo-web-browser"

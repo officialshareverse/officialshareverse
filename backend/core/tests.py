@@ -28,6 +28,7 @@ from .models import (
     GroupChatReadState,
     GroupInviteLink,
     GroupMember,
+    MobilePushDevice,
     Notification,
     PasswordResetOTP,
     PayoutAccount,
@@ -179,6 +180,38 @@ class GroupFlowTests(APITestCase):
     def get_notifications(self, user):
         self.authenticate(user)
         return self.client.get("/api/notifications/")
+
+    def register_mobile_push_device(
+        self,
+        user=None,
+        expo_push_token="ExponentPushToken[test-device-token]",
+        platform="android",
+        project_id="expo-project-id",
+        device_name="Pixel test device",
+    ):
+        self.authenticate(user or self.owner)
+        return self.client.post(
+            "/api/mobile/push/register/",
+            {
+                "expo_push_token": expo_push_token,
+                "platform": platform,
+                "project_id": project_id,
+                "device_name": device_name,
+            },
+            format="json",
+        )
+
+    def unregister_mobile_push_device(
+        self,
+        user=None,
+        expo_push_token="ExponentPushToken[test-device-token]",
+    ):
+        self.authenticate(user or self.owner)
+        return self.client.post(
+            "/api/mobile/push/unregister/",
+            {"expo_push_token": expo_push_token},
+            format="json",
+        )
 
     def mark_notification_read(self, user, notification_id):
         self.authenticate(user)
@@ -2664,6 +2697,49 @@ class GroupFlowTests(APITestCase):
         system_item = payload_by_message["Your account was created and verified successfully."]
         self.assertEqual(system_item["category"], "system")
         self.assertEqual(system_item["icon"], "shield")
+
+    def test_mobile_push_registration_stores_active_device(self):
+        response = self.register_mobile_push_device()
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        device = MobilePushDevice.objects.get(expo_push_token="ExponentPushToken[test-device-token]")
+        self.assertEqual(device.user, self.owner)
+        self.assertEqual(device.platform, "android")
+        self.assertEqual(device.project_id, "expo-project-id")
+        self.assertEqual(device.device_name, "Pixel test device")
+        self.assertTrue(device.is_active)
+
+    def test_mobile_push_unregister_disables_saved_device(self):
+        MobilePushDevice.objects.create(
+            user=self.owner,
+            expo_push_token="ExponentPushToken[test-device-token]",
+            platform="android",
+            project_id="expo-project-id",
+            device_name="Pixel test device",
+        )
+
+        response = self.unregister_mobile_push_device()
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        device = MobilePushDevice.objects.get(expo_push_token="ExponentPushToken[test-device-token]")
+        self.assertFalse(device.is_active)
+
+    def test_create_notification_dispatches_mobile_push_after_commit(self):
+        with patch("core.consumers.push_notification_to_user") as notification_mock, patch(
+            "core.consumers.push_badge_update_to_user"
+        ) as badge_mock, patch("core.consumers.send_push_notification_to_user") as mobile_push_mock:
+            with self.captureOnCommitCallbacks(execute=True):
+                from .consumers import create_notification
+
+                notification = create_notification(
+                    user=self.owner,
+                    message="Your wallet top-up was credited successfully.",
+                )
+
+        self.assertTrue(Notification.objects.filter(id=notification.id).exists())
+        notification_mock.assert_called_once()
+        badge_mock.assert_called_once_with(self.owner.id, reason="notification")
+        mobile_push_mock.assert_called_once()
 
     def test_my_groups_returns_latest_created_group_first(self):
         older_group = self.create_group(mode="sharing", total_slots=2, status="active")

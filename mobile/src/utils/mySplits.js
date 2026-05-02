@@ -50,6 +50,44 @@ export function getLifecycleNote(group) {
   return "Manage invites, members, and split updates from here.";
 }
 
+export function hasActionRequired(group) {
+  if (!group) {
+    return false;
+  }
+
+  return Boolean(
+    group.can_submit_proof ||
+      group.can_activate ||
+      group.can_refund ||
+      Number(group.reported_issues || 0) > 0 ||
+      Number(group.remaining_confirmations || 0) > 0 ||
+      (group.next_action && String(group.next_action).trim())
+  );
+}
+
+export function matchesHostedSplitFilter(group, filterKey) {
+  if (!group) {
+    return false;
+  }
+
+  if (filterKey === "all") {
+    return true;
+  }
+  if (filterKey === "action_needed") {
+    return hasActionRequired(group);
+  }
+  if (filterKey === "sharing") {
+    return group.mode === "sharing";
+  }
+  if (filterKey === "group_buy") {
+    return group.mode === "group_buy";
+  }
+  if (filterKey === "closed") {
+    return ["closed", "refunded", "failed"].includes(group.status);
+  }
+  return true;
+}
+
 export function getActionError(errorData, fallbackMessage) {
   if (!errorData || typeof errorData !== "object") {
     return fallbackMessage;

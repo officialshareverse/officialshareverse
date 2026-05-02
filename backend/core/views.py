@@ -28,6 +28,7 @@ from .models import (
     GroupChatReadState,
     GroupInviteLink,
     GroupMember,
+    MobilePushDevice,
     Notification,
     PayoutAccount,
     RazorpayWebhookEvent,
@@ -91,6 +92,8 @@ from .serializers import (
     GroupListSerializer,
     GroupChatMessageSerializer,
     GroupUpdateSerializer,
+    MobilePushRegistrationSerializer,
+    MobilePushUnregisterSerializer,
     PayoutAccountSerializer,
     PayoutAccountUpsertSerializer,
     ProfileUpdateSerializer,
@@ -3021,6 +3024,69 @@ class NotificationView(ListAPIView):
         notifications = Notification.objects.filter(user=request.user).order_by("-created_at")
         data = [build_notification_payload(notification) for notification in notifications]
         return Response(data)
+
+
+class MobilePushRegistrationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MobilePushRegistrationSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        validated = serializer.validated_data
+        device, created = MobilePushDevice.objects.update_or_create(
+            expo_push_token=validated["expo_push_token"],
+            defaults={
+                "user": request.user,
+                "platform": validated.get("platform") or "android",
+                "project_id": validated.get("project_id", ""),
+                "device_name": validated.get("device_name", ""),
+                "is_active": True,
+                "last_registered_at": timezone.now(),
+                "last_error": "",
+            },
+        )
+
+        return Response(
+            {
+                "message": "Push notifications are enabled on this device.",
+                "device": {
+                    "id": device.id,
+                    "platform": device.platform,
+                    "project_id": device.project_id,
+                    "device_name": device.device_name,
+                    "is_active": device.is_active,
+                    "created": created,
+                },
+            },
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+
+class MobilePushUnregisterView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MobilePushUnregisterSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        token = serializer.validated_data["expo_push_token"]
+        updated = MobilePushDevice.objects.filter(
+            user=request.user,
+            expo_push_token=token,
+        ).update(
+            is_active=False,
+            last_error="",
+        )
+
+        return Response(
+            {
+                "message": "Push notifications were disconnected from this device.",
+                "updated_count": updated,
+            }
+        )
 
 
 class MarkNotificationReadView(APIView):

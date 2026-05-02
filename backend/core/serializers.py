@@ -15,6 +15,7 @@ from .models import (
     GroupChatReadState,
     GroupInviteLink,
     GroupMember,
+    MobilePushDevice,
     PayoutAccount,
     Referral,
     ReferralCode,
@@ -706,6 +707,40 @@ class WalletTopupVerifySerializer(serializers.Serializer):
             "razorpay_payment_id": (attrs.get("razorpay_payment_id") or "").strip(),
             "razorpay_signature": (attrs.get("razorpay_signature") or "").strip(),
         }
+
+
+class MobilePushRegistrationSerializer(serializers.Serializer):
+    expo_push_token = serializers.CharField(max_length=255)
+    platform = serializers.ChoiceField(choices=MobilePushDevice.PLATFORM_CHOICES, default="android")
+    project_id = serializers.CharField(required=False, allow_blank=True, max_length=120)
+    device_name = serializers.CharField(required=False, allow_blank=True, max_length=120)
+
+    def validate_expo_push_token(self, value):
+        normalized = (value or "").strip()
+        if not normalized:
+            raise serializers.ValidationError("Expo push token is required.")
+        if not (
+            normalized.startswith("ExponentPushToken[")
+            or normalized.startswith("ExpoPushToken[")
+        ):
+            raise serializers.ValidationError("Enter a valid Expo push token.")
+        return normalized
+
+    def validate_project_id(self, value):
+        return (value or "").strip()
+
+    def validate_device_name(self, value):
+        return (value or "").strip()
+
+
+class MobilePushUnregisterSerializer(serializers.Serializer):
+    expo_push_token = serializers.CharField(max_length=255)
+
+    def validate_expo_push_token(self, value):
+        normalized = (value or "").strip()
+        if not normalized:
+            raise serializers.ValidationError("Expo push token is required.")
+        return normalized
 
 
 class SubmitPurchaseProofSerializer(serializers.Serializer):

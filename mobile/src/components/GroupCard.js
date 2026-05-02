@@ -11,6 +11,8 @@ function modeLabel(mode) {
 
 export default function GroupCard({ group, onOpen, onJoin, joining = false }) {
   const slotsLeft = Number(group.remaining_slots ?? 0);
+  const progressPercent = Math.max(0, Math.min(100, Number(group.progress_percent || 0)));
+  const isUrgent = slotsLeft <= 1 || Number(group.remaining_cycle_days || 0) <= 3;
 
   return (
     <Pressable onPress={onOpen} style={styles.card}>
@@ -24,6 +26,27 @@ export default function GroupCard({ group, onOpen, onJoin, joining = false }) {
       <Text style={styles.name}>{group.subscription_name || group.subscription?.name}</Text>
       <Text style={styles.owner}>Hosted by @{group.owner_name || group.owner_username || "shareverse"}</Text>
 
+      <View style={styles.tagRow}>
+        <View style={styles.tag}>
+          <Text style={styles.tagText}>{slotsLeft} left</Text>
+        </View>
+        {group.remaining_cycle_days ? (
+          <View style={styles.tag}>
+            <Text style={styles.tagText}>{group.remaining_cycle_days} days left</Text>
+          </View>
+        ) : null}
+        {group.is_joined ? (
+          <View style={[styles.tag, styles.tagSuccess]}>
+            <Text style={[styles.tagText, styles.tagSuccessText]}>Joined</Text>
+          </View>
+        ) : null}
+        {isUrgent ? (
+          <View style={[styles.tag, styles.tagUrgent]}>
+            <Text style={[styles.tagText, styles.tagUrgentText]}>Urgent</Text>
+          </View>
+        ) : null}
+      </View>
+
       <View style={styles.metaRow}>
         <View style={styles.metaItem}>
           <Coins color={colors.primary} size={16} strokeWidth={2.1} />
@@ -35,11 +58,16 @@ export default function GroupCard({ group, onOpen, onJoin, joining = false }) {
         </View>
       </View>
 
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+      </View>
+
       {group.pricing_note ? <Text style={styles.note}>{group.pricing_note}</Text> : null}
+      {group.next_action ? <Text style={styles.nextAction}>{group.next_action}</Text> : null}
 
       <View style={styles.footerRow}>
         <AppButton
-          title="Join group"
+          title={group.join_cta || "Join group"}
           onPress={(event) => {
             event?.stopPropagation?.();
             onJoin?.(event);
@@ -100,6 +128,34 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.md,
   },
+  tagRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  tag: {
+    borderRadius: 999,
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  tagText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  tagSuccess: {
+    backgroundColor: "#dff7f2",
+  },
+  tagSuccessText: {
+    color: colors.primary,
+  },
+  tagUrgent: {
+    backgroundColor: "#fff3e7",
+  },
+  tagUrgentText: {
+    color: colors.secondary,
+  },
   metaItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -114,6 +170,23 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 13,
     lineHeight: 20,
+  },
+  nextAction: {
+    color: colors.primary,
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: "700",
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: colors.surfaceMuted,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: colors.primary,
   },
   footerRow: {
     flexDirection: "row",

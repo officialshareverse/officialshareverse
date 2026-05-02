@@ -55,6 +55,15 @@ export default function MySplitDetailScreen({ route, navigation }) {
   const [proofDocument, setProofDocument] = useState(null);
   const [proofReference, setProofReference] = useState("");
   const [proofNotes, setProofNotes] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [editSubscriptionName, setEditSubscriptionName] = useState("");
+  const [editTotalSlots, setEditTotalSlots] = useState("");
+  const [editPricePerSlot, setEditPricePerSlot] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
+  const [editAccessIdentifier, setEditAccessIdentifier] = useState("");
+  const [editAccessPassword, setEditAccessPassword] = useState("");
+  const [editAccessNotes, setEditAccessNotes] = useState("");
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -80,6 +89,21 @@ export default function MySplitDetailScreen({ route, navigation }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!group) {
+      return;
+    }
+
+    setEditSubscriptionName(group.subscription_name || "");
+    setEditTotalSlots(String(group.total_slots || ""));
+    setEditPricePerSlot(String(group.price_per_slot || ""));
+    setEditStartDate(group.start_date || "");
+    setEditEndDate(group.end_date || "");
+    setEditAccessIdentifier("");
+    setEditAccessPassword("");
+    setEditAccessNotes("");
+  }, [group]);
 
   const inviteLinks = useMemo(() => group?.invite_links || [], [group?.invite_links]);
   const members = useMemo(() => group?.members || [], [group?.members]);
@@ -165,6 +189,88 @@ export default function MySplitDetailScreen({ route, navigation }) {
     } catch {
       // Native share sheets can be dismissed normally.
     }
+  };
+
+  const handleSaveEdits = async () => {
+    const payload = {};
+
+    if ((editSubscriptionName || "").trim() && editSubscriptionName.trim() !== group?.subscription_name) {
+      payload.subscription_name = editSubscriptionName.trim();
+    }
+    if ((editTotalSlots || "").trim() && Number(editTotalSlots) !== Number(group?.total_slots || 0)) {
+      payload.total_slots = Number(editTotalSlots);
+    }
+    if (
+      (editPricePerSlot || "").trim() &&
+      String(editPricePerSlot).trim() !== String(group?.price_per_slot || "")
+    ) {
+      payload.price_per_slot = editPricePerSlot.trim();
+    }
+    if ((editStartDate || "").trim() && editStartDate.trim() !== group?.start_date) {
+      payload.start_date = editStartDate.trim();
+    }
+    if ((editEndDate || "").trim() && editEndDate.trim() !== group?.end_date) {
+      payload.end_date = editEndDate.trim();
+    }
+
+    if (group?.mode === "sharing") {
+      const nextIdentifier = editAccessIdentifier.trim();
+      const nextPassword = editAccessPassword;
+      const nextNotes = editAccessNotes.trim();
+      if (nextIdentifier || nextPassword || nextNotes) {
+        payload.access_identifier = nextIdentifier;
+        payload.access_password = nextPassword;
+        payload.access_notes = nextNotes;
+      }
+    }
+
+    if (!Object.keys(payload).length) {
+      Alert.alert("Nothing changed", "Update a field first, then save the split.");
+      return;
+    }
+
+    try {
+      setActionState("save_edit");
+      await api.patch(`my-groups/${groupId}/`, payload);
+      setEditing(false);
+      setError("");
+      Alert.alert("Split updated", "Your changes were saved successfully.");
+      await load();
+    } catch (requestError) {
+      const message = getActionError(
+        requestError?.response?.data,
+        "We could not save your split changes right now."
+      );
+      setError(message);
+      Alert.alert("Update failed", message);
+    } finally {
+      setActionState("");
+    }
+  };
+
+  const handleDeactivateInvite = (inviteLinkId) => {
+    confirmHostAction(
+      "Deactivate invite?",
+      "This link will stop accepting new members immediately.",
+      async () => {
+        await runHostAction(
+          `deactivate_invite_${inviteLinkId}`,
+          () => api.post(`invite/${inviteLinkId}/deactivate/`),
+          "The invite link was deactivated.",
+          {
+            afterSuccess: () => {
+              setGroup((current) => ({
+                ...(current || {}),
+                invite_links: (current?.invite_links || []).map((link) =>
+                  link.id === inviteLinkId ? { ...link, is_active: false } : link
+                ),
+              }));
+            },
+          }
+        );
+      },
+      true
+    );
   };
 
   const handleRevealCredentials = async () => {
@@ -363,6 +469,11 @@ export default function MySplitDetailScreen({ route, navigation }) {
       <SectionCard>
         <Text style={styles.sectionTitle}>Host actions</Text>
         <AppButton
+          title={editing ? "Cancel editing" : "Edit split details"}
+          onPress={() => setEditing((current) => !current)}
+          variant="secondary"
+        />
+        <AppButton
           title={inviteLoading ? "Generating..." : "Generate 72h invite link"}
           onPress={() => void handleGenerateInvite()}
           variant="secondary"
@@ -427,6 +538,78 @@ export default function MySplitDetailScreen({ route, navigation }) {
         />
       </SectionCard>
 
+      {editing ? (
+        <SectionCard>
+          <Text style={styles.sectionTitle}>Edit split</Text>
+          <Text style={styles.supportingCopy}>
+            Update pricing, slot counts, dates, and optional shared credentials without leaving the app.
+          </Text>
+          <AppTextField
+            label="Subscription name"
+            value={editSubscriptionName}
+            onChangeText={setEditSubscriptionName}
+            placeholder="Netflix, Spotify, Canva..."
+          />
+          <AppTextField
+            label="Total slots"
+            value={editTotalSlots}
+            onChangeText={setEditTotalSlots}
+            placeholder="Number of slots"
+            keyboardType="number-pad"
+          />
+          <AppTextField
+            label="Price per slot"
+            value={editPricePerSlot}
+            onChangeText={setEditPricePerSlot}
+            placeholder="Price in INR"
+            keyboardType="decimal-pad"
+          />
+          <AppTextField
+            label="Start date"
+            value={editStartDate}
+            onChangeText={setEditStartDate}
+            placeholder="YYYY-MM-DD"
+          />
+          <AppTextField
+            label="End date"
+            value={editEndDate}
+            onChangeText={setEditEndDate}
+            placeholder="YYYY-MM-DD"
+          />
+          {group?.mode === "sharing" ? (
+            <>
+              <Text style={styles.supportingMeta}>
+                Leave credential fields empty unless you want to replace the current shared access details.
+              </Text>
+              <AppTextField
+                label="Login / username"
+                value={editAccessIdentifier}
+                onChangeText={setEditAccessIdentifier}
+                placeholder="Email or username"
+              />
+              <AppTextField
+                label="Password"
+                value={editAccessPassword}
+                onChangeText={setEditAccessPassword}
+                placeholder="Shared password"
+              />
+              <AppTextField
+                label="Access notes"
+                value={editAccessNotes}
+                onChangeText={setEditAccessNotes}
+                placeholder="Optional setup notes"
+                multiline
+              />
+            </>
+          ) : null}
+          <AppButton
+            title={actionState === "save_edit" ? "Saving changes..." : "Save changes"}
+            onPress={() => void handleSaveEdits()}
+            loading={actionState === "save_edit"}
+          />
+        </SectionCard>
+      ) : null}
+
       {inviteLinks.length ? (
         <SectionCard>
           <Text style={styles.sectionTitle}>Active invite links</Text>
@@ -434,13 +617,35 @@ export default function MySplitDetailScreen({ route, navigation }) {
             <View key={inviteLink.id} style={styles.inviteCard}>
               <Text style={styles.inviteUrl}>{inviteLink.invite_url}</Text>
               <Text style={styles.inviteMeta}>
-                {inviteLink.use_count || 0} uses - expires{" "}
+                {inviteLink.use_count || 0} uses - {inviteLink.is_active ? "active" : "inactive"} - expires{" "}
                 {inviteLink.expires_at ? formatShortDate(inviteLink.expires_at) : "later"}
               </Text>
+              {inviteLink.is_active ? (
+                <AppButton
+                  title={
+                    actionState === `deactivate_invite_${inviteLink.id}`
+                      ? "Deactivating..."
+                      : "Deactivate invite"
+                  }
+                  onPress={() => handleDeactivateInvite(inviteLink.id)}
+                  loading={actionState === `deactivate_invite_${inviteLink.id}`}
+                  variant="secondary"
+                />
+              ) : null}
             </View>
           ))}
         </SectionCard>
       ) : null}
+
+      <SectionCard>
+        <Text style={styles.sectionTitle}>Moderation snapshot</Text>
+        <KeyValue label="Unread split chat" value={String(group?.unread_chat_count || 0)} />
+        <KeyValue label="Reported issues" value={String(group?.reported_issues || 0)} />
+        <KeyValue
+          label="Remaining confirmations"
+          value={String(group?.remaining_confirmations || 0)}
+        />
+      </SectionCard>
 
       {group?.mode === "sharing" && group?.credentials ? (
         <SectionCard>
