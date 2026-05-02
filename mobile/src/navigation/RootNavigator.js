@@ -3,11 +3,13 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { createNavigationContainerRef, NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import * as Notifications from "expo-notifications";
 
 import { useAuth } from "../auth/AuthProvider";
 import { Compass, House, TicketPercent, UserRound, Wallet } from "../components/Icons";
-import { configurePushNotifications } from "../notifications/push";
+import {
+  addPushNotificationResponseListener,
+  getPushRuntimeSupport,
+} from "../notifications/push";
 import { colors } from "../theme/tokens";
 import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
@@ -34,8 +36,12 @@ export const navigationRef = createNavigationContainerRef();
 
 function PushNotificationBridge() {
   useEffect(() => {
-    configurePushNotifications();
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    const support = getPushRuntimeSupport();
+    if (!support.supported) {
+      return undefined;
+    }
+
+    const subscription = addPushNotificationResponseListener((response) => {
       const data = response?.notification?.request?.content?.data || {};
       if (!navigationRef.isReady()) {
         return;

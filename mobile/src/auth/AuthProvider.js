@@ -109,7 +109,9 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    void syncPushRegistrationAsync(api);
+    void syncPushRegistrationAsync(api).catch(() => {
+      // Push sync should never block or crash auth bootstrap.
+    });
   }, [session?.accessToken]);
 
   const signIn = useCallback(async ({ username, password }) => {

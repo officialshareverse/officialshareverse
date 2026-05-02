@@ -1,14 +1,52 @@
 import Constants from "expo-constants";
 import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
 const PUSH_TOKEN_STORAGE_KEY = "shareverse.expoPushToken";
+const PUSH_EXPO_GO_MESSAGE =
+  "Push notifications require a development build or installed app. Expo Go can preview the UI but cannot register Android remote push.";
+const PUSH_DEVICE_MESSAGE = "Push notifications require a physical Android or iPhone device.";
+const PUSH_PROJECT_MESSAGE = "Expo project id is missing from the app config.";
+const PUSH_PERMISSION_MESSAGE = "Notification permission is not enabled on this device.";
+const PUSH_TOKEN_MESSAGE = "Expo did not return a push token for this device.";
 
 let didConfigureNotifications = false;
+let notificationsModule = null;
+
+function getNotificationsModule() {
+  if (!notificationsModule) {
+    notificationsModule = require("expo-notifications");
+  }
+  return notificationsModule;
+}
+
+export function getPushRuntimeSupport() {
+  const executionEnvironment = Constants.executionEnvironment || "";
+  const isExpoGo =
+    Constants.appOwnership === "expo" || executionEnvironment === "storeClient";
+
+  if (isExpoGo) {
+    return {
+      supported: false,
+      reason: "expo_go",
+      message: PUSH_EXPO_GO_MESSAGE,
+      isExpoGo: true,
+      executionEnvironment,
+    };
+  }
+
+  return {
+    supported: true,
+    reason: "",
+    message: "",
+    isExpoGo: false,
+    executionEnvironment,
+  };
+}
 
 function isGranted(statusPayload) {
+  const Notifications = getNotificationsModule();
   return Boolean(
     statusPayload?.granted ||
       statusPayload?.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
@@ -24,10 +62,12 @@ function getProjectId() {
 }
 
 export function configurePushNotifications() {
-  if (didConfigureNotifications) {
-    return;
+  const support = getPushRuntimeSupport();
+  if (!support.supported || didConfigureNotifications) {
+    return support;
   }
 
+  const Notifications = getNotificationsModule();
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
@@ -39,19 +79,24 @@ export function configurePushNotifications() {
   });
 
   didConfigureNotifications = true;
+  return support;
 }
 
 async function ensureAndroidChannelAsync() {
-  if (Platform.OS !== "android") {
-    return;
+  const support = getPushRuntimeSupport();
+  if (!support.supported || Platform.OS !== "android") {
+    return support;
   }
 
+  const Notifications = getNotificationsModule();
   await Notifications.setNotificationChannelAsync("default", {
     name: "default",
     importance: Notifications.AndroidImportance.MAX,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: "#0f766e",
   });
+
+  return support;
 }
 
 export async function getStoredPushTokenAsync() {
@@ -59,12 +104,28 @@ export async function getStoredPushTokenAsync() {
 }
 
 export async function getPushRegistrationStatusAsync() {
-  configurePushNotifications();
-
-  const permissions = await Notifications.getPermissionsAsync();
+  const support = getPushRuntimeSupport();
   const storedToken = await getStoredPushTokenAsync();
 
+  if (!support.supported) {
+    return {
+      ...support,
+      isDevice: Device.isDevice,
+      granted: false,
+      permissionStatus: "unsupported",
+      storedToken,
+      hasStoredToken: Boolean(storedToken),
+      projectId: getProjectId(),
+    };
+  }
+
+  configurePushNotifications();
+
+  const Notifications = getNotificationsModule();
+  const permissions = await Notifications.getPermissionsAsync();
+
   return {
+    ...support,
     isDevice: Device.isDevice,
     granted: isGranted(permissions),
     permissionStatus: permissions.status || "undetermined",
@@ -96,18 +157,34 @@ export async function registerForPushNotificationsAsync(
   api,
   { requestPermission = true } = {}
 ) {
+  const support = getPushRuntimeSupport();
+  if (!support.supported) {
+    const storedToken = await getStoredPushTokenAsync();
+    return {
+      ok: false,
+      ...support,
+      isDevice: Device.isDevice,
+      permissionStatus: "unsupported",
+      storedToken,
+      hasStoredToken: Boolean(storedToken),
+      projectId: getProjectId(),
+    };
+  }
+
   configurePushNotifications();
 
   if (!Device.isDevice) {
     return {
       ok: false,
+      ...support,
       reason: "device",
-      message: "Push notifications require a physical Android or iPhone device.",
+      message: PUSH_DEVICE_MESSAGE,
     };
   }
 
   await ensureAndroidChannelAsync();
 
+  const Notifications = getNotificationsModule();
   let permissions = await Notifications.getPermissionsAsync();
   if (!isGranted(permissions) && requestPermission) {
     permissions = await Notifications.requestPermissionsAsync();
@@ -116,8 +193,9 @@ export async function registerForPushNotificationsAsync(
   if (!isGranted(permissions)) {
     return {
       ok: false,
+      ...support,
       reason: "permission",
-      message: "Notification permission is not enabled on this device.",
+      message: PUSH_PERMISSION_MESSAGE,
       permissionStatus: permissions.status || "denied",
     };
   }
@@ -126,8 +204,9 @@ export async function registerForPushNotificationsAsync(
   if (!projectId) {
     return {
       ok: false,
+      ...support,
       reason: "project",
-      message: "Expo project id is missing from the app config.",
+      message: PUSH_PROJECT_MESSAGE,
     };
   }
 
@@ -136,8 +215,9 @@ export async function registerForPushNotificationsAsync(
   if (!expoPushToken) {
     return {
       ok: false,
+      ...support,
       reason: "token",
-      message: "Expo did not return a push token for this device.",
+      message: PUSH_TOKEN_MESSAGE,
     };
   }
 
@@ -152,6 +232,7 @@ export async function registerForPushNotificationsAsync(
 
   return {
     ok: true,
+    ...support,
     token: expoPushToken,
     projectId,
     permissionStatus: permissions.status || "granted",
@@ -160,6 +241,13 @@ export async function registerForPushNotificationsAsync(
 
 export async function syncPushRegistrationAsync(api) {
   const status = await getPushRegistrationStatusAsync();
+
+  if (!status.supported) {
+    return {
+      ok: false,
+      ...status,
+    };
+  }
 
   if (!status.isDevice || !status.granted) {
     return {
@@ -170,4 +258,17 @@ export async function syncPushRegistrationAsync(api) {
   }
 
   return registerForPushNotificationsAsync(api, { requestPermission: false });
+}
+
+export function addPushNotificationResponseListener(listener) {
+  const support = getPushRuntimeSupport();
+  if (!support.supported) {
+    return {
+      remove() {},
+    };
+  }
+
+  configurePushNotifications();
+  const Notifications = getNotificationsModule();
+  return Notifications.addNotificationResponseReceivedListener(listener);
 }

@@ -41,6 +41,10 @@ export default function NotificationsScreen() {
   const [workingId, setWorkingId] = useState(null);
   const [pushState, setPushState] = useState({
     checking: true,
+    supported: true,
+    isExpoGo: false,
+    reason: "",
+    message: "",
     granted: false,
     permissionStatus: "unknown",
     hasStoredToken: false,
@@ -53,6 +57,10 @@ export default function NotificationsScreen() {
       const status = await getPushRegistrationStatusAsync();
       setPushState({
         checking: false,
+        supported: status.supported !== false,
+        isExpoGo: Boolean(status.isExpoGo),
+        reason: status.reason || "",
+        message: status.message || "",
         granted: status.granted,
         permissionStatus: status.permissionStatus,
         hasStoredToken: status.hasStoredToken,
@@ -234,7 +242,10 @@ export default function NotificationsScreen() {
         <Text style={styles.sectionCopy}>
           {pushState.checking
             ? "Checking whether this device is connected for live wallet and split updates."
-            : !pushState.isDevice
+            : !pushState.supported
+              ? pushState.message ||
+                "Push notifications require a development build or installed app."
+              : !pushState.isDevice
               ? "Expo Go on a simulator cannot receive device push alerts. Use a physical phone to enable them."
               : pushState.hasStoredToken
                 ? `This device is connected. Permission status: ${pushState.permissionStatus}.`
@@ -242,7 +253,14 @@ export default function NotificationsScreen() {
         </Text>
         <View style={styles.metricGrid}>
           <SummaryMetric label="Device" value={pushState.isDevice ? "Phone" : "Simulator"} />
-          <SummaryMetric label="Permission" value={pushState.permissionStatus || "unknown"} />
+          <SummaryMetric
+            label="Permission"
+            value={
+              !pushState.supported && pushState.isExpoGo
+                ? "Dev build required"
+                : pushState.permissionStatus || "unknown"
+            }
+          />
           <SummaryMetric
             label="Connected"
             value={pushState.hasStoredToken ? "Yes" : "No"}
@@ -250,10 +268,16 @@ export default function NotificationsScreen() {
           />
         </View>
         <AppButton
-          title={workingId === "push_enable" ? "Connecting..." : "Enable push notifications"}
+          title={
+            !pushState.supported && pushState.isExpoGo
+              ? "Use a development build for push"
+              : workingId === "push_enable"
+                ? "Connecting..."
+                : "Enable push notifications"
+          }
           onPress={() => void enablePushNotifications()}
           loading={workingId === "push_enable"}
-          disabled={pushState.checking}
+          disabled={pushState.checking || !pushState.supported}
           variant="secondary"
         />
         {pushState.hasStoredToken ? (
