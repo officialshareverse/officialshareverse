@@ -598,8 +598,8 @@ class MobilePushDevice(models.Model):
     class Meta:
         ordering = ["-updated_at", "-id"]
         indexes = [
-            models.Index(fields=["user", "is_active"]),
-            models.Index(fields=["platform", "is_active"]),
+            models.Index(fields=["user", "is_active"], name="core_mobile_user_id_42a3ee_idx"),
+            models.Index(fields=["platform", "is_active"], name="core_mobile_platfor_b83d7c_idx"),
         ]
 
     def __str__(self):
