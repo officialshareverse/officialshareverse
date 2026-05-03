@@ -3668,6 +3668,53 @@
     box-shadow: 0 18px 32px rgba(124, 58, 237, 0.18);
   }
 
+  .sv-plan-logo-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+    max-width: 44rem;
+  }
+
+  .sv-plan-logo-strip-label,
+  .sv-plan-logo {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    border-radius: 999px;
+    padding: 0.5rem 0.78rem;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .sv-plan-logo-strip-label {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.72);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .sv-plan-logo {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.92);
+    color: #0f172a;
+    box-shadow: 0 12px 26px rgba(2, 6, 23, 0.14);
+  }
+
+  .sv-plan-logo.is-netflix { color: #e50914; }
+  .sv-plan-logo.is-spotify { color: #15803d; }
+  .sv-plan-logo.is-disney { color: #1d4ed8; }
+  .sv-plan-logo.is-prime { color: #2563eb; }
+  .sv-plan-logo.is-youtube { color: #dc2626; }
+  .sv-plan-logo.is-jio { color: #3730a3; }
+  .sv-plan-logo.is-sony { color: #7c3aed; }
+  .sv-plan-logo.is-canva { color: #0891b2; }
+  .sv-plan-logo.is-coursera { color: #1d4ed8; }
+  .sv-plan-logo.is-google { color: #0f766e; }
+
   .sv-hero-media-shell {
     position: relative;
     padding: 0.35rem;
@@ -3733,19 +3780,6 @@
   .sv-hero-image.is-ready {
     opacity: 1;
     transform: scale(1);
-  }
-
-  .sv-hero-floating-card {
-    position: absolute;
-    left: 1rem;
-    right: 1rem;
-    bottom: 1rem;
-    border-radius: 22px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.88);
-    padding: 0.9rem 1rem;
-    box-shadow: 0 24px 42px rgba(15, 23, 42, 0.16);
-    backdrop-filter: blur(16px);
   }
 
   .sv-highlight-card {
@@ -4152,6 +4186,17 @@
   .sv-groups-suggestion-item:hover {
     transform: translateY(-1px);
     background: color-mix(in srgb, var(--sv-accent) 10%, transparent);
+  }
+
+  .sv-groups-category-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .sv-groups-category-row .sv-groups-filter-button {
+    min-height: 48px;
+    padding-inline: 1rem;
   }
 
   .sv-groups-filter-button {
@@ -5225,6 +5270,33 @@
     font-size: 1rem;
     font-weight: 900;
     color: #ffffff;
+  }
+
+  .sv-wallet-balance-details,
+  .sv-wallet-helper-disclosure {
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.85rem 0.95rem;
+  }
+
+  .sv-wallet-helper-disclosure {
+    border-color: var(--sv-border);
+    background: color-mix(in srgb, var(--sv-paper-solid) 94%, transparent);
+  }
+
+  .sv-wallet-balance-details summary,
+  .sv-wallet-helper-disclosure summary {
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .sv-wallet-helper-disclosure summary {
+    color: var(--sv-ink);
   }
 
   .sv-wallet-trend {
@@ -7265,6 +7337,31 @@
       margin-top: 0.7rem !important;
     }
 
+    .sv-groups-category-row.is-mobile {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 0.45rem;
+      margin-top: 0.7rem !important;
+      margin-right: -0.8rem;
+      overflow-x: auto;
+      padding-right: 0.8rem;
+      scrollbar-width: none;
+    }
+
+    .sv-groups-category-row.is-mobile::-webkit-scrollbar {
+      display: none;
+    }
+
+    .sv-groups-category-row.is-mobile .sv-groups-filter-button {
+      flex: 0 0 auto;
+      min-width: max-content;
+      min-height: 40px;
+      padding: 0.55rem 0.7rem;
+      border-radius: 16px;
+      font-size: 11px;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+    }
+
     .sv-groups-filter-button {
       justify-content: center;
       min-width: 0;
@@ -7285,6 +7382,12 @@
 
     .sv-groups-filter-button.is-active {
       box-shadow: 0 12px 22px rgba(124, 58, 237, 0.16);
+    }
+
+    .sv-groups-category-row.is-mobile .sv-groups-filter-button {
+      width: auto;
+      min-width: max-content;
+      padding: 0.55rem 0.7rem;
     }
 
     .sv-groups-mobile-note {
@@ -7724,6 +7827,7 @@
   body.sv-dark .sv-wallet-action-copy,
   body.sv-dark .sv-wallet-form-panel,
   body.sv-dark .sv-wallet-mini-chart,
+  body.sv-dark .sv-wallet-helper-disclosure,
   body.sv-dark .sv-wallet-helper-card,
   body.sv-dark .sv-wallet-amount-chip,
   body.sv-dark .sv-wallet-search,

@@ -328,7 +328,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             response.data["message"],
-            "Withdrawal destination saved for manual review requests.",
+            "Withdrawal destination saved for payout requests.",
         )
         payout_account = PayoutAccount.objects.get(user=self.owner)
         self.assertEqual(payout_account.provider_contact_id, "")
@@ -1513,6 +1513,31 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(payload["total_cycle_days"], 30)
         self.assertIn("remaining 10 of 30 days", payload["pricing_note"])
 
+    def test_groups_list_hides_email_like_host_usernames(self):
+        email_owner = User.objects.create_user(
+            username="atharv@example.com",
+            password="password123",
+            email="atharv@example.com",
+            phone="9000000010",
+        )
+        Group.objects.create(
+            owner=email_owner,
+            subscription=self.subscription,
+            total_slots=2,
+            price_per_slot=Decimal("200.00"),
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=29),
+            mode="sharing",
+            status="forming",
+        )
+
+        self.authenticate(self.member_one)
+        response = self.client.get("/api/groups/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        payload = next(item for item in response.data if item["owner_name"] == "ShareVerse host")
+        self.assertNotIn("@", payload["owner_name"])
+
     def test_joined_member_can_view_and_send_group_chat_messages(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
         GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
@@ -2075,7 +2100,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(
             response.data["message"],
-            "Withdrawal request submitted for manual review.",
+            "Withdrawal request submitted. Payouts are usually processed within 24 hours.",
         )
         wallet.refresh_from_db()
         self.assertEqual(wallet.balance, Decimal("1000.00"))
@@ -2539,7 +2564,7 @@ class GroupFlowTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["wallet_payouts_config"]["mode"], "manual_review")
-        self.assertEqual(response.data["wallet_payouts_config"]["mode_label"], "Manual review payouts")
+        self.assertEqual(response.data["wallet_payouts_config"]["mode_label"], "Payouts processed within 24 hours")
         self.assertEqual(response.data["wallet_payouts_config"]["provider"], "manual")
         self.assertTrue(response.data["wallet_payouts_config"]["manual_review_enabled"])
         self.assertFalse(response.data["wallet_payouts_config"]["payout_enabled"])
@@ -3536,7 +3561,7 @@ class GroupFlowTests(APITestCase):
 
         self.assertEqual(info_response.status_code, status.HTTP_200_OK)
         self.assertEqual(info_response.data["subscription_name"], self.subscription.name)
-        self.assertEqual(info_response.data["owner_username"], self.owner.username)
+        self.assertEqual(info_response.data["owner_username"], "Owner")
         self.assertTrue(info_response.data["is_joinable"])
 
         member_wallet = Wallet.objects.get(user=self.member_one)

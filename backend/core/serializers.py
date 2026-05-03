@@ -55,6 +55,30 @@ def get_group_buy_confirmation_counts(group):
     return confirmed, total
 
 
+def public_user_display_name(user):
+    first_name = (getattr(user, "first_name", "") or "").strip()
+    last_name = (getattr(user, "last_name", "") or "").strip()
+    username = (getattr(user, "username", "") or "").strip()
+
+    if first_name and last_name:
+        return f"{first_name} {last_name[0].upper()}."
+    if first_name:
+        return first_name
+    if last_name:
+        return last_name
+    if not username or "@" in username:
+        return "ShareVerse host"
+
+    parts = [part for part in re.split(r"[\s._-]+", username) if part]
+    if not parts:
+        return "ShareVerse host"
+
+    first = parts[0][:1].upper() + parts[0][1:]
+    if len(parts) > 1:
+        return f"{first} {parts[1][0].upper()}."
+    return first
+
+
 def get_status_copy(group):
     if group.mode == "group_buy":
         if group.status == "disputed":
@@ -651,6 +675,8 @@ class CreateGroupSerializer(serializers.Serializer):
         normalized = (value or "").strip()
         if not normalized:
             raise serializers.ValidationError("Subscription name required.")
+        if not settings.DEBUG and normalized.lower() in {"demo", "test", "sample"}:
+            raise serializers.ValidationError("Use the real plan name before publishing.")
         return normalized
 
     def validate_access_identifier(self, value):
@@ -1098,7 +1124,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
 class GroupListSerializer(serializers.ModelSerializer):
     subscription_name = serializers.CharField(source="subscription.name", read_only=True)
-    owner_name = serializers.CharField(source="owner.username", read_only=True)
+    owner_name = serializers.SerializerMethodField()
     filled_slots = serializers.SerializerMethodField()
     remaining_slots = serializers.SerializerMethodField()
     is_joined = serializers.SerializerMethodField()
@@ -1180,6 +1206,9 @@ class GroupListSerializer(serializers.ModelSerializer):
 
     def get_filled_slots(self, obj):
         return GroupMember.objects.filter(group=obj).count()
+
+    def get_owner_name(self, obj):
+        return public_user_display_name(obj.owner)
 
     def get_remaining_slots(self, obj):
         filled = GroupMember.objects.filter(group=obj).count()

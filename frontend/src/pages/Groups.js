@@ -23,6 +23,14 @@ const SORT_OPTIONS = [
   { value: "almost_full", label: "Almost full" },
 ];
 
+const CATEGORY_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "subscriptions", label: "Subscriptions" },
+  { value: "courses", label: "Courses" },
+  { value: "software", label: "Software" },
+  { value: "memberships", label: "Memberships" },
+];
+
 function getCardTone(mode) {
   if (mode === "group_buy") {
     return {
@@ -41,36 +49,51 @@ function getCardTone(mode) {
   };
 }
 
-function getPlanMeta(name) {
+function getPlanCategory(name) {
   const normalized = String(name || "").toLowerCase();
 
   if (
+    normalized.includes("netflix") ||
+    normalized.includes("spotify") ||
+    normalized.includes("hotstar") ||
+    normalized.includes("disney") ||
+    normalized.includes("prime") ||
+    normalized.includes("youtube") ||
+    normalized.includes("jiocinema") ||
+    normalized.includes("sonyliv") ||
     normalized.includes("family") ||
     normalized.includes("household") ||
     normalized.includes("screen") ||
     normalized.includes("music") ||
     normalized.includes("video")
   ) {
-    return { badge: "TV", label: "Household plan", toneClass: "is-streaming" };
+    return "subscriptions";
   }
 
   if (
+    normalized.includes("coursera") ||
+    normalized.includes("udemy") ||
+    normalized.includes("duolingo") ||
     normalized.includes("course") ||
     normalized.includes("academy") ||
     normalized.includes("class") ||
     normalized.includes("learn")
   ) {
-    return { badge: "EDU", label: "Learning", toneClass: "is-learning" };
+    return "courses";
   }
 
   if (
+    normalized.includes("canva") ||
+    normalized.includes("notion") ||
+    normalized.includes("google one") ||
+    normalized.includes("github") ||
     normalized.includes("software") ||
     normalized.includes("workspace") ||
     normalized.includes("design") ||
     normalized.includes("tool") ||
     normalized.includes("seat")
   ) {
-    return { badge: "APP", label: "Software", toneClass: "is-software" };
+    return "software";
   }
 
   if (
@@ -79,10 +102,32 @@ function getPlanMeta(name) {
     normalized.includes("gym") ||
     normalized.includes("community")
   ) {
-    return { badge: "VIP", label: "Membership", toneClass: "is-membership" };
+    return "memberships";
   }
 
-  return { badge: "SV", label: "Digital plan", toneClass: "is-default" };
+  return "subscriptions";
+}
+
+function getPlanMeta(name) {
+  const category = getPlanCategory(name);
+
+  if (category === "subscriptions") {
+    return { badge: "TV", label: "Subscription", toneClass: "is-streaming", category };
+  }
+
+  if (category === "courses") {
+    return { badge: "EDU", label: "Course", toneClass: "is-learning", category };
+  }
+
+  if (category === "software") {
+    return { badge: "APP", label: "Software", toneClass: "is-software", category };
+  }
+
+  if (category === "memberships") {
+    return { badge: "VIP", label: "Membership", toneClass: "is-membership", category };
+  }
+
+  return { badge: "SV", label: "Digital plan", toneClass: "is-default", category };
 }
 
 function getStatusTone(status) {
@@ -161,6 +206,29 @@ function getInitials(value) {
     .join("");
 }
 
+function formatHostDisplayName(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw.includes("@")) {
+    return "ShareVerse host";
+  }
+
+  const parts = raw
+    .replace(/[._-]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return "ShareVerse host";
+  }
+
+  const firstName = parts[0].slice(0, 1).toUpperCase() + parts[0].slice(1);
+  if (parts.length > 1) {
+    return `${firstName} ${parts[1].slice(0, 1).toUpperCase()}.`;
+  }
+
+  return firstName;
+}
+
 function compareGroups(sortBy, left, right) {
   if (sortBy === "newest") {
     return new Date(right.created_at || 0).getTime() - new Date(left.created_at || 0).getTime();
@@ -192,6 +260,7 @@ export default function Groups() {
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
   );
@@ -323,6 +392,23 @@ export default function Groups() {
     [stats]
   );
 
+  const categoryFilterOptions = useMemo(() => {
+    const counts = groups.reduce(
+      (acc, group) => {
+        const category = getPlanMeta(group.subscription_name || group.subscription).category;
+        acc.all += 1;
+        acc[category] = (acc[category] || 0) + 1;
+        return acc;
+      },
+      { all: 0, subscriptions: 0, courses: 0, software: 0, memberships: 0 }
+    );
+
+    return CATEGORY_FILTERS.map((option) => ({
+      ...option,
+      count: counts[option.value] || 0,
+    }));
+  }, [groups]);
+
   const searchSuggestions = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     if (!normalizedSearch) {
@@ -334,7 +420,7 @@ export default function Groups() {
     groups.forEach((group) => {
       [
         { label: group.subscription_name || group.subscription, helper: group.mode_label },
-        { label: group.owner_name, helper: "Host" },
+        { label: formatHostDisplayName(group.owner_name), helper: "Host" },
       ]
         .filter((item) => item.label)
         .forEach((item) => {
@@ -359,6 +445,12 @@ export default function Groups() {
 
     return [...groups]
       .filter((group) => {
+        const planMeta = getPlanMeta(group.subscription_name || group.subscription);
+        const matchesCategory = categoryFilter === "all" ? true : planMeta.category === categoryFilter;
+        if (!matchesCategory) {
+          return false;
+        }
+
         const matchesFilter = filter === "all" ? true : group.mode === filter;
         if (!matchesFilter) {
           return false;
@@ -370,7 +462,7 @@ export default function Groups() {
 
         const haystack = [
           group.subscription_name,
-          group.owner_name,
+          formatHostDisplayName(group.owner_name),
           group.mode_label,
           group.status_label,
           group.mode_description,
@@ -383,7 +475,7 @@ export default function Groups() {
         return haystack.includes(normalizedSearch);
       })
       .sort((left, right) => compareGroups(effectiveSortBy, left, right));
-  }, [effectiveSortBy, filter, groups, searchTerm]);
+  }, [categoryFilter, effectiveSortBy, filter, groups, searchTerm]);
 
   const spotlightGroup = filteredGroups[0] || groups[0] || null;
   const categoryChips = useMemo(() => {
@@ -420,14 +512,14 @@ export default function Groups() {
             <p className="sv-eyebrow-on-dark">Marketplace</p>
             <h1 className="sv-display-on-dark mt-3 max-w-4xl sm:mt-4">
               {isMobile
-                ? "Explore open groups and join faster."
-                : "Explore open groups with clearer status, cleaner pricing, and a faster path to join."}
+                ? "Browse live groups."
+                : "Browse live groups and join in one click."}
             </h1>
             {!isMobile ? (
               <>
                 <p className="sv-groups-hero-body mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-5 sm:text-base sm:leading-8">
-                  Browse live sharing and buy-together groups, compare what you pay now, and see which
-                  plans are nearly full before you commit.
+                  Filter by subscriptions, courses, software, and memberships, then compare price,
+                  slots, and status before you commit.
                 </p>
 
                 <div className="sv-groups-hero-chips mt-4 flex flex-wrap gap-1.5 sm:mt-8 sm:gap-2">
@@ -493,6 +585,20 @@ export default function Groups() {
               )}
             </div>
 
+            <div className={`mt-4 ${isMobile ? "sv-groups-category-row is-mobile" : "sv-groups-category-row"}`}>
+              {categoryFilterOptions.map((option) => (
+                <FilterButton
+                  key={option.value}
+                  active={categoryFilter === option.value}
+                  count={option.count}
+                  showCount={!isMobile}
+                  onClick={() => setCategoryFilter(option.value)}
+                >
+                  {option.label}
+                </FilterButton>
+              ))}
+            </div>
+
             <label className={`mt-4 block sm:mt-5 ${isMobile ? "sv-groups-panel-search" : ""}`}>
               <span className={`mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs ${isMobile ? "sv-groups-search-label" : ""}`}>
                 {isMobile ? "Plan or host" : "Search groups"}
@@ -507,7 +613,7 @@ export default function Groups() {
                   onBlur={() => {
                     window.setTimeout(() => setSearchFocused(false), 120);
                   }}
-                  placeholder={isMobile ? "Search plan or host..." : "Household plan, software, host name..."}
+                  placeholder={isMobile ? "Search plan..." : "Netflix, Spotify, Canva, host name..."}
                   className="sv-groups-search-input"
                 />
                 {searchTerm ? (
@@ -657,11 +763,12 @@ export default function Groups() {
             </div>
 
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-              {(searchTerm || filter !== "all") && (
+              {(searchTerm || filter !== "all" || categoryFilter !== "all") && (
                 <button
                   type="button"
                   onClick={() => {
                     setSearchTerm("");
+                    setCategoryFilter("all");
                     setFilter("all");
                     setSortBy("popular");
                   }}
@@ -688,6 +795,7 @@ export default function Groups() {
               const planMeta = getPlanMeta(group.subscription_name || group.subscription);
               const progress = Math.min(100, Number(group.progress_percent || Math.round((filledSlots / totalSlots) * 100)));
               const activityLabel = formatRelativeTime(group.created_at);
+              const hostDisplayName = formatHostDisplayName(group.owner_name);
               const timelineLabel =
                 group.mode === "group_buy"
                   ? formatDate(group.purchase_deadline_at)
@@ -760,10 +868,10 @@ export default function Groups() {
 
                       <div className="sv-group-owner-row">
                         <div className="flex items-center gap-3">
-                          <span className="sv-group-owner-avatar">{getInitials(group.owner_name)}</span>
+                          <span className="sv-group-owner-avatar">{getInitials(hostDisplayName)}</span>
                           <div>
                             <p className="text-sm font-semibold text-slate-950">
-                              Hosted by {group.owner_name || "ShareVerse host"}
+                              Hosted by {hostDisplayName}
                             </p>
                             <p className="text-[12px] text-slate-500 sm:text-[13px]">{timelineLabel}</p>
                           </div>
@@ -906,7 +1014,7 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
   const statusTone = getStatusTone(group.status);
   const planMeta = getPlanMeta(group.subscription_name || group.subscription);
   const planName = group.subscription_name || group.subscription;
-  const ownerName = group.owner_name || "ShareVerse host";
+  const ownerName = formatHostDisplayName(group.owner_name);
   const totalSlots = Number(group.total_slots || 0);
   const filledSlots = Number(group.filled_slots || 0);
   const remainingSlots = Math.max(Number(group.remaining_slots ?? (totalSlots - filledSlots)) || 0, 0);

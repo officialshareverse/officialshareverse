@@ -525,13 +525,13 @@ export default function CreateGroup() {
                 <p className="sv-eyebrow-on-dark">Create Split</p>
                 <h1 className="sv-display-on-dark mt-4 max-w-4xl">
                   {isSinglePageMobile
-                    ? "Set up the split on one page and publish when the basics are ready."
-                    : "Build the split in steps, preview it live, and publish only when the whole flow feels clear."}
+                    ? "List your plan in 2 minutes."
+                    : "List your plan, set the price, and publish when the basics are ready."}
                 </h1>
                 <p className="sv-create-hero-body mt-4 max-w-3xl text-sm leading-7 text-slate-200 sm:text-base sm:leading-8">
                   {isSinglePageMobile
-                    ? "Choose the mode, fill the basics, set the timing, and publish once everything important is in place."
-                    : `Step ${currentStep + 1} of ${WIZARD_STEPS.length}: ${currentStepConfig.label}. Choose the mode, set the details, confirm the timing, and review the listing before it goes live.`}
+                    ? "Choose the mode, add the price and slots, set the timing, and publish."
+                    : `Step ${currentStep + 1} of ${WIZARD_STEPS.length}: ${currentStepConfig.label}. Add the plan details, confirm the timing, and review the listing before it goes live.`}
                 </p>
               </div>
 

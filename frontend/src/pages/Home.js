@@ -770,12 +770,11 @@ export default function Home() {
               </p>
               <h1 className="mt-3 max-w-3xl text-3xl font-bold leading-tight text-slate-950 sm:text-4xl">
                 {isMobile
-                  ? "Everything you need, without the noise."
-                  : "A simpler view of your wallet, splits, and next step."}
+                  ? "Your dashboard"
+                  : "Your dashboard for savings, wallet balance, and active splits."}
               </h1>
               <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7 md:text-base">
-                Keep the essentials visible, open the next action quickly, and manage your
-                groups without a crowded dashboard.
+                See what you can join, what you host, and what needs action next.
               </p>
 
               <div className="mt-4 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-700">

@@ -43,7 +43,7 @@ const faqSections = [
       {
         question: "How do withdrawals work right now?",
         answer:
-          "Withdrawals are currently handled through a manual review flow. You can submit a request from the wallet page, and approved withdrawals are typically processed within 24 hours.",
+          "Withdrawals are requested from the wallet page and are typically processed within 24 hours after operator checks.",
       },
       {
         question: "What happens if there is a payment issue?",

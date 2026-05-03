@@ -7,38 +7,51 @@ import PublicFooter from "../components/PublicFooter";
 const heroIllustrationSrc = `${process.env.PUBLIC_URL}/shareverse-hero-network.png`;
 
 const featureNotes = [
-  { label: "Subscriptions", icon: "📺", targetId: "modes" },
-  { label: "Courses", icon: "🎓", targetId: "how-it-works" },
-  { label: "Software", icon: "💻", targetId: "social-proof" },
-  { label: "Memberships", icon: "🏷️", targetId: "cta" },
+  { label: "Subscriptions", icon: "TV", targetId: "modes" },
+  { label: "Courses", icon: "EDU", targetId: "how-it-works" },
+  { label: "Software", icon: "APP", targetId: "social-proof" },
+  { label: "Memberships", icon: "VIP", targetId: "cta" },
 ];
 
 const heroStats = [
-  { value: 500, suffix: "+", label: "active splits", note: "across team tools, learning, and memberships" },
-  { value: 12, prefix: "₹", suffix: "L+", label: "saved together", note: "through cleaner shared-cost coordination" },
-  { value: 4.9, suffix: "/5", label: "community trust", note: "from repeat hosts and members", decimals: 1 },
+  { value: 500, prefix: "Rs ", suffix: "/mo", label: "example saving", note: "when one plan is split with trusted members" },
+  { value: 80, suffix: "%", label: "less per person", note: "possible on multi-seat plans when more people join" },
+  { value: 24, suffix: "h", label: "payout window", note: "manual withdrawals are usually processed within a day" },
+];
+
+const popularPlanLogos = [
+  { name: "Netflix", className: "is-netflix" },
+  { name: "Spotify", className: "is-spotify" },
+  { name: "Disney+ Hotstar", className: "is-disney" },
+  { name: "Prime Video", className: "is-prime" },
+  { name: "YouTube Premium", className: "is-youtube" },
+  { name: "JioCinema", className: "is-jio" },
+  { name: "SonyLIV", className: "is-sony" },
+  { name: "Canva Pro", className: "is-canva" },
+  { name: "Coursera", className: "is-coursera" },
+  { name: "Google One", className: "is-google" },
 ];
 
 const heroHighlights = [
   {
-    icon: "📦",
-    label: "Shared-cost groups",
-    value: "Cleaner than scattered chats",
-    body: "Create a group once, keep members aligned, and stop juggling screenshots or reminders across apps.",
+    icon: "01",
+    label: "Split popular apps",
+    value: "Pay your share, not the full bill",
+    body: "Create or join groups for streaming, music, tools, learning, and memberships.",
     targetId: "modes",
   },
   {
-    icon: "💸",
-    label: "Wallet top-ups",
-    value: "Ready before members join",
-    body: "Keep wallet funding and plan participation in one flow, instead of chasing contributions one by one.",
+    icon: "02",
+    label: "Real money flow",
+    value: "Wallet-backed joins",
+    body: "Members pay through the wallet so hosts are not chasing payments in separate chats.",
     targetId: "cta",
   },
   {
-    icon: "🛡️",
-    label: "Community trust",
-    value: "Profiles, reviews, confirmations",
-    body: "Make repeat participation feel safer with visible status, cleaner history, and accountable group activity.",
+    icon: "03",
+    label: "Safer coordination",
+    value: "Status, chat, and proof in one place",
+    body: "Everyone can see slots, pricing, updates, and confirmations before moving forward.",
     targetId: "social-proof",
   },
 ];
@@ -48,19 +61,19 @@ const modes = [
     id: "sharing",
     tab: "Sharing",
     eyebrow: "Existing plans",
-    title: "Turn one digital plan into an organized shared-cost group",
-    body: "Invite members into a plan you already manage, keep pricing visible, and track who is active without relying on messy screenshots or scattered DMs.",
+    title: "List your plan in 2 minutes",
+    body: "Already pay for a plan with extra seats? Add the price, slots, and timing so members can join with clear terms.",
     cta: "Start a sharing split",
     ctaTo: "/signup",
     bullets: [
       "Best when you already own the subscription or tool.",
-      "Great for provider-permitted household plans, shared tools, premium memberships, and courses.",
-      "Members join a clear flow instead of a casual chat thread.",
+      "Good for provider-permitted family plans, shared tools, memberships, and courses.",
+      "Members see the price and slot count before they pay.",
     ],
     metrics: [
       { label: "Best for", value: "Existing plans" },
       { label: "Works well with", value: "Subscriptions and software" },
-      { label: "Main benefit", value: "Cleaner host control" },
+      { label: "Main benefit", value: "Lower monthly cost" },
     ],
     mockSteps: [
       "Create the split and add the plan details.",
@@ -72,8 +85,8 @@ const modes = [
     id: "buy_together",
     tab: "Buy together",
     eyebrow: "Group purchase flow",
-    title: "Fill a group before the purchase happens",
-    body: "Collect commitments first, coordinate the purchase once the group is ready, and keep updates, chat, and participation in one shared workspace.",
+    title: "Start a group purchase before anyone overpays",
+    body: "Collect members first, buy only when the group is ready, and keep everyone updated from the same page.",
     cta: "Start a buy-together group",
     ctaTo: "/signup",
     bullets: [
@@ -84,7 +97,7 @@ const modes = [
     metrics: [
       { label: "Best for", value: "Planned group purchases" },
       { label: "Works well with", value: "Courses and memberships" },
-      { label: "Main benefit", value: "Clear readiness tracking" },
+      { label: "Main benefit", value: "Buy only after enough people join" },
     ],
     mockSteps: [
       "Open the group and collect interested members first.",
@@ -96,61 +109,58 @@ const modes = [
 
 const trustPoints = [
   {
-    title: "Visual group status",
-    body: "Members can tell whether a group is open, filling, waiting, or active without reading long explanations.",
+    title: "Clear slot and price status",
+    body: "Members can see what they pay, how many slots are left, and whether the group is still open.",
   },
   {
-    title: "One home for updates",
-    body: "Notifications, wallet activity, and chat stay connected so the next step is always easier to spot.",
+    title: "Wallet records for every move",
+    body: "Top-ups, joins, refunds, and withdrawals stay visible in one ledger.",
   },
   {
-    title: "Designed for repeat use",
-    body: "Profiles, ratings, and clean participation history help people come back with more confidence next time.",
+    title: "Manual payouts with a visible window",
+    body: "Withdrawals are requested in the wallet and usually processed within 24 hours after operator review.",
   },
 ];
 
 const howItWorks = [
   {
     step: "01",
-    title: "Open a split",
-    body: "Choose whether you are sharing an existing plan or buying together after members commit.",
+    title: "List your plan",
+    body: "Add the app, monthly price, available seats, and the amount each member pays.",
   },
   {
     step: "02",
-    title: "Let people join clearly",
-    body: "Show slots, pricing, and status in one place so members know exactly what they are entering.",
+    title: "Members join",
+    body: "People browse live groups, pay from wallet balance, and track their spot from My Splits.",
   },
   {
     step: "03",
-    title: "Manage progress calmly",
-    body: "Track confirmations, wallet actions, chat, and updates without losing the thread of the group.",
+    title: "Everyone saves",
+    body: "The plan cost is split across members instead of one person carrying the full bill.",
   },
 ];
 
-const testimonials = [
+const safetyChecklist = [
   {
-    name: "Riya S.",
-    role: "Hosted a household plan group",
-    quote: "ShareVerse made the whole thing feel organized instead of improvised. People joined faster because the listing looked clear from the start.",
+    title: "Display names, not public emails",
+    body: "Marketplace listings show a host name without exposing email addresses.",
   },
   {
-    name: "Arjun P.",
-    role: "Runs software seat groups",
-    quote: "The difference is confidence. Pricing, status, and wallet actions live in one place, so fewer questions keep coming back to me.",
+    title: "Provider-safe listings",
+    body: "Groups should be created only for plans where sharing or group purchase coordination is permitted.",
   },
   {
-    name: "Neha K.",
-    role: "Joined a course buy-together",
-    quote: "I liked knowing where the group stood without checking five chats. It felt much more real and much less messy.",
+    title: "Admin payout completion",
+    body: "Withdrawals are completed after the real transfer is made, keeping wallet history consistent.",
   },
 ];
 
 const joinTickerItems = [
-  "A household-plan group filled in 18 minutes",
-  "A cohort course group opened with 6 seats",
-  "Three teammates started a software buy-together",
-  "A wallet top-up cleared before a new group launch",
-  "Another membership group just went live",
+  "Netflix groups can reduce the monthly bill per person",
+  "Spotify family plans work best when every seat is filled",
+  "Courses and tools can be listed as buy-together groups",
+  "Wallet joins keep payments out of scattered DMs",
+  "Withdrawals are usually processed within 24 hours",
 ];
 
 export default function Landing() {
@@ -196,24 +206,24 @@ export default function Landing() {
         <section className="sv-dark-hero sv-landing-hero relative overflow-hidden">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(320px,0.96fr)] lg:items-center">
             <div className="relative z-[1]">
-              <span className="sv-live-badge sv-animate-glow">🔥 New groups added today</span>
+              <span className="sv-live-badge sv-animate-glow">Popular apps, one shared wallet</span>
               <p className="sv-eyebrow-on-dark mt-5">Split more. Pay less.</p>
               <h1 className="sv-display-on-dark mt-4 max-w-4xl">
-                Shared-cost plans feel more trustworthy when the whole flow looks
-                <span className="sv-gradient-text"> organized from the start.</span>
+                Save Rs 500/month on Netflix, Spotify, and everyday apps
+                <span className="sv-gradient-text"> by splitting costs safely.</span>
               </h1>
               <p className="sv-landing-hero-body mt-4 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-sm sm:leading-7 md:text-base md:leading-8">
-                ShareVerse gives digital plans, courses, software, and memberships a calmer system:
-                create a split, let people join clearly, keep updates visible, and manage shared payments
-                in one premium-feeling workspace.
+                Browse live groups or list a plan you already pay for. ShareVerse keeps slots,
+                pricing, wallet payments, chat, and withdrawal requests in one place so everyone
+                understands the split before joining.
               </p>
 
               <div className="mt-5 grid gap-2.5 sm:inline-flex sm:flex-wrap sm:gap-3">
                 <Link to="/signup" className="sv-btn-primary justify-center">
-                  Start with your first split
+                  Start saving
                 </Link>
                 <Link to="/login" className="sv-btn-secondary justify-center bg-white/90 text-slate-950 sm:bg-white/90">
-                  I already have an account
+                  Browse live groups
                 </Link>
               </div>
 
@@ -244,6 +254,15 @@ export default function Landing() {
                   </button>
                 ))}
               </div>
+
+              <div className="sv-plan-logo-strip mt-5" aria-label="Popular plans on ShareVerse">
+                <span className="sv-plan-logo-strip-label">Popular plans</span>
+                {popularPlanLogos.map((item) => (
+                  <span key={item.name} className={`sv-plan-logo ${item.className}`}>
+                    {item.name}
+                  </span>
+                ))}
+              </div>
             </div>
 
             <div className="relative z-[1]">
@@ -262,15 +281,6 @@ export default function Landing() {
                     onLoad={() => setHeroLoaded(true)}
                     className={`sv-hero-image ${heroLoaded ? "is-ready" : ""}`}
                   />
-
-                  <div className="sv-hero-floating-card">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Live social proof
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-950 sm:text-base">
-                      Join 500+ users already coordinating shared costs in a cleaner workflow.
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
@@ -298,10 +308,10 @@ export default function Landing() {
         <section id="modes" className="sv-card-solid scroll-mt-24">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <p className="sv-eyebrow">Modes that match the real-world flow</p>
-              <h2 className="sv-title mt-2 sm:mt-3">Choose between sharing a plan now or buying together later</h2>
+              <p className="sv-eyebrow">Ways to save</p>
+              <h2 className="sv-title mt-2 sm:mt-3">Share a plan you have or start a group purchase</h2>
               <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
-                Instead of presenting two static cards, ShareVerse can explain each mode in context so people immediately understand which flow fits their group.
+                Use sharing when you already have the plan. Use buy together when the group should form before anyone commits to the full price.
               </p>
             </div>
 
@@ -399,9 +409,9 @@ export default function Landing() {
         <section id="social-proof" className="grid gap-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] scroll-mt-24">
           <section className="sv-card-solid">
             <p className="sv-eyebrow">Why ShareVerse</p>
-            <h2 className="sv-title mt-2 sm:mt-3">A calmer, more visual way to manage digital plan groups</h2>
+            <h2 className="sv-title mt-2 sm:mt-3">Know the price, slots, and payout status before you join</h2>
             <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
-              Instead of collecting screenshots, balances, and member updates across scattered chats, ShareVerse gives the whole group one coordinated workspace.
+              ShareVerse is for people who want to save on digital plans without losing track of who paid, what is open, and what happens next.
             </p>
 
             <div className="sv-trust-timeline mt-5">
@@ -420,26 +430,20 @@ export default function Landing() {
           <section className="sv-card-solid">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="sv-eyebrow">Social proof</p>
-                <h2 className="sv-title mt-2">People come back when the flow feels trustworthy</h2>
+                <p className="sv-eyebrow">Safety basics</p>
+                <h2 className="sv-title mt-2">Trust signals that match the current product</h2>
               </div>
-              <span className="sv-chip">Rated 4.9/5 by repeat users</span>
+              <span className="sv-chip">No inflated user claims</span>
             </div>
 
             <div className="sv-testimonial-list mt-5 grid gap-3 sm:gap-4">
-              {testimonials.map((item, index) => (
+              {safetyChecklist.map((item, index) => (
                 <article
-                  key={item.name}
+                  key={item.title}
                   className={`sv-testimonial-card ${index === 0 ? "sv-animate-rise" : index === 1 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-950 sm:text-base">{item.name}</p>
-                      <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">{item.role}</p>
-                    </div>
-                    <span className="text-amber-500">★★★★★</span>
-                  </div>
-                  <p className="mt-3 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">{item.quote}</p>
+                  <p className="text-sm font-semibold text-slate-950 sm:text-base">{item.title}</p>
+                  <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">{item.body}</p>
                 </article>
               ))}
             </div>
@@ -451,10 +455,10 @@ export default function Landing() {
             <div>
               <p className="sv-eyebrow-on-dark">Ready to start</p>
               <h2 className="sv-display-on-dark mt-3 max-w-3xl">
-                Join 500+ users already coordinating shared costs in a workflow that looks as organized as it feels.
+                Start saving on the subscriptions and tools you already use.
               </h2>
               <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-sm sm:leading-7">
-                Create a group, track who joins, keep updates visible, and bring wallet actions into the same polished flow instead of managing everything through scattered conversations.
+                Create a group, let members join with clear pricing, and use wallet records so every payment and withdrawal has a trace.
               </p>
             </div>
 

@@ -281,7 +281,7 @@ def create_manual_wallet_payout_request(
     create_notification(
         user=user,
         message=(
-            f"Your withdrawal request for Rs. {amount} to {normalized_destination} was submitted for manual review."
+            f"Your withdrawal request for Rs. {amount} to {normalized_destination} was submitted. Payouts are usually processed within 24 hours."
         ),
     )
 

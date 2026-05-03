@@ -21,8 +21,8 @@ import useRevealOnScroll from "../hooks/useRevealOnScroll";
 const RAZORPAY_CHECKOUT_URL = "https://checkout.razorpay.com/v1/checkout.js";
 const QUICK_AMOUNTS = ["100", "300", "500", "1000"];
 const ACTION_TABS = [
-  { id: "topup", label: "Top Up" },
-  { id: "payout", label: "Payout Setup" },
+  { id: "topup", label: "Add Money" },
+  { id: "payout", label: "Payout Method" },
   { id: "withdraw", label: "Withdraw" },
 ];
 const ACTION_TAB_META = {
@@ -260,7 +260,7 @@ function getWalletDelta(transactions) {
 }
 
 function getPayoutTimeline(status, payoutsLive) {
-  const reviewLabel = payoutsLive ? "Processing" : "Manual review";
+  const reviewLabel = payoutsLive ? "Processing" : "Within 24h";
 
   if (["processed", "success"].includes(status)) {
     return [
@@ -499,10 +499,10 @@ export default function Wallet() {
     activeTab === "topup" ? (
       <div className="sv-wallet-action-panel mt-5">
         <div className="sv-wallet-action-copy">
-          <p className="sv-eyebrow">Top Up</p>
+          <p className="sv-eyebrow">Add Money</p>
           <h3 className="sv-title mt-2">Add money with Razorpay and credit the wallet after verification</h3>
           <p className="mt-3 text-sm leading-7 text-slate-600">
-            Use UPI, cards, or netbanking. Top-ups add real cash balance after the payment is verified successfully.
+            Use UPI, cards, or netbanking. Money is added to your cash balance after payment verification.
           </p>
 
           <div className="sv-wallet-inline-grid sv-wallet-mobile-secondary mt-4">
@@ -728,12 +728,12 @@ export default function Wallet() {
         <div className="sv-wallet-action-copy">
           <p className="sv-eyebrow">Withdraw</p>
           <h3 className="sv-title mt-2">
-            {payoutsLive ? "Send wallet money to your saved payout method" : "Request a manual wallet withdrawal"}
+            {payoutsLive ? "Send wallet money to your saved payout method" : "Request a wallet withdrawal"}
           </h3>
           <p className="mt-3 text-sm leading-7 text-slate-600">
             {payoutsLive
               ? "Live payouts reserve balance immediately. Failed or reversed transfers are returned automatically."
-              : "Manual withdrawal requests do not deduct the wallet immediately. They are reviewed first, then settled manually."}
+              : "Withdrawal requests do not deduct the wallet immediately. They are checked first, then settled within the usual 24-hour window."}
           </p>
 
           <div className="sv-feedback-banner mt-4">
@@ -782,7 +782,7 @@ export default function Wallet() {
             <WalletOverviewStat
               label="ETA"
               value={payoutsLive ? "Fast" : "24h"}
-              note={payoutsLive ? "provider processing time" : "manual review window"}
+              note={payoutsLive ? "provider processing time" : "processing window"}
             />
           </div>
 
@@ -1064,21 +1064,31 @@ export default function Wallet() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="sv-eyebrow-on-dark">Wallet</p>
-                  <h1 className="sv-display-on-dark mt-3 max-w-3xl">Keep money ready for joins, payouts, and live group activity.</h1>
+                  <h1 className="sv-display-on-dark mt-3 max-w-3xl">Balance</h1>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => focusActionTab("topup")}
-                  className="sv-wallet-quick-cta"
-                >
-                  <CreditIcon className="h-4 w-4" />
-                  Quick top-up
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => focusActionTab("topup")}
+                    className="sv-wallet-quick-cta"
+                  >
+                    <CreditIcon className="h-4 w-4" />
+                    Add money
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => focusActionTab("withdraw")}
+                    className="sv-wallet-quick-cta"
+                  >
+                    <DebitIcon className="h-4 w-4" />
+                    Withdraw
+                  </button>
+                </div>
               </div>
 
               <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-300">Spendable balance</p>
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-300">Balance</p>
                   <div className="mt-2 flex items-center gap-3">
                     <span className="sv-wallet-glyph">
                       <WalletGlyph className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -1090,27 +1100,28 @@ export default function Wallet() {
                   <p className={`mt-3 text-sm font-semibold ${walletDelta.tone === "is-up" ? "text-emerald-200" : "text-rose-200"}`}>
                     {walletDelta.label}
                   </p>
-                  <div className="sv-wallet-balance-splits mt-4">
-                    <div className="sv-wallet-balance-split">
-                      <span>Cash balance</span>
-                      <strong>{formatCurrency(balance)}</strong>
+                  <details className="sv-wallet-balance-details mt-4">
+                    <summary>Cash and bonus details</summary>
+                    <div className="sv-wallet-balance-splits mt-3">
+                      <div className="sv-wallet-balance-split">
+                        <span>Cash</span>
+                        <strong>{formatCurrency(balance)}</strong>
+                      </div>
+                      <div className="sv-wallet-balance-split">
+                        <span>Bonus</span>
+                        <strong>{formatCurrency(bonusBalance)}</strong>
+                      </div>
                     </div>
-                    <div className="sv-wallet-balance-split">
-                      <span>Bonus credit</span>
-                      <strong>{formatCurrency(bonusBalance)}</strong>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-xs leading-6 text-slate-300">
-                    Referral rewards go into bonus credit. Bonus can only be used to join groups and cannot be withdrawn.
-                  </p>
+                    <p className="mt-3 text-xs leading-6 text-slate-300">
+                      Bonus credit can be used to join groups and cannot be withdrawn.
+                    </p>
+                  </details>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {topupConfig ? <span className="sv-wallet-info-pill">{topupConfig.mode_label}</span> : null}
-                  <span className="sv-wallet-info-pill is-light">Cash {formatCurrency(balance)}</span>
-                  <span className="sv-wallet-info-pill is-bonus">Bonus {formatCurrency(bonusBalance)}</span>
+                  {topupConfig ? <span className="sv-wallet-info-pill">Live payments</span> : null}
                   <span className={`sv-wallet-info-pill ${payoutsLive ? "is-light" : "is-warning"}`}>
-                    {payoutConfig?.mode_label || (payoutsLive ? "Payouts live" : "Manual review")}
+                    {payoutConfig?.mode_label || (payoutsLive ? "Payouts live" : "Payouts processed within 24 hours")}
                   </span>
                 </div>
               </div>
@@ -1139,8 +1150,8 @@ export default function Wallet() {
           <aside className="sv-card sv-reveal sv-wallet-overview">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="sv-eyebrow">Quick setup</p>
-                <h2 className="sv-title mt-2">{isMobile ? "Pick an amount, then open one simple action sheet" : "Tap an amount, then manage the rest in one place"}</h2>
+                <p className="sv-eyebrow">Add Money</p>
+                <h2 className="sv-title mt-2">{isMobile ? "Pick an amount" : "Choose an amount, then add money or withdraw"}</h2>
               </div>
               <span className="sv-chip">{sortedTransactions.length} wallet records</span>
             </div>
@@ -1165,48 +1176,51 @@ export default function Wallet() {
               ))}
             </div>
 
-            <div className="sv-wallet-overview-stats mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              <WalletOverviewStat
-                label="Spendable"
-                value={formatCurrency(spendableBalance)}
-                note="cash plus bonus usable for joins"
-              />
-              <WalletOverviewStat
-                label="Withdrawable cash"
-                value={formatCurrency(balance)}
-                note="the only balance available for payouts"
-              />
-              <WalletOverviewStat
-                label="Bonus credit"
-                value={formatCurrency(bonusBalance)}
-                note="referral rewards for joining groups only"
-              />
-            </div>
+            <details className="sv-wallet-helper-disclosure mt-5">
+              <summary>More wallet details</summary>
+              <div className="sv-wallet-overview-stats mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                <WalletOverviewStat
+                  label="Balance"
+                  value={formatCurrency(spendableBalance)}
+                  note="cash plus bonus usable for joins"
+                />
+                <WalletOverviewStat
+                  label="Withdrawable"
+                  value={formatCurrency(balance)}
+                  note="cash available for payouts"
+                />
+                <WalletOverviewStat
+                  label="Bonus"
+                  value={formatCurrency(bonusBalance)}
+                  note="join-only referral credit"
+                />
+              </div>
 
-            <div className="sv-wallet-support-cards mt-5 space-y-3">
-              {topupConfig ? (
-                <div className="sv-wallet-helper-card">
-                  <p className="sv-wallet-helper-title">Top-ups</p>
-                  <p className="sv-wallet-helper-body">{topupConfig.helper_text}</p>
+              <div className="sv-wallet-support-cards mt-4 space-y-3">
+                {topupConfig ? (
+                  <div className="sv-wallet-helper-card">
+                    <p className="sv-wallet-helper-title">Add money</p>
+                    <p className="sv-wallet-helper-body">{topupConfig.helper_text}</p>
+                  </div>
+                ) : null}
+
+                <div className={`sv-wallet-helper-card ${payoutsLive ? "" : "is-warning"}`}>
+                  <p className="sv-wallet-helper-title">Withdraw</p>
+                  <p className="sv-wallet-helper-body">
+                    {payoutsLive
+                      ? payoutConfig?.helper_text || "Withdrawals move to your saved payout method through the live payout rail."
+                      : "Save a destination and request a withdrawal. Payouts are usually processed within 24 hours."}
+                  </p>
                 </div>
-              ) : null}
 
-              <div className={`sv-wallet-helper-card ${payoutsLive ? "" : "is-warning"}`}>
-                <p className="sv-wallet-helper-title">{payoutsLive ? "Withdrawals" : "Manual review mode"}</p>
-                <p className="sv-wallet-helper-body">
-                  {payoutsLive
-                    ? payoutConfig?.helper_text || "Withdrawals move to your saved payout method through the live payout rail."
-                    : "Automated payouts are pending activation. Save a destination and manual withdrawal requests are usually reviewed within 24 hours."}
-                </p>
+                <div className="sv-wallet-helper-card">
+                  <p className="sv-wallet-helper-title">Bonus</p>
+                  <p className="sv-wallet-helper-body">
+                    Bonus credit can be used only for joining groups and cannot be withdrawn or paid out.
+                  </p>
+                </div>
               </div>
-
-              <div className="sv-wallet-helper-card">
-                <p className="sv-wallet-helper-title">Bonus credit policy</p>
-                <p className="sv-wallet-helper-body">
-                  Referral rewards go into bonus credit. It can be used only for joining groups and cannot be withdrawn or paid out.
-                </p>
-              </div>
-            </div>
+            </details>
           </aside>
         </section>
 
@@ -1215,9 +1229,9 @@ export default function Wallet() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="sv-eyebrow">Wallet actions</p>
-                <h2 className="sv-title mt-2">Open only the action you need</h2>
+                <h2 className="sv-title mt-2">Add money or withdraw</h2>
                 <p className="mt-2 text-sm leading-7 text-slate-600">
-                  Keep this screen focused, then handle top-up, payout setup, or withdrawals in a bottom sheet.
+                  Use one action at a time so the wallet stays focused.
                 </p>
               </div>
               <span className="sv-chip">3 actions</span>
@@ -1251,10 +1265,10 @@ export default function Wallet() {
         {!isMobile ? (
         <section id="wallet-actions" className="sv-card sv-reveal">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="sv-eyebrow">Actions</p>
-              <h2 className="sv-title mt-2">Top up, save a destination, or withdraw without leaving the page</h2>
-            </div>
+              <div>
+                <p className="sv-eyebrow">Actions</p>
+                <h2 className="sv-title mt-2">Balance, add money, withdraw</h2>
+              </div>
             <span className="sv-chip">
               {activeTab === "topup" ? "Add money" : activeTab === "payout" ? "Destination setup" : "Move money out"}
             </span>
@@ -1306,7 +1320,7 @@ export default function Wallet() {
                     <ClockIcon className="h-6 w-6" />
                   </div>
                   <p className="text-sm font-semibold text-slate-900">
-                    {payoutsLive ? "No payout requests yet." : "No manual withdrawal requests yet."}
+                    No withdrawal requests yet.
                   </p>
                   <p className="mt-2 text-sm leading-7 text-slate-500">
                     Your recent withdrawal requests and their review status will appear here.

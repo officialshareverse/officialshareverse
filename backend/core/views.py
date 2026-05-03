@@ -110,6 +110,7 @@ from .serializers import (
     WalletTopupVerifySerializer,
     get_mode_copy,
     get_status_copy,
+    public_user_display_name,
 )
 
 CREDENTIAL_REVEAL_TTL_MINUTES = 5
@@ -760,7 +761,7 @@ def build_safe_group_chat_group_payload(group):
 
     owner_name = "Unknown owner"
     try:
-        owner_name = getattr(getattr(group, "owner", None), "username", None) or owner_name
+        owner_name = public_user_display_name(getattr(group, "owner", None)) or owner_name
     except Exception:
         pass
 
@@ -1028,11 +1029,10 @@ def build_wallet_payout_config():
 
     if manual_review_enabled:
         mode = "manual_review"
-        label = "Manual review payouts"
+        label = "Payouts processed within 24 hours"
         helper_text = (
-            "Withdrawal requests are live through manual review. "
-            "Users can save a payout destination and request a withdrawal, "
-            "then admins complete the transfer manually within 24 hours."
+            "Users can save a payout destination and request a withdrawal. "
+            "Admins complete the transfer manually, usually within 24 hours."
         )
     elif is_live_mode:
         mode = "live"
@@ -2072,7 +2072,7 @@ class GroupInviteInfoView(APIView):
             {
                 "group_id": group.id,
                 "subscription_name": group.subscription.name,
-                "owner_username": group.owner.username,
+                "owner_username": public_user_display_name(group.owner),
                 "slots_remaining": slots_remaining,
                 "mode": group.mode,
                 "mode_label": get_mode_copy(group.mode)["label"],
@@ -2584,7 +2584,7 @@ class PayoutAccountView(APIView):
             )
             return Response(
                 {
-                    "message": "Withdrawal destination saved for manual review requests.",
+                    "message": "Withdrawal destination saved for payout requests.",
                     "payout_account": PayoutAccountSerializer(payout_account).data,
                     "payout_config": payout_config,
                 },
@@ -2665,7 +2665,7 @@ class WithdrawMoneyView(APIView):
             wallet, _ = Wallet.objects.get_or_create(user=request.user)
             return Response(
                 {
-                    "message": "Withdrawal request submitted for manual review.",
+                    "message": "Withdrawal request submitted. Payouts are usually processed within 24 hours.",
                     "balance": str(wallet.balance),
                     "payout": WalletPayoutSerializer(wallet_payout).data,
                     "payout_config": payout_config,
@@ -2983,7 +2983,7 @@ class DashboardView(APIView):
                     "id": membership.group.id,
                     "subscription_name": membership.group.subscription.name,
                     "owner_id": membership.group.owner_id,
-                    "owner_name": membership.group.owner.username,
+                    "owner_name": public_user_display_name(membership.group.owner),
                     "mode": membership.group.mode,
                     "mode_label": get_mode_copy(membership.group.mode)["label"],
                     "status": membership.group.status,

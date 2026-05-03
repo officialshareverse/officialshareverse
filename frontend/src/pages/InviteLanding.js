@@ -140,7 +140,7 @@ export default function InviteLanding() {
                   </div>
                   <div className="sv-invite-summary-row">
                     <span>Hosted by</span>
-                    <strong>@{inviteInfo.owner_username}</strong>
+                    <strong>{inviteInfo.owner_username}</strong>
                   </div>
                   <div className="sv-invite-summary-row">
                     <span>Group mode</span>
