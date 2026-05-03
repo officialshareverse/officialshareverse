@@ -21,6 +21,7 @@ from rest_framework.views import APIView
 
 from .models import (
     AccountDeletionRequest,
+    ContentReport,
     CredentialRevealToken,
     EscrowLedger,
     Group,
@@ -40,6 +41,7 @@ from .models import (
     Subscription,
     Transaction,
     User,
+    UserBlock,
     Wallet,
     WalletPayout,
     WalletTopupOrder,
@@ -88,6 +90,8 @@ from .serializers import (
     AcceptGroupInviteSerializer,
     AccountDeletionRequestCreateSerializer,
     AccountDeletionRequestSerializer,
+    ContentReportCreateSerializer,
+    ContentReportSerializer,
     CreateGroupSerializer,
     GenerateGroupInviteLinkSerializer,
     GroupChatPresenceSerializer,
@@ -106,6 +110,8 @@ from .serializers import (
     SubmitReviewSerializer,
     SubmitPurchaseProofSerializer,
     TransactionSerializer,
+    UserBlockCreateSerializer,
+    UserBlockSerializer,
     ValidateReferralCodeSerializer,
     WalletPayoutCreateSerializer,
     WalletPayoutSerializer,
@@ -529,6 +535,35 @@ def can_user_join_group_chat(user, group):
     return GroupMember.objects.filter(group=group, user=user).exists()
 
 
+def get_blocked_user_ids(user):
+    if not getattr(user, "is_authenticated", False):
+        return set()
+
+    return set(UserBlock.objects.filter(blocker=user).values_list("blocked_id", flat=True))
+
+
+def has_blocked_user(blocker, blocked):
+    if not getattr(blocker, "is_authenticated", False) or not blocked:
+        return False
+
+    blocked_id = getattr(blocked, "id", blocked)
+    return UserBlock.objects.filter(blocker=blocker, blocked_id=blocked_id).exists()
+
+
+def visible_group_chat_messages_for_user(user, group=None, group_ids=None):
+    queryset = GroupChatMessage.objects.filter(moderation_status="visible")
+    if group is not None:
+        queryset = queryset.filter(group=group)
+    if group_ids is not None:
+        queryset = queryset.filter(group_id__in=group_ids)
+
+    blocked_user_ids = get_blocked_user_ids(user)
+    if blocked_user_ids:
+        queryset = queryset.exclude(sender_id__in=blocked_user_ids)
+
+    return queryset
+
+
 def get_group_chat_participants(group):
     participants = [group.owner_id]
     participants.extend(
@@ -545,7 +580,7 @@ def get_group_chat_unread_count(user, group):
             .order_by("-last_read_at", "-id")
             .first()
         )
-        unread_messages = GroupChatMessage.objects.filter(group=group).exclude(sender=user)
+        unread_messages = visible_group_chat_messages_for_user(user, group=group).exclude(sender=user)
         if read_state:
             unread_messages = unread_messages.filter(created_at__gt=read_state.last_read_at)
         return unread_messages.count()
@@ -656,7 +691,9 @@ def touch_group_chat_presence(user, group, is_typing=None):
 def serialize_group_chat_participant(user, role, presence, now=None, current_user=None):
     presence_state = get_group_chat_presence_state(presence, now=now)
     return {
+        "user_id": user.id,
         "username": user.username,
+        "display_name": public_user_display_name(user),
         "role": role,
         "initials": build_name_initials(user.username),
         "is_self": bool(current_user and user.id == current_user.id),
@@ -672,12 +709,15 @@ def build_group_chat_activity_snapshot(group, current_user=None, presence_map=No
     participant_users.extend(member.user for member in members)
 
     seen_user_ids = set()
+    blocked_user_ids = get_blocked_user_ids(current_user) if current_user else set()
     serialized_participants = []
     active_typing_users = []
     online_participant_count = 0
 
     for participant in participant_users:
         if participant.id in seen_user_ids:
+            continue
+        if current_user and participant.id != current_user.id and participant.id in blocked_user_ids:
             continue
         seen_user_ids.add(participant.id)
         presence = (presence_map or {}).get(participant.id)
@@ -718,8 +758,11 @@ def build_group_chat_fallback_snapshot(group, current_user=None, members=None):
 
     serialized_participants = []
     seen_user_ids = set()
+    blocked_user_ids = get_blocked_user_ids(current_user) if current_user else set()
     for participant in participant_users:
         if participant.id in seen_user_ids:
+            continue
+        if current_user and participant.id != current_user.id and participant.id in blocked_user_ids:
             continue
         seen_user_ids.add(participant.id)
         serialized_participants.append(
@@ -767,6 +810,11 @@ def build_safe_group_chat_group_payload(group):
         owner_name = public_user_display_name(getattr(group, "owner", None)) or owner_name
     except Exception:
         pass
+    owner_username = ""
+    try:
+        owner_username = getattr(getattr(group, "owner", None), "username", "") or ""
+    except Exception:
+        pass
 
     return {
         "id": getattr(group, "id", None),
@@ -775,7 +823,9 @@ def build_safe_group_chat_group_payload(group):
         "mode_label": mode_copy.get("label", "Share existing plan"),
         "status": status,
         "status_label": status_label,
+        "owner_id": getattr(group, "owner_id", None),
         "owner_name": owner_name,
+        "owner_username": owner_username,
         "created_at": getattr(group, "created_at", None),
     }
 
@@ -788,7 +838,9 @@ def build_emergency_group_chat_group_payload(group):
         "mode_label": "Buy together" if getattr(group, "mode", "") == "group_buy" else "Share existing plan",
         "status": (getattr(group, "status", "") or "forming").strip() or "forming",
         "status_label": "Unavailable right now",
+        "owner_id": getattr(group, "owner_id", None),
         "owner_name": "Unknown owner",
+        "owner_username": "",
         "created_at": getattr(group, "created_at", None),
     }
 
@@ -3199,6 +3251,118 @@ class MarkAllNotificationsReadView(APIView):
         return Response({"message": "All notifications marked as read", "updated_count": updated_count})
 
 
+class UserBlockListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        blocks = UserBlock.objects.filter(blocker=request.user).select_related("blocked")
+        return Response({"blocked_users": UserBlockSerializer(blocks, many=True).data})
+
+    def post(self, request):
+        serializer = UserBlockCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        blocked_user_id = serializer.validated_data["blocked_user_id"]
+        if blocked_user_id == request.user.id:
+            return Response({"error": "You cannot block yourself."}, status=400)
+
+        try:
+            blocked_user = User.objects.get(id=blocked_user_id)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=404)
+
+        block, created = UserBlock.objects.update_or_create(
+            blocker=request.user,
+            blocked=blocked_user,
+            defaults={"reason": serializer.validated_data.get("reason", "")},
+        )
+        return Response(
+            {
+                "message": "User blocked." if created else "User block updated.",
+                "block": UserBlockSerializer(block).data,
+            },
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+
+class UserBlockDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, blocked_user_id):
+        deleted_count, _ = UserBlock.objects.filter(
+            blocker=request.user,
+            blocked_id=blocked_user_id,
+        ).delete()
+        if not deleted_count:
+            return Response({"error": "Blocked user not found."}, status=404)
+        return Response({"message": "User unblocked."})
+
+
+class ContentReportCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ContentReportCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        target_type = serializer.validated_data["target_type"]
+        target_id = serializer.validated_data["target_id"]
+        reason = serializer.validated_data["reason"]
+        details = serializer.validated_data.get("details", "")
+
+        reported_user = None
+        group = None
+        chat_message = None
+
+        if target_type == "user":
+            if target_id == request.user.id:
+                return Response({"error": "You cannot report yourself."}, status=400)
+            try:
+                reported_user = User.objects.get(id=target_id)
+            except User.DoesNotExist:
+                return Response({"error": "User not found."}, status=404)
+
+        elif target_type == "group":
+            try:
+                group = Group.objects.select_related("subscription", "owner").get(id=target_id)
+            except Group.DoesNotExist:
+                return Response({"error": "Group not found."}, status=404)
+            reported_user = group.owner
+
+        elif target_type == "chat_message":
+            try:
+                chat_message = (
+                    GroupChatMessage.objects.select_related("group", "group__subscription", "sender")
+                    .get(id=target_id, moderation_status="visible")
+                )
+            except GroupChatMessage.DoesNotExist:
+                return Response({"error": "Chat message not found."}, status=404)
+
+            group = chat_message.group
+            reported_user = chat_message.sender
+            if not can_user_join_group_chat(request.user, group):
+                return Response({"error": "You are not allowed to report this message."}, status=403)
+
+        report = ContentReport.objects.create(
+            reporter=request.user,
+            target_type=target_type,
+            reported_user=reported_user,
+            group=group,
+            chat_message=chat_message,
+            reason=reason,
+            details=details,
+        )
+        return Response(
+            {
+                "message": "Report submitted. ShareVerse will review it.",
+                "report": ContentReportSerializer(report).data,
+            },
+            status=201,
+        )
+
+
 class GroupChatView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -3247,7 +3411,7 @@ class GroupChatView(APIView):
 
         try:
             try:
-                messages = GroupChatMessage.objects.filter(group=group).select_related("sender")
+                messages = visible_group_chat_messages_for_user(request.user, group=group).select_related("sender")
                 serialized_messages = GroupChatMessageSerializer(
                     messages,
                     many=True,
@@ -3341,6 +3505,8 @@ class GroupChatView(APIView):
         for participant_id in get_group_chat_participants(group):
             if participant_id == request.user.id:
                 continue
+            if UserBlock.objects.filter(blocker_id=participant_id, blocked=request.user).exists():
+                continue
             create_notification(
                 user_id=participant_id,
                 message=(
@@ -3418,10 +3584,14 @@ class GroupChatInboxView(APIView):
 
     def get(self, request):
         user = request.user
+        blocked_user_ids = get_blocked_user_ids(user)
         try:
             try:
+                visible_messages_for_last = GroupChatMessage.objects.filter(moderation_status="visible")
+                if blocked_user_ids:
+                    visible_messages_for_last = visible_messages_for_last.exclude(sender_id__in=blocked_user_ids)
                 last_message_subquery = (
-                    GroupChatMessage.objects.filter(group_id=OuterRef("pk"))
+                    visible_messages_for_last.filter(group_id=OuterRef("pk"))
                     .order_by("-created_at", "-id")
                 )
                 groups = list(
@@ -3502,17 +3672,20 @@ class GroupChatInboxView(APIView):
                 read_state_by_group = {}
 
             try:
+                visible_messages = GroupChatMessage.objects.filter(moderation_status="visible")
+                if blocked_user_ids:
+                    visible_messages = visible_messages.exclude(sender_id__in=blocked_user_ids)
                 message_count_by_group = {
                     row["group_id"]: row["message_count"]
                     for row in (
-                        GroupChatMessage.objects.filter(group_id__in=group_ids)
+                        visible_messages.filter(group_id__in=group_ids)
                         .values("group_id")
                         .annotate(message_count=Count("id"))
                     )
                 }
                 unread_count_by_group = {group_id: 0 for group_id in group_ids}
                 unread_rows = (
-                    GroupChatMessage.objects.filter(group_id__in=group_ids)
+                    visible_messages.filter(group_id__in=group_ids)
                     .exclude(sender=user)
                     .values_list("group_id", "created_at")
                 )
@@ -3524,7 +3697,7 @@ class GroupChatInboxView(APIView):
                 last_message_ids = [group.last_message_id for group in groups if getattr(group, "last_message_id", None)]
                 last_message_by_id = {
                     message.id: message
-                    for message in GroupChatMessage.objects.filter(id__in=last_message_ids).select_related("sender")
+                    for message in visible_messages.filter(id__in=last_message_ids).select_related("sender")
                 }
             except Exception as exc:
                 log_group_chat_failure(

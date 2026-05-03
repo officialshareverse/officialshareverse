@@ -2,14 +2,17 @@ import json
 
 from django import forms
 from django.contrib import admin, messages
+from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from .models import (
     AccountDeletionRequest,
+    ContentReport,
     CredentialRevealToken,
     EscrowLedger,
     Group,
+    GroupChatMessage,
     GroupInviteLink,
     GroupMember,
     JoinRequest,
@@ -22,6 +25,7 @@ from .models import (
     Subscription,
     Transaction,
     User,
+    UserBlock,
     Wallet,
     WalletPayout,
 )
@@ -61,6 +65,102 @@ class AccountDeletionRequestAdmin(admin.ModelAdmin):
     list_filter = ("status", "request_source", "created_at")
     search_fields = ("user__username", "user__email", "contact_email", "reason", "details")
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(UserBlock)
+class UserBlockAdmin(admin.ModelAdmin):
+    list_display = ("id", "blocker", "blocked", "created_at")
+    list_filter = ("created_at",)
+    search_fields = ("blocker__username", "blocker__email", "blocked__username", "blocked__email", "reason")
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(GroupChatMessage)
+class GroupChatMessageAdmin(admin.ModelAdmin):
+    list_display = ("id", "group", "sender", "moderation_status", "created_at", "hidden_at", "hidden_by")
+    list_filter = ("moderation_status", "created_at", "hidden_at")
+    search_fields = ("message", "sender__username", "sender__email", "group__subscription__name")
+    readonly_fields = ("created_at", "hidden_at")
+    actions = ("hide_messages", "restore_messages")
+
+    @admin.action(description="Hide selected chat messages")
+    def hide_messages(self, request, queryset):
+        updated_count = 0
+        for message in queryset:
+            message.hide(moderator=request.user, reason="Hidden from Django admin moderation.")
+            message.save(update_fields=["moderation_status", "hidden_reason", "hidden_at", "hidden_by"])
+            updated_count += 1
+        self.message_user(request, f"{updated_count} chat message(s) hidden.", level=messages.SUCCESS)
+
+    @admin.action(description="Restore selected chat messages")
+    def restore_messages(self, request, queryset):
+        updated_count = 0
+        for message in queryset:
+            message.unhide()
+            message.save(update_fields=["moderation_status", "hidden_reason", "hidden_at", "hidden_by"])
+            updated_count += 1
+        self.message_user(request, f"{updated_count} chat message(s) restored.", level=messages.SUCCESS)
+
+
+@admin.register(ContentReport)
+class ContentReportAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "target_type",
+        "reason",
+        "status",
+        "reporter",
+        "reported_user",
+        "group",
+        "created_at",
+        "reviewed_at",
+    )
+    list_filter = ("target_type", "reason", "status", "created_at")
+    search_fields = (
+        "reporter__username",
+        "reporter__email",
+        "reported_user__username",
+        "reported_user__email",
+        "details",
+        "admin_notes",
+        "chat_message__message",
+        "group__subscription__name",
+    )
+    readonly_fields = ("created_at", "updated_at", "reviewed_at", "reviewed_by")
+    actions = ("mark_in_review", "hide_reported_chat_messages", "mark_action_taken", "dismiss_reports")
+
+    @admin.action(description="Mark selected reports in review")
+    def mark_in_review(self, request, queryset):
+        updated_count = queryset.update(status="in_review")
+        self.message_user(request, f"{updated_count} report(s) marked in review.", level=messages.SUCCESS)
+
+    @admin.action(description="Hide reported chat messages")
+    def hide_reported_chat_messages(self, request, queryset):
+        updated_count = 0
+        for report in queryset.select_related("chat_message"):
+            if not report.chat_message:
+                continue
+            report.chat_message.hide(
+                moderator=request.user,
+                reason=f"Hidden after report #{report.id}: {report.get_reason_display()}",
+            )
+            report.chat_message.save(update_fields=["moderation_status", "hidden_reason", "hidden_at", "hidden_by"])
+            report.status = "action_taken"
+            report.reviewed_by = request.user
+            report.reviewed_at = timezone.now()
+            report.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
+            updated_count += 1
+        self.message_user(request, f"{updated_count} reported message(s) hidden.", level=messages.SUCCESS)
+
+    @admin.action(description="Mark selected reports action taken")
+    def mark_action_taken(self, request, queryset):
+        updated_count = queryset.update(status="action_taken", reviewed_by_id=request.user.id, reviewed_at=timezone.now())
+        self.message_user(request, f"{updated_count} report(s) marked action taken.", level=messages.SUCCESS)
+
+    @admin.action(description="Dismiss selected reports")
+    def dismiss_reports(self, request, queryset):
+        updated_count = queryset.update(status="dismissed", reviewed_by_id=request.user.id, reviewed_at=timezone.now())
+        self.message_user(request, f"{updated_count} report(s) dismissed.", level=messages.SUCCESS)
 
 
 class ManualWalletPayoutAdminForm(forms.ModelForm):

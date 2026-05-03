@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,7 +14,7 @@ import {
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
 import AppTextField from "../../components/AppTextField";
-import { MessageSquare, Send, Users } from "../../components/Icons";
+import { Flag, MessageSquare, Send, UserX, Users } from "../../components/Icons";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors, spacing } from "../../theme/tokens";
 import { formatRelativeTime, getInitials } from "../../utils/formatters";
@@ -28,7 +30,7 @@ function getGroupSubtitle(group) {
 
   const statusLabel = group.status_label || group.status || "Active";
   const hostLabel = group.owner_username ? `Host @${group.owner_username}` : "ShareVerse group";
-  return `${statusLabel} · ${hostLabel}`;
+  return `${statusLabel} - ${hostLabel}`;
 }
 
 function getTypingState(activeTypingUsers) {
@@ -45,16 +47,32 @@ function getTypingState(activeTypingUsers) {
   return `${usernames[0]} and ${usernames.length - 1} more are typing...`;
 }
 
-function MessageBubble({ item }) {
+function MessageBubble({ item, onReport, onBlock }) {
   return (
     <View style={[styles.messageBubble, item.is_own ? styles.messageBubbleOwn : styles.messageBubblePeer]}>
       <Text style={[styles.messageSender, item.is_own ? styles.messageSenderOwn : null]}>
         {item.is_own ? "You" : item.sender_username}
       </Text>
       <Text style={[styles.messageText, item.is_own ? styles.messageTextOwn : null]}>{item.message}</Text>
-      <Text style={[styles.messageTime, item.is_own ? styles.messageTimeOwn : null]}>
-        {formatRelativeTime(item.created_at)}
-      </Text>
+      <View style={styles.messageMetaRow}>
+        <Text style={[styles.messageTime, item.is_own ? styles.messageTimeOwn : null]}>
+          {formatRelativeTime(item.created_at)}
+        </Text>
+        {!item.is_own ? (
+          <View style={styles.safetyActions}>
+            <Pressable onPress={() => onReport?.(item)} style={styles.safetyAction}>
+              <Flag color={colors.textMuted} size={13} strokeWidth={2.2} />
+              <Text style={styles.safetyActionText}>Report</Text>
+            </Pressable>
+            {item.sender_id ? (
+              <Pressable onPress={() => onBlock?.(item)} style={styles.safetyAction}>
+                <UserX color={colors.textMuted} size={13} strokeWidth={2.2} />
+                <Text style={styles.safetyActionText}>Block</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -160,6 +178,68 @@ export default function GroupChatScreen({ route }) {
     }
   };
 
+  const submitMessageReport = async (item, reason = "other") => {
+    try {
+      setError("");
+      await api.post("safety/reports/", {
+        target_type: "chat_message",
+        target_id: item.id,
+        reason,
+        details: `Reported from mobile group chat ${groupId}.`,
+      });
+      Alert.alert("Report sent", "Thanks. ShareVerse will review this message.");
+    } catch (requestError) {
+      Alert.alert(
+        "Report failed",
+        requestError?.response?.data?.error || "We could not submit this report right now."
+      );
+    }
+  };
+
+  const handleReportMessage = (item) => {
+    Alert.alert("Report message", `Tell us what is wrong with ${item.sender_username}'s message.`, [
+      { text: "Spam", onPress: () => void submitMessageReport(item, "spam") },
+      { text: "Harassment", onPress: () => void submitMessageReport(item, "harassment") },
+      { text: "Scam", onPress: () => void submitMessageReport(item, "scam") },
+      { text: "Other", onPress: () => void submitMessageReport(item, "other") },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
+  const handleBlockSender = (item) => {
+    if (!item.sender_id) {
+      return;
+    }
+
+    Alert.alert(
+      "Block user?",
+      `You will stop seeing messages from ${item.sender_username}. You can ask support to undo this later.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.post("safety/blocks/", {
+                blocked_user_id: item.sender_id,
+                reason: `Blocked from mobile group chat ${groupId}.`,
+              });
+              setMessages((current) => current.filter((message) => message.sender_id !== item.sender_id));
+              Alert.alert("User blocked", `Messages from ${item.sender_username} are now hidden.`);
+              void load(false);
+            } catch (requestError) {
+              Alert.alert(
+                "Block failed",
+                requestError?.response?.data?.error || "We could not block this user right now."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const group = detail?.group || groupPreview || {};
   const participants = useMemo(() => detail?.participants || [], [detail?.participants]);
   const typingState = getTypingState(detail?.active_typing_users);
@@ -196,7 +276,7 @@ export default function GroupChatScreen({ route }) {
             <View style={styles.heroCopy}>
               <Text style={styles.heroTitle}>{getGroupTitle(group)}</Text>
               <Text style={styles.heroMeta}>
-                {(detail?.online_participant_count || 0)} online · {participants.length || detail?.participant_count || 0} participants
+                {(detail?.online_participant_count || 0)} online - {participants.length || detail?.participant_count || 0} participants
               </Text>
             </View>
             <Users color={colors.primary} size={20} strokeWidth={2.1} />
@@ -216,7 +296,14 @@ export default function GroupChatScreen({ route }) {
             keyboardShouldPersistTaps="handled"
           >
             {messages.length ? (
-              messages.map((item) => <MessageBubble key={`${item.id}-${item.created_at}`} item={item} />)
+              messages.map((item) => (
+                <MessageBubble
+                  key={`${item.id}-${item.created_at}`}
+                  item={item}
+                  onReport={handleReportMessage}
+                  onBlock={handleBlockSender}
+                />
+              ))
             ) : (
               <View style={styles.emptyState}>
                 <MessageSquare color={colors.primary} size={22} strokeWidth={2.1} />
@@ -231,6 +318,9 @@ export default function GroupChatScreen({ route }) {
 
         <SectionCard>
           <Text style={styles.sectionTitle}>Reply</Text>
+          <Text style={styles.safetyCopy}>
+            Use report or block on any message that feels unsafe, spammy, or abusive.
+          </Text>
           <AppTextField
             label="Message"
             value={draft}
@@ -363,6 +453,33 @@ const styles = StyleSheet.create({
   },
   messageTimeOwn: {
     color: "rgba(255,255,255,0.72)",
+  },
+  messageMetaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  safetyActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  safetyAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 2,
+  },
+  safetyActionText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  safetyCopy: {
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
   },
   emptyState: {
     alignItems: "center",

@@ -22,6 +22,7 @@ from .views import (
     ActivateGroupPurchaseView,
     AddMoneyView,
     CloseGroupView,
+    ContentReportCreateView,
     DeactivateGroupInviteLinkView,
     ConfirmGroupAccessView,
     CreateGroupView,
@@ -58,6 +59,8 @@ from .views import (
     VerifyWalletTopupView,
     WalletPayoutSyncView,
     WithdrawMoneyView,
+    UserBlockDetailView,
+    UserBlockListCreateView,
 )
 
 urlpatterns = [
@@ -91,6 +94,9 @@ urlpatterns = [
     path('group-chats/', GroupChatInboxView.as_view()),
     path('groups/<int:group_id>/chat/', GroupChatView.as_view()),
     path('groups/<int:group_id>/reviews/', GroupReviewView.as_view()),
+    path('safety/reports/', ContentReportCreateView.as_view()),
+    path('safety/blocks/', UserBlockListCreateView.as_view()),
+    path('safety/blocks/<int:blocked_user_id>/', UserBlockDetailView.as_view()),
     path('add-money/', AddMoneyView.as_view()),
     path('payments/razorpay/create-order/', AddMoneyView.as_view()),
     path('payments/razorpay/verify/', VerifyWalletTopupView.as_view()),

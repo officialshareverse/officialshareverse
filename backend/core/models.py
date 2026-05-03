@@ -687,16 +687,51 @@ class EscrowLedger(models.Model):
 
 
 class GroupChatMessage(models.Model):
+    MODERATION_STATUS_CHOICES = (
+        ("visible", "Visible"),
+        ("hidden", "Hidden"),
+    )
+
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="chat_messages")
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField()
+    moderation_status = models.CharField(
+        max_length=20,
+        choices=MODERATION_STATUS_CHOICES,
+        default="visible",
+        db_index=True,
+    )
+    hidden_reason = models.TextField(blank=True, default="")
+    hidden_at = models.DateTimeField(null=True, blank=True)
+    hidden_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="hidden_group_chat_messages",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["created_at", "id"]
+        indexes = [
+            models.Index(fields=["group", "moderation_status", "created_at"]),
+        ]
 
     def __str__(self):
         return f"{self.sender.username} in group {self.group_id}"
+
+    def hide(self, *, moderator=None, reason=""):
+        self.moderation_status = "hidden"
+        self.hidden_reason = (reason or "").strip()
+        self.hidden_at = timezone.now()
+        self.hidden_by = moderator
+
+    def unhide(self):
+        self.moderation_status = "visible"
+        self.hidden_reason = ""
+        self.hidden_at = None
+        self.hidden_by = None
 
 
 class GroupChatReadState(models.Model):
@@ -728,6 +763,98 @@ class GroupChatPresence(models.Model):
 
     def __str__(self):
         return f"{self.user.username} presence in group {self.group_id}"
+
+
+class UserBlock(models.Model):
+    blocker = models.ForeignKey(User, on_delete=models.CASCADE, related_name="blocked_users")
+    blocked = models.ForeignKey(User, on_delete=models.CASCADE, related_name="blocked_by_users")
+    reason = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("blocker", "blocked")
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["blocker", "blocked"]),
+            models.Index(fields=["blocked", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.blocker.username} blocked {self.blocked.username}"
+
+
+class ContentReport(models.Model):
+    TARGET_TYPE_CHOICES = (
+        ("user", "User"),
+        ("group", "Group"),
+        ("chat_message", "Chat Message"),
+    )
+    REASON_CHOICES = (
+        ("harassment", "Harassment or bullying"),
+        ("hate", "Hate or abuse"),
+        ("sexual_content", "Sexual content"),
+        ("violence", "Violence or threats"),
+        ("spam", "Spam"),
+        ("scam", "Scam or fraud"),
+        ("privacy", "Privacy issue"),
+        ("other", "Other"),
+    )
+    STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("in_review", "In Review"),
+        ("action_taken", "Action Taken"),
+        ("dismissed", "Dismissed"),
+    )
+
+    reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name="content_reports")
+    target_type = models.CharField(max_length=20, choices=TARGET_TYPE_CHOICES)
+    reported_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reports_about_user",
+    )
+    group = models.ForeignKey(
+        Group,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="content_reports",
+    )
+    chat_message = models.ForeignKey(
+        GroupChatMessage,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="content_reports",
+    )
+    reason = models.CharField(max_length=40, choices=REASON_CHOICES, default="other")
+    details = models.TextField(blank=True, default="")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    admin_notes = models.TextField(blank=True, default="")
+    reviewed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_content_reports",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["status", "created_at"]),
+            models.Index(fields=["target_type", "created_at"]),
+            models.Index(fields=["reporter", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.get_target_type_display()} report #{self.id} ({self.status})"
 
 
 class CredentialRevealToken(models.Model):

@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshControl, StyleSheet, Text, View } from "react-native";
+import { Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../auth/AuthProvider";
-import AppButton from "../../components/AppButton";
-import { Bell, Compass, MessageSquare, WalletCards } from "../../components/Icons";
+import { Bell, ClipboardList, Compass, MessageSquare, WalletCards, Users } from "../../components/Icons";
 import Screen, { SectionCard } from "../../components/Screen";
-import { colors, spacing } from "../../theme/tokens";
+import { colors, radius, spacing } from "../../theme/tokens";
 import { formatCurrency, formatRelativeTime, getGreetingLabel } from "../../utils/formatters";
 
 function MetricPill({ label, value, tone = "primary" }) {
@@ -16,6 +15,17 @@ function MetricPill({ label, value, tone = "primary" }) {
       </Text>
       <Text style={styles.metricLabel}>{label}</Text>
     </View>
+  );
+}
+
+function ActionTile({ label, icon: Icon, onPress }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.actionTile, pressed ? styles.actionTilePressed : null]}>
+      <View style={styles.actionIcon}>
+        <Icon color={colors.primary} size={24} strokeWidth={2.2} />
+      </View>
+      <Text style={styles.actionLabel}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -76,50 +86,39 @@ export default function HomeScreen({ navigation }) {
       </SectionCard>
 
       <View style={styles.actionGrid}>
-        <AppButton
-          title="Browse groups"
+        <ActionTile
+          label="Browse"
           onPress={() => navigation.navigate("MarketplaceTab")}
-          variant="secondary"
-          fullWidth={false}
           icon={Compass}
         />
-        <AppButton
-          title="Create split"
+        <ActionTile
+          label="Create split"
           onPress={() => navigation.navigate("CreateSplit")}
-          variant="secondary"
-          fullWidth={false}
+          icon={Users}
         />
-        <AppButton
-          title="My splits"
+        <ActionTile
+          label="My splits"
           onPress={() => navigation.navigate("MySplits")}
-          variant="secondary"
-          fullWidth={false}
+          icon={ClipboardList}
         />
-        <AppButton
-          title="Joined groups"
+        <ActionTile
+          label="Joined"
           onPress={() => navigation.navigate("JoinedGroups")}
-          variant="secondary"
-          fullWidth={false}
+          icon={Users}
         />
-        <AppButton
-          title="Open wallet"
+        <ActionTile
+          label="Wallet"
           onPress={() => navigation.navigate("WalletTab")}
-          variant="secondary"
-          fullWidth={false}
           icon={WalletCards}
         />
-        <AppButton
-          title="Notifications"
+        <ActionTile
+          label="Updates"
           onPress={() => navigation.navigate("Notifications")}
-          variant="secondary"
-          fullWidth={false}
           icon={Bell}
         />
-        <AppButton
-          title="Chats"
+        <ActionTile
+          label="Chats"
           onPress={() => navigation.navigate("Chats")}
-          variant="secondary"
-          fullWidth={false}
           icon={MessageSquare}
         />
       </View>
@@ -230,30 +229,58 @@ const styles = StyleSheet.create({
   },
   metricPill: {
     flex: 1,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: "rgba(255,255,255,0.10)",
     borderRadius: 16,
     padding: spacing.md,
   },
   metricPillWarm: {
-    backgroundColor: "#fff3e7",
+    backgroundColor: "rgba(234,88,12,0.14)",
   },
   metricValue: {
-    color: colors.primary,
-    fontSize: 16,
+    color: "#ffffff",
+    fontSize: 18,
     fontWeight: "800",
   },
   metricValueWarm: {
-    color: colors.secondary,
+    color: "#fbbf24",
   },
   metricLabel: {
-    color: colors.textMuted,
+    color: "rgba(255,255,255,0.62)",
     fontSize: 12,
     marginTop: 4,
   },
   actionGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.md,
+    gap: spacing.sm,
+  },
+  actionTile: {
+    width: "48%",
+    minHeight: 104,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  actionTilePressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }],
+  },
+  actionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#dff7f2",
+  },
+  actionLabel: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "800",
   },
   sectionTitle: {
     fontSize: 18,

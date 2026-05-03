@@ -22,6 +22,7 @@ from . import auth_views
 from .pricing import get_group_join_pricing
 from .models import (
     AccountDeletionRequest,
+    ContentReport,
     EscrowLedger,
     Group,
     GroupChatMessage,
@@ -42,6 +43,7 @@ from .models import (
     Subscription,
     Transaction,
     User,
+    UserBlock,
     Wallet,
     WalletPayout,
     WalletTopupOrder,
@@ -227,6 +229,27 @@ class GroupFlowTests(APITestCase):
         return self.client.post(
             f"/api/groups/{group.id}/chat/",
             {"message": message},
+            format="json",
+        )
+
+    def report_content(self, user, target_type, target_id, reason="other", details="Needs review."):
+        self.authenticate(user)
+        return self.client.post(
+            "/api/safety/reports/",
+            {
+                "target_type": target_type,
+                "target_id": target_id,
+                "reason": reason,
+                "details": details,
+            },
+            format="json",
+        )
+
+    def block_user(self, user, blocked_user, reason="Unsafe chat."):
+        self.authenticate(user)
+        return self.client.post(
+            "/api/safety/blocks/",
+            {"blocked_user_id": blocked_user.id, "reason": reason},
             format="json",
         )
 
@@ -1576,6 +1599,68 @@ class GroupFlowTests(APITestCase):
         self.assertTrue(
             GroupChatReadState.objects.filter(group=group, user=self.member_one).exists()
         )
+
+    def test_user_can_report_group_chat_message_for_moderation(self):
+        group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        chat_response = self.send_group_chat(group, self.owner, "Suspicious message")
+        message_id = chat_response.data["chat_message"]["id"]
+
+        response = self.report_content(
+            self.member_one,
+            "chat_message",
+            message_id,
+            reason="scam",
+            details="This looks suspicious.",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        report = ContentReport.objects.get(id=response.data["report"]["id"])
+        self.assertEqual(report.reporter, self.member_one)
+        self.assertEqual(report.reported_user, self.owner)
+        self.assertEqual(report.chat_message_id, message_id)
+        self.assertEqual(report.group, group)
+        self.assertEqual(report.status, "pending")
+
+    def test_hidden_group_chat_message_is_not_returned(self):
+        group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        visible_response = self.send_group_chat(group, self.owner, "Visible message")
+        hidden_response = self.send_group_chat(group, self.owner, "Hidden message")
+        hidden_message = GroupChatMessage.objects.get(id=hidden_response.data["chat_message"]["id"])
+        hidden_message.hide(moderator=self.owner, reason="Test moderation")
+        hidden_message.save(update_fields=["moderation_status", "hidden_reason", "hidden_at", "hidden_by"])
+
+        response = self.get_group_chat(group, self.member_one)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        returned_ids = [message["id"] for message in response.data["messages"]]
+        self.assertIn(visible_response.data["chat_message"]["id"], returned_ids)
+        self.assertNotIn(hidden_message.id, returned_ids)
+
+    def test_blocked_user_messages_are_hidden_from_chat_and_inbox(self):
+        group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        block_response = self.block_user(self.member_one, self.owner)
+        self.assertEqual(block_response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(UserBlock.objects.filter(blocker=self.member_one, blocked=self.owner).exists())
+
+        self.send_group_chat(group, self.owner, "Member should not see this")
+        self.send_group_chat(group, self.member_one, "Member own message")
+
+        detail_response = self.get_group_chat(group, self.member_one)
+        self.assertEqual(detail_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(detail_response.data["messages"]), 1)
+        self.assertEqual(detail_response.data["messages"][0]["sender_username"], self.member_one.username)
+        self.assertFalse(
+            any(participant["username"] == self.owner.username for participant in detail_response.data["participants"])
+        )
+
+        inbox_response = self.get_chat_inbox(self.member_one)
+        self.assertEqual(inbox_response.status_code, status.HTTP_200_OK)
+        chat_item = inbox_response.data["chats"][0]
+        self.assertEqual(chat_item["message_count"], 1)
+        self.assertEqual(chat_item["last_message"]["sender_username"], self.member_one.username)
 
     def test_non_member_cannot_access_group_chat(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")

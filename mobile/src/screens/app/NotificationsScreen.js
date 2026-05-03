@@ -3,7 +3,7 @@ import { Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
-import { Bell, CheckCircle2 } from "../../components/Icons";
+import { Bell, CheckCircle2, Star } from "../../components/Icons";
 import {
   getPushRegistrationStatusAsync,
   registerForPushNotificationsAsync,
@@ -30,6 +30,54 @@ function SummaryMetric({ label, value, tone = "default" }) {
       </Text>
       <Text style={styles.metricLabel}>{label}</Text>
     </View>
+  );
+}
+
+function isRatingNotification(notification) {
+  const message = String(notification?.message || "").toLowerCase();
+  return notification?.kind === "review" || message.includes("rated") || message.includes("rating");
+}
+
+function getDisplayMessage(notification) {
+  return String(notification?.message || "Notification")
+    .replace(/\s*[^\x00-\x7F]+$/g, "")
+    .trim();
+}
+
+function NotificationRow({ notification, onPress }) {
+  const unread = !notification.is_read;
+  const rating = isRatingNotification(notification);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.notificationRow, unread ? styles.notificationRowUnread : styles.notificationRowRead]}
+    >
+      <View style={[styles.timelineDot, unread ? styles.timelineDotUnread : null]} />
+      <View style={styles.notificationBody}>
+        <View style={styles.notificationLine}>
+          <Text style={[styles.notificationMessage, unread ? styles.notificationMessageUnread : null]}>
+            {getDisplayMessage(notification)}
+          </Text>
+          {rating ? (
+            <View style={styles.starRow}>
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Star key={`star-${notification.id}-${index}`} color={colors.warning} size={12} strokeWidth={2.4} />
+              ))}
+            </View>
+          ) : null}
+        </View>
+        <View style={styles.notificationMetaRow}>
+          <Text style={styles.notificationTime}>{formatRelativeTime(notification.created_at)}</Text>
+          <Text style={styles.notificationCategory}>
+            {notification.category_label || notification.category || "Update"}
+          </Text>
+        </View>
+        {notification.context_title ? (
+          <Text style={styles.notificationContext}>{notification.context_title}</Text>
+        ) : null}
+      </View>
+    </Pressable>
   );
 }
 
@@ -215,7 +263,7 @@ export default function NotificationsScreen() {
           <View style={styles.headerCopy}>
             <Text style={styles.sectionTitle}>Inbox snapshot</Text>
             <Text style={styles.sectionCopy}>
-              Keep an eye on unread updates and clear them once you’re caught up.
+              Keep an eye on unread updates and clear them once you're caught up.
             </Text>
           </View>
           <Bell color={colors.primary} size={20} strokeWidth={2.1} />
@@ -311,34 +359,15 @@ export default function NotificationsScreen() {
         <Text style={styles.sectionTitle}>Latest updates</Text>
         {filteredNotifications.length ? (
           filteredNotifications.map((notification) => (
-            <Pressable
+            <NotificationRow
               key={notification.id}
+              notification={notification}
               onPress={() => {
                 if (!notification.is_read) {
                   void markNotificationRead(notification.id);
                 }
               }}
-              style={[
-                styles.notificationCard,
-                notification.is_read ? styles.notificationRead : styles.notificationUnread,
-              ]}
-            >
-              <View style={styles.notificationHeader}>
-                <View style={styles.notificationBadgeRow}>
-                  <View style={styles.categoryPill}>
-                    <Text style={styles.categoryPillText}>
-                      {notification.category_label || notification.category || "Update"}
-                    </Text>
-                  </View>
-                  {!notification.is_read ? <View style={styles.unreadDot} /> : null}
-                </View>
-                <Text style={styles.notificationTime}>{formatRelativeTime(notification.created_at)}</Text>
-              </View>
-              <Text style={styles.notificationMessage}>{notification.message}</Text>
-              {notification.context_title ? (
-                <Text style={styles.notificationContext}>{notification.context_title}</Text>
-              ) : null}
-            </Pressable>
+            />
           ))
         ) : (
           <Text style={styles.emptyCopy}>
@@ -426,57 +455,67 @@ const styles = StyleSheet.create({
   filterLabelActive: {
     color: "#ffffff",
   },
-  notificationCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: spacing.md,
-    gap: 10,
-  },
-  notificationUnread: {
-    borderColor: "#cfece7",
-    backgroundColor: "#f5fbfa",
-  },
-  notificationRead: {
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  notificationHeader: {
+  notificationRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  notificationBadgeRow: {
+  notificationRowUnread: {
+    opacity: 1,
+  },
+  notificationRowRead: {
+    opacity: 0.55,
+  },
+  timelineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: "#cfd6dd",
+    marginTop: 6,
+  },
+  timelineDotUnread: {
+    backgroundColor: colors.primary,
+  },
+  notificationBody: {
+    flex: 1,
+    gap: 6,
+  },
+  notificationLine: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    flexWrap: "wrap",
+    gap: 6,
   },
-  categoryPill: {
-    borderRadius: 999,
-    backgroundColor: colors.surfaceMuted,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  notificationMetaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
   },
-  categoryPillText: {
-    color: colors.primary,
-    fontSize: 11,
+  notificationMessage: {
+    color: colors.textMuted,
+    fontSize: 15,
+    lineHeight: 22,
     fontWeight: "700",
   },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: colors.primary,
+  notificationMessageUnread: {
+    color: colors.text,
+  },
+  starRow: {
+    flexDirection: "row",
+    gap: 1,
   },
   notificationTime: {
     color: colors.textMuted,
     fontSize: 12,
+    fontWeight: "700",
   },
-  notificationMessage: {
-    color: colors.text,
-    fontSize: 14,
-    lineHeight: 22,
-    fontWeight: "600",
+  notificationCategory: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "800",
   },
   notificationContext: {
     color: colors.textMuted,

@@ -9,6 +9,7 @@ from rest_framework import serializers
 from .auth_identity import find_user_by_login_identifier, normalize_login_identifier
 from .models import (
     AccountDeletionRequest,
+    ContentReport,
     EscrowLedger,
     Group,
     GroupChatMessage,
@@ -24,6 +25,7 @@ from .models import (
     Subscription,
     Transaction,
     User,
+    UserBlock,
     WalletPayout,
 )
 from .pricing import (
@@ -843,12 +845,13 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class GroupChatMessageSerializer(serializers.ModelSerializer):
+    sender_id = serializers.IntegerField(source="sender.id", read_only=True)
     sender_username = serializers.CharField(source="sender.username", read_only=True)
     is_own = serializers.SerializerMethodField()
 
     class Meta:
         model = GroupChatMessage
-        fields = ["id", "sender_username", "message", "created_at", "is_own"]
+        fields = ["id", "sender_id", "sender_username", "message", "created_at", "is_own"]
 
     def get_is_own(self, obj):
         request = self.context.get("request")
@@ -869,6 +872,63 @@ class GroupChatPresenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroupChatPresence
         fields = ["is_typing"]
+
+
+class UserBlockSerializer(serializers.ModelSerializer):
+    blocked_user_id = serializers.IntegerField(source="blocked.id", read_only=True)
+    blocked_username = serializers.CharField(source="blocked.username", read_only=True)
+    blocked_display_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserBlock
+        fields = [
+            "id",
+            "blocked_user_id",
+            "blocked_username",
+            "blocked_display_name",
+            "reason",
+            "created_at",
+        ]
+
+    def get_blocked_display_name(self, obj):
+        return public_user_display_name(obj.blocked)
+
+
+class UserBlockCreateSerializer(serializers.Serializer):
+    blocked_user_id = serializers.IntegerField()
+    reason = serializers.CharField(max_length=300, allow_blank=True, required=False)
+
+
+class ContentReportSerializer(serializers.ModelSerializer):
+    reporter_username = serializers.CharField(source="reporter.username", read_only=True)
+    reported_username = serializers.CharField(source="reported_user.username", read_only=True)
+    group_name = serializers.CharField(source="group.subscription.name", read_only=True)
+    chat_message_text = serializers.CharField(source="chat_message.message", read_only=True)
+
+    class Meta:
+        model = ContentReport
+        fields = [
+            "id",
+            "reporter_username",
+            "target_type",
+            "reported_username",
+            "group",
+            "group_name",
+            "chat_message",
+            "chat_message_text",
+            "reason",
+            "details",
+            "status",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class ContentReportCreateSerializer(serializers.Serializer):
+    target_type = serializers.ChoiceField(choices=ContentReport.TARGET_TYPE_CHOICES)
+    target_id = serializers.IntegerField()
+    reason = serializers.ChoiceField(choices=ContentReport.REASON_CHOICES, default="other")
+    details = serializers.CharField(max_length=1000, allow_blank=True, required=False)
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
@@ -1376,7 +1436,12 @@ class GroupListSerializer(serializers.ModelSerializer):
             user=request.user,
         ).first()
 
-        unread_messages = GroupChatMessage.objects.filter(group=obj).exclude(sender=request.user)
+        blocked_user_ids = UserBlock.objects.filter(blocker=request.user).values_list("blocked_id", flat=True)
+        unread_messages = (
+            GroupChatMessage.objects.filter(group=obj, moderation_status="visible")
+            .exclude(sender=request.user)
+            .exclude(sender_id__in=blocked_user_ids)
+        )
         if read_state:
             unread_messages = unread_messages.filter(created_at__gt=read_state.last_read_at)
 

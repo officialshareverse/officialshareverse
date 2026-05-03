@@ -299,6 +299,8 @@ class GroupChatConsumer(AsyncJsonWebsocketConsumer):
     async def chat_message_event(self, event):
         payload = dict(event["payload"])
         sender_id = payload.pop("sender_id", None)
+        if sender_id and sender_id != self.user.id and await self.is_sender_blocked(sender_id):
+            return
         await self.send_json(
             {
                 "type": "chat_message",
@@ -312,6 +314,12 @@ class GroupChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def presence_event(self, event):
         await self.send_json(event["payload"])
+
+    @database_sync_to_async
+    def is_sender_blocked(self, sender_id):
+        from .models import UserBlock
+
+        return UserBlock.objects.filter(blocker=self.user, blocked_id=sender_id).exists()
 
     @database_sync_to_async
     def get_group_for_user(self, user, group_id):
@@ -342,6 +350,7 @@ class GroupChatConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def create_message(self, raw_message):
         from .views import get_group_chat_participants, mark_group_chat_read, touch_group_chat_presence
+        from .models import UserBlock
 
         normalized = (raw_message or "").strip()
         if not normalized:
@@ -359,6 +368,8 @@ class GroupChatConsumer(AsyncJsonWebsocketConsumer):
         participant_ids = list(get_group_chat_participants(self.group))
         for participant_id in participant_ids:
             if participant_id != self.user.id:
+                if UserBlock.objects.filter(blocker_id=participant_id, blocked=self.user).exists():
+                    continue
                 create_notification(
                     user_id=participant_id,
                     message=f"New group chat message in {self.group.subscription.name} from {self.user.username}.",

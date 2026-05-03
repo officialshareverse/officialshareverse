@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
@@ -50,6 +50,7 @@ export default function SignupScreen() {
   const [finishing, setFinishing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const hasVerificationSession = Boolean(signupSessionId);
 
@@ -58,9 +59,10 @@ export default function SignupScreen() {
       form.username.trim() &&
       /^\S+@\S+\.\S+$/.test(form.email.trim()) &&
       form.password.length >= 8 &&
-      form.password === form.confirmPassword
+      form.password === form.confirmPassword &&
+      acceptedTerms
     );
-  }, [form]);
+  }, [acceptedTerms, form]);
 
   const updateField = (key, value) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -69,7 +71,7 @@ export default function SignupScreen() {
 
   const handleRequestOtp = async () => {
     if (!canRequestOtp) {
-      setError("Add your username, email, and matching password first.");
+      setError("Add your username, email, matching password, and accept the ShareVerse terms first.");
       return;
     }
 
@@ -102,6 +104,11 @@ export default function SignupScreen() {
       return;
     }
 
+    if (!acceptedTerms) {
+      setError("Accept the ShareVerse terms and privacy policy before creating your account.");
+      return;
+    }
+
     if (!/^\d{6}$/.test(form.otp.trim())) {
       setError("Enter the 6-digit verification code.");
       return;
@@ -129,6 +136,11 @@ export default function SignupScreen() {
   };
 
   const handleGoogleAuth = async (credential) => {
+    if (!acceptedTerms) {
+      setError("Accept the ShareVerse terms and privacy policy before creating your account.");
+      return;
+    }
+
     try {
       setFinishing(true);
       setError("");
@@ -245,6 +257,20 @@ export default function SignupScreen() {
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <LegalLinks intro="By creating a ShareVerse account, you agree to" />
+        <Pressable
+          onPress={() => {
+            setAcceptedTerms((current) => !current);
+            setError("");
+          }}
+          style={styles.termsRow}
+        >
+          <View style={[styles.checkbox, acceptedTerms ? styles.checkboxActive : null]}>
+            {acceptedTerms ? <CheckCircle2 color="#ffffff" size={14} strokeWidth={2.4} /> : null}
+          </View>
+          <Text style={styles.termsCopy}>
+            I agree to the ShareVerse Terms, Privacy Policy, and user safety rules.
+          </Text>
+        </Pressable>
 
         <View style={styles.buttonColumn}>
           <AppButton
@@ -301,5 +327,36 @@ const styles = StyleSheet.create({
   },
   buttonColumn: {
     gap: 12,
+  },
+  termsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    padding: 12,
+    backgroundColor: colors.surface,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  checkboxActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  termsCopy: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "600",
   },
 });

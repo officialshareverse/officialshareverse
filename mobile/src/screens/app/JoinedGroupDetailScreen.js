@@ -5,7 +5,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
 import AppTextField from "../../components/AppTextField";
-import { MessageSquare } from "../../components/Icons";
+import { Flag, MessageSquare, UserX } from "../../components/Icons";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors, spacing } from "../../theme/tokens";
 import { formatCurrency, formatRelativeTime } from "../../utils/formatters";
@@ -229,6 +229,65 @@ export default function JoinedGroupDetailScreen({ route, navigation }) {
     }
   };
 
+  const submitGroupReport = async (reason = "other") => {
+    if (!group) {
+      return;
+    }
+
+    try {
+      await api.post("safety/reports/", {
+        target_type: "group",
+        target_id: group.id,
+        reason,
+        details: `Reported from mobile joined group ${group.id}.`,
+      });
+      Alert.alert("Report sent", "Thanks. ShareVerse will review this group.");
+    } catch (requestError) {
+      const message = getActionError(requestError?.response?.data, "We could not submit this report right now.");
+      Alert.alert("Report failed", message);
+    }
+  };
+
+  const handleReportGroup = () => {
+    Alert.alert("Report group", "Tell us what looks wrong with this group.", [
+      { text: "Spam", onPress: () => void submitGroupReport("spam") },
+      { text: "Scam", onPress: () => void submitGroupReport("scam") },
+      { text: "Harassment", onPress: () => void submitGroupReport("harassment") },
+      { text: "Other", onPress: () => void submitGroupReport("other") },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
+  const handleBlockHost = () => {
+    if (!group?.owner_id) {
+      return;
+    }
+
+    Alert.alert(
+      "Block host in chat?",
+      `Messages from @${group.owner_name || "this host"} will be hidden in group chats.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.post("safety/blocks/", {
+                blocked_user_id: group.owner_id,
+                reason: `Blocked from joined group ${group.id}.`,
+              });
+              Alert.alert("Host blocked", "Messages from this host are now hidden in chats.");
+            } catch (requestError) {
+              const message = getActionError(requestError?.response?.data, "We could not block this user right now.");
+              Alert.alert("Block failed", message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const ratingSummary = useMemo(() => group?.owner_rating || null, [group?.owner_rating]);
 
   if (loading && !group) {
@@ -278,6 +337,10 @@ export default function JoinedGroupDetailScreen({ route, navigation }) {
           variant="secondary"
           icon={MessageSquare}
         />
+        <AppButton title="Report this group" onPress={handleReportGroup} variant="secondary" icon={Flag} />
+        {group?.owner_id ? (
+          <AppButton title="Block host in chat" onPress={handleBlockHost} variant="secondary" icon={UserX} />
+        ) : null}
         {group?.credentials?.requires_one_time_reveal ? (
           <AppButton
             title={revealingCredentials ? "Revealing..." : "Reveal credentials once"}

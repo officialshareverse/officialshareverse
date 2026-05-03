@@ -32,13 +32,26 @@ const PAYOUT_MODES = [
 
 const NATIVE_TOPUP_PRESETS = ["100", "300", "500", "1000"];
 
-function BalanceCard({ label, value, tone = "primary" }) {
+function BalanceCard({ label, value, tone = "primary", dark = false }) {
   return (
-    <View style={[styles.balanceCard, tone === "bonus" ? styles.balanceCardBonus : null]}>
-      <Text style={[styles.balanceValue, tone === "bonus" ? styles.balanceValueBonus : null]}>
+    <View
+      style={[
+        styles.balanceCard,
+        dark ? styles.balanceCardDark : null,
+        tone === "bonus" ? styles.balanceCardBonus : null,
+        tone === "bonus" && dark ? styles.balanceCardBonusDark : null,
+      ]}
+    >
+      <Text
+        style={[
+          styles.balanceValue,
+          dark ? styles.balanceValueDark : null,
+          tone === "bonus" ? styles.balanceValueBonus : null,
+        ]}
+      >
         {value}
       </Text>
-      <Text style={styles.balanceLabel}>{label}</Text>
+      <Text style={[styles.balanceLabel, dark ? styles.balanceLabelDark : null]}>{label}</Text>
     </View>
   );
 }
@@ -285,28 +298,29 @@ export default function WalletScreen({ navigation }) {
       subtitle="Track balances, save your payout destination, and request withdrawals."
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load()} />}
     >
-      <SectionCard>
-        <Text style={styles.sectionTitle}>Balances</Text>
+      <SectionCard style={styles.walletHero}>
+        <Text style={styles.walletHeroEyebrow}>Wallet</Text>
+        <Text style={styles.walletHeroBalance}>{formatCurrency(profile?.wallet_balance || 0)}</Text>
         <View style={styles.balanceGrid}>
-          <BalanceCard label="Spendable" value={formatCurrency(profile?.wallet_balance || 0)} />
-          <BalanceCard label="Cash" value={formatCurrency(profile?.wallet_cash_balance || 0)} />
+          <BalanceCard label="Cash" value={formatCurrency(profile?.wallet_cash_balance || 0)} dark />
           <BalanceCard
             label="Bonus"
             value={formatCurrency(profile?.wallet_bonus_balance || 0)}
             tone="bonus"
+            dark
           />
         </View>
-        <Text style={styles.supportingCopy}>
+        <Text style={styles.walletHeroCopy}>
           Bonus credit comes from referrals and can only be used to join groups.
         </Text>
       </SectionCard>
 
       <SectionCard>
-        <Text style={styles.sectionTitle}>Wallet actions</Text>
+        <Text style={styles.sectionTitle}>Top-up amount</Text>
         <Text style={styles.supportingCopy}>
           {walletPayments?.helper_text || "Top up on the web wallet and manage withdrawals here."}
         </Text>
-        <View style={styles.chipRow}>
+        <View style={styles.amountPresetRow}>
           {NATIVE_TOPUP_PRESETS.map((amount) => (
             <FilterChip
               key={amount}
@@ -325,7 +339,7 @@ export default function WalletScreen({ navigation }) {
           helper="Start a secure Razorpay checkout directly inside the app."
         />
         <AppButton
-          title={actionState === "topup" ? "Starting Razorpay..." : "Top up natively"}
+          title={actionState === "topup" ? "Starting Razorpay..." : "Pay securely with Razorpay"}
           onPress={() => void handleNativeTopup()}
           loading={actionState === "topup"}
           disabled={!walletPayments?.topup_enabled}
@@ -533,34 +547,70 @@ export default function WalletScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  walletHero: {
+    backgroundColor: colors.night,
+    borderColor: colors.night,
+  },
+  walletHeroEyebrow: {
+    color: "rgba(255,255,255,0.58)",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+  },
+  walletHeroBalance: {
+    color: "#ffffff",
+    fontSize: 38,
+    fontWeight: "900",
+  },
+  walletHeroCopy: {
+    color: "rgba(255,255,255,0.62)",
+    fontSize: 13,
+    lineHeight: 20,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "800",
     color: colors.night,
   },
   balanceGrid: {
+    flexDirection: "row",
     gap: spacing.md,
   },
   balanceCard: {
+    flex: 1,
     backgroundColor: colors.surfaceMuted,
     borderRadius: 16,
     padding: spacing.md,
   },
+  balanceCardDark: {
+    backgroundColor: "rgba(255,255,255,0.10)",
+  },
   balanceCardBonus: {
     backgroundColor: "#fff3e7",
+  },
+  balanceCardBonusDark: {
+    backgroundColor: "rgba(234,88,12,0.14)",
   },
   balanceValue: {
     color: colors.primary,
     fontSize: 22,
     fontWeight: "800",
   },
+  balanceValueDark: {
+    color: "#ffffff",
+  },
   balanceValueBonus: {
-    color: colors.secondary,
+    color: "#fbbf24",
   },
   balanceLabel: {
     color: colors.textMuted,
     fontSize: 13,
     marginTop: 4,
+  },
+  balanceLabelDark: {
+    color: "rgba(255,255,255,0.58)",
+    fontWeight: "700",
   },
   supportingCopy: {
     color: colors.textMuted,
@@ -577,7 +627,13 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.sm,
   },
+  amountPresetRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
   filterChip: {
+    flexGrow: 1,
+    alignItems: "center",
     borderRadius: 999,
     borderWidth: 1,
     borderColor: colors.border,

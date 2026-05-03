@@ -2,7 +2,7 @@ import { Alert, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
-import { Coins, ShieldCheck, Users } from "../../components/Icons";
+import { Coins, Flag, ShieldCheck, Users } from "../../components/Icons";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors } from "../../theme/tokens";
 import { formatCurrency } from "../../utils/formatters";
@@ -32,6 +32,33 @@ export default function GroupDetailScreen({ route, navigation }) {
         requestError?.response?.data?.error || "We could not join this group right now."
       );
     }
+  };
+
+  const submitGroupReport = async (reason = "other") => {
+    try {
+      await api.post("safety/reports/", {
+        target_type: "group",
+        target_id: group.id,
+        reason,
+        details: `Reported from mobile marketplace group ${group.id}.`,
+      });
+      Alert.alert("Report sent", "Thanks. ShareVerse will review this group.");
+    } catch (requestError) {
+      Alert.alert(
+        "Report failed",
+        requestError?.response?.data?.error || "We could not submit this report right now."
+      );
+    }
+  };
+
+  const handleReportGroup = () => {
+    Alert.alert("Report group", "Tell us what looks wrong with this listing.", [
+      { text: "Spam", onPress: () => void submitGroupReport("spam") },
+      { text: "Scam", onPress: () => void submitGroupReport("scam") },
+      { text: "Privacy issue", onPress: () => void submitGroupReport("privacy") },
+      { text: "Other", onPress: () => void submitGroupReport("other") },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
 
   return (
@@ -79,6 +106,7 @@ export default function GroupDetailScreen({ route, navigation }) {
       ) : null}
 
       <AppButton title={group.join_cta || "Join group"} onPress={handleJoin} />
+      <AppButton title="Report this group" onPress={handleReportGroup} variant="secondary" icon={Flag} />
     </Screen>
   );
 }
