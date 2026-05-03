@@ -6,6 +6,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from .models import (
+    AccountDeletionRequest,
     CredentialRevealToken,
     EscrowLedger,
     Group,
@@ -43,6 +44,23 @@ class GroupAdmin(admin.ModelAdmin):
     list_filter = ("mode", "status", "proof_review_status")
     search_fields = ("subscription__name", "owner__username", "purchase_reference")
     readonly_fields = ("proof_submitted_at", "proof_reviewed_at", "funds_released_at", "created_at")
+
+
+@admin.register(AccountDeletionRequest)
+class AccountDeletionRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "contact_email",
+        "status",
+        "request_source",
+        "created_at",
+        "processed_at",
+        "processed_by",
+    )
+    list_filter = ("status", "request_source", "created_at")
+    search_fields = ("user__username", "user__email", "contact_email", "reason", "details")
+    readonly_fields = ("created_at", "updated_at")
 
 
 class ManualWalletPayoutAdminForm(forms.ModelForm):

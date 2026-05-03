@@ -20,6 +20,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import (
+    AccountDeletionRequest,
     CredentialRevealToken,
     EscrowLedger,
     Group,
@@ -85,6 +86,8 @@ from .referral_config import (
 )
 from .serializers import (
     AcceptGroupInviteSerializer,
+    AccountDeletionRequestCreateSerializer,
+    AccountDeletionRequestSerializer,
     CreateGroupSerializer,
     GenerateGroupInviteLinkSerializer,
     GroupChatPresenceSerializer,
@@ -3640,6 +3643,11 @@ def build_profile_response(user, request=None):
         "reviewer",
         "group__subscription",
     )[:5]
+    account_deletion_request = (
+        AccountDeletionRequest.objects.filter(user=user, status__in=["pending", "in_review"])
+        .order_by("-created_at", "-id")
+        .first()
+    )
 
     total_spent = transactions.filter(type="debit").aggregate(total=Sum("amount"))["total"] or Decimal("0")
     total_earned = transactions.filter(
@@ -3704,6 +3712,11 @@ def build_profile_response(user, request=None):
             }
             for review in recent_reviews
         ],
+        "account_deletion_request": (
+            AccountDeletionRequestSerializer(account_deletion_request).data
+            if account_deletion_request
+            else None
+        ),
     }
 
 
@@ -3723,6 +3736,76 @@ class ProfileView(APIView):
             serializer.save()
             return Response(build_profile_response(request.user, request))
         return Response(serializer.errors, status=400)
+
+
+class AccountDeletionRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    retention_notice = (
+        "ShareVerse will delete or anonymize account data that is no longer needed. "
+        "Payment, wallet, payout, dispute, fraud-prevention, tax, and legal records may be retained where required."
+    )
+
+    def get(self, request):
+        account_deletion_request = (
+            AccountDeletionRequest.objects.filter(user=request.user, status__in=["pending", "in_review"])
+            .order_by("-created_at", "-id")
+            .first()
+        )
+        return Response(
+            {
+                "account_deletion_request": (
+                    AccountDeletionRequestSerializer(account_deletion_request).data
+                    if account_deletion_request
+                    else None
+                ),
+                "retention_notice": self.retention_notice,
+            }
+        )
+
+    def post(self, request):
+        serializer = AccountDeletionRequestCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        existing_request = (
+            AccountDeletionRequest.objects.filter(user=request.user, status__in=["pending", "in_review"])
+            .order_by("-created_at", "-id")
+            .first()
+        )
+        if existing_request:
+            return Response(
+                {
+                    "message": "Your account deletion request is already pending review.",
+                    "account_deletion_request": AccountDeletionRequestSerializer(existing_request).data,
+                    "retention_notice": self.retention_notice,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        account_deletion_request = AccountDeletionRequest.objects.create(
+            user=request.user,
+            contact_email=request.user.email or f"{request.user.username}@example.invalid",
+            reason=serializer.validated_data.get("reason", ""),
+            details=serializer.validated_data.get("details", ""),
+            request_source="mobile",
+        )
+        create_notification(
+            user=request.user,
+            message=(
+                "Your ShareVerse account deletion request has been received. "
+                "Support will review it and follow up by email."
+            ),
+        )
+
+        return Response(
+            {
+                "message": "Account deletion request submitted. Support will review it and follow up by email.",
+                "account_deletion_request": AccountDeletionRequestSerializer(account_deletion_request).data,
+                "retention_notice": self.retention_notice,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class SubscriptionListView(APIView):

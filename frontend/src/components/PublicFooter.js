@@ -12,6 +12,7 @@ const footerLinks = [
   { to: "/faq", label: "Q&A" },
   { to: "/terms", label: "Terms" },
   { to: "/privacy", label: "Privacy" },
+  { to: "/account-deletion", label: "Account Deletion" },
   { to: "/refunds", label: "Refund Policy" },
   { to: "/shipping", label: "Shipping Policy" },
   { to: "/support", label: "Support" },

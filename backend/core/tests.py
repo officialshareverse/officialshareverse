@@ -21,6 +21,7 @@ from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from . import auth_views
 from .pricing import get_group_join_pricing
 from .models import (
+    AccountDeletionRequest,
     EscrowLedger,
     Group,
     GroupChatMessage,
@@ -2748,6 +2749,65 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         device = MobilePushDevice.objects.get(expo_push_token="ExponentPushToken[test-device-token]")
         self.assertFalse(device.is_active)
+
+    def test_mobile_user_can_request_account_deletion(self):
+        self.authenticate(self.owner)
+
+        response = self.client.post(
+            "/api/mobile/account/deletion-request/",
+            {
+                "reason": "Leaving",
+                "details": "Please delete my account after verification.",
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        deletion_request = AccountDeletionRequest.objects.get(user=self.owner)
+        self.assertEqual(deletion_request.status, "pending")
+        self.assertEqual(deletion_request.reason, "Leaving")
+        self.assertEqual(deletion_request.request_source, "mobile")
+        self.assertEqual(response.data["account_deletion_request"]["status"], "pending")
+        self.assertIn("retained", response.data["retention_notice"])
+        self.assertTrue(
+            Notification.objects.filter(
+                user=self.owner,
+                message__icontains="account deletion request has been received",
+            ).exists()
+        )
+
+    def test_mobile_account_deletion_request_is_idempotent_while_pending(self):
+        self.authenticate(self.owner)
+        first_response = self.client.post(
+            "/api/mobile/account/deletion-request/",
+            {"reason": "First request"},
+        )
+        second_response = self.client.post(
+            "/api/mobile/account/deletion-request/",
+            {"reason": "Second request"},
+        )
+
+        self.assertEqual(first_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(second_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(AccountDeletionRequest.objects.filter(user=self.owner).count(), 1)
+        self.assertEqual(
+            second_response.data["account_deletion_request"]["id"],
+            first_response.data["account_deletion_request"]["id"],
+        )
+
+    def test_profile_endpoint_includes_pending_account_deletion_request(self):
+        deletion_request = AccountDeletionRequest.objects.create(
+            user=self.owner,
+            contact_email=self.owner.email,
+            reason="Cleanup",
+            request_source="mobile",
+        )
+        self.authenticate(self.owner)
+
+        response = self.client.get("/api/profile/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["account_deletion_request"]["id"], deletion_request.id)
+        self.assertEqual(response.data["account_deletion_request"]["status_label"], "Pending")
 
     def test_create_notification_dispatches_mobile_push_after_commit(self):
         with patch("core.consumers.push_notification_to_user") as notification_mock, patch(

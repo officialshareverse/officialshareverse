@@ -6,6 +6,7 @@ import AppButton from "../../components/AppButton";
 import AppTextField from "../../components/AppTextField";
 import GoogleAuthButton from "../../components/GoogleAuthButton";
 import { CheckCircle2, MailCheck } from "../../components/Icons";
+import LegalLinks from "../../components/LegalLinks";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors } from "../../theme/tokens";
 
@@ -243,6 +244,7 @@ export default function SignupScreen() {
 
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        <LegalLinks intro="By creating a ShareVerse account, you agree to" />
 
         <View style={styles.buttonColumn}>
           <AppButton

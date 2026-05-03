@@ -37,6 +37,7 @@ export const MessageSquare = featherIcon("message-square");
 export const Send = featherIcon("send");
 export const ShieldCheck = materialIcon("shield-check-outline");
 export const TicketPercent = materialIcon("ticket-percent-outline");
+export const Trash2 = featherIcon("trash-2");
 export const UserRound = featherIcon("user");
 export const Users = featherIcon("users");
 export const Wallet = ionicon("wallet-outline");

@@ -18,6 +18,7 @@ from .auth_views import (
 )
 from .views import (
     AcceptGroupInviteView,
+    AccountDeletionRequestView,
     ActivateGroupPurchaseView,
     AddMoneyView,
     CloseGroupView,
@@ -106,6 +107,8 @@ urlpatterns = [
     path('notifications/mark-all-read/', MarkAllNotificationsReadView.as_view()),
     path('notifications/<int:notification_id>/read/', MarkNotificationReadView.as_view()),
     path('profile/', ProfileView.as_view()),
+    path('account/deletion-request/', AccountDeletionRequestView.as_view()),
+    path('mobile/account/deletion-request/', AccountDeletionRequestView.as_view()),
     path('subscriptions/', SubscriptionListView.as_view()),
     path('my-groups/', MyGroupsView.as_view()),
     path('my-groups/<int:group_id>/', MyGroupDetailView.as_view()),

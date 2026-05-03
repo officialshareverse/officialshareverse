@@ -6,6 +6,7 @@ import AppButton from "../../components/AppButton";
 import GoogleAuthButton from "../../components/GoogleAuthButton";
 import { ArrowRight, ShieldCheck } from "../../components/Icons";
 import AppTextField from "../../components/AppTextField";
+import LegalLinks from "../../components/LegalLinks";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors } from "../../theme/tokens";
 
@@ -122,11 +123,14 @@ export default function LoginScreen({ navigation }) {
         </Pressable>
       </SectionCard>
 
-      <View style={styles.footerRow}>
-        <Text style={styles.footerText}>New here?</Text>
-        <Pressable onPress={() => navigation.navigate("Signup")}>
-          <Text style={styles.footerLink}>Create your account</Text>
-        </Pressable>
+      <View style={styles.footerStack}>
+        <View style={styles.footerRow}>
+          <Text style={styles.footerText}>New here?</Text>
+          <Pressable onPress={() => navigation.navigate("Signup")}>
+            <Text style={styles.footerLink}>Create your account</Text>
+          </Pressable>
+        </View>
+        <LegalLinks compact />
       </View>
     </Screen>
   );
@@ -171,6 +175,9 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: "center",
     justifyContent: "center",
+  },
+  footerStack: {
+    gap: 12,
   },
   footerText: {
     color: colors.textMuted,

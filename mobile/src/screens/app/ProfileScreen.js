@@ -3,7 +3,8 @@ import { RefreshControl, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
-import { Bell, LogOut, MessageSquare, TicketPercent, UserRound } from "../../components/Icons";
+import { Bell, LogOut, MessageSquare, TicketPercent, Trash2, UserRound } from "../../components/Icons";
+import { LegalLinkButtons } from "../../components/LegalLinks";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors, spacing } from "../../theme/tokens";
 import { getInitials } from "../../utils/formatters";
@@ -116,6 +117,18 @@ export default function ProfileScreen({ navigation }) {
         <Text style={styles.meta}>Trust score: {profile?.trust_score || 0}</Text>
         <Text style={styles.meta}>Verified: {profile?.is_verified ? "Yes" : "No"}</Text>
         <Text style={styles.meta}>Reviews: {profile?.review_count || 0}</Text>
+      </SectionCard>
+
+      <SectionCard>
+        <Text style={styles.sectionTitle}>Legal</Text>
+        <Text style={styles.meta}>Review the latest ShareVerse terms and privacy policy.</Text>
+        <LegalLinkButtons />
+        <AppButton
+          title="Request account deletion"
+          onPress={() => navigation.navigate("AccountDeletion")}
+          variant="secondary"
+          icon={Trash2}
+        />
       </SectionCard>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}

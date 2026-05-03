@@ -19,7 +19,8 @@
       "expo-notifications",
       "expo-secure-store",
       "expo-asset",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-font"
     ],
     "ios": {
       "supportsTablet": true,

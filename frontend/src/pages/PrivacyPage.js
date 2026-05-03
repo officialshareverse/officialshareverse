@@ -53,6 +53,7 @@ const sections = [
       "You can request access, correction, deletion review, or other privacy help by contacting ShareVerse through the published support and compliance channels.",
     points: [
       "Requests should include your username, the email or phone tied to the account, and a short description of the request.",
+      "Account deletion requests can be started in the mobile app from Profile > Account deletion or from https://shareverse.in/account-deletion.",
       "ShareVerse normally acknowledges privacy requests within 5 business days and aims to respond within 30 days, subject to identity verification and legal or payment-record retention requirements.",
       "Deletion requests may be denied or delayed for information that must be retained for fraud prevention, dispute handling, chargeback response, tax or accounting needs, or legal compliance.",
     ],

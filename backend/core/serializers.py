@@ -8,6 +8,7 @@ from rest_framework import serializers
 
 from .auth_identity import find_user_by_login_identifier, normalize_login_identifier
 from .models import (
+    AccountDeletionRequest,
     EscrowLedger,
     Group,
     GroupChatMessage,
@@ -767,6 +768,36 @@ class MobilePushUnregisterSerializer(serializers.Serializer):
         if not normalized:
             raise serializers.ValidationError("Expo push token is required.")
         return normalized
+
+
+class AccountDeletionRequestCreateSerializer(serializers.Serializer):
+    reason = serializers.CharField(required=False, allow_blank=True, max_length=120)
+    details = serializers.CharField(required=False, allow_blank=True, max_length=1000)
+
+    def validate_reason(self, value):
+        return (value or "").strip()
+
+    def validate_details(self, value):
+        return (value or "").strip()
+
+
+class AccountDeletionRequestSerializer(serializers.ModelSerializer):
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = AccountDeletionRequest
+        fields = [
+            "id",
+            "status",
+            "status_label",
+            "contact_email",
+            "reason",
+            "details",
+            "request_source",
+            "created_at",
+            "updated_at",
+            "processed_at",
+        ]
 
 
 class SubmitPurchaseProofSerializer(serializers.Serializer):

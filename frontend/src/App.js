@@ -13,6 +13,7 @@ import {
 import SpotlightSearch from "./components/SpotlightSearch";
 import { ToastProvider } from "./components/ToastProvider";
 import AboutPage from "./pages/AboutPage";
+import AccountDeletionPage from "./pages/AccountDeletionPage";
 import ChatsInbox from "./pages/ChatsInbox";
 import CreateGroup from "./pages/CreateGroup";
 import FaqPage from "./pages/FaqPage";
@@ -264,6 +265,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
           <Route path="/refunds" element={<RefundPolicyPage />} />
           <Route path="/shipping" element={<ShippingPolicyPage />} />
           <Route path="/support" element={<SupportPage />} />
+          <Route path="/account-deletion" element={<AccountDeletionPage />} />
 
           <Route
             path="/home"

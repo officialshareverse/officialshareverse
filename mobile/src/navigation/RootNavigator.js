@@ -14,6 +14,7 @@ import { colors } from "../theme/tokens";
 import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
 import SignupScreen from "../screens/auth/SignupScreen";
+import AccountDeletionScreen from "../screens/app/AccountDeletionScreen";
 import CreateSplitScreen from "../screens/app/CreateSplitScreen";
 import ChatsScreen from "../screens/app/ChatsScreen";
 import GroupDetailScreen from "../screens/app/GroupDetailScreen";
@@ -132,6 +133,11 @@ function AppStack() {
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: "Notifications" }} />
       <Stack.Screen name="Chats" component={ChatsScreen} options={{ title: "Chats" }} />
       <Stack.Screen name="GroupChat" component={GroupChatScreen} options={{ title: "Group chat" }} />
+      <Stack.Screen
+        name="AccountDeletion"
+        component={AccountDeletionScreen}
+        options={{ title: "Account deletion" }}
+      />
       <Stack.Screen
         name="Referral"
         component={ReferralScreen}
