@@ -43,6 +43,26 @@ def ensure_referral_code_for_user(user):
                 return existing_referral_code
 
 
+def mask_vpa_address(vpa_address):
+    normalized = (vpa_address or "").strip().lower()
+    if not normalized:
+        return ""
+    if "*" in normalized:
+        return normalized
+
+    username, separator, handle = normalized.partition("@")
+    if not separator:
+        if len(normalized) <= 2:
+            return "*" * len(normalized)
+        return f"{normalized[:2]}{'*' * max(len(normalized) - 2, 1)}"
+
+    if len(username) <= 2:
+        masked_username = "*" * len(username)
+    else:
+        masked_username = f"{username[:2]}{'*' * max(len(username) - 2, 1)}"
+    return f"{masked_username}@{handle}"
+
+
 class Subscription(models.Model):
     name = models.CharField(max_length=100, unique=True)
     max_slots = models.IntegerField(default=5)
@@ -392,7 +412,7 @@ class PayoutAccount(models.Model):
     def set_vpa_address(self, vpa_address):
         normalized = (vpa_address or "").strip().lower()
         self.vpa_address = encrypt_secret(normalized) if normalized else ""
-        self.vpa_handle = normalized
+        self.vpa_handle = mask_vpa_address(normalized)
 
     def get_vpa_address(self):
         return decrypt_secret(self.vpa_address)
@@ -409,17 +429,7 @@ class PayoutAccount(models.Model):
 
     def get_masked_destination(self):
         if self.account_type == "vpa":
-            address = self.get_vpa_address()
-            if not address:
-                return ""
-            username, separator, handle = address.partition("@")
-            if not separator:
-                return address
-            if len(username) <= 2:
-                masked_username = "*" * len(username)
-            else:
-                masked_username = f"{username[:2]}{'*' * max(len(username) - 2, 1)}"
-            return f"{masked_username}@{handle}"
+            return mask_vpa_address(self.get_vpa_address())
 
         if not self.bank_account_last4:
             return ""

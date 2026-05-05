@@ -2013,6 +2013,25 @@ class GroupFlowTests(APITestCase):
         RAZORPAYX_KEY_SECRET="secret_x_123",
         RAZORPAYX_SOURCE_ACCOUNT_NUMBER="2323230000001",
     )
+    def test_user_can_save_vpa_payout_account_without_plaintext_handle(self):
+        response = self.save_vpa_payout_account(self.owner)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        account = PayoutAccount.objects.get(user=self.owner)
+        self.assertTrue(account.vpa_address.startswith("enc::"))
+        self.assertEqual(account.get_vpa_address(), "owner@upi")
+        self.assertEqual(account.vpa_handle, "ow***@upi")
+        self.assertNotEqual(account.vpa_handle, "owner@upi")
+        self.assertEqual(
+            response.data["payout_account"]["masked_destination"],
+            "ow***@upi",
+        )
+
+    @override_settings(
+        RAZORPAYX_KEY_ID="rzp_test_x_123",
+        RAZORPAYX_KEY_SECRET="secret_x_123",
+        RAZORPAYX_SOURCE_ACCOUNT_NUMBER="2323230000001",
+    )
     def test_user_can_create_wallet_payout_request(self):
         self.save_bank_payout_account(self.owner)
         wallet = Wallet.objects.get(user=self.owner)
