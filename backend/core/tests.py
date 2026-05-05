@@ -1562,6 +1562,28 @@ class GroupFlowTests(APITestCase):
         payload = next(item for item in response.data if item["owner_name"] == "ShareVerse host")
         self.assertNotIn("@", payload["owner_name"])
 
+    def test_read_only_group_views_do_not_process_expired_refunds_inline(self):
+        owned_group = self.create_group(mode="sharing", total_slots=3, status="active")
+        joined_group = self.create_group(mode="group_buy", total_slots=2, status="proof_submitted")
+        GroupMember.objects.create(group=joined_group, user=self.member_one, has_paid=True)
+
+        with patch("core.views.process_expired_buy_together_refunds") as process_mock:
+            self.authenticate(self.member_one)
+            groups_response = self.client.get("/api/groups/")
+
+            self.authenticate(self.owner)
+            my_groups_response = self.client.get("/api/my-groups/")
+            detail_response = self.client.get(f"/api/my-groups/{owned_group.id}/")
+
+            self.authenticate(self.member_one)
+            dashboard_response = self.client.get("/api/dashboard/")
+
+        self.assertEqual(groups_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(my_groups_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(detail_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(dashboard_response.status_code, status.HTTP_200_OK)
+        process_mock.assert_not_called()
+
     def test_joined_member_can_view_and_send_group_chat_messages(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
         GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
@@ -3279,7 +3301,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(owner_wallet.balance, Decimal("1000.00"))
         self.assertEqual(EscrowLedger.objects.filter(group=group, entry_type="release").count(), 0)
 
-    def test_expired_buy_together_group_auto_refunds_on_owner_detail_view(self):
+    def test_expired_buy_together_group_refunds_only_when_deadline_worker_runs(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")
         group.purchase_deadline_at = timezone.now() - timedelta(minutes=5)
         group.auto_refund_at = timezone.now() - timedelta(minutes=5)
@@ -3319,12 +3341,23 @@ class GroupFlowTests(APITestCase):
         member_one_wallet.refresh_from_db()
         member_two_wallet.refresh_from_db()
 
+        self.assertEqual(group.status, "awaiting_purchase")
+        self.assertFalse(group.is_refunded)
+        self.assertEqual(member_one_wallet.balance, Decimal("800.00"))
+        self.assertEqual(member_two_wallet.balance, Decimal("800.00"))
+        self.assertEqual(response.data["status"], "awaiting_purchase")
+        self.assertEqual(EscrowLedger.objects.filter(group=group, entry_type="refund").count(), 0)
+
+        call_command("process_expired_group_buy_refunds")
+
+        group.refresh_from_db()
+        member_one_wallet.refresh_from_db()
+        member_two_wallet.refresh_from_db()
+
         self.assertEqual(group.status, "refunded")
         self.assertTrue(group.is_refunded)
         self.assertEqual(member_one_wallet.balance, Decimal("1000.00"))
         self.assertEqual(member_two_wallet.balance, Decimal("1000.00"))
-        self.assertEqual(response.data["status"], "refunded")
-        self.assertFalse(response.data["can_refund"])
         self.assertEqual(EscrowLedger.objects.filter(group=group, entry_type="refund").count(), 2)
 
     def test_owner_can_refund_held_group_buy_funds(self):

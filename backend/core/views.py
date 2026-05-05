@@ -2213,7 +2213,6 @@ class GroupListView(ListAPIView):
     ordering_fields = ["price_per_slot", "start_date"]
 
     def get_queryset(self):
-        process_expired_buy_together_refunds()
         return Group.objects.annotate(
             filled_slots=Count("groupmember")
         ).filter(
@@ -2983,7 +2982,6 @@ class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        process_expired_buy_together_refunds()
         user = request.user
         wallet, _ = Wallet.objects.get_or_create(user=user)
         transactions = Transaction.objects.filter(user=user)
@@ -4000,7 +3998,6 @@ class MyGroupsView(ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        process_expired_buy_together_refunds()
         return Group.objects.filter(owner=self.request.user).order_by("-created_at", "-id")
 
     def get_serializer_context(self):
@@ -4011,7 +4008,6 @@ class MyGroupDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, group_id):
-        process_expired_buy_together_refunds([group_id])
         try:
             group = Group.objects.select_related("subscription", "owner").get(
                 id=group_id,
