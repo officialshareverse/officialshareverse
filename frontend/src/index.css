@@ -408,6 +408,66 @@
     line-height: 1;
   }
 
+  .sv-pwa-install {
+    position: fixed;
+    left: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    z-index: 115;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    max-width: min(25rem, calc(100vw - 2rem));
+    min-height: 48px;
+    padding: 0.72rem 1rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--sv-accent) 24%, var(--sv-border));
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--sv-accent) 13%, transparent) 0%, transparent 56%),
+      color-mix(in srgb, var(--sv-elevated-surface) 97%, transparent);
+    color: var(--sv-ink);
+    box-shadow: 0 22px 50px rgba(15, 23, 42, 0.18);
+    backdrop-filter: blur(18px);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.2;
+    animation: sv-pop 0.36s ease both;
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+  }
+
+  .sv-pwa-install:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--sv-accent) 42%, var(--sv-border));
+    box-shadow: 0 26px 58px rgba(15, 23, 42, 0.2);
+  }
+
+  .sv-pwa-install svg {
+    flex: 0 0 auto;
+    color: var(--sv-accent);
+  }
+
+  .sv-pwa-install span {
+    min-width: 0;
+  }
+
+  .sv-pwa-install-hint {
+    border-radius: 22px;
+    align-items: flex-start;
+    font-weight: 800;
+    line-height: 1.45;
+  }
+
+  .sv-pwa-install-hint button {
+    flex: 0 0 auto;
+    margin-left: 0.2rem;
+    min-height: 32px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.14);
+    color: var(--sv-ink);
+    font-size: 11px;
+    font-weight: 900;
+  }
+
   .sv-scroll-snap-x {
     scroll-snap-type: x proximity;
     scroll-padding-inline: 1rem;
@@ -420,6 +480,23 @@
   @media (max-width: 1023px) {
     .sv-scroll-top {
       bottom: calc(6.5rem + env(safe-area-inset-bottom));
+    }
+
+    .sv-pwa-install {
+      bottom: calc(6.5rem + env(safe-area-inset-bottom));
+    }
+  }
+
+  @media (max-width: 639px) {
+    .sv-pwa-install {
+      right: 0.75rem;
+      left: 0.75rem;
+      justify-content: center;
+      max-width: none;
+    }
+
+    .sv-pwa-install-hint {
+      justify-content: flex-start;
     }
   }
 
@@ -10191,6 +10268,7 @@
   .sv-wallet-balance-card,
   .sv-toast,
   .sv-toast-progress,
+  .sv-pwa-install,
   .sv-animate-float,
   .sv-animate-float-soft,
   .sv-animate-rise,

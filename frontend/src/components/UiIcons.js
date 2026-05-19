@@ -119,6 +119,16 @@ export function ShareIcon(props) {
   );
 }
 
+export function DownloadIcon(props) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="M12 3v11" />
+      <path d="m7.5 9.5 4.5 4.5 4.5-4.5" />
+      <path d="M5 17.5V20h14v-2.5" />
+    </svg>
+  );
+}
+
 export function QrCodeIcon(props) {
   return (
     <svg {...iconProps(props)}>

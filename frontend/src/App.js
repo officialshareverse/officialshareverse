@@ -12,6 +12,7 @@ import {
 } from "./components/SkeletonFactory";
 import SpotlightSearch from "./components/SpotlightSearch";
 import { ToastProvider } from "./components/ToastProvider";
+import { DownloadIcon } from "./components/UiIcons";
 import AboutPage from "./pages/AboutPage";
 import AccountDeletionPage from "./pages/AccountDeletionPage";
 import ChatsInbox from "./pages/ChatsInbox";
@@ -70,6 +71,28 @@ const PublicRoute = ({ children }) => {
   const location = useLocation();
   return !isAuthenticated() ? children : <Navigate to={getSafeRedirectTarget(location.search)} replace />;
 };
+
+function isRunningStandalone() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true
+  );
+}
+
+function isIosSafariLike() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const userAgent = window.navigator.userAgent || "";
+  const isIos = /iphone|ipad|ipod/i.test(userAgent);
+  const isWebKit = /safari/i.test(userAgent) && !/crios|fxios|edgios/i.test(userAgent);
+  return isIos && isWebKit;
+}
 
 function App() {
   const [isAuth, setIsAuth] = useState(false);
@@ -153,6 +176,7 @@ function App() {
               toggleTheme={toggleTheme}
             />
           )}
+          <PwaInstallPrompt />
         </ToastProvider>
       </BrowserRouter>
     </ErrorBoundary>
@@ -403,6 +427,81 @@ function AuthBootstrapScreen() {
           </SkeletonCard>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PwaInstallPrompt() {
+  const [installPromptEvent, setInstallPromptEvent] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(isRunningStandalone);
+  const [showIosHint, setShowIosHint] = useState(() => isIosSafariLike() && !isRunningStandalone());
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setInstallPromptEvent(event);
+      setShowIosHint(false);
+    };
+
+    const handleAppInstalled = () => {
+      setInstallPromptEvent(null);
+      setShowIosHint(false);
+      setIsInstalled(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const syncInstalledState = () => setIsInstalled(isRunningStandalone());
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncInstalledState);
+      return () => mediaQuery.removeEventListener("change", syncInstalledState);
+    }
+
+    mediaQuery.addListener(syncInstalledState);
+    return () => mediaQuery.removeListener(syncInstalledState);
+  }, []);
+
+  if (isInstalled) {
+    return null;
+  }
+
+  if (installPromptEvent) {
+    return (
+      <button
+        type="button"
+        className="sv-pwa-install"
+        onClick={async () => {
+          await installPromptEvent.prompt();
+          setInstallPromptEvent(null);
+        }}
+      >
+        <DownloadIcon className="h-4 w-4" />
+        <span>Install ShareVerse</span>
+      </button>
+    );
+  }
+
+  if (!showIosHint) {
+    return null;
+  }
+
+  return (
+    <div className="sv-pwa-install sv-pwa-install-hint" role="status">
+      <DownloadIcon className="h-4 w-4" />
+      <span>Add ShareVerse to Home Screen from Safari share.</span>
+      <button type="button" onClick={() => setShowIosHint(false)} aria-label="Dismiss install hint">
+        Dismiss
+      </button>
     </div>
   );
 }
