@@ -381,21 +381,23 @@ class ValidateReferralCodeView(APIView):
 class GroupListView(ListAPIView):
     serializer_class = GroupListSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = ShareVersePageNumberPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ["subscription__name"]
     filterset_fields = ["price_per_slot", "subscription"]
-    ordering_fields = ["price_per_slot", "start_date"]
+    ordering_fields = ["price_per_slot", "start_date", "created_at"]
+    ordering = ["-created_at", "-id"]
 
     def get_queryset(self):
-        return Group.objects.annotate(
-            filled_slots=Count("groupmember")
-        ).filter(
-            end_date__gte=timezone.localdate(),
-            filled_slots__lt=F("total_slots")
-        ).exclude(
-            owner=self.request.user
-        ).exclude(
-            status__in=["closed", "refunding", "refunded", "failed"]
+        return (
+            Group.objects.select_related("subscription", "owner")
+            .annotate(filled_slots=Count("groupmember"))
+            .filter(
+                end_date__gte=timezone.localdate(),
+                filled_slots__lt=F("total_slots"),
+            )
+            .exclude(owner=self.request.user)
+            .exclude(status__in=["closed", "refunding", "refunded", "failed"])
         )
 
     def get_serializer_context(self):

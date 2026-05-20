@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import { getPaginatedCount, getPaginatedItems } from "../api/pagination";
 import { clearAuthSession } from "../auth/session";
 import useWebSocket from "../hooks/useWebSocket";
 import BrandMark from "./BrandMark";
@@ -117,11 +118,16 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
     try {
       const [chatResponse, notificationResponse] = await Promise.all([
         API.get("group-chats/"),
-        API.get("notifications/"),
+        API.get("notifications/", { params: { is_read: "false", page_size: 1 } }),
       ]);
       setUnreadChatCount(chatResponse.data?.total_unread_count || 0);
-      const notifications = Array.isArray(notificationResponse.data) ? notificationResponse.data : [];
-      setUnreadNotificationCount(notifications.filter((item) => !item.is_read).length);
+      const notificationCount = getPaginatedCount(notificationResponse.data);
+      const notifications = getPaginatedItems(notificationResponse.data);
+      setUnreadNotificationCount(
+        typeof notificationResponse.data?.count === "number"
+          ? notificationCount
+          : notifications.filter((item) => !item.is_read).length
+      );
     } catch (err) {
       console.error("Failed to load navbar badge counts:", err);
     }

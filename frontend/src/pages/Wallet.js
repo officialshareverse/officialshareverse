@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import { getPaginatedItems } from "../api/pagination";
 import Drawer from "../components/Drawer";
 import { useToast } from "../components/ToastProvider";
 import {
@@ -828,14 +829,14 @@ export default function Wallet() {
       setLoading(true);
       const [dashboardResponse, transactionsResponse] = await Promise.all([
         API.get("dashboard/"),
-        API.get("transactions/"),
+        API.get("transactions/", { params: { page_size: 100 } }),
       ]);
 
       const dashboard = dashboardResponse.data || {};
       setBalance(dashboard.balance || "0.00");
       setBonusBalance(dashboard.bonus_balance || "0.00");
       setSpendableBalance(dashboard.spendable_balance || dashboard.wallet_balance || dashboard.balance || "0.00");
-      setTransactions(Array.isArray(transactionsResponse.data) ? transactionsResponse.data : []);
+      setTransactions(getPaginatedItems(transactionsResponse.data));
       setTopupConfig(dashboard.wallet_payments || null);
       setPayoutConfig(dashboard.wallet_payouts_config || null);
       setPayoutAccount(dashboard.wallet_payout_account || null);
@@ -1079,6 +1080,7 @@ export default function Wallet() {
                     type="button"
                     onClick={() => focusActionTab("withdraw")}
                     className="sv-wallet-quick-cta"
+                    aria-label="Open withdrawal action"
                   >
                     <DebitIcon className="h-4 w-4" />
                     Withdraw

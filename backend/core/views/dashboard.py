@@ -3,9 +3,14 @@
 class TransactionHistoryView(ListAPIView):
     serializer_class = TransactionSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = ShareVersePageNumberPagination
 
     def get_queryset(self):
-        return Transaction.objects.filter(user=self.request.user).order_by("-created_at")
+        return (
+            Transaction.objects.filter(user=self.request.user)
+            .select_related("group", "group__subscription")
+            .order_by("-created_at", "-id")
+        )
 
 
 class DashboardView(APIView):

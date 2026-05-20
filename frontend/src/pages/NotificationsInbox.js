@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import { getPaginatedItems } from "../api/pagination";
 import CountUp from "../components/CountUp";
 import Drawer from "../components/Drawer";
 import EmptyState from "../components/EmptyState";
@@ -294,12 +295,12 @@ export default function NotificationsInbox() {
         setLoading(true);
       }
 
-      const response = await API.get("notifications/");
+      const response = await API.get("notifications/", { params: { page_size: 50 } });
       if (!isMountedRef.current) {
         return;
       }
 
-      const nextNotifications = Array.isArray(response.data) ? response.data : [];
+      const nextNotifications = getPaginatedItems(response.data);
       const nextUnreadCount = nextNotifications.filter((notification) => !notification.is_read).length;
       const previousUnreadCount = previousUnreadCountRef.current;
 

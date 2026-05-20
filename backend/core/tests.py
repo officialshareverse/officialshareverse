@@ -117,6 +117,11 @@ class GroupFlowTests(APITestCase):
     def authenticate(self, user):
         self.client.force_authenticate(user=user)
 
+    def list_results(self, response):
+        if isinstance(response.data, dict) and "results" in response.data:
+            return response.data["results"]
+        return response.data
+
     def submit_purchase_proof(self, group, reference="ORDER-001", notes="Bought from the creator account."):
         self.authenticate(self.owner)
         with patch(
@@ -1527,7 +1532,7 @@ class GroupFlowTests(APITestCase):
         response = self.client.get("/api/groups/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        payload = next(item for item in response.data if item["id"] == group.id)
+        payload = next(item for item in self.list_results(response) if item["id"] == group.id)
         self.assertEqual(payload["price_per_slot"], "300.00")
         self.assertEqual(payload["join_price"], "105.00")
         self.assertEqual(payload["join_subtotal"], "100.00")
@@ -1559,8 +1564,25 @@ class GroupFlowTests(APITestCase):
         response = self.client.get("/api/groups/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        payload = next(item for item in response.data if item["owner_name"] == "ShareVerse host")
+        payload = next(item for item in self.list_results(response) if item["owner_name"] == "ShareVerse host")
         self.assertNotIn("@", payload["owner_name"])
+
+    def test_groups_list_supports_page_number_pagination(self):
+        for index in range(3):
+            self.create_group(
+                mode="sharing",
+                total_slots=3,
+                status="forming",
+                end_date=date.today() + timedelta(days=30 + index),
+            )
+
+        self.authenticate(self.member_one)
+        response = self.client.get("/api/groups/?page_size=2")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 3)
+        self.assertEqual(len(response.data["results"]), 2)
+        self.assertIsNotNone(response.data["next"])
 
     def test_read_only_group_views_do_not_process_expired_refunds_inline(self):
         owned_group = self.create_group(mode="sharing", total_slots=3, status="active")
@@ -2735,6 +2757,34 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(dashboard_after_read.status_code, status.HTTP_200_OK)
         self.assertEqual(dashboard_after_read.data["groups"][0]["unread_chat_count"], 0)
 
+    def test_badge_counts_batch_unread_chats_and_notifications(self):
+        from .consumers import get_badge_counts_for_user
+
+        unread_group = self.create_group(mode="sharing", total_slots=2, status="active")
+        blocked_group = self.create_group(mode="sharing", total_slots=2, status="active")
+        read_group = self.create_group(mode="sharing", total_slots=2, status="active")
+        GroupMember.objects.create(group=unread_group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=blocked_group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=read_group, user=self.member_one, has_paid=True)
+
+        GroupChatMessage.objects.create(group=unread_group, sender=self.owner, message="Unread")
+        GroupChatMessage.objects.create(group=blocked_group, sender=self.outsider, message="Blocked")
+        GroupChatMessage.objects.create(group=read_group, sender=self.owner, message="Already read")
+        GroupChatReadState.objects.create(
+            group=read_group,
+            user=self.member_one,
+            last_read_at=timezone.now() + timedelta(seconds=1),
+        )
+        UserBlock.objects.create(blocker=self.member_one, blocked=self.outsider)
+        Notification.objects.create(user=self.member_one, message="Unread notification")
+        Notification.objects.create(user=self.member_one, message="Read notification", is_read=True)
+
+        with self.assertNumQueries(2):
+            counts = get_badge_counts_for_user(self.member_one)
+
+        self.assertEqual(counts["unread_chats"], 1)
+        self.assertEqual(counts["unread_notifications"], 1)
+
     def test_group_chat_inbox_returns_all_accessible_chats_with_unread_total(self):
         owned_group = self.create_group(mode="sharing", total_slots=2, status="active")
         joined_group = self.create_group(mode="group_buy", total_slots=2, status="proof_submitted")
@@ -2816,7 +2866,8 @@ class GroupFlowTests(APITestCase):
         response = self.get_notifications(self.owner)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual([item["id"] for item in response.data[:2]], [newer.id, older.id])
+        results = self.list_results(response)
+        self.assertEqual([item["id"] for item in results[:2]], [newer.id, older.id])
 
     def test_notifications_payload_includes_category_metadata(self):
         Notification.objects.create(
@@ -2835,7 +2886,7 @@ class GroupFlowTests(APITestCase):
         response = self.get_notifications(self.owner)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        payload_by_message = {item["message"]: item for item in response.data}
+        payload_by_message = {item["message"]: item for item in self.list_results(response)}
 
         chat_item = payload_by_message["New group chat message in Netflix from member1."]
         self.assertEqual(chat_item["category"], "groups")
@@ -2849,6 +2900,20 @@ class GroupFlowTests(APITestCase):
         system_item = payload_by_message["Your account was created and verified successfully."]
         self.assertEqual(system_item["category"], "system")
         self.assertEqual(system_item["icon"], "shield")
+
+    def test_notifications_support_pagination_and_unread_filter(self):
+        Notification.objects.create(user=self.owner, message="Already seen", is_read=True)
+        unread_one = Notification.objects.create(user=self.owner, message="Unread one")
+        unread_two = Notification.objects.create(user=self.owner, message="Unread two")
+
+        self.authenticate(self.owner)
+        response = self.client.get("/api/notifications/?is_read=false&page_size=1")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertIn(response.data["results"][0]["id"], {unread_one.id, unread_two.id})
+        self.assertIsNotNone(response.data["next"])
 
     def test_mobile_push_registration_stores_active_device(self):
         response = self.register_mobile_push_device()
@@ -2980,6 +3045,43 @@ class GroupFlowTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual([group["id"] for group in response.data["groups"][:2]], [second_group.id, first_group.id])
+
+    def test_transaction_history_supports_page_number_pagination(self):
+        first_transaction = Transaction.objects.create(
+            user=self.owner,
+            amount=Decimal("100.00"),
+            type="credit",
+            status="success",
+            payment_method="wallet_topup",
+        )
+        second_transaction = Transaction.objects.create(
+            user=self.owner,
+            amount=Decimal("75.00"),
+            type="debit",
+            status="success",
+            payment_method="wallet",
+        )
+        Transaction.objects.create(
+            user=self.owner,
+            amount=Decimal("50.00"),
+            type="credit",
+            status="success",
+            payment_method="refund",
+        )
+        Transaction.objects.filter(id=first_transaction.id).update(
+            created_at=timezone.now() - timedelta(days=2)
+        )
+        Transaction.objects.filter(id=second_transaction.id).update(
+            created_at=timezone.now() - timedelta(days=1)
+        )
+
+        self.authenticate(self.owner)
+        response = self.client.get("/api/transactions/?page_size=2")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 3)
+        self.assertEqual(len(response.data["results"]), 2)
+        self.assertIsNotNone(response.data["next"])
 
     def test_dashboard_returns_group_buy_confirmation_state_for_joined_member(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="proof_submitted")
@@ -3563,7 +3665,7 @@ class GroupFlowTests(APITestCase):
         self.authenticate(self.member_two)
         browse_response = self.client.get("/api/groups/")
         self.assertEqual(browse_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(browse_response.data), 0)
+        self.assertEqual(len(self.list_results(browse_response)), 0)
 
         join_response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
         self.assertEqual(join_response.status_code, status.HTTP_400_BAD_REQUEST)

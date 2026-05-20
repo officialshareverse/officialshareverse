@@ -15,6 +15,7 @@ from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -121,6 +122,13 @@ from ..serializers import (
     get_status_copy,
     public_user_display_name,
 )
+
+
+class ShareVersePageNumberPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
 
 CREDENTIAL_REVEAL_TTL_MINUTES = 5
 GROUP_CHAT_ONLINE_WINDOW_MINUTES = 6

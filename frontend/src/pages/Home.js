@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import { getPaginatedItems } from "../api/pagination";
 import BrandMark from "../components/BrandMark";
 import {
   SkeletonBlock,
@@ -117,14 +118,14 @@ export default function Home() {
       try {
         const profilePromise = API.get("profile/").catch(() => null);
         const [groupsRes, dashboardRes, profileRes] = await Promise.all([
-          API.get("groups/"),
+          API.get("groups/", { params: { page_size: 8 } }),
           API.get("dashboard/"),
           profilePromise,
         ]);
         if (!isMounted) {
           return;
         }
-        setGroups(Array.isArray(groupsRes.data) ? groupsRes.data : []);
+        setGroups(getPaginatedItems(groupsRes.data));
         setDashboard(dashboardRes.data || null);
         setProfileSnapshot(profileRes?.data || null);
       } catch (err) {

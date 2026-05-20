@@ -2,9 +2,23 @@
 
 class NotificationView(ListAPIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = ShareVersePageNumberPagination
 
     def get(self, request):
-        notifications = Notification.objects.filter(user=request.user).order_by("-created_at")
+        notifications = Notification.objects.filter(user=request.user).order_by("-created_at", "-id")
+        is_read = request.query_params.get("is_read")
+        if is_read is not None:
+            normalized_is_read = str(is_read).strip().lower()
+            if normalized_is_read in {"true", "1", "yes"}:
+                notifications = notifications.filter(is_read=True)
+            elif normalized_is_read in {"false", "0", "no"}:
+                notifications = notifications.filter(is_read=False)
+
+        page = self.paginate_queryset(notifications)
+        if page is not None:
+            data = [build_notification_payload(notification) for notification in page]
+            return self.get_paginated_response(data)
+
         data = [build_notification_payload(notification) for notification in notifications]
         return Response(data)
 

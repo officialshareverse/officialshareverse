@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 
 import API from "../api/axios";
+import { getPaginatedItems } from "../api/pagination";
 import { useToast } from "../components/ToastProvider";
 import {
   CheckCircleIcon,
@@ -276,8 +277,8 @@ export default function Groups() {
 
   const fetchGroups = async () => {
     try {
-      const res = await API.get("groups/");
-      setGroups(Array.isArray(res.data) ? res.data : []);
+      const res = await API.get("groups/", { params: { page_size: 50 } });
+      setGroups(getPaginatedItems(res.data));
     } catch (err) {
       console.error(err);
       toast.error("Failed to load groups.", { title: "Couldn't load marketplace" });

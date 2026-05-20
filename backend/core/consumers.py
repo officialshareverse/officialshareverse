@@ -4,9 +4,9 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.layers import get_channel_layer
 from django.contrib.auth.models import AnonymousUser
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, OuterRef, Q, Subquery
 
-from .models import Group, GroupChatMessage, Notification, User
+from .models import Group, GroupChatMessage, GroupChatReadState, GroupMember, Notification, User, UserBlock
 from .push import send_push_notification_to_user
 
 WS_CLOSE_TOKEN_EXPIRED = 4001
@@ -50,10 +50,25 @@ def build_group_chat_message_payload(message):
 
 
 def get_badge_counts_for_user(user):
-    from .views import get_group_chat_unread_count
-
-    groups = Group.objects.filter(Q(owner=user) | Q(groupmember__user=user)).distinct()
-    unread_chats = sum(get_group_chat_unread_count(user, group) for group in groups)
+    accessible_groups = Group.objects.filter(
+        Q(owner=user) | Q(id__in=GroupMember.objects.filter(user=user).values("group_id"))
+    ).values("id")
+    latest_read_at = (
+        GroupChatReadState.objects.filter(group_id=OuterRef("group_id"), user=user)
+        .order_by("-last_read_at", "-id")
+        .values("last_read_at")[:1]
+    )
+    unread_chats = (
+        GroupChatMessage.objects.filter(
+            group_id__in=accessible_groups,
+            moderation_status="visible",
+        )
+        .exclude(sender_id=user.id)
+        .exclude(sender_id__in=UserBlock.objects.filter(blocker=user).values("blocked_id"))
+        .annotate(user_last_read_at=Subquery(latest_read_at))
+        .filter(Q(user_last_read_at__isnull=True) | Q(created_at__gt=F("user_last_read_at")))
+        .count()
+    )
     unread_notifications = Notification.objects.filter(user=user, is_read=False).count()
     return {
         "unread_notifications": unread_notifications,

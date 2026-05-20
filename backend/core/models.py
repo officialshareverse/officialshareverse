@@ -336,6 +336,12 @@ class Transaction(models.Model):
     payment_method = models.CharField(max_length=50, default="system")
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["user", "-created_at"], name="core_tx_user_created_idx"),
+        ]
+
     def __str__(self):
         return f"{self.user.username} - {self.amount}"
 
@@ -584,6 +590,13 @@ class Notification(models.Model):
     message = models.TextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["user", "-created_at"], name="core_notif_user_created_idx"),
+            models.Index(fields=["user", "is_read", "-created_at"], name="core_notif_user_read_idx"),
+        ]
 
 
 class MobilePushDevice(models.Model):
