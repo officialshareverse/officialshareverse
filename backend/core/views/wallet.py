@@ -4,6 +4,10 @@ class AddMoneyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        rate_limit_response = get_financial_rate_limit_response(request, "wallet_topup_create")
+        if rate_limit_response is not None:
+            return rate_limit_response
+
         serializer = WalletTopupOrderCreateSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
@@ -463,6 +467,10 @@ class WithdrawMoneyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        rate_limit_response = get_financial_rate_limit_response(request, "wallet_withdraw_create")
+        if rate_limit_response is not None:
+            return rate_limit_response
+
         serializer = WalletPayoutCreateSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)

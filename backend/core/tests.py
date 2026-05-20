@@ -2258,6 +2258,32 @@ class GroupFlowTests(APITestCase):
         self.assertIsNone(payout.transaction)
         self.assertEqual(payout.provider_status_source, "user_manual_request")
 
+    def test_manual_wallet_payout_request_is_rate_limited(self):
+        self.create_local_bank_payout_account(self.owner)
+
+        self.authenticate(self.owner)
+        with patch.dict(
+            "core.views.common.FINANCIAL_RATE_LIMITS",
+            {"wallet_withdraw_create": {"limit": 1, "window_seconds": 60}},
+            clear=False,
+        ):
+            first_response = self.client.post(
+                "/api/withdraw-money/",
+                {"amount": "250.00", "payout_mode": "IMPS"},
+                format="json",
+            )
+            second_response = self.client.post(
+                "/api/withdraw-money/",
+                {"amount": "250.00", "payout_mode": "IMPS"},
+                format="json",
+            )
+
+        self.assertEqual(first_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(second_response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertGreaterEqual(second_response.data["retry_after_seconds"], 1)
+        self.assertEqual(second_response["Retry-After"], str(second_response.data["retry_after_seconds"]))
+        self.assertEqual(WalletPayout.objects.filter(user=self.owner, provider="manual").count(), 1)
+
     def test_manual_wallet_payout_can_process_existing_request(self):
         payout_account = self.create_local_bank_payout_account(self.owner)
         wallet = Wallet.objects.get(user=self.owner)
@@ -2368,7 +2394,7 @@ class GroupFlowTests(APITestCase):
         RAZORPAY_KEY_SECRET="test_secret_123",
         RAZORPAY_COMPANY_NAME="ShareVerse",
     )
-    @patch("core.views.create_razorpay_order")
+    @patch("core.views.wallet.create_razorpay_order")
     def test_wallet_topup_create_order_returns_checkout_payload(self, create_order_mock):
         create_order_mock.return_value = {"id": "order_test_123"}
 
@@ -2394,6 +2420,39 @@ class GroupFlowTests(APITestCase):
                 amount_subunits=25000,
             ).exists()
         )
+
+    @override_settings(
+        RAZORPAY_KEY_ID="rzp_test_123",
+        RAZORPAY_KEY_SECRET="test_secret_123",
+        RAZORPAY_COMPANY_NAME="ShareVerse",
+    )
+    @patch("core.views.wallet.create_razorpay_order")
+    def test_wallet_topup_order_creation_is_rate_limited(self, create_order_mock):
+        create_order_mock.return_value = {"id": "order_test_123"}
+
+        self.authenticate(self.owner)
+        with patch.dict(
+            "core.views.common.FINANCIAL_RATE_LIMITS",
+            {"wallet_topup_create": {"limit": 1, "window_seconds": 60}},
+            clear=False,
+        ):
+            first_response = self.client.post(
+                "/api/payments/razorpay/create-order/",
+                {"amount": "250.00"},
+                format="json",
+            )
+            second_response = self.client.post(
+                "/api/payments/razorpay/create-order/",
+                {"amount": "250.00"},
+                format="json",
+            )
+
+        self.assertEqual(first_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(second_response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertGreaterEqual(second_response.data["retry_after_seconds"], 1)
+        self.assertEqual(second_response["Retry-After"], str(second_response.data["retry_after_seconds"]))
+        create_order_mock.assert_called_once()
+        self.assertEqual(WalletTopupOrder.objects.filter(user=self.owner).count(), 1)
 
     @patch("core.views.verify_razorpay_signature", return_value=True)
     @patch("core.views.fetch_razorpay_payment")
@@ -3159,6 +3218,24 @@ class GroupFlowTests(APITestCase):
                 message__contains="creator will buy the subscription and upload proof next",
             ).exists()
         )
+
+    def test_join_group_is_rate_limited(self):
+        group = self.create_group(mode="sharing", total_slots=3, status="active")
+
+        self.authenticate(self.member_one)
+        with patch.dict(
+            "core.views.common.FINANCIAL_RATE_LIMITS",
+            {"group_join": {"limit": 1, "window_seconds": 60}},
+            clear=False,
+        ):
+            first_response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
+            second_response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
+
+        self.assertEqual(first_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(second_response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertGreaterEqual(second_response.data["retry_after_seconds"], 1)
+        self.assertEqual(second_response["Retry-After"], str(second_response.data["retry_after_seconds"]))
+        self.assertEqual(GroupMember.objects.filter(group=group, user=self.member_one).count(), 1)
 
     def test_owner_can_activate_full_group_buy_group_and_notify_members(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")

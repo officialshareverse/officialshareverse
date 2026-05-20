@@ -73,6 +73,7 @@ from ..pricing import (
     get_member_platform_fee_amount,
     sum_member_contribution_amounts,
 )
+from ..rate_limit import check_and_increment_rate_limit
 from ..consumers import (
     create_notification,
     push_badge_update_to_user,
@@ -136,6 +137,11 @@ GROUP_CHAT_RECENT_WINDOW_MINUTES = 30
 GROUP_CHAT_TYPING_WINDOW_SECONDS = 12
 BUY_TOGETHER_PURCHASE_DEADLINE_HOURS = 6
 BUY_TOGETHER_MEMBER_CONFIRMATION_WINDOW_HOURS = 12
+FINANCIAL_RATE_LIMITS = {
+    "wallet_topup_create": {"limit": 10, "window_seconds": 300},
+    "wallet_withdraw_create": {"limit": 5, "window_seconds": 600},
+    "group_join": {"limit": 12, "window_seconds": 300},
+}
 
 
 def can_close_group(group):
@@ -534,6 +540,40 @@ def can_user_access_group_credentials(user, group):
         return False
 
     return group.owner_id == user.id
+
+
+def build_financial_rate_limit_identity(request):
+    user_id = getattr(getattr(request, "user", None), "id", None)
+    if user_id:
+        return f"user:{user_id}"
+
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        return f"ip:{x_forwarded_for.split(',')[0].strip()}"
+    return f"ip:{request.META.get('REMOTE_ADDR', '')}"
+
+
+def get_financial_rate_limit_response(request, scope):
+    config = FINANCIAL_RATE_LIMITS[scope]
+    result = check_and_increment_rate_limit(
+        scope,
+        build_financial_rate_limit_identity(request),
+        limit=config["limit"],
+        window_seconds=config["window_seconds"],
+    )
+    if result["allowed"]:
+        return None
+
+    retry_after = int(result.get("retry_after_seconds") or config["window_seconds"])
+    response = Response(
+        {
+            "error": "Too many requests. Please wait before trying again.",
+            "retry_after_seconds": retry_after,
+        },
+        status=status.HTTP_429_TOO_MANY_REQUESTS,
+    )
+    response["Retry-After"] = str(retry_after)
+    return response
 
 
 def can_user_join_group_chat(user, group):

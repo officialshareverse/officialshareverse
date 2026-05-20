@@ -51,6 +51,10 @@ class JoinGroupView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        rate_limit_response = get_financial_rate_limit_response(request, "group_join")
+        if rate_limit_response is not None:
+            return rate_limit_response
+
         group_id = request.data.get("group_id")
 
         try:
