@@ -161,7 +161,7 @@ Optional future payout-automation values:
 
 ## Background Jobs
 
-Buy-together refunds and auto-releases should be processed on a schedule:
+Buy-together refunds and auto-releases must be processed on a schedule:
 
 ```powershell
 cd backend
@@ -169,6 +169,17 @@ python manage.py process_expired_group_buy_refunds
 ```
 
 Recommended schedule: every `5 minutes`.
+
+For the current VPS deployment, install the systemd timer in [backend/systemd](backend/systemd):
+
+```bash
+sudo cp backend/systemd/shareverse-refunds.service /etc/systemd/system/shareverse-refunds.service
+sudo cp backend/systemd/shareverse-refunds.timer /etc/systemd/system/shareverse-refunds.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now shareverse-refunds.timer
+```
+
+The optional Render blueprint also defines `shareverse-refund-processor` as a cron service on the same five-minute schedule.
 
 ## Optional Render Blueprint
 

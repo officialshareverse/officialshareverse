@@ -67,6 +67,39 @@ services:
       - key: DJANGO_GOOGLE_CLIENT_ID
         sync: false
 
+  - type: cron
+    name: shareverse-refund-processor
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py process_expired_group_buy_refunds
+    schedule: "*/5 * * * *"
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.3
+      - key: DJANGO_ENV
+        value: production
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      - key: CREDENTIAL_ENCRYPTION_KEY
+        sync: false
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DJANGO_EXPOSE_DEV_OTP
+        value: "false"
+      - key: DJANGO_SERVE_MEDIA
+        value: "true"
+      - key: DJANGO_REDIS_URL
+        fromService:
+          type: keyvalue
+          name: shareverse-redis
+          property: connectionString
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shareverse-db
+          property: connectionString
+
   - type: web
     name: shareverse-web
     runtime: static

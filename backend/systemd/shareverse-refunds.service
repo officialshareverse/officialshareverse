@@ -1,0 +1,10 @@
+[Unit]
+Description=ShareVerse expired buy-together refund and auto-release processor
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/officialshareverse/backend
+EnvironmentFile=-/var/www/officialshareverse/backend/.env
+ExecStart=/usr/bin/flock -n /tmp/shareverse-refunds.lock /var/www/officialshareverse/backend/.venv/bin/python manage.py process_expired_group_buy_refunds

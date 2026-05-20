@@ -155,12 +155,36 @@ Do not enable automated withdrawals publicly until the provider is approved, tes
 
 ## 7. Run the Refund / Auto-Release Job
 
-Schedule this command every `5 minutes`:
+Schedule this command every `5 minutes` so filled or expired buy-together groups cannot leave funds held indefinitely:
 
 ```bash
 cd /var/www/officialshareverse/backend
 source .venv/bin/activate
 python manage.py process_expired_group_buy_refunds
+```
+
+This repo includes systemd units for the current VPS deployment:
+
+- [backend/systemd/shareverse-refunds.service](../backend/systemd/shareverse-refunds.service)
+- [backend/systemd/shareverse-refunds.timer](../backend/systemd/shareverse-refunds.timer)
+
+Install or refresh them on the VPS after pulling the repo:
+
+```bash
+cd /var/www/officialshareverse
+git pull origin main
+sudo cp backend/systemd/shareverse-refunds.service /etc/systemd/system/shareverse-refunds.service
+sudo cp backend/systemd/shareverse-refunds.timer /etc/systemd/system/shareverse-refunds.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now shareverse-refunds.timer
+sudo systemctl list-timers shareverse-refunds.timer
+```
+
+Run one immediate safety check after installing:
+
+```bash
+sudo systemctl start shareverse-refunds.service
+sudo journalctl -u shareverse-refunds.service -n 50 --no-pager
 ```
 
 This handles:
