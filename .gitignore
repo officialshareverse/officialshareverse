@@ -1,5 +1,8 @@
 # ShareVerse project secrets and local state
 /.env
+**/.env
+**/.env.*
+!**/.env.example
 /backend/.env
 /backend/core/test-media/
 /frontend/.env
