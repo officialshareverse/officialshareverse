@@ -1,6 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import './styles/base.css';
+import './styles/components-01.css';
+import './styles/components-02.css';
+import './styles/components-03.css';
+import './styles/components-04.css';
+import './styles/components-05.css';
+import './styles/motion.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
