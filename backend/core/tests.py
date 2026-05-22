@@ -260,8 +260,8 @@ class GroupFlowTests(APITestCase):
 
     def save_bank_payout_account(self, user=None):
         self.authenticate(user or self.owner)
-        with patch("core.views.create_razorpayx_contact") as contact_mock, patch(
-            "core.views.create_razorpayx_bank_fund_account"
+        with patch("core.views.common.create_razorpayx_contact") as contact_mock, patch(
+            "core.views.common.create_razorpayx_bank_fund_account"
         ) as fund_account_mock:
             contact_mock.return_value = {"id": "cont_test_123"}
             fund_account_mock.return_value = {"id": "fa_test_123"}
@@ -282,8 +282,8 @@ class GroupFlowTests(APITestCase):
 
     def save_vpa_payout_account(self, user=None):
         self.authenticate(user or self.owner)
-        with patch("core.views.create_razorpayx_contact") as contact_mock, patch(
-            "core.views.create_razorpayx_vpa_fund_account"
+        with patch("core.views.common.create_razorpayx_contact") as contact_mock, patch(
+            "core.views.common.create_razorpayx_vpa_fund_account"
         ) as fund_account_mock:
             contact_mock.return_value = {"id": "cont_test_123"}
             fund_account_mock.return_value = {"id": "fa_vpa_test_123"}
@@ -2059,7 +2059,7 @@ class GroupFlowTests(APITestCase):
         wallet = Wallet.objects.get(user=self.owner)
 
         self.authenticate(self.owner)
-        with patch("core.views.create_razorpayx_payout") as payout_mock:
+        with patch("core.views.wallet.create_razorpayx_payout") as payout_mock:
             payout_mock.return_value = {
                 "id": "pout_test_123",
                 "status": "pending",
@@ -2093,7 +2093,10 @@ class GroupFlowTests(APITestCase):
         wallet = Wallet.objects.get(user=self.owner)
 
         self.authenticate(self.owner)
-        with patch("core.views.create_razorpayx_payout", side_effect=PaymentGatewayError("Payout gateway unavailable")):
+        with patch(
+            "core.views.wallet.create_razorpayx_payout",
+            side_effect=PaymentGatewayError("Payout gateway unavailable"),
+        ):
             response = self.client.post(
                 "/api/withdraw-money/",
                 {"amount": "250.00", "payout_mode": "IMPS"},
@@ -2120,7 +2123,7 @@ class GroupFlowTests(APITestCase):
         self.save_bank_payout_account(self.owner)
 
         self.authenticate(self.owner)
-        with patch("core.views.create_razorpayx_payout") as payout_mock:
+        with patch("core.views.wallet.create_razorpayx_payout") as payout_mock:
             payout_mock.return_value = {
                 "id": "pout_test_123",
                 "status": "pending",
@@ -2153,7 +2156,7 @@ class GroupFlowTests(APITestCase):
             },
         }
 
-        with patch("core.views.verify_razorpayx_webhook_signature", return_value=True):
+        with patch("core.views.wallet.verify_razorpayx_webhook_signature", return_value=True):
             response = self.client.post(
                 "/api/payments/razorpayx/webhook/",
                 data=json.dumps(payload),
@@ -2173,6 +2176,26 @@ class GroupFlowTests(APITestCase):
                 status="processed",
             ).exists()
         )
+
+    @override_settings(
+        RAZORPAY_WEBHOOK_IP_ALLOWLIST_ENABLED=True,
+        RAZORPAY_WEBHOOK_ALLOWED_IPS=["52.66.75.174"],
+        RAZORPAY_WEBHOOK_TRUSTED_PROXY_IPS=["127.0.0.1"],
+    )
+    @patch("core.views.wallet.verify_razorpayx_webhook_signature", return_value=True)
+    def test_razorpayx_webhook_rejects_non_allowlisted_source_ip(self, verify_webhook_signature_mock):
+        response = self.client.post(
+            "/api/payments/razorpayx/webhook/",
+            data=json.dumps({"event": "payout.processed", "payload": {"payout": {"entity": {"id": "pout_blocked"}}}}),
+            content_type="application/json",
+            HTTP_X_RAZORPAY_SIGNATURE="sig_test",
+            HTTP_X_FORWARDED_FOR="203.0.113.10",
+            REMOTE_ADDR="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.json()["error"], "Webhook source IP is not allowed.")
+        verify_webhook_signature_mock.assert_not_called()
 
     @override_settings(
         RAZORPAYX_KEY_ID="rzp_test_x_123",
@@ -2454,8 +2477,8 @@ class GroupFlowTests(APITestCase):
         create_order_mock.assert_called_once()
         self.assertEqual(WalletTopupOrder.objects.filter(user=self.owner).count(), 1)
 
-    @patch("core.views.verify_razorpay_signature", return_value=True)
-    @patch("core.views.fetch_razorpay_payment")
+    @patch("core.views.wallet.verify_razorpay_signature", return_value=True)
+    @patch("core.views.wallet.fetch_razorpay_payment")
     def test_wallet_topup_verify_credits_wallet_once(self, fetch_payment_mock, verify_signature_mock):
         wallet = Wallet.objects.get(user=self.owner)
         topup_order = WalletTopupOrder.objects.create(
@@ -2527,9 +2550,9 @@ class GroupFlowTests(APITestCase):
         )
         verify_signature_mock.assert_called()
 
-    @patch("core.views.verify_razorpay_signature", return_value=True)
-    @patch("core.views.capture_razorpay_payment")
-    @patch("core.views.fetch_razorpay_payment")
+    @patch("core.views.wallet.verify_razorpay_signature", return_value=True)
+    @patch("core.views.common.capture_razorpay_payment")
+    @patch("core.views.wallet.fetch_razorpay_payment")
     def test_wallet_topup_verify_captures_authorized_payment(
         self,
         fetch_payment_mock,
@@ -2583,7 +2606,7 @@ class GroupFlowTests(APITestCase):
         )
         verify_signature_mock.assert_called()
 
-    @patch("core.views.verify_razorpay_signature", return_value=False)
+    @patch("core.views.wallet.verify_razorpay_signature", return_value=False)
     def test_wallet_topup_verify_rejects_invalid_signature(self, verify_signature_mock):
         wallet = Wallet.objects.get(user=self.owner)
         WalletTopupOrder.objects.create(
@@ -2619,7 +2642,7 @@ class GroupFlowTests(APITestCase):
         )
         verify_signature_mock.assert_called_once()
 
-    @patch("core.views.verify_razorpay_webhook_signature", return_value=True)
+    @patch("core.views.wallet.verify_razorpay_webhook_signature", return_value=True)
     def test_wallet_topup_webhook_credits_wallet_once(self, verify_webhook_signature_mock):
         wallet = Wallet.objects.get(user=self.owner)
         topup_order = WalletTopupOrder.objects.create(
@@ -2699,7 +2722,59 @@ class GroupFlowTests(APITestCase):
         )
         verify_webhook_signature_mock.assert_called()
 
-    @patch("core.views.verify_razorpay_webhook_signature", return_value=False)
+    @override_settings(
+        RAZORPAY_WEBHOOK_IP_ALLOWLIST_ENABLED=True,
+        RAZORPAY_WEBHOOK_ALLOWED_IPS=["52.66.75.174"],
+        RAZORPAY_WEBHOOK_TRUSTED_PROXY_IPS=["127.0.0.1"],
+    )
+    @patch("core.views.wallet.verify_razorpay_webhook_signature", return_value=True)
+    def test_wallet_topup_webhook_allows_allowlisted_forwarded_ip(self, verify_webhook_signature_mock):
+        payload = {
+            "event": "payment.failed",
+            "payload": {
+                "payment": {
+                    "entity": {
+                        "id": "pay_allowed_ip",
+                        "order_id": "order_allowed_ip",
+                    }
+                }
+            },
+        }
+
+        response = self.client.post(
+            "/api/payments/razorpay/webhook/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_RAZORPAY_SIGNATURE="webhook_signature_123",
+            HTTP_X_FORWARDED_FOR="52.66.75.174, 10.0.0.5",
+            REMOTE_ADDR="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["message"], "Webhook ignored.")
+        verify_webhook_signature_mock.assert_called_once()
+
+    @override_settings(
+        RAZORPAY_WEBHOOK_IP_ALLOWLIST_ENABLED=True,
+        RAZORPAY_WEBHOOK_ALLOWED_IPS=["52.66.75.174"],
+        RAZORPAY_WEBHOOK_TRUSTED_PROXY_IPS=["127.0.0.1"],
+    )
+    @patch("core.views.wallet.verify_razorpay_webhook_signature", return_value=True)
+    def test_wallet_topup_webhook_rejects_non_allowlisted_source_ip(self, verify_webhook_signature_mock):
+        response = self.client.post(
+            "/api/payments/razorpay/webhook/",
+            data=json.dumps({"event": "payment.captured", "payload": {"payment": {"entity": {"id": "pay_blocked"}}}}),
+            content_type="application/json",
+            HTTP_X_RAZORPAY_SIGNATURE="webhook_signature_123",
+            HTTP_X_FORWARDED_FOR="203.0.113.10",
+            REMOTE_ADDR="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.json()["error"], "Webhook source IP is not allowed.")
+        verify_webhook_signature_mock.assert_not_called()
+
+    @patch("core.views.wallet.verify_razorpay_webhook_signature", return_value=False)
     def test_wallet_topup_webhook_rejects_invalid_signature(self, verify_webhook_signature_mock):
         wallet = Wallet.objects.get(user=self.owner)
         topup_order = WalletTopupOrder.objects.create(

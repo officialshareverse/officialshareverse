@@ -97,6 +97,21 @@ DEFAULT_PRODUCTION_CSRF_TRUSTED_ORIGINS = [
     "https://www.shareverse.in",
     "https://api.shareverse.in",
 ]
+# Razorpay India webhook egress IPs:
+# https://razorpay.com/docs/security/whitelists/?preferred-country=IN
+DEFAULT_RAZORPAY_WEBHOOK_ALLOWED_IPS = [
+    "52.66.75.174",
+    "52.66.76.63",
+    "52.66.151.218",
+    "35.154.217.40",
+    "35.154.22.73",
+    "35.154.143.15",
+    "13.126.199.247",
+    "13.126.238.192",
+    "13.232.194.134",
+    "18.96.225.0/26",
+    "18.99.161.0/26",
+]
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '').strip()
@@ -178,6 +193,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'core.middleware.EnsureCorsCredentialsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'core.middleware.RazorpayWebhookIPAllowlistMiddleware',
 ]
 
 if _HAS_WHITENOISE:
@@ -407,6 +423,22 @@ RAZORPAYX_KEY_ID = os.environ.get('RAZORPAYX_KEY_ID', '').strip()
 RAZORPAYX_KEY_SECRET = os.environ.get('RAZORPAYX_KEY_SECRET', '').strip()
 RAZORPAYX_WEBHOOK_SECRET = os.environ.get('RAZORPAYX_WEBHOOK_SECRET', '').strip()
 RAZORPAYX_SOURCE_ACCOUNT_NUMBER = os.environ.get('RAZORPAYX_SOURCE_ACCOUNT_NUMBER', '').strip()
+RAZORPAY_WEBHOOK_IP_ALLOWLIST_ENABLED = _get_env_bool(
+    'RAZORPAY_WEBHOOK_IP_ALLOWLIST_ENABLED',
+    IS_PRODUCTION_ENV,
+)
+RAZORPAY_WEBHOOK_ALLOWED_IPS = _get_env_list(
+    'RAZORPAY_WEBHOOK_ALLOWED_IPS',
+    DEFAULT_RAZORPAY_WEBHOOK_ALLOWED_IPS,
+)
+RAZORPAY_WEBHOOK_TRUSTED_PROXY_IPS = _get_env_list(
+    'RAZORPAY_WEBHOOK_TRUSTED_PROXY_IPS',
+    ['127.0.0.1', '::1'],
+)
+RAZORPAY_WEBHOOK_PATHS = [
+    '/api/payments/razorpay/webhook/',
+    '/api/payments/razorpayx/webhook/',
+]
 
 if not DEBUG and not IS_TEST_ENV:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
