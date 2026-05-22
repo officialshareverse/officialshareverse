@@ -5,6 +5,7 @@ import tempfile
 import json
 from unittest.mock import patch
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -4279,6 +4280,18 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.data["database"], "ok")
         self.assertIn("payments", response.data)
         self.assertIn("payouts", response.data)
+
+    def test_api_responses_include_security_headers(self):
+        response = self.client.get("/api/health/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Security-Policy"], settings.API_CONTENT_SECURITY_POLICY)
+        self.assertEqual(response["Referrer-Policy"], "no-referrer")
+        self.assertEqual(response["X-Content-Type-Options"], "nosniff")
+        self.assertEqual(
+            response["Permissions-Policy"],
+            "camera=(), microphone=(), geolocation=(), payment=()",
+        )
 
     @override_settings(
         RAZORPAY_KEY_ID="rzp_live_123",

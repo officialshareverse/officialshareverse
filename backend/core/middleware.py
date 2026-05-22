@@ -22,6 +22,32 @@ class EnsureCorsCredentialsMiddleware:
         return response
 
 
+class APIContentSecurityPolicyMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+
+        if not self._should_apply(request):
+            return response
+
+        csp = getattr(settings, "API_CONTENT_SECURITY_POLICY", "")
+        if csp and not response.has_header("Content-Security-Policy"):
+            response["Content-Security-Policy"] = csp
+
+        security_headers = getattr(settings, "API_SECURITY_HEADERS", {})
+        for header_name, header_value in security_headers.items():
+            if header_value and not response.has_header(header_name):
+                response[header_name] = header_value
+
+        return response
+
+    def _should_apply(self, request):
+        path_prefixes = getattr(settings, "API_SECURITY_HEADER_PATH_PREFIXES", ["/api/"])
+        return any(request.path.startswith(path_prefix) for path_prefix in path_prefixes)
+
+
 class RazorpayWebhookIPAllowlistMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response

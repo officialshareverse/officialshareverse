@@ -193,6 +193,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'core.middleware.EnsureCorsCredentialsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'core.middleware.APIContentSecurityPolicyMiddleware',
     'core.middleware.RazorpayWebhookIPAllowlistMiddleware',
 ]
 
@@ -439,6 +440,18 @@ RAZORPAY_WEBHOOK_PATHS = [
     '/api/payments/razorpay/webhook/',
     '/api/payments/razorpayx/webhook/',
 ]
+API_SECURITY_HEADER_PATH_PREFIXES = ['/api/']
+API_CONTENT_SECURITY_POLICY = (
+    "default-src 'none'; "
+    "frame-ancestors 'none'; "
+    "base-uri 'none'; "
+    "form-action 'none'"
+)
+API_SECURITY_HEADERS = {
+    'Referrer-Policy': 'no-referrer',
+    'X-Content-Type-Options': 'nosniff',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
+}
 
 if not DEBUG and not IS_TEST_ENV:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
