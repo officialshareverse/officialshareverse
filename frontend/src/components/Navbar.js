@@ -169,6 +169,21 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
   }, [badgeSocketStatus, fetchUnreadCounts]);
 
   useEffect(() => {
+    if ("setAppBadge" in navigator) {
+      const totalUnread = unreadChatCount + unreadNotificationCount;
+      if (totalUnread > 0) {
+        navigator.setAppBadge(totalUnread).catch((error) => {
+          console.error("Failed to set app badge:", error);
+        });
+      } else {
+        navigator.clearAppBadge().catch((error) => {
+          console.error("Failed to clear app badge:", error);
+        });
+      }
+    }
+  }, [unreadChatCount, unreadNotificationCount]);
+
+  useEffect(() => {
     let isMounted = true;
 
     API.get("profile/")
