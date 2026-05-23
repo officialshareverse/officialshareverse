@@ -8,7 +8,7 @@ const faqSections = [
       {
         question: "What is ShareVerse?",
         answer:
-          "ShareVerse is a platform for coordinating shared-cost participation for provider-permitted digital plans, courses, memberships, software plans, and similar services. It helps people organize groups, track payments, chat with members, and manage the group flow in one place.",
+          "ShareVerse is a platform for coordinating shared-cost participation for digital plans, courses, memberships, software plans, and similar services where the provider allows it. It helps people organize groups, track payments, chat with members, and manage the group flow in one place.",
       },
       {
         question: "How do I join a split?",
@@ -18,7 +18,7 @@ const faqSections = [
       {
         question: "Do I need to share my own login credentials?",
         answer:
-          "No. ShareVerse does not support listings that ask members to upload passwords, exchange account credentials, or send secret access details through the platform. Hosts should only coordinate access in provider-permitted ways and should never request member passwords.",
+          "No. ShareVerse does not support listings that ask members to upload passwords, exchange account credentials, or send secret access details through the platform. Hosts should only coordinate access in ways where the provider allows it and should never request member passwords.",
       },
       {
         question: "Can I create splits for courses, software, or memberships too?",

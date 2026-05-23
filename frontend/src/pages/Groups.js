@@ -550,7 +550,7 @@ export default function Groups() {
                   </span>
                   <span className="hidden sm:inline-flex sv-chip-dark">
                     <ShieldIcon className="h-3.5 w-3.5" />
-                    Provider-safe listings only
+                    Only share plans where the provider allows it
                   </span>
                 </div>
 
@@ -684,7 +684,7 @@ export default function Groups() {
             </div>
 
             <div className="mt-4 rounded-[length:var(--sv-radius-card)] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-7 text-emerald-950">
-              Hosts should publish only provider-permitted listings. ShareVerse does not support password-upload or credential-sharing listings.
+              Only share plans where the provider allows it. ShareVerse does not support password-upload or credential-sharing listings.
             </div>
 
             {!isMobile ? (
@@ -949,7 +949,7 @@ export default function Groups() {
                             ) : null}
                             {group.is_prorated ? (
                               <span className="sv-group-inline-note sv-group-inline-note-success">
-                                Prorated pricing active
+                                If you join mid-month, you only pay for the remaining days
                               </span>
                             ) : null}
                           </div>

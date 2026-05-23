@@ -60,7 +60,7 @@ export function getLifecycleNote(group) {
   }
 
   if (group.mode === "group_buy" && group.status === "proof_submitted") {
-    return "Purchase proof is uploaded. Members can confirm access or report a problem, and escrow releases automatically when everyone confirms or the clean confirmation window ends.";
+    return "Purchase proof is uploaded. Members can confirm access or report a problem, and the held payout releases automatically when everyone confirms or the clean confirmation window ends.";
   }
 
   if (group.mode === "group_buy" && group.status === "disputed") {
@@ -104,7 +104,7 @@ export function getEscrowLabel(member, groupStatus = "") {
   }
 
   if (member.has_paid) {
-    return "Held in escrow";
+    return "Held safely";
   }
 
   return "Awaiting payment";

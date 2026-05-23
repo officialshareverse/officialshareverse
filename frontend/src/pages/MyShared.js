@@ -285,7 +285,7 @@ export default function MyShared() {
       { label: "Groups created", value: totals.created },
       { label: "Groups joined", value: joinedSummary.joined },
       { label: "Sharing revenue", value: `Rs ${totals.revenue.toFixed(2)}`, highlight: true },
-      { label: "Held in escrow", value: `Rs ${totals.held.toFixed(2)}` },
+      { label: "Held safely", value: `Rs ${totals.held.toFixed(2)}` },
       { label: "Buy-together waiting", value: totals.buyWaiting },
       { label: "Active memberships", value: joinedSummary.active },
     ];
@@ -1534,7 +1534,7 @@ export default function MyShared() {
 
                       {detail.mode === "group_buy" ? (
                         <div style={{ ...buyTogetherNotice, marginBottom: 0 }}>
-                          <p style={buyTogetherNoticeTitle}>Buy-together escrow</p>
+                          <p style={buyTogetherNoticeTitle}>Buy-together safe holding</p>
                           <p style={{ ...subtleText, ...(isMobile ? subtleTextCompact : {}) }}>
                             Holds stay protected until proof is uploaded and members confirm access or raise an issue.
                           </p>
@@ -1617,7 +1617,7 @@ export default function MyShared() {
 
                         {detail.status === "active" ? (
                           <p style={proofApproved}>
-                            All confirmations are complete and the escrow payout has already been released.
+                            All confirmations are complete and the held payout has already been released.
                           </p>
                         ) : null}
 

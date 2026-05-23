@@ -67,7 +67,7 @@ const modes = [
     ctaTo: "/signup",
     bullets: [
       "Best when you already own the subscription or tool.",
-      "Good for provider-permitted family plans, shared tools, memberships, and courses.",
+      "Good for family plans where the provider allows it, shared tools, memberships, and courses.",
       "Members see the price and slot count before they pay.",
     ],
     metrics: [

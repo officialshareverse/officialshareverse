@@ -899,7 +899,7 @@ export const memberStatus = (paidOrLabel) => {
     };
   }
 
-  if (paidOrLabel === "Held in escrow") {
+  if (paidOrLabel === "Held safely") {
     return {
       background: "#fef3c7",
       color: "#92400e",

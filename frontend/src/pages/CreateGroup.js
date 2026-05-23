@@ -153,7 +153,7 @@ function getModeConfig(mode) {
       targetLabel: "Total group target",
       scheduleLabel: "Funding window",
       helper:
-        "Members join first, contributions stay protected, and payout is released only after access confirmation. Only create listings that the underlying provider allows.",
+        "Members join first, money is held safely until both sides confirm, and payout is released only after access confirmation. Only share plans where the provider allows it.",
       accent: "amber",
       badge: "BUY",
       previewSteps: [
@@ -172,9 +172,9 @@ function getModeConfig(mode) {
     summaryTitle: "Sharing summary",
     amountLabel: "Price per member",
     targetLabel: "Total cycle value",
-    scheduleLabel: "Current cycle window",
+    scheduleLabel: "Subscription period",
     helper:
-      "Late joiners are charged only for the remaining days. Use this only for provider-permitted arrangements and never for password-sharing requests.",
+      "If members join late, they only pay for remaining days. Only share plans where the provider allows it and never for password-sharing requests.",
     accent: "teal",
     badge: "LIVE",
     previewSteps: [
@@ -622,7 +622,7 @@ export default function CreateGroup() {
                       onClick={() => handleModeChange("sharing")}
                       steps={[
                         "Best for active subscriptions and shared tools.",
-                        "Late joiners are automatically prorated.",
+                        "If members join late, they only pay for remaining days.",
                         "You coordinate access later from My Splits.",
                       ]}
                     />
@@ -635,7 +635,7 @@ export default function CreateGroup() {
                       onClick={() => handleModeChange("group_buy")}
                       steps={[
                         "Best for new cohorts, memberships, and shared software.",
-                        "Member contributions are held first.",
+                        "Money is held safely until both sides confirm.",
                         "Payout waits for proof and confirmations.",
                       ]}
                     />
@@ -704,7 +704,7 @@ export default function CreateGroup() {
 
                         {!isMobile ? (
                           <div className="rounded-[length:var(--sv-radius-card)] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-7 text-emerald-950">
-                            Publish only listings that the underlying provider permits. Do not create listings that require password uploads, credential transfers, or off-platform secret sharing.
+                            Only share plans where the provider allows it. Do not create listings that require password uploads, credential transfers, or off-platform secret sharing.
                           </div>
                         ) : null}
 
@@ -783,7 +783,7 @@ export default function CreateGroup() {
                       <div>
                         <p className="sv-eyebrow">Timeline</p>
                         <h3 className="sv-title mt-2">
-                          {isSharing ? "Set the current cycle window" : "Set the funding and purchase window"}
+                          {isSharing ? "Set the subscription period" : "Set the funding and purchase window"}
                         </h3>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -1057,7 +1057,7 @@ export default function CreateGroup() {
                   body="Use one clean per-member amount that feels easy to trust. You can clarify edge cases later in chat."
                 />
                 <WizardTip
-                  title="Only list provider-permitted plans"
+                  title="Only share plans where the provider allows it"
                   body="Household, team, or membership plans should match the underlying provider rules. If the provider does not allow the arrangement, do not publish it on ShareVerse."
                 />
                 <WizardTip
