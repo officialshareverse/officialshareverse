@@ -71,7 +71,7 @@ export default function PrivacyPage() {
         {sections.map((section) => (
           <article
             key={section.title}
-            className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
+            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
           >
             <h2 className="text-xl font-semibold text-slate-950">{section.title}</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">{section.body}</p>
@@ -86,7 +86,7 @@ export default function PrivacyPage() {
         ))}
       </div>
 
-      <div className="mt-6 rounded-[24px] border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-950 md:p-6">
+      <div className="mt-6 rounded-[length:var(--sv-radius-card)] border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-950 md:p-6">
         Privacy and data-rights questions should be sent through the published support or compliance email. Include your username, the email linked to the account, and the specific request so the team can verify identity and respond correctly.
       </div>
 

@@ -10,7 +10,7 @@ export default function PublicPageShell({ eyebrow, title, intro, children }) {
         <header className="sv-brand-shell sv-reveal flex flex-col items-stretch gap-3 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <Link
             to="/"
-            className="inline-flex w-full items-center justify-center gap-3 rounded-[22px] border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 sm:w-auto sm:justify-start sm:rounded-full"
+            className="inline-flex w-full items-center justify-center gap-3 rounded-[length:var(--sv-radius-card)] border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 sm:w-auto sm:justify-start sm:rounded-full"
           >
             <BrandMark glow />
             <span className="text-lg font-bold leading-none sm:text-xl">
@@ -46,7 +46,7 @@ export default function PublicPageShell({ eyebrow, title, intro, children }) {
             <div className="hidden lg:block">
               <div className="sv-soft-card sv-animate-float-soft">
                 <div className="flex items-center gap-3">
-                  <BrandMark glow sizeClass="h-14 w-14" roundedClass="rounded-[20px]" />
+                  <BrandMark glow sizeClass="h-14 w-14" roundedClass="rounded-[length:var(--sv-radius-card)]" />
                   <div>
                     <p className="text-xs uppercase tracking-[0.18em] text-slate-500">ShareVerse</p>
                     <p className="mt-2 text-lg font-semibold text-slate-950">Built for cleaner group coordination</p>

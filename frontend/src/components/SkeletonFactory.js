@@ -23,7 +23,7 @@ export function SkeletonTextGroup({
   );
 }
 
-export function SkeletonHero({ className = "h-64 rounded-[24px] sm:h-80" }) {
+export function SkeletonHero({ className = "h-64 rounded-[length:var(--sv-radius-card)] sm:h-80" }) {
   return <SkeletonBlock className={className} />;
 }
 
@@ -47,7 +47,7 @@ export function SkeletonMetricGrid({
 export function SkeletonList({
   count = 4,
   className = "space-y-4",
-  itemClassName = "h-24 rounded-[22px]",
+  itemClassName = "h-24 rounded-[length:var(--sv-radius-card)]",
 }) {
   return (
     <div className={className}>

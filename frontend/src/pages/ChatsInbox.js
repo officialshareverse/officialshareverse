@@ -344,7 +344,7 @@ export default function ChatsInbox() {
           </SkeletonCard>
           <SkeletonMetricGrid count={4} />
           <SkeletonCard>
-            <SkeletonList count={4} itemClassName="h-32 rounded-[22px]" />
+            <SkeletonList count={4} itemClassName="h-32 rounded-[length:var(--sv-radius-card)]" />
           </SkeletonCard>
         </div>
       </div>

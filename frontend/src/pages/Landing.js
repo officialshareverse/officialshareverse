@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import BrandMark from "../components/BrandMark";
 import PublicFooter from "../components/PublicFooter";
 
-const heroIllustrationSrc = `${process.env.PUBLIC_URL}/shareverse-hero-network.png`;
+
 
 const featureNotes = [
   { label: "Subscriptions", icon: "TV", targetId: "modes" },
@@ -165,7 +165,6 @@ const joinTickerItems = [
 
 export default function Landing() {
   const [activeMode, setActiveMode] = useState(modes[0].id);
-  const [heroLoaded, setHeroLoaded] = useState(false);
 
   const activeModeContent = modes.find((mode) => mode.id === activeMode) || modes[0];
 
@@ -267,20 +266,30 @@ export default function Landing() {
 
             <div className="relative z-[1]">
               <div className="sv-hero-media-shell">
-                <div className="sv-hero-image-shell">
-                  <div
-                    className={`sv-hero-image-backdrop ${heroLoaded ? "is-loaded" : ""}`}
-                    style={{ backgroundImage: `url(${heroIllustrationSrc})` }}
-                  />
-                  <div className={`sv-hero-image-placeholder ${heroLoaded ? "is-loaded" : ""}`} />
-                  <img
-                    src={heroIllustrationSrc}
-                    alt="Illustration showing people coordinating digital plans, tools, and shared-cost participation across one connected platform."
-                    loading="lazy"
-                    decoding="async"
-                    onLoad={() => setHeroLoaded(true)}
-                    className={`sv-hero-image ${heroLoaded ? "is-ready" : ""}`}
-                  />
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[32px] bg-gradient-to-br from-slate-800 to-slate-950 p-1 shadow-2xl ring-1 ring-white/10 lg:aspect-auto lg:h-[480px]">
+                  <div className="relative flex h-full w-full flex-col items-center justify-center rounded-[length:var(--sv-radius-card-md)] bg-slate-900/50 backdrop-blur-sm">
+                    <div className="relative flex items-center justify-center">
+                      <div className="absolute inset-0 animate-ping rounded-full bg-emerald-500/20" />
+                      <div className="relative flex h-24 w-24 items-center justify-center rounded-[length:var(--sv-radius-card)] bg-gradient-to-br from-emerald-400 to-teal-600 shadow-xl shadow-emerald-500/20">
+                        <BrandMark glow={false} sizeClass="h-12 w-12 text-white" />
+                      </div>
+                    </div>
+                    <div className="mt-8 flex gap-4">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur-md">
+                        <span className="text-xl font-bold text-white">4</span>
+                      </div>
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur-md">
+                        <span className="text-xl font-bold text-white">/</span>
+                      </div>
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur-md">
+                        <span className="text-xl font-bold text-white">4</span>
+                      </div>
+                    </div>
+                    <div className="mt-6 flex items-center gap-2 rounded-full bg-emerald-500/10 px-4 py-1.5 text-sm font-medium text-emerald-400 ring-1 ring-emerald-500/20">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                      Group filled
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

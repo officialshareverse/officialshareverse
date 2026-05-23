@@ -672,7 +672,7 @@ export default function Groups() {
               ))}
             </div>
 
-            <div className="mt-4 rounded-[20px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-7 text-emerald-950">
+            <div className="mt-4 rounded-[length:var(--sv-radius-card)] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-7 text-emerald-950">
               Hosts should publish only provider-permitted listings. ShareVerse does not support password-upload or credential-sharing listings.
             </div>
 
@@ -729,9 +729,9 @@ export default function Groups() {
         {loading ? (
           <section className="grid gap-4 xl:gap-5">
             {Array.from({ length: 5 }).map((_, index) => (
-              <article key={index} className="sv-skeleton-card space-y-4 rounded-[30px]">
+              <article key={index} className="sv-skeleton-card space-y-4 rounded-[length:var(--sv-radius-card-md)]">
                 <div className="flex items-start gap-4">
-                  <div className="sv-skeleton h-20 w-20 rounded-[24px]" />
+                  <div className="sv-skeleton h-20 w-20 rounded-[length:var(--sv-radius-card)]" />
                   <div className="min-w-0 flex-1 space-y-3">
                     <div className="sv-skeleton h-3 w-24" />
                     <div className="sv-skeleton h-10 w-2/3 rounded-[16px]" />

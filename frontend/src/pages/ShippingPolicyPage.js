@@ -35,7 +35,7 @@ export default function ShippingPolicyPage() {
         {sections.map((section) => (
           <article
             key={section.title}
-            className="rounded-[24px] border border-slate-200 bg-slate-50 p-5 md:p-6"
+            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 md:p-6"
           >
             <h2 className="text-xl font-semibold text-slate-950">{section.title}</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">{section.body}</p>
@@ -43,7 +43,7 @@ export default function ShippingPolicyPage() {
         ))}
       </div>
 
-      <div className="mt-6 rounded-[24px] border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-900 md:p-6">
+      <div className="mt-6 rounded-[length:var(--sv-radius-card)] border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-900 md:p-6">
         If a payment partner or reviewer needs a plain-language summary: ShareVerse is a web-based service, all delivery is digital, and no physical order fulfillment is involved.
       </div>
 

@@ -14,7 +14,7 @@ export default function PublicBusinessIdentity({
   intro = "ShareVerse is operated by Chetak Harichandra Pagare. These public contact details are provided for members, partners, payment providers, and compliance review.",
 }) {
   return (
-    <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+    <div className="mt-6 rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
       <h2 className="text-2xl font-semibold text-slate-950">{title}</h2>
       <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 md:text-base">{intro}</p>
 

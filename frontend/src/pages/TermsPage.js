@@ -105,7 +105,7 @@ export default function TermsPage() {
         {sections.map((section) => (
           <article
             key={section.title}
-            className="rounded-[24px] border border-slate-200 bg-slate-50 p-5 md:p-6"
+            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 md:p-6"
           >
             <h2 className="text-xl font-semibold text-slate-950">{section.title}</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">{section.body}</p>

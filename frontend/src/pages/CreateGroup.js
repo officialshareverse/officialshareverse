@@ -574,7 +574,7 @@ export default function CreateGroup() {
             </div>
 
             {activationPrefill?.template ? (
-              <div className="mt-5 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+              <div className="mt-5 rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 px-4 py-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-slate-950">
@@ -703,7 +703,7 @@ export default function CreateGroup() {
                         </div>
 
                         {!isMobile ? (
-                          <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-7 text-emerald-950">
+                          <div className="rounded-[length:var(--sv-radius-card)] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-7 text-emerald-950">
                             Publish only listings that the underlying provider permits. Do not create listings that require password uploads, credential transfers, or off-platform secret sharing.
                           </div>
                         ) : null}

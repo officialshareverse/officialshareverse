@@ -552,7 +552,7 @@ export default function NotificationsInbox() {
           </SkeletonCard>
           <SkeletonMetricGrid count={4} className="grid gap-2 grid-cols-2 sm:grid-cols-4 sm:gap-4" />
           <SkeletonCard>
-            <SkeletonList count={4} itemClassName="h-24 rounded-[22px]" />
+            <SkeletonList count={4} itemClassName="h-24 rounded-[length:var(--sv-radius-card)]" />
           </SkeletonCard>
         </div>
       </div>

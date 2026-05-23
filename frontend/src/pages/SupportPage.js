@@ -115,7 +115,7 @@ export default function SupportPage() {
         {contactCards.map((card) => (
           <article
             key={card.title}
-            className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
               {card.title}
@@ -126,7 +126,7 @@ export default function SupportPage() {
         ))}
       </div>
 
-      <div className="mt-6 rounded-[28px] border border-slate-200 bg-slate-50 p-5 md:p-6">
+      <div className="mt-6 rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-slate-50 p-5 md:p-6">
         <h2 className="text-2xl font-semibold text-slate-950">Before contacting support</h2>
         <ul className="mt-4 grid gap-3 text-sm leading-7 text-slate-600">
           <li>Check your wallet page for payment and balance history.</li>
@@ -141,7 +141,7 @@ export default function SupportPage() {
         {serviceLevels.map((item) => (
           <article
             key={item.title}
-            className="rounded-[24px] border border-slate-200 bg-slate-50 p-5 md:p-6"
+            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 md:p-6"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{item.title}</p>
             <h2 className="mt-3 text-xl font-semibold text-slate-950">{item.detail}</h2>
@@ -154,7 +154,7 @@ export default function SupportPage() {
         {workflowSteps.map((step) => (
           <article
             key={step.title}
-            className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
+            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
           >
             <h2 className="text-xl font-semibold text-slate-950">{step.title}</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">{step.body}</p>
@@ -171,7 +171,7 @@ export default function SupportPage() {
         {faqItems.map((item) => (
           <article
             key={item.question}
-            className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
+            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
           >
             <h3 className="text-lg font-semibold text-slate-950">{item.question}</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">{item.answer}</p>

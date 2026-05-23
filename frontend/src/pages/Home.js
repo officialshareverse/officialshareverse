@@ -454,17 +454,17 @@ export default function Home() {
           <SkeletonHero />
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
-              <SkeletonBlock key={index} className="h-32 rounded-[24px]" />
+              <SkeletonBlock key={index} className="h-32 rounded-[length:var(--sv-radius-card)]" />
             ))}
           </div>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(260px,0.92fr)]">
-            <SkeletonBlock className="h-56 rounded-[24px]" />
-            <SkeletonBlock className="h-56 rounded-[24px]" />
+            <SkeletonBlock className="h-56 rounded-[length:var(--sv-radius-card)]" />
+            <SkeletonBlock className="h-56 rounded-[length:var(--sv-radius-card)]" />
           </div>
           <SkeletonList
             count={4}
             className="grid gap-4 lg:grid-cols-2"
-            itemClassName="h-48 rounded-[24px]"
+            itemClassName="h-48 rounded-[length:var(--sv-radius-card)]"
           />
         </div>
       </div>
@@ -672,7 +672,7 @@ export default function Home() {
           </div>
         ) : null}
 
-        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sv-animate-rise sm:p-6">
+        <section className="rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-white p-5 shadow-sm sv-animate-rise sm:p-6">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1.12fr)_320px] lg:items-start">
             <div>
               <div className="flex flex-wrap items-center gap-3">
@@ -692,7 +692,7 @@ export default function Home() {
                 See what you can join, what you host, and what needs action next.
               </p>
 
-              <div className="mt-4 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-700">
+              <div className="mt-4 rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-700">
                 {heroSummary}
               </div>
 
@@ -728,7 +728,7 @@ export default function Home() {
               </div>
             </div>
 
-            <aside className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+            <aside className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5">
               <p className="sv-eyebrow">Overview</p>
               <div className="mt-4 grid gap-3">
                 <SummaryLine label="Wallet balance" value={formatCurrency(walletBalanceValue)} />
@@ -759,7 +759,7 @@ export default function Home() {
             isMobile ? "" : "lg:grid-cols-[minmax(0,1.08fr)_minmax(260px,0.92fr)]"
           }`}
         >
-          <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <section className="rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="sv-eyebrow">{primaryCard.label}</p>
@@ -775,7 +775,7 @@ export default function Home() {
               </span>
             </div>
 
-            <div className="mt-5 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+            <div className="mt-5 rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 px-4 py-4">
               <div className="flex items-center justify-between gap-3 text-[12px] font-semibold text-slate-500">
                 <span>Progress snapshot</span>
                 <span>
@@ -811,7 +811,7 @@ export default function Home() {
             </div>
           </section>
 
-          <aside className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+          <aside className="rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-slate-50 p-5">
             <p className="sv-eyebrow">Quick checks</p>
             <div className="mt-4 space-y-3">
               {quickChecks.map((item) => (
@@ -819,7 +819,7 @@ export default function Home() {
                   key={item.label}
                   type="button"
                   onClick={item.onClick}
-                  className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-slate-300 hover:shadow-sm"
+                  className="w-full rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-slate-300 hover:shadow-sm"
                 >
                   <p className="text-sm font-semibold text-slate-950">{item.label}</p>
                   <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
@@ -850,7 +850,7 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm">
               <div>
                 <p className="text-lg font-bold text-slate-950">No splits are visible yet.</p>
                 <p className="mt-2 text-sm leading-7 text-slate-600">
@@ -976,7 +976,7 @@ function StatCard({
 
   return (
     <article
-      className="cursor-pointer rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md sm:p-5"
+      className="cursor-pointer rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md sm:p-5"
       onClick={onClick}
       onKeyDown={handleKeyDown}
       role="button"
@@ -1023,7 +1023,7 @@ function RecentSplitCard({ group, onClick }) {
   );
 
   return (
-    <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+    <article className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="inline-flex items-center gap-2">
