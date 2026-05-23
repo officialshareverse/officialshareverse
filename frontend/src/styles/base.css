@@ -1,4 +1,4 @@
-﻿  :root {
+  :root {
     --sv-bg: #f5f1e8;
     --sv-bg-soft: #edf3f5;
     --sv-paper: rgba(255, 255, 255, 0.82);
@@ -238,11 +238,14 @@
   html {
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
   }
 
   body {
     margin: 0;
     min-height: 100vh;
+    width: 100%;
+    max-width: 100vw;
     background:
       radial-gradient(circle at top left, var(--sv-body-radial-a), transparent 30%),
       radial-gradient(circle at top right, var(--sv-body-radial-b), transparent 24%),
@@ -254,6 +257,12 @@
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
     transition: background 0.35s ease, color 0.35s ease;
+  }
+  
+  #root {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
   body.sv-auth-shell-active {
