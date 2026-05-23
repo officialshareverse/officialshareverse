@@ -1,4 +1,4 @@
-﻿
+
   .sv-notification-toggle.is-active {
     border-color: rgba(16, 185, 129, 0.24);
     background: rgba(16, 185, 129, 0.12);
@@ -779,7 +779,7 @@
   }
 
   .sv-mobile-appbar {
-    @apply flex items-center justify-between gap-3 border backdrop-blur;
+    @apply flex items-center justify-between gap-3 border backdrop-blur w-full;
     border-radius: 22px;
     padding: 0.75rem 0.875rem;
     border-color: var(--sv-border);
