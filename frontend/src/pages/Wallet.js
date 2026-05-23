@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
 import Drawer from "../components/Drawer";
+import FirstVisitHint from "../components/FirstVisitHint";
 import { useToast } from "../components/ToastProvider";
 import {
   BankIcon,
@@ -1053,6 +1054,12 @@ export default function Wallet() {
       ) : null}
 
       <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
+        <FirstVisitHint
+          storageKey="wallet-v1"
+          title="Manage your ShareVerse funds"
+          body="Add money here to join paid groups instantly. You can withdraw anytime to your bank or UPI."
+        />
+
         <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.08fr_0.92fr]">
           <div className="sv-card-solid sv-wallet-balance-card sv-reveal">
             <div className="sv-wallet-balance-backdrop" aria-hidden="true">

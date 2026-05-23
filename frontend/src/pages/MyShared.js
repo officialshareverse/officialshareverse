@@ -4,7 +4,9 @@ import API from "../api/axios";
 import { revealGroupCredentials } from "../api/credentials";
 import ActionDialog from "../components/ActionDialog";
 import Drawer from "../components/Drawer";
+import FirstVisitHint from "../components/FirstVisitHint";
 import InviteShareModal from "../components/InviteShareModal";
+import Tooltip from "../components/Tooltip";
 import { useToast } from "../components/ToastProvider";
 import useIsMobile from "../hooks/useIsMobile";
 import {
@@ -1139,6 +1141,14 @@ export default function MyShared() {
         ) : null}
       </div>
 
+      <div style={{ marginBottom: "24px" }}>
+        <FirstVisitHint
+          storageKey="my-splits-v1"
+          title="Manage your created and joined groups"
+          body="Groups you create or join appear here. Start by creating a split or exploring the marketplace."
+        />
+      </div>
+
       <div style={{ ...statsGrid, ...(isMobile ? statsGridMobile : {}) }}>
         {summaryCards.map((item) => (
           <SummaryCard key={item.label} label={item.label} value={item.value} highlight={item.highlight} compact={isMobile} />
@@ -1162,7 +1172,17 @@ export default function MyShared() {
       </div>
 
       {filteredGroups.length === 0 ? (
-        <p>No groups created yet.</p>
+        <Tooltip
+          guided={joinedGroups.length === 0}
+          side="bottom"
+          storageKey="sv-guided-tooltip-my-shared-empty-v1"
+          title="Your split workspace"
+          content="Groups you create or join appear here. Start by creating a split or exploring live groups."
+        >
+          <span style={{ display: "inline-flex", marginTop: "8px", color: "#64748b" }}>
+            No groups created yet.
+          </span>
+        </Tooltip>
       ) : (
         filteredGroups.map((group) => {
           const detail = details[group.id];
@@ -1805,7 +1825,9 @@ export default function MyShared() {
       </div>
 
       {joinedGroups.length === 0 ? (
-        <p>You have not joined any groups yet.</p>
+        <span style={{ display: "inline-flex", marginTop: "8px", color: "#64748b" }}>
+          You have not joined any groups yet.
+        </span>
       ) : (
         <div style={{ ...joinedGrid, ...(isMobile ? joinedGridMobile : {}) }}>
           {joinedGroups.map((group) => {

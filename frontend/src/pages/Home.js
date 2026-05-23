@@ -17,10 +17,6 @@ import {
   WalletIcon,
 } from "../components/UiIcons";
 import useIsMobile from "../hooks/useIsMobile";
-import {
-  HOME_ACTIVATION_VERSION,
-  getActivationTemplatesForPath,
-} from "./activationOptions";
 
 function formatCurrency(value) {
   const numeric = Number(value || 0);
@@ -74,12 +70,12 @@ function formatRelativeTime(value) {
 function getGreetingMeta() {
   const hour = new Date().getHours();
   if (hour < 12) {
-    return { text: "Good morning", emoji: "ðŸŒ…" };
+    return { text: "Good morning" };
   }
   if (hour < 17) {
-    return { text: "Good afternoon", emoji: "â˜€ï¸" };
+    return { text: "Good afternoon" };
   }
-  return { text: "Good evening", emoji: "ðŸŒ™" };
+  return { text: "Good evening" };
 }
 
 function getRecentSplitStatusMeta(status) {
@@ -104,13 +100,10 @@ export default function Home() {
   const [profileSnapshot, setProfileSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showIntro, setShowIntro] = useState(false);
+  const [introStep, setIntroStep] = useState(0);
   const [showGuide, setShowGuide] = useState(false);
   const [guideStep, setGuideStep] = useState(0);
-  const [showActivation, setShowActivation] = useState(false);
-  const [activationPath, setActivationPath] = useState("sharing");
-  const [activationTemplateId, setActivationTemplateId] = useState(
-    () => getActivationTemplatesForPath("sharing")[0]?.id || ""
-  );
 
   useEffect(() => {
     let isMounted = true;
@@ -146,12 +139,13 @@ export default function Home() {
   }, []);
 
   const currentUserId = dashboard?.current_user?.id || null;
-  const onboardingGuideVersion = "v2";
+  const onboardingIntroVersion = "v1";
+  const onboardingGuideVersion = "v3";
+  const onboardingIntroStorageKey = currentUserId
+    ? `sv-home-intro-seen-${onboardingIntroVersion}-${currentUserId}`
+    : "";
   const onboardingStorageKey = currentUserId
     ? `sv-home-guide-seen-${onboardingGuideVersion}-${currentUserId}`
-    : "";
-  const activationStorageKey = currentUserId
-    ? `sv-home-activation-seen-${HOME_ACTIVATION_VERSION}-${currentUserId}`
     : "";
 
   const ownerSummary = dashboard?.owner_summary || {};
@@ -167,9 +161,6 @@ export default function Home() {
   const membershipNeedsAttention = memberships.filter(
     (group) => group.access_confirmation_required || group.has_reported_access_issue
   ).length;
-  const hostedGroupsCount = Number(ownerSummary.total_groups_created || 0);
-  const joinedGroupsCount = memberships.length;
-  const shouldShowFirstActionActivation = hostedGroupsCount === 0 && joinedGroupsCount === 0;
   const greetingMeta = getGreetingMeta();
   const currentUserFirstName =
     profileSnapshot?.first_name?.trim() || dashboard?.current_user?.username || "there";
@@ -177,20 +168,10 @@ export default function Home() {
   const activeGroups = Number(dashboard?.active_groups || 0);
   const totalSpent = Number(profileSnapshot?.total_spent || dashboard?.total_spent || 0);
   const profileCompletion = Number(profileSnapshot?.profile_completion || 0);
-  const totalGuideSlides = 7;
+  const totalGuideSlides = 3;
   const marketplaceGroups = groups.slice(0, isMobile ? 2 : 4);
   const activeActionCount =
     membershipNeedsAttention + Number(ownerSummary.buy_together_waiting || 0);
-  const activationTemplates = useMemo(
-    () => getActivationTemplatesForPath(activationPath),
-    [activationPath]
-  );
-  const selectedActivationTemplate =
-    activationPath === "join"
-      ? null
-      : activationTemplates.find((item) => item.id === activationTemplateId) ||
-        activationTemplates[0] ||
-        null;
   const heroSummary =
     totalSpent > 0
       ? `${formatCurrency(totalSpent)} has moved through your ShareVerse activity so far.`
@@ -201,38 +182,28 @@ export default function Home() {
           : "You are ready to create your first split whenever you want.";
 
   useEffect(() => {
-    if (activationPath === "join") {
-      return;
-    }
-
-    if (!activationTemplates.some((item) => item.id === activationTemplateId)) {
-      setActivationTemplateId(activationTemplates[0]?.id || "");
-    }
-  }, [activationPath, activationTemplateId, activationTemplates]);
-
-  useEffect(() => {
     if (!currentUserId) {
       return;
     }
 
-    const hasSeenActivation = window.localStorage.getItem(activationStorageKey) === "1";
+    const hasSeenIntro = window.localStorage.getItem(onboardingIntroStorageKey) === "1";
     const hasSeenGuide = window.localStorage.getItem(onboardingStorageKey) === "1";
 
-    if (shouldShowFirstActionActivation && !hasSeenActivation) {
-      setShowActivation(true);
+    if (!hasSeenIntro) {
+      setIntroStep(0);
+      setShowIntro(true);
       setShowGuide(false);
       return;
     }
 
-    setShowActivation(false);
+    setShowIntro(false);
     if (!hasSeenGuide) {
       setShowGuide(true);
     }
   }, [
-    activationStorageKey,
     currentUserId,
+    onboardingIntroStorageKey,
     onboardingStorageKey,
-    shouldShowFirstActionActivation,
   ]);
 
   const primaryCard = useMemo(() => {
@@ -379,41 +350,51 @@ export default function Home() {
     [activeActionCount, navigate, profileCompletion, walletBalanceValue]
   );
 
+  const introSlides = [
+    {
+      eyebrow: "Split the cost",
+      title: "Rs 649 per month can become Rs 162 each.",
+      body: "A host opens paid slots for a plan they already manage, members join, and everyone sees the same price before paying.",
+      visual: "split",
+    },
+    {
+      eyebrow: "Coordinate in one place",
+      title: "Wallet, chat, confirmations, and updates stay together.",
+      body: "ShareVerse keeps the money flow, group messages, and access confirmations in the same workspace so nobody has to chase context.",
+      visual: "hub",
+    },
+    {
+      eyebrow: "Choose your path",
+      title: "Share a plan, join a live group, or start a buy-together.",
+      body: "Use sharing when you already have the plan. Use buy-together when members commit first and the creator buys later.",
+      visual: "paths",
+    },
+  ];
+
   const onboardingSteps = [
     {
       step: "01",
-      title: "Create a new split",
-      body: "Tap 'Create split' on the home screen to set up a provider-permitted plan, course, membership, or software tool for others to join.",
-      cta: "Create Split",
-      onClick: () => navigate("/create"),
+      title: "Add Rs 100 to your wallet",
+      body: "Wallet balance lets you join paid groups without repeating checkout for every split.",
+      cta: "Open Wallet",
+      onClick: () => navigate("/wallet"),
+      visual: "wallet",
     },
     {
       step: "02",
-      title: "Pick sharing or buy-together",
-      body: "Choose 'Sharing' if you already own the plan, or 'Buy together' if the group buys it after members join.",
-      cta: "Open Create Flow",
-      onClick: () => navigate("/create"),
+      title: "Browse a group that interests you",
+      body: "Explore live listings, compare open slots and prices, then open a card to review details before joining.",
+      cta: "Explore Groups",
+      onClick: () => navigate("/groups"),
+      visual: "browse",
     },
     {
       step: "03",
-      title: "Set the details and publish",
-      body: "Name your split, choose slots, set the price per slot, review dates, and publish when ready.",
-      cta: "Continue Setup",
+      title: "Or create your first split",
+      body: "Start a sharing group for a plan you already manage, or collect commitments first with buy-together.",
+      cta: "Create Split",
       onClick: () => navigate("/create"),
-    },
-    {
-      step: "04",
-      title: "Manage everything in My Splits",
-      body: "Check members, chat, confirmations, and actions all in one place after creating or joining a split.",
-      cta: "Open My Splits",
-      onClick: () => navigate("/my-shared"),
-    },
-    {
-      step: "05",
-      title: "Add money or withdraw from Wallet",
-      body: "Top up via Razorpay before joining paid groups. Request withdrawals anytime; they're usually settled within 24 hours.",
-      cta: "Open Wallet",
-      onClick: () => navigate("/wallet"),
+      visual: "create",
     },
   ];
 
@@ -423,39 +404,42 @@ export default function Home() {
     }
   };
 
-  const dismissGuide = () => {
+  const markIntroSeen = () => {
+    if (onboardingIntroStorageKey) {
+      window.localStorage.setItem(onboardingIntroStorageKey, "1");
+    }
+  };
+
+  const dismissIntro = () => {
+    markIntroSeen();
     markGuideSeen();
+    setShowIntro(false);
     setShowGuide(false);
   };
 
-  const dismissActivation = () => {
-    if (activationStorageKey) {
-      window.localStorage.setItem(activationStorageKey, "1");
-    }
-    markGuideSeen();
-    setShowActivation(false);
-  };
-
-  const continueFromActivation = () => {
-    dismissActivation();
-
-    if (activationPath === "join") {
-      navigate("/groups", {
-        state: {
-          activationEntry: "home-activation",
-          activationPath: "join",
-        },
-      });
+  const continueIntro = () => {
+    if (introStep < introSlides.length - 1) {
+      setIntroStep((current) => Math.min(introSlides.length - 1, current + 1));
       return;
     }
 
-    navigate("/create", {
-      state: {
-        activationEntry: "home-activation",
-        activationPath,
-        activationTemplateId: selectedActivationTemplate?.id || null,
-      },
-    });
+    markIntroSeen();
+    setShowIntro(false);
+    setGuideStep(0);
+    setShowGuide(true);
+  };
+
+  const startIntroAction = (path) => {
+    markIntroSeen();
+    markGuideSeen();
+    setShowIntro(false);
+    setShowGuide(false);
+    navigate(path);
+  };
+
+  const dismissGuide = () => {
+    markGuideSeen();
+    setShowGuide(false);
   };
 
   const openGuide = () => {
@@ -489,122 +473,97 @@ export default function Home() {
 
   return (
     <div className="sv-page">
-      {showActivation ? (
+      {showIntro ? (
         <div className="sv-modal-backdrop">
           <div className="sv-guide-modal">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="sv-eyebrow">First step</p>
+                <p className="sv-eyebrow">What is ShareVerse?</p>
                 <h2 className="mt-2 text-xl font-bold leading-tight text-slate-950 sm:text-2xl">
-                  What would you like to do first?
+                  {introSlides[introStep].title}
                 </h2>
               </div>
               <button
                 type="button"
-                onClick={dismissActivation}
+                onClick={dismissIntro}
                 className="min-h-[44px] px-1 py-2 text-[13px] font-semibold text-slate-500 transition hover:text-slate-800 sm:text-sm"
               >
-                Maybe later
+                Skip
               </button>
             </div>
 
-            <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
-              Pick the fastest path into ShareVerse. You can share something you already
-              manage, join an open split, or start a buy-together with safer category
-              defaults already prepared for you.
-            </p>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <ActivationPathCard
-                active={activationPath === "sharing"}
-                eyebrow="Share first"
-                title="Share a plan you already pay for"
-                body="Best when you already manage the plan and just want paid slots to go live."
-                icon={<PlusIcon className="h-5 w-5" />}
-                onClick={() => setActivationPath("sharing")}
-              />
-              <ActivationPathCard
-                active={activationPath === "join"}
-                eyebrow="Join first"
-                title="Join an open split"
-                body="Browse live listings and jump into something that already fits your stack."
-                icon={<CompassIcon className="h-5 w-5" />}
-                onClick={() => setActivationPath("join")}
-              />
-              <ActivationPathCard
-                active={activationPath === "group_buy"}
-                eyebrow="Buy together"
-                title="Start a buy-together"
-                body="Collect member commitments first, then buy after the group is aligned."
-                icon={<LayersIcon className="h-5 w-5" />}
-                onClick={() => setActivationPath("group_buy")}
-              />
+            <div className="mt-3 text-center text-[12px] font-medium text-slate-500 sm:mt-4 sm:text-sm">
+              Panel {introStep + 1} of {introSlides.length}
+            </div>
+            <div className="sv-guide-dots">
+              {introSlides.map((slide, index) => (
+                <span
+                  key={slide.eyebrow}
+                  className={`sv-guide-dot ${index === introStep ? "sv-guide-dot-active" : ""}`}
+                />
+              ))}
             </div>
 
-            {activationPath === "join" ? (
-              <div className="mt-5 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
-                <p className="text-sm font-semibold text-slate-950">Fastest path to value</p>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
-                  We&apos;ll take you straight to Explore so you can compare open splits,
-                  pricing, and availability before you commit.
+            <article className="sv-guide-step sv-intro-step sv-animate-rise">
+              <ShareVerseIntroVisual type={introSlides[introStep].visual} />
+              <div>
+                <p className="sv-eyebrow">{introSlides[introStep].eyebrow}</p>
+                <p className="mt-3 max-w-xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
+                  {introSlides[introStep].body}
                 </p>
-              </div>
-            ) : (
-              <div className="mt-5 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">
-                      Start with a safer category template
-                    </p>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">
-                      We&apos;ll prefill the name, slot count, and starting price. You can
-                      adjust everything before publishing.
-                    </p>
-                  </div>
-                  <span className="sv-chip">
-                    {activationPath === "sharing" ? "Share path" : "Buy-together path"}
-                  </span>
-                </div>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  {activationTemplates.map((template) => (
+                {introStep === introSlides.length - 1 ? (
+                  <div className="mt-4 grid gap-2 sm:grid-cols-3">
                     <button
-                      key={template.id}
                       type="button"
-                      onClick={() => setActivationTemplateId(template.id)}
-                      className={`rounded-[20px] border px-4 py-4 text-left transition ${
-                        selectedActivationTemplate?.id === template.id
-                          ? "border-slate-900 bg-white shadow-sm"
-                          : "border-slate-200 bg-white/80 hover:border-slate-300"
-                      }`}
+                      onClick={() => startIntroAction("/create")}
+                      className="sv-guide-map-item"
                     >
-                      <p className="text-sm font-semibold text-slate-950">{template.label}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
-                        {template.description}
-                      </p>
-                      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                        {template.totalSlots} slots • Rs {template.pricePerSlot} each
-                      </p>
+                      <span className="block text-[13px] font-semibold text-slate-950 sm:text-sm">
+                        Share a plan
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-500">
+                        Open paid slots
+                      </span>
                     </button>
-                  ))}
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => startIntroAction("/groups")}
+                      className="sv-guide-map-item"
+                    >
+                      <span className="block text-[13px] font-semibold text-slate-950 sm:text-sm">
+                        Join a group
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-500">
+                        Browse live splits
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => startIntroAction("/create")}
+                      className="sv-guide-map-item"
+                    >
+                      <span className="block text-[13px] font-semibold text-slate-950 sm:text-sm">
+                        Buy together
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-500">
+                        Commit first
+                      </span>
+                    </button>
+                  </div>
+                ) : null}
               </div>
-            )}
+            </article>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-[12px] leading-6 text-slate-500 sm:text-sm">
-                This only sets your starting point. Nothing gets published until you review it.
+                A short walkthrough follows after this intro.
               </p>
               <button
                 type="button"
-                onClick={continueFromActivation}
+                onClick={continueIntro}
                 className="sv-btn-primary w-full justify-center sm:w-auto"
               >
-                {activationPath === "join"
-                  ? "Explore open splits"
-                  : activationPath === "group_buy"
-                    ? "Start buy-together setup"
-                    : "Start sharing setup"}
+                {introStep < introSlides.length - 1 ? "Next panel" : "Continue to walkthrough"}
               </button>
             </div>
           </div>
@@ -613,7 +572,7 @@ export default function Home() {
         <div className="sv-modal-backdrop">
           <div className="sv-guide-modal">
             <div className="flex items-center justify-between gap-3">
-              <p className="sv-eyebrow">Quick guide</p>
+              <p className="sv-eyebrow">3-step walkthrough</p>
               <button
                 type="button"
                 onClick={dismissGuide}
@@ -636,88 +595,37 @@ export default function Home() {
             </div>
 
             <div className="mt-4 sm:mt-6">
-              {guideStep === 0 ? (
-                <div className="sv-guide-step sv-animate-rise">
-                  <h2 className="text-xl font-bold leading-tight text-slate-950 sm:text-2xl">
-                    Welcome to ShareVerse ðŸ‘‹
-                  </h2>
-                  <p className="mt-3 max-w-xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
-                    Here&apos;s a quick tour of the main sections. Tap any shortcut to jump
-                    straight there, or hit Next for a step-by-step guide.
-                  </p>
-
-                  <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
-                    {[
-                      { label: "Create split", note: "Host a new plan", onClick: () => navigate("/create") },
-                      { label: "Explore splits", note: "Join something open", onClick: () => navigate("/groups") },
-                      { label: "My splits", note: "Manage updates", onClick: () => navigate("/my-shared") },
-                      { label: "Wallet", note: "Top up or withdraw", onClick: () => navigate("/wallet") },
-                    ].map((item) => (
+              {guideStep < onboardingSteps.length ? (
+                <article className="sv-guide-step sv-walkthrough-step sv-animate-rise">
+                  <WalkthroughVisual type={onboardingSteps[guideStep].visual} />
+                  <div>
+                    <div className="flex items-center gap-2.5 sm:gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-[12px] font-bold text-white sm:h-11 sm:w-11 sm:text-sm">
+                        {onboardingSteps[guideStep].step}
+                      </span>
+                      <h3 className="text-[14px] font-semibold leading-snug text-slate-950 sm:text-lg">
+                        {onboardingSteps[guideStep].title}
+                      </h3>
+                    </div>
+                    <p className="mt-4 max-w-xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
+                      {onboardingSteps[guideStep].body}
+                    </p>
+                    <div className="mt-5">
                       <button
-                        key={item.label}
                         type="button"
                         onClick={() => {
                           dismissGuide();
-                          item.onClick();
+                          onboardingSteps[guideStep].onClick();
                         }}
-                        className="sv-guide-map-item"
+                        className="sv-btn-secondary w-full justify-center text-[13px] sm:w-auto sm:text-sm"
                       >
-                        <span className="block text-[13px] font-semibold text-slate-950 sm:text-sm">
-                          {item.label}
-                        </span>
-                        <span className="mt-0.5 block text-[11px] leading-5 text-slate-500 sm:mt-1 sm:text-xs sm:leading-6">
-                          {item.note}
-                        </span>
+                        {onboardingSteps[guideStep].cta}
                       </button>
-                    ))}
-                  </div>
-                </div>
-              ) : guideStep <= onboardingSteps.length ? (
-                <article className="sv-guide-step sv-animate-rise">
-                  <div className="flex items-center gap-2.5 sm:gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-[12px] font-bold text-white sm:h-11 sm:w-11 sm:text-sm">
-                      {onboardingSteps[guideStep - 1].step}
-                    </span>
-                    <h3 className="text-[14px] font-semibold leading-snug text-slate-950 sm:text-lg">
-                      {onboardingSteps[guideStep - 1].title}
-                    </h3>
-                  </div>
-                  <p className="mt-4 max-w-xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
-                    {onboardingSteps[guideStep - 1].body}
-                  </p>
-                  <div className="mt-5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        dismissGuide();
-                        onboardingSteps[guideStep - 1].onClick();
-                      }}
-                      className="sv-btn-secondary w-full justify-center text-[13px] sm:w-auto sm:text-sm"
-                    >
-                      {onboardingSteps[guideStep - 1].cta}
-                    </button>
+                    </div>
                   </div>
                 </article>
-              ) : (
-                <div className="flex flex-col gap-3 rounded-[18px] border border-emerald-200 bg-emerald-50 px-3.5 py-3.5 sv-animate-rise sm:rounded-[24px] sm:px-4 sm:py-4">
-                  <h2 className="text-xl font-bold text-emerald-950 sm:text-2xl">
-                    You&apos;re ready to go
-                  </h2>
-                  <p className="max-w-xl text-[13px] leading-6 text-emerald-900 sm:text-sm sm:leading-7">
-                    Need help after this? Open Support anytime and we&apos;ll help you
-                    with creating splits, joining them, top-ups, or manual withdrawal review.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={dismissGuide}
-                    className="sv-btn-primary w-full justify-center sm:w-auto"
-                  >
-                    Got it
-                  </button>
-                </div>
-              )}
+              ) : null}
             </div>
-
             <div className="sv-guide-nav">
               {guideStep === 0 ? (
                 <span aria-hidden="true" className="min-h-[44px] w-24 shrink-0" />
@@ -744,7 +652,13 @@ export default function Home() {
                   Next
                 </button>
               ) : (
-                <span aria-hidden="true" className="min-h-[44px] w-24 shrink-0" />
+                <button
+                  type="button"
+                  onClick={dismissGuide}
+                  className="sv-btn-primary min-w-[96px]"
+                >
+                  Done
+                </button>
               )}
             </div>
           </div>
@@ -987,36 +901,59 @@ function QuickActionButton({ icon, title, note, onClick }) {
   );
 }
 
-function ActivationPathCard({ active, eyebrow, title, body, icon, onClick }) {
+function ShareVerseIntroVisual({ type }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-[24px] border px-4 py-4 text-left transition ${
-        active
-          ? "border-slate-900 bg-slate-950 text-white shadow-sm"
-          : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
-      }`}
-    >
-      <span
-        className={`inline-flex h-10 w-10 items-center justify-center rounded-[16px] ${
-          active ? "bg-white/12 text-white" : "bg-slate-100 text-slate-700"
-        }`}
-      >
-        {icon}
-      </span>
-      <p
-        className={`mt-4 text-[11px] font-semibold uppercase tracking-[0.14em] ${
-          active ? "text-white/70" : "text-slate-500"
-        }`}
-      >
-        {eyebrow}
-      </p>
-      <h3 className="mt-2 text-base font-semibold leading-tight">{title}</h3>
-      <p className={`mt-3 text-sm leading-6 ${active ? "text-white/80" : "text-slate-600"}`}>
-        {body}
-      </p>
-    </button>
+    <div className={`sv-intro-visual is-${type}`} aria-hidden="true">
+      {type === "split" ? (
+        <>
+          <div className="sv-intro-price-card">
+            <span>Netflix</span>
+            <strong>Rs 649/mo</strong>
+          </div>
+          <div className="sv-intro-split-row">
+            {[1, 2, 3, 4].map((item) => (
+              <span key={item}>Rs 162</span>
+            ))}
+          </div>
+        </>
+      ) : type === "hub" ? (
+        <>
+          <div className="sv-intro-hub-node is-main">SV</div>
+          <div className="sv-intro-hub-node">Wallet</div>
+          <div className="sv-intro-hub-node">Chat</div>
+          <div className="sv-intro-hub-node">Access</div>
+        </>
+      ) : (
+        <div className="sv-intro-paths">
+          <span>Share</span>
+          <span>Join</span>
+          <span>Buy together</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WalkthroughVisual({ type }) {
+  return (
+    <div className={`sv-walkthrough-visual is-${type}`} aria-hidden="true">
+      {type === "wallet" ? (
+        <>
+          <WalletIcon className="h-7 w-7" />
+          <span>Rs 100</span>
+        </>
+      ) : type === "browse" ? (
+        <>
+          <CompassIcon className="h-7 w-7" />
+          <span>Live groups</span>
+        </>
+      ) : (
+        <>
+          <PlusIcon className="h-7 w-7" />
+          <span>First split</span>
+        </>
+      )}
+    </div>
   );
 }
 

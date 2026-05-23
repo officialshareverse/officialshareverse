@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
+import FirstVisitHint from "../components/FirstVisitHint";
 import { useToast } from "../components/ToastProvider";
 import {
   CheckCircleIcon,
@@ -718,6 +719,12 @@ export default function Groups() {
             )}
           </div>
         </section>
+
+        <FirstVisitHint
+          storageKey="explore-v1"
+          title="These are live groups people have created"
+          body="Tap any card to see pricing and join with your wallet balance. Filter by type, search by plan name, and sort by what matters most."
+        />
 
         {loading ? (
           <section className="grid gap-4 xl:gap-5">

@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-route
 import { refreshAccessToken } from "./api/axios";
 import { getAuthToken } from "./auth/session";
 import ErrorBoundary from "./components/ErrorBoundary";
+import FloatingHelpButton from "./components/FloatingHelpButton";
 import Navbar from "./components/Navbar";
 import {
   SkeletonBlock,
@@ -407,6 +408,8 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
         isVisible={isScrollTopVisible}
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       />
+
+      {isAuth ? <FloatingHelpButton /> : null}
     </>
   );
 }

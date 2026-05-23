@@ -71,32 +71,33 @@ beforeEach(() => {
   window.localStorage.clear();
 });
 
-test("shows the first-action activation modal and launches buy-together setup with a template", async () => {
+test("shows the visual intro before the 3-step walkthrough", async () => {
   installHomeDataMocks();
 
   render(<Home />);
 
   expect(
-    await screen.findByRole("heading", { name: /what would you like to do first/i })
+    await screen.findByRole("heading", { name: /rs 649 per month can become rs 162 each/i })
   ).toBeInTheDocument();
+  expect(screen.getByText("Netflix")).toBeInTheDocument();
+  expect(screen.getAllByText("Rs 162")).toHaveLength(4);
 
-  await userEvent.click(
-    screen.getByRole("button", { name: /start a buy-together/i })
-  );
-  await userEvent.click(
-    screen.getByRole("button", { name: /learning membership/i })
-  );
-  await userEvent.click(
-    screen.getByRole("button", { name: /start buy-together setup/i })
-  );
+  await userEvent.click(screen.getByRole("button", { name: /next panel/i }));
+  expect(screen.getByRole("heading", { name: /wallet, chat, confirmations/i })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: /next panel/i }));
+  expect(screen.getByRole("heading", { name: /share a plan, join a live group/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /join a group/i })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: /continue to walkthrough/i }));
+  expect(screen.getByText(/step 1 of 3/i)).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /add rs 100 to your wallet/i })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: /open wallet/i }));
 
   await waitFor(() => {
-    expect(__navigateMock).toHaveBeenCalledWith("/create", {
-      state: {
-        activationEntry: "home-activation",
-        activationPath: "group_buy",
-        activationTemplateId: "learning-membership-buy",
-      },
-    });
+    expect(__navigateMock).toHaveBeenCalledWith("/wallet");
   });
+  expect(window.localStorage.getItem("sv-home-intro-seen-v1-17")).toBe("1");
+  expect(window.localStorage.getItem("sv-home-guide-seen-v3-17")).toBe("1");
 });

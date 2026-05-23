@@ -155,6 +155,9 @@ export default function Profile() {
   const [isDragActive, setIsDragActive] = useState(false);
   const [reviewFilter, setReviewFilter] = useState("all");
   const [reviewSort, setReviewSort] = useState("newest");
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
 
   useRevealOnScroll();
 
@@ -196,6 +199,24 @@ export default function Profile() {
       URL.revokeObjectURL(objectUrl);
     };
   }, [selectedProfilePicture]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
 
   const initials = useMemo(() => {
     const source = profile?.full_name || profile?.username || "User";
@@ -295,6 +316,14 @@ export default function Profile() {
 
     return nextReviews;
   }, [recentReviews, reviewFilter, reviewSort]);
+
+  const mobileReviews = useMemo(
+    () =>
+      [...recentReviews]
+        .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime())
+        .slice(0, 2),
+    [recentReviews]
+  );
 
   const startEditing = () => {
     if (!profile) {
@@ -494,7 +523,7 @@ export default function Profile() {
                     </span>
                   </div>
 
-                  <p className="mt-3 text-sm text-slate-200 md:text-base">@{profile.username}</p>
+                  <p className="mt-3 text-sm text-slate-200 md:text-base">{isMobile ? `@${profile.username}` : `@${profile.username}`}</p>
                   <p className="sv-profile-tagline mt-3 max-w-2xl text-sm leading-7 text-slate-300 md:text-base md:leading-8">
                     {profileTagline}
                   </p>
@@ -508,23 +537,25 @@ export default function Profile() {
               </div>
             </div>
 
-            <div className="sv-profile-hero-metrics grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-              <HeroMetricCard
-                label="Wallet balance"
-                value={formatCurrency(profile.wallet_balance)}
-                note="Keep funds ready for paid joins and faster checkouts."
-              />
-              <HeroMetricCard
-                label="Profile strength"
-                value={`${profileStrength}%`}
-                note="A stronger profile shortens trust checks for new members."
-              />
-              <HeroMetricCard
-                label="Active now"
-                value={`${Number(profile.active_memberships || 0) + Number(profile.active_hosting || 0)}`}
-                note="Total active memberships and hosted groups right now."
-              />
-            </div>
+            {!isMobile ? (
+              <div className="sv-profile-hero-metrics grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                <HeroMetricCard
+                  label="Wallet balance"
+                  value={formatCurrency(profile.wallet_balance)}
+                  note="Keep funds ready for paid joins and faster checkouts."
+                />
+                <HeroMetricCard
+                  label="Profile strength"
+                  value={`${profileStrength}%`}
+                  note="A stronger profile shortens trust checks for new members."
+                />
+                <HeroMetricCard
+                  label="Active now"
+                  value={`${Number(profile.active_memberships || 0) + Number(profile.active_hosting || 0)}`}
+                  note="Total active memberships and hosted groups right now."
+                />
+              </div>
+            ) : null}
           </div>
         </section>
 
@@ -537,10 +568,12 @@ export default function Profile() {
             <LayersIcon className="h-4 w-4" />
             My splits
           </button>
-          <button type="button" className="sv-btn-secondary" onClick={() => navigate("/create")}>
-            <SparkIcon className="h-4 w-4" />
-            Create split
-          </button>
+          {!isMobile ? (
+            <button type="button" className="sv-btn-secondary" onClick={() => navigate("/create")}>
+              <SparkIcon className="h-4 w-4" />
+              Create split
+            </button>
+          ) : null}
         </section>
 
         {saveMessage ? (
@@ -557,8 +590,8 @@ export default function Profile() {
         <section className="sv-profile-stat-grid grid gap-4 md:grid-cols-2 xl:grid-cols-4 sv-reveal">
           <StatCard label="Groups joined" value={profile.groups_joined} icon={LayersIcon} tone="is-teal" note="Member history" />
           <StatCard label="Groups created" value={profile.groups_created} icon={SparkIcon} tone="is-violet" note="Host activity" />
-          <StatCard label="Total spent" value={profile.total_spent} icon={CreditIcon} tone="is-rose" note="Across joined groups" format="currency" />
-          <StatCard label="Total earned" value={profile.total_earned} icon={WalletIcon} tone="is-emerald" note="From sharing activity" format="currency" />
+          {!isMobile ? <StatCard label="Total spent" value={profile.total_spent} icon={CreditIcon} tone="is-rose" note="Across joined groups" format="currency" /> : null}
+          {!isMobile ? <StatCard label="Total earned" value={profile.total_earned} icon={WalletIcon} tone="is-emerald" note="From sharing activity" format="currency" /> : null}
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
@@ -566,7 +599,7 @@ export default function Profile() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="sv-eyebrow">Identity</p>
-                <h2 className="sv-title mt-2">Make your profile feel complete</h2>
+                <h2 className="sv-title mt-2">{isMobile ? "Profile basics" : "Make your profile feel complete"}</h2>
               </div>
               {!isEditing ? (
                 <button type="button" className="sv-btn-secondary" onClick={startEditing}>
@@ -646,7 +679,7 @@ export default function Profile() {
                     ) : null}
                   </div>
 
-                  {selectedProfilePicture || removeProfilePicture ? (
+                  {(selectedProfilePicture || removeProfilePicture) && !isMobile ? (
                     <div className="sv-profile-photo-compare">
                       <PhotoPreviewCard label="Current" imageUrl={profile?.profile_picture_url || ""} initials={initials} />
                       <PhotoPreviewCard
@@ -713,14 +746,16 @@ export default function Profile() {
                   label="Full name"
                   value={profile.full_name || "Add your name to complete your profile"}
                 />
-                <InfoRow icon={SparkIcon} label="Username" value={`@${profile.username}`} />
+                {!isMobile ? <InfoRow icon={SparkIcon} label="Username" value={`@${profile.username}`} /> : null}
                 <InfoRow icon={CreditIcon} label="Email" value={profile.email || "Add an email address"} />
                 <InfoRow icon={ClockIcon} label="Phone" value={profile.phone || "Add a phone number"} />
-                <InfoRow
-                  icon={ShieldIcon}
-                  label="Profile photo"
-                  value={profile.has_profile_picture ? "Added to your account" : "Add a photo to make your profile more complete"}
-                />
+                {!isMobile ? (
+                  <InfoRow
+                    icon={ShieldIcon}
+                    label="Profile photo"
+                    value={profile.has_profile_picture ? "Added to your account" : "Add a photo to make your profile more complete"}
+                  />
+                ) : null}
               </div>
             )}
           </section>
@@ -734,33 +769,43 @@ export default function Profile() {
                   <div>
                     <h2 className="text-[1.8rem] font-black text-slate-950">{Number(profile.trust_score || 0).toFixed(1)} / 5.0</h2>
                     <p className="mt-2 text-sm leading-7 text-slate-600">
-                      One place to understand how trusted your account feels before someone joins, pays, or hosts with you.
+                      {isMobile
+                        ? "Your trust score summarizes how ready your profile feels for members and hosts."
+                        : "One place to understand how trusted your account feels before someone joins, pays, or hosts with you."}
                     </p>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  {trustBreakdown.map((item) => (
-                    <div key={item.label} className="sv-profile-breakdown-row">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-sm font-semibold text-slate-950">{item.label}</span>
-                        <span className="text-sm font-semibold text-slate-500">{item.value}%</span>
-                      </div>
-                      <div className="sv-profile-breakdown-track">
-                        <span className="sv-profile-breakdown-fill" style={{ width: `${Math.max(8, item.value)}%` }} />
-                      </div>
-                      <p className="text-xs leading-6 text-slate-500">{item.note}</p>
+                {!isMobile ? (
+                  <>
+                    <div className="space-y-3">
+                      {trustBreakdown.map((item) => (
+                        <div key={item.label} className="sv-profile-breakdown-row">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm font-semibold text-slate-950">{item.label}</span>
+                            <span className="text-sm font-semibold text-slate-500">{item.value}%</span>
+                          </div>
+                          <div className="sv-profile-breakdown-track">
+                            <span className="sv-profile-breakdown-fill" style={{ width: `${Math.max(8, item.value)}%` }} />
+                          </div>
+                          <p className="text-xs leading-6 text-slate-500">{item.note}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
 
-                <details className="sv-profile-details-card">
-                  <summary>How to improve this</summary>
-                  <div className="mt-3 grid gap-3 text-sm leading-7 text-slate-600">
-                    <p>Add a clear photo, complete your contact fields, and keep your wallet funded before joining new paid groups.</p>
-                    <p>Hosting more successfully and collecting a few positive reviews will strengthen your group-history signal over time.</p>
+                    <details className="sv-profile-details-card">
+                      <summary>How to improve this</summary>
+                      <div className="mt-3 grid gap-3 text-sm leading-7 text-slate-600">
+                        <p>Add a clear photo, complete your contact fields, and keep your wallet funded before joining new paid groups.</p>
+                        <p>Hosting more successfully and collecting a few positive reviews will strengthen your group-history signal over time.</p>
+                      </div>
+                    </details>
+                  </>
+                ) : (
+                  <div className="rounded-[20px] border border-slate-200 bg-slate-50/90 px-4 py-4 text-sm leading-7 text-slate-600">
+                    Add a clear photo, complete your contact details, and keep wallet plus group activity healthy to improve trust faster.
                   </div>
-                </details>
+                )}
               </div>
             </section>
 
@@ -781,7 +826,7 @@ export default function Profile() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="sv-eyebrow">Reviews</p>
-                  <h2 className="sv-title mt-2">How others rate the experience</h2>
+                  <h2 className="sv-title mt-2">{isMobile ? "Recent reviews" : "How others rate the experience"}</h2>
                   <p className="mt-2 text-sm leading-7 text-slate-500">
                     {profile.review_count
                       ? `${profile.review_count} review${profile.review_count === 1 ? "" : "s"} received across your split activity.`
@@ -798,52 +843,56 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="mt-6 rounded-[26px] border border-slate-200 bg-slate-50/90 p-5">
-                <p className="text-sm font-semibold text-slate-950">Rating distribution</p>
-                <div className="mt-4 space-y-3">
-                  {reviewDistribution.map((item) => <ReviewDistributionRow key={item.rating} {...item} />)}
-                </div>
-              </div>
+              {!isMobile ? (
+                <>
+                  <div className="mt-6 rounded-[26px] border border-slate-200 bg-slate-50/90 p-5">
+                    <p className="text-sm font-semibold text-slate-950">Rating distribution</p>
+                    <div className="mt-4 space-y-3">
+                      {reviewDistribution.map((item) => <ReviewDistributionRow key={item.rating} {...item} />)}
+                    </div>
+                  </div>
 
-              <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { value: "all", label: "All" },
-                    { value: "5", label: "5 stars" },
-                    { value: "4", label: "4 stars" },
-                    { value: "3", label: "3 stars" },
-                  ].map((item) => (
-                    <button
-                      key={item.value}
-                      type="button"
-                      className={`sv-profile-filter-chip ${reviewFilter === item.value ? "is-active" : ""}`}
-                      onClick={() => setReviewFilter(item.value)}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: "all", label: "All" },
+                        { value: "5", label: "5 stars" },
+                        { value: "4", label: "4 stars" },
+                        { value: "3", label: "3 stars" },
+                      ].map((item) => (
+                        <button
+                          key={item.value}
+                          type="button"
+                          className={`sv-profile-filter-chip ${reviewFilter === item.value ? "is-active" : ""}`}
+                          onClick={() => setReviewFilter(item.value)}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { value: "newest", label: "Newest" },
-                    { value: "highest", label: "Highest rating" },
-                  ].map((item) => (
-                    <button
-                      key={item.value}
-                      type="button"
-                      className={`sv-profile-filter-chip ${reviewSort === item.value ? "is-active" : ""}`}
-                      onClick={() => setReviewSort(item.value)}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: "newest", label: "Newest" },
+                        { value: "highest", label: "Highest rating" },
+                      ].map((item) => (
+                        <button
+                          key={item.value}
+                          type="button"
+                          className={`sv-profile-filter-chip ${reviewSort === item.value ? "is-active" : ""}`}
+                          onClick={() => setReviewSort(item.value)}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : null}
 
               <div className="sv-profile-review-list mt-5 space-y-4">
-                {filteredReviews.length ? (
-                  filteredReviews.map((review) => <ReviewCard key={review.id} review={review} />)
+                {(isMobile ? mobileReviews : filteredReviews).length ? (
+                  (isMobile ? mobileReviews : filteredReviews).map((review) => <ReviewCard key={review.id} review={review} />)
                 ) : (
                   <div className="sv-empty-state">
                     <div className="sv-empty-icon">
