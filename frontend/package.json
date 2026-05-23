@@ -15,7 +15,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "prestart": "node update-sw-version.js",
     "start": "react-scripts start",
+    "prebuild": "node update-sw-version.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
