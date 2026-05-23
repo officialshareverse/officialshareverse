@@ -25,7 +25,7 @@ const navItems = [
   { to: "/groups", label: "Explore", mobileLabel: "Explore", icon: CompassIcon, mobileTab: true, desktopGroup: "primary" },
   { to: "/create", label: "Create", mobileLabel: "Create", icon: PlusIcon, mobileTab: true, desktopGroup: "primary" },
   { to: "/my-shared", label: "My Splits", mobileLabel: "Splits", icon: LayersIcon, mobileTab: true, desktopGroup: "workspace" },
-  { to: "/wallet", label: "Wallet", mobileLabel: "Wallet", icon: WalletIcon, mobileTab: true, desktopGroup: "workspace" },
+  { to: "/wallet", label: "Wallet", mobileLabel: "Wallet", icon: WalletIcon, mobileTab: false, desktopGroup: "workspace" },
   { to: "/referrals", label: "Refer and earn", mobileLabel: "Refer", icon: SparkIcon, mobileMenu: true },
   { to: "/notifications", label: "Notifications", mobileLabel: "Alerts", icon: BellIcon, badgeKey: "notification", desktopGroup: "signals" },
   { to: "/chats", label: "Chats", mobileLabel: "Chats", icon: ChatIcon, badgeKey: "chat", desktopGroup: "signals" },
