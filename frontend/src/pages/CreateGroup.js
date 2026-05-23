@@ -947,6 +947,9 @@ export default function CreateGroup() {
                       <CheckCircleIcon className="h-5 w-5 text-emerald-600" />
                       <span>Preview looks clear enough to publish confidently.</span>
                     </div>
+                    <div className="mt-3 rounded-xl bg-amber-50 p-4 border border-amber-200">
+                      <p className="text-sm font-semibold text-amber-800">Trust Guarantee: Members' money is held safely until they confirm they got access.</p>
+                    </div>
                   </section>
                 </div>
               ) : null}

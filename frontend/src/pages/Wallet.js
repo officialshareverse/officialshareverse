@@ -821,6 +821,10 @@ export default function Wallet() {
               </>
             )}
           </button>
+          
+          <div className="mt-4 rounded-xl bg-slate-50 p-3 border border-slate-200 text-center">
+            <p className="text-xs font-semibold text-slate-600">Withdrawals are reviewed and securely processed within 24 hours.</p>
+          </div>
         </form>
       </div>
     );
@@ -1501,7 +1505,19 @@ export default function Wallet() {
                                   {transaction.status}
                                 </span>
                               </div>
-                              <p className={`mt-2 text-sm text-slate-600 ${isMobile ? "leading-6 sv-wallet-message-compact" : "leading-7"}`}>{transaction.description}</p>
+                              <div className={`mt-2 text-sm text-slate-600 ${isMobile ? "leading-6 sv-wallet-message-compact" : "leading-7"}`}>
+                                {transaction.title.toLowerCase().includes("join") ? (
+                                  <span className="flex items-center gap-2 flex-wrap">
+                                    <span>{formatCurrency(Math.abs(transaction.amount))} charged</span>
+                                    <span className="text-slate-300">→</span>
+                                    <span className="font-semibold text-amber-700">Held</span>
+                                    <span className="text-slate-300">→</span>
+                                    <span>Waiting for confirmation</span>
+                                  </span>
+                                ) : (
+                                  <p>{transaction.description}</p>
+                                )}
+                              </div>
                               <p className="mt-1 text-xs text-slate-500">
                                 {isMobile
                                   ? transaction.group_name || transaction.mode_label

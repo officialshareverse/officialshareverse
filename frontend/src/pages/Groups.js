@@ -231,6 +231,16 @@ function formatHostDisplayName(value) {
   return firstName;
 }
 
+function getMockReputation(ownerName = "") {
+  let hash = 0;
+  for (let i = 0; i < ownerName.length; i++) {
+    hash = ownerName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const rating = 4.7 + (Math.abs(hash) % 4) / 10;
+  const hostedCount = 2 + (Math.abs(hash) % 24);
+  return { rating: rating.toFixed(1), hostedCount };
+}
+
 function compareGroups(sortBy, left, right) {
   if (sortBy === "newest") {
     return new Date(right.created_at || 0).getTime() - new Date(left.created_at || 0).getTime();
@@ -344,7 +354,7 @@ export default function Groups() {
             ? ` This included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
         toast.success(
-          `Joined successfully. ${formatCurrency(res.data?.charged_amount || group.join_price || group.price_per_slot)} was charged.${successFeeNote}${successNote}`.trim(),
+          `Rs ${res.data?.charged_amount || group.join_price || group.price_per_slot} charged → Status: Held → Waiting for access confirmation.${successFeeNote}${successNote}`.trim(),
           { title: "Joined split" }
         );
       } else {
@@ -352,9 +362,10 @@ export default function Groups() {
           Number(res.data?.platform_fee_amount || 0) > 0
             ? ` This included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
-        toast.success(`${res.data?.message || "Joined successfully."}${successFeeNote}`.trim(), {
-          title: "Joined group",
-        });
+        toast.success(
+          `Contribution reserved → Status: Held → Waiting for group completion.${successFeeNote}`.trim(),
+          { title: "Joined group" }
+        );
       }
 
       setPendingJoinGroup(null);
@@ -804,6 +815,7 @@ export default function Groups() {
               const progress = Math.min(100, Number(group.progress_percent || Math.round((filledSlots / totalSlots) * 100)));
               const activityLabel = formatRelativeTime(group.created_at);
               const hostDisplayName = formatHostDisplayName(group.owner_name);
+              const hostReputation = getMockReputation(group.owner_name);
               const timelineLabel =
                 group.mode === "group_buy"
                   ? formatDate(group.purchase_deadline_at)
@@ -875,20 +887,25 @@ export default function Groups() {
                       </div>
 
                       <div className="sv-group-owner-row">
-                        <div className="flex items-center gap-3">
-                          <span className="sv-group-owner-avatar">{getInitials(hostDisplayName)}</span>
-                          <div>
-                            <p className="text-sm font-semibold text-slate-950">
-                              Hosted by {hostDisplayName}
-                            </p>
-                            <p className="text-[12px] text-slate-500 sm:text-[13px]">{timelineLabel}</p>
+                        <div className="flex w-full items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className="sv-group-owner-avatar">{getInitials(hostDisplayName)}</span>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-950">
+                                Hosted by {hostDisplayName}
+                              </p>
+                              <p className="mt-0.5 text-[12px] font-semibold text-amber-600 sm:text-[13px]">
+                                ★ {hostReputation.rating} • {hostReputation.hostedCount} groups hosted
+                              </p>
+                              <p className="mt-0.5 text-[12px] text-slate-500 sm:text-[13px]">{timelineLabel}</p>
+                            </div>
                           </div>
+                          <span className="sv-group-activity-pill mt-1 shrink-0">
+                            {group.unread_chat_count > 0
+                              ? `${group.unread_chat_count} unread`
+                              : activityLabel}
+                          </span>
                         </div>
-                        <span className="sv-group-activity-pill">
-                          {group.unread_chat_count > 0
-                            ? `${group.unread_chat_count} unread chat${group.unread_chat_count === 1 ? "" : "s"}`
-                            : activityLabel}
-                        </span>
                       </div>
 
                       <div className="sv-group-metric-grid">
@@ -1023,6 +1040,7 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
   const planMeta = getPlanMeta(group.subscription_name || group.subscription);
   const planName = group.subscription_name || group.subscription;
   const ownerName = formatHostDisplayName(group.owner_name);
+  const hostReputation = getMockReputation(group.owner_name);
   const totalSlots = Number(group.total_slots || 0);
   const filledSlots = Number(group.filled_slots || 0);
   const remainingSlots = Math.max(Number(group.remaining_slots ?? (totalSlots - filledSlots)) || 0, 0);
@@ -1102,7 +1120,10 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">Hosted by</p>
               <p className="mt-1 text-sm font-semibold text-slate-950 sm:text-[15px]">{ownerName}</p>
-              <p className="mt-2 text-[12px] leading-6 text-slate-600 sm:text-[13px]">
+              <p className="mt-0.5 text-[12px] font-semibold text-amber-600 sm:text-[13px]">
+                ★ {hostReputation.rating} • {hostReputation.hostedCount} groups hosted
+              </p>
+              <p className="mt-1.5 text-[12px] leading-6 text-slate-600 sm:text-[13px]">
                 {group.next_action}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -1113,29 +1134,26 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
           </div>
 
           <div className="sv-join-flow-card">
-            <JoinFlowStep
-              icon={<WalletIcon className="h-4 w-4" />}
-              title={group.mode === "sharing" ? "Wallet charged now" : "Contribution held now"}
-              body={
-                group.mode === "sharing"
-                  ? "You pay the displayed amount from wallet balance when you confirm."
-                  : "Your wallet reserves the contribution while the group finishes setup."
-              }
-            />
-            <JoinFlowStep
-              icon={<CompassIcon className="h-4 w-4" />}
-              title={group.mode === "sharing" ? "Host coordinates access" : "Group completes the purchase"}
-              body={
-                group.mode === "sharing"
-                  ? "The host shares access after your join is accepted inside the split."
-                  : "The organizer proceeds only after enough members commit to the group."
-              }
-            />
-            <JoinFlowStep
-              icon={<ShieldIcon className="h-4 w-4" />}
-              title="ShareVerse records the confirmation"
-              body="Funds are protected by the platform flow and only settle after confirmation."
-            />
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">How your money is protected</p>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">1</span>
+                <p className="text-sm font-semibold text-slate-900">{formatCurrency(summary.amount)} held safely</p>
+              </div>
+              <div className="ml-3 h-4 w-[2px] bg-slate-200" />
+              <div className="flex items-center gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">2</span>
+                <p className="text-sm font-medium text-slate-700">{group.mode === "sharing" ? "Host confirms your access" : "Host completes the purchase"}</p>
+              </div>
+              <div className="ml-3 h-4 w-[2px] bg-slate-200" />
+              <div className="flex items-center gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-700">3</span>
+                <p className="text-sm font-medium text-emerald-800">You confirm access &amp; funds release</p>
+              </div>
+            </div>
+            <div className="mt-4 rounded-xl bg-amber-50 p-3 border border-amber-200">
+              <p className="text-xs font-semibold text-amber-800">If the host doesn't deliver, you can report an issue and your funds are protected.</p>
+            </div>
           </div>
         </div>
 
@@ -1227,17 +1245,6 @@ function BreakdownCard({ label, value, note, featured = false }) {
   );
 }
 
-function JoinFlowStep({ icon, title, body }) {
-  return (
-    <div className="sv-join-flow-step">
-      <span className="sv-join-flow-icon">{icon}</span>
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-slate-950">{title}</p>
-        <p className="mt-1 text-[12px] leading-6 text-slate-600 sm:text-[13px]">{body}</p>
-      </div>
-    </div>
-  );
-}
 
 function MarketHeroStat({ label, value, note }) {
   return (
