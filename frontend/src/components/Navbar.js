@@ -25,7 +25,7 @@ const navItems = [
   { to: "/groups", label: "Explore", mobileLabel: "Explore", icon: CompassIcon, mobileTab: true, desktopGroup: "primary" },
   { to: "/create", label: "Create", mobileLabel: "Create", icon: PlusIcon, mobileTab: true, desktopGroup: "primary" },
   { to: "/my-shared", label: "My Splits", mobileLabel: "Splits", icon: LayersIcon, mobileTab: true, desktopGroup: "workspace" },
-  { to: "/wallet", label: "Wallet", mobileLabel: "Wallet", icon: WalletIcon, mobileTab: false, desktopGroup: "workspace" },
+  { to: "/wallet", label: "Wallet", mobileLabel: "Wallet", icon: WalletIcon, mobileTab: true, desktopGroup: "workspace" },
   { to: "/referrals", label: "Refer and earn", mobileLabel: "Refer", icon: SparkIcon, mobileMenu: true },
   { to: "/notifications", label: "Notifications", mobileLabel: "Alerts", icon: BellIcon, badgeKey: "notification", desktopGroup: "signals" },
   { to: "/chats", label: "Chats", mobileLabel: "Chats", icon: ChatIcon, badgeKey: "chat", desktopGroup: "signals" },
@@ -240,6 +240,18 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
   }, [currentPath, unreadChatCount, unreadNotificationCount]);
 
   const renderNavLabel = (item) => {
+    if (item.to === "/wallet" && profile && typeof profile.wallet_balance !== "undefined") {
+      const balance = Number(profile.wallet_balance || 0);
+      return (
+        <span className="inline-flex items-center gap-2">
+          <span>{item.label}</span>
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-bold tracking-wide text-slate-800 dark:bg-slate-800 dark:text-slate-200">
+            Rs {balance.toFixed(2)}
+          </span>
+        </span>
+      );
+    }
+
     if (item.badgeKey !== "chat" && item.badgeKey !== "notification") {
       return item.label;
     }
@@ -432,6 +444,16 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
             </div>
 
             <div className="flex items-center gap-2">
+              {profile && typeof profile.wallet_balance !== "undefined" ? (
+                <button
+                  type="button"
+                  onClick={() => navigate("/wallet")}
+                  className="flex items-center gap-1.5 rounded-full bg-slate-100/80 px-2.5 py-1 text-xs font-bold text-slate-800 mr-1 dark:bg-slate-800/80 dark:text-slate-200"
+                >
+                  <WalletIcon className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Rs {Number(profile.wallet_balance || 0).toFixed(0)}
+                </button>
+              ) : null}
               <Tooltip content="Notifications">
                 <button
                   type="button"
@@ -452,6 +474,7 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
                   aria-expanded={isMenuOpen}
                 >
                   <HamburgerIcon open={isMenuOpen} />
+                  {(unreadChatCount > 0 || unreadNotificationCount > 0) && !isMenuOpen ? <span className="sv-mobile-icon-dot" /> : null}
                 </button>
               </Tooltip>
             </div>
