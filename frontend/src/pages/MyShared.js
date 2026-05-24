@@ -4,9 +4,11 @@ import API from "../api/axios";
 import { revealGroupCredentials } from "../api/credentials";
 import ActionDialog from "../components/ActionDialog";
 import Drawer from "../components/Drawer";
+import EmptyState from "../components/EmptyState";
 import FirstVisitHint from "../components/FirstVisitHint";
 import InviteShareModal from "../components/InviteShareModal";
 import Tooltip from "../components/Tooltip";
+import { SkeletonList } from "../components/SkeletonFactory";
 import { useToast } from "../components/ToastProvider";
 import useIsMobile from "../hooks/useIsMobile";
 import {
@@ -139,6 +141,7 @@ export default function MyShared() {
   const isMobile = useIsMobile();
   const [groups, setGroups] = useState([]);
   const [joinedGroups, setJoinedGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [details, setDetails] = useState({});
   const [loadingDetailId, setLoadingDetailId] = useState(null);
@@ -217,8 +220,15 @@ export default function MyShared() {
   };
 
   useEffect(() => {
-    fetchGroups();
-    fetchJoinedGroups();
+    let isMounted = true;
+    const fetchAll = async () => {
+      await Promise.all([fetchGroups(), fetchJoinedGroups()]);
+      if (isMounted) setLoading(false);
+    };
+    fetchAll();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -1171,7 +1181,9 @@ export default function MyShared() {
         <FilterButton active={filter === "group_buy"} onClick={() => setFilter("group_buy")} compact={isMobile}>Buy together</FilterButton>
       </div>
 
-      {filteredGroups.length === 0 ? (
+      {loading ? (
+        <SkeletonList count={3} />
+      ) : filteredGroups.length === 0 ? (
         <Tooltip
           guided={joinedGroups.length === 0}
           side="bottom"
@@ -1179,9 +1191,16 @@ export default function MyShared() {
           title="Your split workspace"
           content="Groups you create or join appear here. Start by creating a split or exploring live groups."
         >
-          <span style={{ display: "inline-flex", marginTop: "8px", color: "#64748b" }}>
-            No groups created yet.
-          </span>
+          <EmptyState
+            icon={LayersIcon}
+            title="No splits created yet"
+            description="You haven't created any groups. List your first subscription to start saving."
+            actions={
+              <button style={primaryButton} onClick={() => navigate("/create")}>
+                Create Your First Split
+              </button>
+            }
+          />
         </Tooltip>
       ) : (
         filteredGroups.map((group) => {
@@ -1824,10 +1843,19 @@ export default function MyShared() {
         ) : null}
       </div>
 
-      {joinedGroups.length === 0 ? (
-        <span style={{ display: "inline-flex", marginTop: "8px", color: "#64748b" }}>
-          You have not joined any groups yet.
-        </span>
+      {loading ? (
+        <SkeletonList count={3} />
+      ) : joinedGroups.length === 0 ? (
+        <EmptyState
+          icon={SparkIcon}
+          title="No joined groups yet"
+          description="You haven't joined any splits. Explore the marketplace to find subscriptions."
+          actions={
+            <button style={primaryButton} onClick={() => navigate("/explore")}>
+              Explore Marketplace
+            </button>
+          }
+        />
       ) : (
         <div style={{ ...joinedGrid, ...(isMobile ? joinedGridMobile : {}) }}>
           {joinedGroups.map((group) => {

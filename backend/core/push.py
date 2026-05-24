@@ -33,6 +33,18 @@ def send_push_notification_to_user(user_id, notification_payload):
         "kind": notification_payload.get("kind"),
         "context_title": notification_payload.get("context_title"),
     }
+    badge_count = 0
+    try:
+        from .models import User
+        from .consumers import get_badge_counts_for_user
+
+        user = User.objects.filter(id=user_id).first()
+        if user:
+            counts = get_badge_counts_for_user(user)
+            badge_count = sum(counts.values())
+    except Exception:
+        pass
+
     payload = [
         {
             "to": device.expo_push_token,
@@ -40,6 +52,7 @@ def send_push_notification_to_user(user_id, notification_payload):
             "body": message,
             "sound": "default",
             "priority": "high",
+            "badge": badge_count,
             "data": push_data,
         }
         for device in devices

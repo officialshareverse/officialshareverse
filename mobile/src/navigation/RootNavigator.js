@@ -35,12 +35,17 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 export const navigationRef = createNavigationContainerRef();
 
+import * as Notifications from "expo-notifications";
+import { AppState } from "react-native";
+
 function PushNotificationBridge() {
   useEffect(() => {
     const support = getPushRuntimeSupport();
     if (!support.supported) {
       return undefined;
     }
+
+    Notifications.setBadgeCountAsync(0);
 
     const subscription = addPushNotificationResponseListener((response) => {
       const data = response?.notification?.request?.content?.data || {};
@@ -56,8 +61,15 @@ function PushNotificationBridge() {
       navigationRef.navigate("Notifications");
     });
 
+    const appStateSubscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        Notifications.setBadgeCountAsync(0);
+      }
+    });
+
     return () => {
       subscription.remove();
+      appStateSubscription.remove();
     };
   }, []);
 

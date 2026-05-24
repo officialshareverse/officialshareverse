@@ -508,7 +508,19 @@ export default function CreateGroup() {
       navigate("/my-shared");
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.error || "We could not create the group right now.", {
+      let errorMessage = "We could not create the group right now.";
+      if (err.response?.data) {
+        if (err.response.data.error) {
+          errorMessage = err.response.data.error;
+        } else if (typeof err.response.data === "object") {
+          const firstKey = Object.keys(err.response.data)[0];
+          const firstVal = err.response.data[firstKey];
+          if (Array.isArray(firstVal) && firstVal.length > 0) {
+            errorMessage = firstVal[0];
+          }
+        }
+      }
+      toast.error(errorMessage, {
         title: "Couldn't create split",
       });
     } finally {
