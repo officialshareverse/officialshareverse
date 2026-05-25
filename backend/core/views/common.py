@@ -1701,10 +1701,6 @@ def award_referral_reward_for_group_join(joined_user, group, join_subtotal, invi
 
 
 def perform_group_join(joined_user, group):
-    error_payload, error_status, pricing = validate_group_join_request(group, joined_user)
-    if error_payload:
-        return None, error_payload, error_status
-
     with transaction.atomic():
         try:
             locked_group = (

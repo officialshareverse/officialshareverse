@@ -10,7 +10,7 @@ from django.core.exceptions import ValidationError
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
-from django.db import DatabaseError
+from django.db import DatabaseError, transaction
 from django.utils import timezone
 from django.test import override_settings
 from rest_framework import status
@@ -51,6 +51,7 @@ from .models import (
 )
 from .manual_payouts import create_manual_wallet_payout, create_manual_wallet_payout_request
 from .payments import PaymentGatewayError
+from .views import common as view_common
 
 
 class GroupFlowTests(APITestCase):
@@ -3294,6 +3295,23 @@ class GroupFlowTests(APITestCase):
                 message__contains="creator will buy the subscription and upload proof next",
             ).exists()
         )
+
+    def test_group_join_capacity_validation_runs_inside_atomic_lock(self):
+        group = self.create_group(mode="sharing", total_slots=2, status="forming")
+        validation_atomic_states = []
+        original_validate = view_common.validate_group_join_request
+
+        def record_atomic_state(group_arg, user_arg):
+            validation_atomic_states.append(transaction.get_connection().in_atomic_block)
+            return original_validate(group_arg, user_arg)
+
+        self.authenticate(self.member_one)
+        with patch("core.views.common.validate_group_join_request", side_effect=record_atomic_state):
+            response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(validation_atomic_states, [True])
+        self.assertEqual(GroupMember.objects.filter(group=group, user=self.member_one).count(), 1)
 
     def test_join_group_is_rate_limited(self):
         group = self.create_group(mode="sharing", total_slots=3, status="active")
