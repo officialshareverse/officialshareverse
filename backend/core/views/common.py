@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import DatabaseError, connections, transaction
+from django.db import DatabaseError, IntegrityError, connections, transaction
 from django.db.models import Avg, Count, ExpressionWrapper, F, IntegerField, Max, OuterRef, Prefetch, Q, Subquery, Sum, Value
 from django.utils import timezone
 from rest_framework import status
@@ -1384,31 +1384,50 @@ def apply_wallet_payout_state(wallet_payout_id, payout_details, *, status_source
 
 
 def mark_wallet_topup_failed(topup_order, message, payment_id="", signature=""):
-    update_fields = ["last_error", "status", "updated_at"]
-    topup_order.last_error = message
-    topup_order.status = "failed"
+    with transaction.atomic():
+        locked_topup = WalletTopupOrder.objects.select_for_update().select_related("user").get(id=topup_order.id)
+        if locked_topup.credited_at:
+            log_operation_event(
+                "wallet_topup_failure_ignored_after_credit",
+                topup_order_id=locked_topup.id,
+                user_id=locked_topup.user_id,
+                username=locked_topup.user.username,
+                amount=locked_topup.amount,
+                currency=locked_topup.currency,
+                provider_order_id=locked_topup.provider_order_id,
+                payment_id=payment_id or locked_topup.provider_payment_id,
+                reason=message,
+                status=locked_topup.status,
+            )
+            return False, locked_topup
 
-    if payment_id and topup_order.provider_payment_id != payment_id:
-        topup_order.provider_payment_id = payment_id
-        update_fields.append("provider_payment_id")
+        update_fields = ["last_error", "status", "updated_at"]
+        locked_topup.last_error = message
+        locked_topup.status = "failed"
 
-    if signature and topup_order.provider_signature != signature:
-        topup_order.provider_signature = signature
-        update_fields.append("provider_signature")
+        if payment_id and locked_topup.provider_payment_id != payment_id:
+            locked_topup.provider_payment_id = payment_id
+            update_fields.append("provider_payment_id")
 
-    topup_order.save(update_fields=update_fields)
+        if signature and locked_topup.provider_signature != signature:
+            locked_topup.provider_signature = signature
+            update_fields.append("provider_signature")
+
+        locked_topup.save(update_fields=update_fields)
+
     log_operation_event(
         "wallet_topup_failed",
-        topup_order_id=topup_order.id,
-        user_id=topup_order.user_id,
-        username=topup_order.user.username,
-        amount=topup_order.amount,
-        currency=topup_order.currency,
-        provider_order_id=topup_order.provider_order_id,
-        payment_id=payment_id or topup_order.provider_payment_id,
+        topup_order_id=locked_topup.id,
+        user_id=locked_topup.user_id,
+        username=locked_topup.user.username,
+        amount=locked_topup.amount,
+        currency=locked_topup.currency,
+        provider_order_id=locked_topup.provider_order_id,
+        payment_id=payment_id or locked_topup.provider_payment_id,
         reason=message,
-        status=topup_order.status,
+        status=locked_topup.status,
     )
+    return True, locked_topup
 
 
 def validate_wallet_topup_payment_details(topup_order, payment_details):
@@ -1447,7 +1466,7 @@ def credit_wallet_topup_order(topup_order_id, payment_id, signature=""):
         locked_topup = WalletTopupOrder.objects.select_for_update().select_related("user").get(id=topup_order_id)
         wallet, _ = Wallet.objects.select_for_update().get_or_create(user=locked_topup.user)
 
-        if locked_topup.status != "paid" or not locked_topup.credited_at:
+        if not locked_topup.credited_at:
             wallet.balance += locked_topup.amount
             wallet.save()
 
@@ -1476,6 +1495,23 @@ def credit_wallet_topup_order(topup_order_id, payment_id, signature=""):
                 ]
             )
             credited_now = True
+        else:
+            update_fields = []
+            if locked_topup.status != "paid":
+                locked_topup.status = "paid"
+                update_fields.append("status")
+            if payment_id and not locked_topup.provider_payment_id:
+                locked_topup.provider_payment_id = payment_id
+                update_fields.append("provider_payment_id")
+            if signature and not locked_topup.provider_signature:
+                locked_topup.provider_signature = signature
+                update_fields.append("provider_signature")
+            if locked_topup.last_error:
+                locked_topup.last_error = ""
+                update_fields.append("last_error")
+            if update_fields:
+                update_fields.append("updated_at")
+                locked_topup.save(update_fields=update_fields)
 
     final_topup = WalletTopupOrder.objects.select_related("user").get(id=topup_order_id)
     final_wallet, _ = Wallet.objects.get_or_create(user=final_topup.user)
@@ -1492,6 +1528,22 @@ def credit_wallet_topup_order(topup_order_id, payment_id, signature=""):
         wallet_balance=final_wallet.balance,
     )
     return credited_now, final_topup, final_wallet
+
+
+def record_razorpay_webhook_event_once(event_id, event_type, payment_id="", provider_order_id="", status="processed", notes=""):
+    try:
+        with transaction.atomic():
+            webhook_event = RazorpayWebhookEvent.objects.create(
+                event_id=event_id,
+                event_type=event_type or "unknown",
+                payment_id=payment_id,
+                provider_order_id=provider_order_id,
+                status=status,
+                notes=notes,
+            )
+        return webhook_event, True
+    except IntegrityError:
+        return RazorpayWebhookEvent.objects.get(event_id=event_id), False
 
 
 def can_rate_group(group):

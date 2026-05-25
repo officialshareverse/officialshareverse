@@ -2552,6 +2552,28 @@ class GroupFlowTests(APITestCase):
         )
         verify_signature_mock.assert_called()
 
+    def test_wallet_topup_credit_rolls_back_if_transaction_record_creation_fails(self):
+        wallet = Wallet.objects.get(user=self.owner)
+        topup_order = WalletTopupOrder.objects.create(
+            user=self.owner,
+            amount=Decimal("175.00"),
+            amount_subunits=17500,
+            currency="INR",
+            receipt="topup_atomic_receipt",
+            provider_order_id="order_atomic_123",
+        )
+
+        with patch("core.views.common.Transaction.objects.create", side_effect=DatabaseError("write failed")):
+            with self.assertRaises(DatabaseError):
+                view_common.credit_wallet_topup_order(topup_order.id, "pay_atomic_123")
+
+        wallet.refresh_from_db()
+        topup_order.refresh_from_db()
+        self.assertEqual(wallet.balance, Decimal("1000.00"))
+        self.assertEqual(topup_order.status, "created")
+        self.assertIsNone(topup_order.credited_at)
+        self.assertFalse(Transaction.objects.filter(payment_method="wallet_topup", amount=Decimal("175.00")).exists())
+
     @patch("core.views.wallet.verify_razorpay_signature", return_value=True)
     @patch("core.views.common.capture_razorpay_payment")
     @patch("core.views.wallet.fetch_razorpay_payment")
@@ -2723,6 +2745,71 @@ class GroupFlowTests(APITestCase):
             1,
         )
         verify_webhook_signature_mock.assert_called()
+
+    @patch("core.views.wallet.verify_razorpay_webhook_signature", return_value=True)
+    def test_wallet_topup_webhook_failure_cannot_regress_paid_order(self, verify_webhook_signature_mock):
+        wallet = Wallet.objects.get(user=self.owner)
+        wallet.balance = Decimal("1300.00")
+        wallet.save(update_fields=["balance"])
+        credited_at = timezone.now()
+        topup_order = WalletTopupOrder.objects.create(
+            user=self.owner,
+            amount=Decimal("300.00"),
+            amount_subunits=30000,
+            currency="INR",
+            receipt="topup_paid_webhook_receipt",
+            provider_order_id="order_paid_webhook_123",
+            provider_payment_id="pay_paid_webhook_123",
+            status="paid",
+            credited_at=credited_at,
+        )
+        Transaction.objects.create(
+            user=self.owner,
+            amount=Decimal("300.00"),
+            type="credit",
+            status="success",
+            payment_method="wallet_topup",
+        )
+        payload = {
+            "event": "payment.captured",
+            "payload": {
+                "payment": {
+                    "entity": {
+                        "id": "pay_paid_webhook_123",
+                        "order_id": "order_paid_webhook_123",
+                        "amount": 1,
+                        "currency": "INR",
+                        "status": "captured",
+                        "captured": True,
+                    }
+                }
+            },
+        }
+
+        response = self.client.post(
+            "/api/payments/razorpay/webhook/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_RAZORPAY_SIGNATURE="webhook_signature_123",
+            HTTP_X_RAZORPAY_EVENT_ID="evt_paid_bad_amount",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        wallet.refresh_from_db()
+        topup_order.refresh_from_db()
+        self.assertEqual(wallet.balance, Decimal("1300.00"))
+        self.assertEqual(topup_order.status, "paid")
+        self.assertEqual(topup_order.credited_at, credited_at)
+        self.assertEqual(topup_order.last_error, "")
+        self.assertEqual(Transaction.objects.filter(payment_method="wallet_topup", amount=Decimal("300.00")).count(), 1)
+        self.assertTrue(
+            RazorpayWebhookEvent.objects.filter(
+                event_id="evt_paid_bad_amount",
+                status="failed",
+                payment_id="pay_paid_webhook_123",
+            ).exists()
+        )
+        verify_webhook_signature_mock.assert_called_once()
 
     @override_settings(
         RAZORPAY_WEBHOOK_IP_ALLOWLIST_ENABLED=True,

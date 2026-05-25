@@ -1,5 +1,25 @@
 ﻿from .common import *
 
+def record_wallet_topup_webhook_event(event_id, event_type, payment_id, provider_order_id, status, notes):
+    webhook_event, created = record_razorpay_webhook_event_once(
+        event_id=event_id,
+        event_type=event_type,
+        payment_id=payment_id,
+        provider_order_id=provider_order_id,
+        status=status,
+        notes=notes,
+    )
+    if not created:
+        log_operation_event(
+            "wallet_topup_webhook_duplicate",
+            event_id=event_id,
+            event_type=event_type,
+            provider_order_id=provider_order_id,
+            payment_id=payment_id,
+        )
+    return webhook_event, created
+
+
 class AddMoneyView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -265,7 +285,7 @@ class RazorpayWebhookView(APIView):
             return Response({"message": "Webhook already processed."}, status=200)
 
         if event_type not in {"payment.authorized", "payment.captured", "order.paid"}:
-            RazorpayWebhookEvent.objects.create(
+            _, event_created = record_wallet_topup_webhook_event(
                 event_id=event_id,
                 event_type=event_type or "unknown",
                 payment_id=payment_id,
@@ -273,6 +293,8 @@ class RazorpayWebhookView(APIView):
                 status="ignored",
                 notes="Webhook event is not handled by wallet top-up processing.",
             )
+            if not event_created:
+                return Response({"message": "Webhook already processed."}, status=200)
             log_operation_event(
                 "wallet_topup_webhook_ignored",
                 event_id=event_id,
@@ -283,7 +305,7 @@ class RazorpayWebhookView(APIView):
             return Response({"message": "Webhook ignored."}, status=200)
 
         if not provider_order_id or not payment_id:
-            RazorpayWebhookEvent.objects.create(
+            _, event_created = record_wallet_topup_webhook_event(
                 event_id=event_id,
                 event_type=event_type,
                 payment_id=payment_id,
@@ -291,6 +313,8 @@ class RazorpayWebhookView(APIView):
                 status="failed",
                 notes="Webhook payload did not include the required payment/order identifiers.",
             )
+            if not event_created:
+                return Response({"message": "Webhook already processed."}, status=200)
             log_operation_event(
                 "wallet_topup_webhook_invalid_payload",
                 event_id=event_id,
@@ -305,7 +329,7 @@ class RazorpayWebhookView(APIView):
             provider_order_id=provider_order_id,
         ).first()
         if not topup_order:
-            RazorpayWebhookEvent.objects.create(
+            _, event_created = record_wallet_topup_webhook_event(
                 event_id=event_id,
                 event_type=event_type,
                 payment_id=payment_id,
@@ -313,6 +337,8 @@ class RazorpayWebhookView(APIView):
                 status="ignored",
                 notes="No matching wallet top-up order was found.",
             )
+            if not event_created:
+                return Response({"message": "Webhook already processed."}, status=200)
             log_operation_event(
                 "wallet_topup_webhook_missing_order",
                 event_id=event_id,
@@ -327,7 +353,7 @@ class RazorpayWebhookView(APIView):
         validation_error = validate_wallet_topup_payment_details(topup_order, payment_details)
         if validation_error:
             mark_wallet_topup_failed(topup_order, validation_error, payment_id)
-            RazorpayWebhookEvent.objects.create(
+            _, event_created = record_wallet_topup_webhook_event(
                 event_id=event_id,
                 event_type=event_type,
                 payment_id=payment_id,
@@ -335,6 +361,8 @@ class RazorpayWebhookView(APIView):
                 status="failed",
                 notes=validation_error,
             )
+            if not event_created:
+                return Response({"message": "Webhook already processed."}, status=200)
             return Response({"message": "Webhook acknowledged."}, status=200)
 
         try:
@@ -343,7 +371,7 @@ class RazorpayWebhookView(APIView):
                 payment_details,
             )
         except PaymentGatewayError as exc:
-            RazorpayWebhookEvent.objects.create(
+            _, event_created = record_wallet_topup_webhook_event(
                 event_id=event_id,
                 event_type=event_type,
                 payment_id=payment_id,
@@ -351,12 +379,14 @@ class RazorpayWebhookView(APIView):
                 status="failed",
                 notes=str(exc),
             )
+            if not event_created:
+                return Response({"message": "Webhook already processed."}, status=200)
             return Response({"message": "Webhook acknowledged."}, status=200)
 
         if not payment_captured:
             message = "Payment is not captured yet."
             mark_wallet_topup_failed(topup_order, message, payment_id)
-            RazorpayWebhookEvent.objects.create(
+            _, event_created = record_wallet_topup_webhook_event(
                 event_id=event_id,
                 event_type=event_type,
                 payment_id=payment_id,
@@ -364,17 +394,28 @@ class RazorpayWebhookView(APIView):
                 status="failed",
                 notes=message,
             )
+            if not event_created:
+                return Response({"message": "Webhook already processed."}, status=200)
             return Response({"message": "Webhook acknowledged."}, status=200)
 
-        credited_now, _, _ = credit_wallet_topup_order(topup_order.id, payment_id)
-        RazorpayWebhookEvent.objects.create(
-            event_id=event_id,
-            event_type=event_type,
-            payment_id=payment_id,
-            provider_order_id=provider_order_id,
-            status="processed",
-            notes="Wallet top-up credited via webhook." if credited_now else "Webhook received after wallet was already credited.",
-        )
+        with transaction.atomic():
+            webhook_event, event_created = record_wallet_topup_webhook_event(
+                event_id=event_id,
+                event_type=event_type,
+                payment_id=payment_id,
+                provider_order_id=provider_order_id,
+                status="processed",
+                notes="Wallet top-up webhook accepted for processing.",
+            )
+            if not event_created:
+                return Response({"message": "Webhook already processed."}, status=200)
+            credited_now, _, _ = credit_wallet_topup_order(topup_order.id, payment_id)
+            webhook_event.notes = (
+                "Wallet top-up credited via webhook."
+                if credited_now
+                else "Webhook received after wallet was already credited."
+            )
+            webhook_event.save(update_fields=["notes"])
         log_operation_event(
             "wallet_topup_webhook_processed",
             event_id=event_id,
