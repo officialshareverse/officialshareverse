@@ -36,7 +36,7 @@ const AUTH_REDIRECT_EXEMPT_PATHS = [
 let isRedirectingForUnauthorized = false;
 let refreshSessionPromise = null;
 
-export async function refreshAccessToken() {
+async function requestAccessTokenRefresh() {
   const response = await axios.post(
     `${API_BASE_URL}auth/refresh/`,
     {},
@@ -52,6 +52,30 @@ export async function refreshAccessToken() {
   return nextAccessToken;
 }
 
+export function refreshAccessToken() {
+  if (!refreshSessionPromise) {
+    refreshSessionPromise = requestAccessTokenRefresh().finally(() => {
+      refreshSessionPromise = null;
+    });
+  }
+
+  return refreshSessionPromise;
+}
+
+function isAuthRedirectExemptRequest(requestUrl) {
+  return AUTH_REDIRECT_EXEMPT_PATHS.some((path) => requestUrl.includes(path));
+}
+
+function redirectToLoginAfterExpiredSession() {
+  if (isRedirectingForUnauthorized || typeof window === "undefined") {
+    return;
+  }
+
+  isRedirectingForUnauthorized = true;
+  clearAuthSession("Your session expired. Please sign in again.");
+  window.location.replace("/login");
+}
+
 API.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -60,19 +84,13 @@ API.interceptors.response.use(
     const originalRequest = error?.config || {};
 
     if (status === 401) {
-      const isAuthEndpoint = AUTH_REDIRECT_EXEMPT_PATHS.some((path) => requestUrl.includes(path));
+      const isAuthEndpoint = isAuthRedirectExemptRequest(requestUrl);
 
       if (!isAuthEndpoint && !originalRequest._retry) {
         originalRequest._retry = true;
 
         try {
-          if (!refreshSessionPromise) {
-            refreshSessionPromise = refreshAccessToken().finally(() => {
-              refreshSessionPromise = null;
-            });
-          }
-
-          const nextToken = await refreshSessionPromise;
+          const nextToken = await refreshAccessToken();
           originalRequest.headers = {
             ...(originalRequest.headers || {}),
             Authorization: `Bearer ${nextToken}`,
@@ -83,10 +101,8 @@ API.interceptors.response.use(
         }
       }
 
-      if (!isAuthEndpoint && !isRedirectingForUnauthorized) {
-        isRedirectingForUnauthorized = true;
-        clearAuthSession("Your session expired. Please sign in again.");
-        window.location.replace("/login");
+      if (!isAuthEndpoint) {
+        redirectToLoginAfterExpiredSession();
       }
     }
 
