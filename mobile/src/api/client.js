@@ -31,13 +31,18 @@ const AUTH_EXEMPT_PATHS = [
 
 let accessToken = "";
 let refreshToken = "";
-let refreshPromise = null;
+let isRefreshing = false;
+let failedRequestQueue = [];
+let isHandlingUnauthorized = false;
 let unauthorizedHandler = null;
 let sessionUpdateHandler = null;
 
 export function setSessionTokens(session) {
   accessToken = session?.accessToken || "";
   refreshToken = session?.refreshToken || "";
+  if (accessToken && refreshToken) {
+    isHandlingUnauthorized = false;
+  }
 }
 
 export function registerUnauthorizedHandler(handler) {
@@ -78,12 +83,55 @@ async function refreshAccessToken() {
   return nextAccessToken;
 }
 
+function isAuthExemptRequest(requestUrl) {
+  return AUTH_EXEMPT_PATHS.some((path) => requestUrl.includes(path));
+}
+
+function queueRequestUntilRefreshCompletes() {
+  return new Promise((resolve, reject) => {
+    failedRequestQueue.push({ resolve, reject });
+  });
+}
+
+function settleQueuedRequests(error, nextAccessToken = "") {
+  const queuedRequests = failedRequestQueue;
+  failedRequestQueue = [];
+
+  queuedRequests.forEach(({ resolve, reject }) => {
+    if (error) {
+      reject(error);
+      return;
+    }
+
+    resolve(nextAccessToken);
+  });
+}
+
+async function handleUnauthorizedSession(error) {
+  if (isHandlingUnauthorized) {
+    return;
+  }
+
+  isHandlingUnauthorized = true;
+  accessToken = "";
+  refreshToken = "";
+  await clearStoredSession();
+  if (unauthorizedHandler) {
+    unauthorizedHandler(error);
+  }
+}
+
+function attachAuthorizationHeader(config, nextAccessToken) {
+  config.headers = {
+    ...(config.headers || {}),
+    Authorization: `Bearer ${nextAccessToken}`,
+  };
+  return config;
+}
+
 api.interceptors.request.use((config) => {
   if (accessToken) {
-    config.headers = {
-      ...(config.headers || {}),
-      Authorization: `Bearer ${accessToken}`,
-    };
+    attachAuthorizationHeader(config, accessToken);
   }
   return config;
 });
@@ -96,32 +144,43 @@ api.interceptors.response.use(
     const originalRequest = error?.config || {};
 
     if (status === 401) {
-      const isAuthEndpoint = AUTH_EXEMPT_PATHS.some((path) => requestUrl.includes(path));
+      const isAuthEndpoint = isAuthExemptRequest(requestUrl);
 
-      if (!isAuthEndpoint && !originalRequest._retry) {
-        originalRequest._retry = true;
+      if (isAuthEndpoint) {
+        return Promise.reject(error);
+      }
 
+      if (originalRequest._retry) {
+        await handleUnauthorizedSession(error);
+        return Promise.reject(error);
+      }
+
+      originalRequest._retry = true;
+
+      if (isRefreshing) {
         try {
-          if (!refreshPromise) {
-            refreshPromise = refreshAccessToken().finally(() => {
-              refreshPromise = null;
-            });
-          }
-
-          const nextToken = await refreshPromise;
-          originalRequest.headers = {
-            ...(originalRequest.headers || {}),
-            Authorization: `Bearer ${nextToken}`,
-          };
+          const nextToken = await queueRequestUntilRefreshCompletes();
+          attachAuthorizationHeader(originalRequest, nextToken);
           return api(originalRequest);
         } catch (refreshError) {
-          accessToken = "";
-          refreshToken = "";
-          await clearStoredSession();
-          if (unauthorizedHandler) {
-            unauthorizedHandler(refreshError);
-          }
+          await handleUnauthorizedSession(refreshError);
+          return Promise.reject(refreshError);
         }
+      }
+
+      isRefreshing = true;
+
+      try {
+        const nextToken = await refreshAccessToken();
+        settleQueuedRequests(null, nextToken);
+        attachAuthorizationHeader(originalRequest, nextToken);
+        return api(originalRequest);
+      } catch (refreshError) {
+        settleQueuedRequests(refreshError);
+        await handleUnauthorizedSession(refreshError);
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
