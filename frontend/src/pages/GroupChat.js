@@ -205,9 +205,7 @@ export default function GroupChat() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
-  );
+  const isMobile = useIsMobile();
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   const handleWebSocketMessage = useCallback((event) => {
@@ -323,23 +321,7 @@ export default function GroupChat() {
     };
   }, [groupId, sendWebSocketMessage, webSocketStatus]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const handleChange = (event) => setIsMobile(event.matches);
-    setIsMobile(mediaQuery.matches);
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
-  }, []);
+  
 
   useEffect(() => {
     if (!isMobile) {

@@ -138,9 +138,7 @@ export default function ChatsInbox() {
   const [chatInbox, setChatInbox] = useState({ chats: [], total_chats: 0, total_unread_count: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
-  );
+  const isMobile = useIsMobile();
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
@@ -168,23 +166,7 @@ export default function ChatsInbox() {
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const handleChange = (event) => setIsMobile(event.matches);
-    setIsMobile(mediaQuery.matches);
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
-  }, []);
+  
 
   useEffect(() => {
     if (!isMobile) {

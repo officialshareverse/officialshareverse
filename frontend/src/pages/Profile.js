@@ -155,9 +155,7 @@ export default function Profile() {
   const [isDragActive, setIsDragActive] = useState(false);
   const [reviewFilter, setReviewFilter] = useState("all");
   const [reviewSort, setReviewSort] = useState("newest");
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
-  );
+  const isMobile = useIsMobile();
 
   useRevealOnScroll();
 
@@ -200,23 +198,7 @@ export default function Profile() {
     };
   }, [selectedProfilePicture]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const handleChange = (event) => setIsMobile(event.matches);
-    setIsMobile(mediaQuery.matches);
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
-  }, []);
+  
 
   const initials = useMemo(() => {
     const source = profile?.full_name || profile?.username || "User";

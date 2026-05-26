@@ -329,31 +329,13 @@ export default function CreateGroup() {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [showPreview, setShowPreview] = useState(true);
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
-  );
+  const isMobile = useIsMobile();
 
   const isSharing = form.mode === "sharing";
   const modeConfig = getModeConfig(form.mode);
   const toast = useToast();
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const handleChange = (event) => setIsMobile(event.matches);
-    setIsMobile(mediaQuery.matches);
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
-  }, []);
+  
 
   const durationDays = useMemo(() => {
     if (!form.start_date || !form.end_date || form.end_date < form.start_date) {

@@ -269,13 +269,14 @@ function compareGroups(sortBy, left, right) {
 
 export default function Groups() {
   const [groups, setGroups] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [joiningId, setJoiningId] = useState(null);
   const [filter, setFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
-  );
+  const isMobile = useIsMobile();
   const [sortBy, setSortBy] = useState("popular");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -286,15 +287,28 @@ export default function Groups() {
 
   useRevealOnScroll();
 
-  const fetchGroups = async () => {
+  const fetchGroups = async (pageToFetch = 1) => {
     try {
-      const res = await API.get("groups/", { params: { page_size: 50 } });
-      setGroups(getPaginatedItems(res.data));
+      if (pageToFetch === 1) setLoading(true);
+      else setLoadingMore(true);
+
+      const res = await API.get("groups/", { params: { page: pageToFetch, page_size: 50 } });
+      const newItems = getPaginatedItems(res.data);
+      
+      if (pageToFetch === 1) {
+        setGroups(newItems);
+      } else {
+        setGroups((current) => [...current, ...newItems]);
+      }
+      
+      setHasMore(!!res.data?.next || newItems.length === 50);
+      setPage(pageToFetch);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load groups.", { title: "Couldn't load marketplace" });
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -304,23 +318,7 @@ export default function Groups() {
     fetchGroupsRef.current?.();
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const handleChange = (event) => setIsMobile(event.matches);
-    setIsMobile(mediaQuery.matches);
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
-  }, []);
+  
 
   useEffect(() => {
     if (!pendingJoinGroup) {
@@ -999,6 +997,19 @@ export default function Groups() {
               );
             })}
           </section>
+        )}
+
+        {hasMore && !loading && (
+          <div className="mt-8 flex justify-center">
+            <button
+              type="button"
+              onClick={() => fetchGroups(page + 1)}
+              disabled={loadingMore}
+              className="sv-btn-secondary"
+            >
+              {loadingMore ? "Loading..." : "Load More"}
+            </button>
+          </div>
         )}
 
         {spotlightGroup && !isMobile ? (

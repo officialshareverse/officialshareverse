@@ -141,6 +141,8 @@ export default function MyShared() {
   const isMobile = useIsMobile();
   const [groups, setGroups] = useState([]);
   const [joinedGroups, setJoinedGroups] = useState([]);
+  const [page, setPage] = useState(1);
+  const [joinedPage, setJoinedPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [details, setDetails] = useState({});
@@ -244,6 +246,12 @@ export default function MyShared() {
     }
     return groups.filter((group) => group.mode === filter);
   }, [filter, groups]);
+
+  const displayedFilteredGroups = filteredGroups.slice(0, page * 50);
+  const hasMoreGroups = displayedFilteredGroups.length < filteredGroups.length;
+
+  const displayedJoinedGroups = joinedGroups.slice(0, joinedPage * 50);
+  const hasMoreJoinedGroups = displayedJoinedGroups.length < joinedGroups.length;
 
   const totals = useMemo(() => {
     return groups.reduce(
@@ -1203,7 +1211,8 @@ export default function MyShared() {
           />
         </Tooltip>
       ) : (
-        filteredGroups.map((group) => {
+        <>
+        {displayedFilteredGroups.map((group) => {
           const detail = details[group.id];
           const isEditing = editingId === group.id;
           const hasMembers = group.filled_slots > 0;
@@ -1832,6 +1841,17 @@ export default function MyShared() {
           );
         })
       )}
+      
+      {hasMoreGroups && (
+        <div style={{ marginTop: "24px", display: "flex", justifyContent: "center" }}>
+          <button
+            style={{ ...secondaryButton, padding: "10px 24px" }}
+            onClick={() => setPage(page + 1)}
+          >
+            Load More
+          </button>
+        </div>
+      )}
 
       <div style={{ ...joinedSectionHeader, ...(isMobile ? sectionHeaderMobile : {}) }}>
         <div>
@@ -1858,7 +1878,7 @@ export default function MyShared() {
         />
       ) : (
         <div style={{ ...joinedGrid, ...(isMobile ? joinedGridMobile : {}) }}>
-          {joinedGroups.map((group) => {
+          {displayedJoinedGroups.map((group) => {
             const reviewTarget = group.owner_rating;
             const reviewKey = getReviewKey(group.id, group.owner_id);
             const reviewForm =
@@ -2065,6 +2085,17 @@ export default function MyShared() {
               </div>
             );
           })}
+
+      {hasMoreJoinedGroups && (
+            <div style={{ marginTop: "24px", display: "flex", justifyContent: "center" }}>
+              <button
+                style={{ ...secondaryButton, padding: "10px 24px" }}
+                onClick={() => setJoinedPage(joinedPage + 1)}
+              >
+                Load More
+              </button>
+            </div>
+          )}
         </div>
       )}
       </div>

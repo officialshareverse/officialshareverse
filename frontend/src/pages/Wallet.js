@@ -314,9 +314,7 @@ export default function Wallet() {
   const [workingAction, setWorkingAction] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("topup");
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
-  );
+  const isMobile = useIsMobile();
   const [isMobileActionDrawerOpen, setIsMobileActionDrawerOpen] = useState(false);
   const [isMobileHistoryDrawerOpen, setIsMobileHistoryDrawerOpen] = useState(false);
   const [transactionSearch, setTransactionSearch] = useState("");
@@ -331,23 +329,7 @@ export default function Wallet() {
     fetchDataRef.current?.();
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const handleChange = (event) => setIsMobile(event.matches);
-    setIsMobile(mediaQuery.matches);
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
-  }, []);
+  
 
   useEffect(() => {
     if (!isMobile) {

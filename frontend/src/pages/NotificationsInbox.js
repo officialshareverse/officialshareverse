@@ -219,11 +219,12 @@ export default function NotificationsInbox() {
   const navigate = useNavigate();
   const toast = useToast();
   const [notifications, setNotifications] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
-  );
+  const isMobile = useIsMobile();
   const [filter, setFilter] = useState("all");
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [workingId, setWorkingId] = useState(null);
@@ -257,23 +258,7 @@ export default function NotificationsInbox() {
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const handleChange = (event) => setIsMobile(event.matches);
-    setIsMobile(mediaQuery.matches);
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
-  }, []);
+  
 
   useEffect(() => {
     soundEnabledRef.current = soundEnabled;
@@ -289,13 +274,14 @@ export default function NotificationsInbox() {
     notificationsRef.current = notifications;
   }, [notifications]);
 
-  const fetchNotifications = useCallback(async (showLoader = false) => {
+  const fetchNotifications = useCallback(async (showLoader = false, pageToFetch = 1) => {
     try {
       if (showLoader && isMountedRef.current) {
-        setLoading(true);
+        if (pageToFetch === 1) setLoading(true);
+        else setLoadingMore(true);
       }
 
-      const response = await API.get("notifications/", { params: { page_size: 50 } });
+      const response = await API.get("notifications/", { params: { page: pageToFetch, page_size: 50 } });
       if (!isMountedRef.current) {
         return;
       }
@@ -304,7 +290,7 @@ export default function NotificationsInbox() {
       const nextUnreadCount = nextNotifications.filter((notification) => !notification.is_read).length;
       const previousUnreadCount = previousUnreadCountRef.current;
 
-      if (previousUnreadCount !== null && nextUnreadCount > previousUnreadCount) {
+      if (pageToFetch === 1 && previousUnreadCount !== null && nextUnreadCount > previousUnreadCount) {
         if (soundEnabledRef.current) {
           playNotificationChime();
         }
@@ -313,9 +299,18 @@ export default function NotificationsInbox() {
         }
       }
 
-      previousUnreadCountRef.current = nextUnreadCount;
-      notificationsRef.current = nextNotifications;
-      setNotifications(nextNotifications);
+      const newNotificationsList = pageToFetch === 1 
+        ? nextNotifications 
+        : [...notificationsRef.current, ...nextNotifications];
+
+      if (pageToFetch === 1) {
+        previousUnreadCountRef.current = nextUnreadCount;
+      }
+
+      notificationsRef.current = newNotificationsList;
+      setNotifications(newNotificationsList);
+      setHasMore(!!response.data?.next || nextNotifications.length === 50);
+      setPage(pageToFetch);
       setError("");
     } catch (err) {
       console.error(err);
@@ -325,6 +320,7 @@ export default function NotificationsInbox() {
     } finally {
       if (showLoader && isMountedRef.current) {
         setLoading(false);
+        setLoadingMore(false);
       }
     }
   }, []);
@@ -700,6 +696,19 @@ export default function NotificationsInbox() {
               ))
             )}
           </div>
+
+          {hasMore && !loading && (
+            <div className="mt-8 flex justify-center">
+              <button
+                type="button"
+                onClick={() => fetchNotifications(true, page + 1)}
+                disabled={loadingMore}
+                className="sv-btn-secondary"
+              >
+                {loadingMore ? "Loading..." : "Load More"}
+              </button>
+            </div>
+          )}
         </section>
       </div>
 

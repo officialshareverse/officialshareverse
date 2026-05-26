@@ -258,140 +258,168 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
           <Route
             path="/"
             element={
-              <PublicRoute>
-                <Landing />
-              </PublicRoute>
+              <ErrorBoundary>
+                <PublicRoute>
+                  <Landing />
+                </PublicRoute>
+              </ErrorBoundary>
             }
           />
 
           <Route
             path="/login"
             element={
-              <PublicRoute>
-                <Login setIsAuth={setIsAuth} themeMode={themeMode} toggleTheme={toggleTheme} />
-              </PublicRoute>
+              <ErrorBoundary>
+                <PublicRoute>
+                  <Login setIsAuth={setIsAuth} themeMode={themeMode} toggleTheme={toggleTheme} />
+                </PublicRoute>
+              </ErrorBoundary>
             }
           />
 
           <Route
             path="/signup"
             element={
-              <PublicRoute>
-                <Signup setIsAuth={setIsAuth} themeMode={themeMode} toggleTheme={toggleTheme} />
-              </PublicRoute>
+              <ErrorBoundary>
+                <PublicRoute>
+                  <Signup setIsAuth={setIsAuth} themeMode={themeMode} toggleTheme={toggleTheme} />
+                </PublicRoute>
+              </ErrorBoundary>
             }
           />
 
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/faq" element={<FaqPage />} />
-          <Route path="/invite/:token" element={<InviteLanding />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/refunds" element={<RefundPolicyPage />} />
-          <Route path="/shipping" element={<ShippingPolicyPage />} />
-          <Route path="/support" element={<SupportPage />} />
-          <Route path="/account-deletion" element={<AccountDeletionPage />} />
+          <Route path="/about" element={<ErrorBoundary><AboutPage /></ErrorBoundary>} />
+          <Route path="/faq" element={<ErrorBoundary><FaqPage /></ErrorBoundary>} />
+          <Route path="/invite/:token" element={<ErrorBoundary><InviteLanding /></ErrorBoundary>} />
+          <Route path="/terms" element={<ErrorBoundary><TermsPage /></ErrorBoundary>} />
+          <Route path="/privacy" element={<ErrorBoundary><PrivacyPage /></ErrorBoundary>} />
+          <Route path="/refunds" element={<ErrorBoundary><RefundPolicyPage /></ErrorBoundary>} />
+          <Route path="/shipping" element={<ErrorBoundary><ShippingPolicyPage /></ErrorBoundary>} />
+          <Route path="/support" element={<ErrorBoundary><SupportPage /></ErrorBoundary>} />
+          <Route path="/account-deletion" element={<ErrorBoundary><AccountDeletionPage /></ErrorBoundary>} />
 
           <Route
             path="/home"
             element={
-              <PrivateRoute>
-                <Home />
-              </PrivateRoute>
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <Home />
+                </PrivateRoute>
+              </ErrorBoundary>
             }
           />
 
           <Route
             path="/dashboard"
             element={
-              <PrivateRoute>
-                <Navigate to="/home" replace />
-              </PrivateRoute>
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <Navigate to="/home" replace />
+                </PrivateRoute>
+              </ErrorBoundary>
             }
           />
 
           <Route
             path="/groups"
             element={
-              <PrivateRoute>
-                <Groups />
-              </PrivateRoute>
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <Groups />
+                </PrivateRoute>
+              </ErrorBoundary>
             }
           />
 
           <Route
             path="/notifications"
             element={
-              <PrivateRoute>
-                <NotificationsInbox />
-              </PrivateRoute>
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <NotificationsInbox />
+                </PrivateRoute>
+              </ErrorBoundary>
             }
           />
 
           <Route
             path="/chats"
             element={
-              <PrivateRoute>
-                <ChatsInbox />
-              </PrivateRoute>
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <ChatsInbox />
+                </PrivateRoute>
+              </ErrorBoundary>
             }
           />
 
           <Route
             path="/create"
             element={
-              <PrivateRoute>
-                <CreateGroup />
-              </PrivateRoute>
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <CreateGroup />
+                </PrivateRoute>
+              </ErrorBoundary>
             }
           />
 
           <Route
             path="/my-shared"
             element={
-              <PrivateRoute>
-                <MyShared />
-              </PrivateRoute>
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <MyShared />
+                </PrivateRoute>
+              </ErrorBoundary>
             }
           />
 
           <Route
             path="/profile"
             element={
-              <PrivateRoute>
-                <Profile />
-              </PrivateRoute>
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <Profile />
+                </PrivateRoute>
+              </ErrorBoundary>
             }
           />
 
           <Route
             path="/wallet"
             element={
-              <PrivateRoute>
-                <Wallet />
-              </PrivateRoute>
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <Wallet />
+                </PrivateRoute>
+              </ErrorBoundary>
             }
           />
 
           <Route
             path="/referrals"
             element={
-              <PrivateRoute>
-                <ReferralPage />
-              </PrivateRoute>
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <ReferralPage />
+                </PrivateRoute>
+              </ErrorBoundary>
             }
           />
 
           <Route
             path="/groups/:groupId/chat"
             element={
-              <PrivateRoute>
-                <GroupChat />
-              </PrivateRoute>
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <GroupChat />
+                </PrivateRoute>
+              </ErrorBoundary>
             }
           />
 
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<ErrorBoundary><Navigate to="/" /></ErrorBoundary>} />
         </Routes>
       </div>
 
