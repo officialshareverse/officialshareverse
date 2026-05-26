@@ -1535,7 +1535,7 @@
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .sv-signup-otp-input:focus {
+  .sv-signup-otp-input:focus-visible {
     transform: translateY(-1px);
     border-color: rgba(15, 118, 110, 0.52);
     box-shadow:

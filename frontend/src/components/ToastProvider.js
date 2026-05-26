@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 
 import { CheckCircleIcon, ClockIcon, ShieldIcon, SparkIcon } from "./UiIcons";
 
@@ -110,6 +110,20 @@ export function useToast() {
 }
 
 function ToastCard({ toast, onDismiss }) {
+  const [isExiting, setIsExiting] = useState(false);
+
+  const triggerDismiss = useCallback(() => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onDismiss(toast.id);
+    }, 200);
+  }, [onDismiss, toast.id]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(triggerDismiss, toast.duration);
+    return () => window.clearTimeout(timeoutId);
+  }, [triggerDismiss, toast.duration]);
+
   const swipeRef = useRef({
     pointerId: null,
     startX: 0,
@@ -117,16 +131,6 @@ function ToastCard({ toast, onDismiss }) {
   });
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      onDismiss(toast.id);
-    }, toast.duration);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [onDismiss, toast.duration, toast.id]);
 
   const toneConfig =
     toast.tone === "success"
@@ -186,7 +190,7 @@ function ToastCard({ toast, onDismiss }) {
 
     const finalOffset = swipeRef.current.currentX - swipeRef.current.startX;
     if (Math.abs(finalOffset) >= TOAST_SWIPE_DISMISS_PX) {
-      onDismiss(toast.id);
+      triggerDismiss();
       return;
     }
 
@@ -252,7 +256,7 @@ function ToastCard({ toast, onDismiss }) {
 
     const finalOffset = swipeRef.current.currentX - swipeRef.current.startX;
     if (Math.abs(finalOffset) >= TOAST_SWIPE_DISMISS_PX) {
-      onDismiss(toast.id);
+      triggerDismiss();
       return;
     }
 
@@ -261,7 +265,7 @@ function ToastCard({ toast, onDismiss }) {
 
   return (
     <div
-      className={`sv-toast ${toneConfig.className} ${isSwiping ? "is-swiping" : ""}`}
+      className={`sv-toast ${toneConfig.className} ${isSwiping ? "is-swiping" : ""} ${isExiting ? "is-exiting" : ""}`.trim()}
       role="status"
       style={{ "--sv-toast-swipe-x": `${swipeOffset}px` }}
       onPointerDown={handlePointerDown}
@@ -281,7 +285,7 @@ function ToastCard({ toast, onDismiss }) {
         <p className="sv-toast-message">{toast.message}</p>
       </div>
 
-      <button type="button" onClick={() => onDismiss(toast.id)} className="sv-toast-close" aria-label="Dismiss notification">
+      <button type="button" onClick={triggerDismiss} className="sv-toast-close" aria-label="Dismiss notification">
         Dismiss
       </button>
 

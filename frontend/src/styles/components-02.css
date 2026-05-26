@@ -28,6 +28,12 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
   }
 
+  .sv-tab:hover,
+  .sv-inbox-tab:hover {
+    background: color-mix(in srgb, var(--sv-border) 40%, transparent);
+    transform: translateY(-1px);
+  }
+
   .sv-tab.is-active,
   .sv-inbox-tab.is-active {
     border-color: transparent;
@@ -73,6 +79,18 @@
     padding: 1rem;
     background: color-mix(in srgb, var(--sv-paper-solid) 94%, transparent);
     box-shadow: 0 18px 44px rgba(15, 23, 42, 0.06);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+
+  .sv-notification-card:hover {
+    background: var(--sv-soft-surface);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08);
+  }
+
+  .sv-notification-card:active {
+    transform: translateY(0) scale(0.98);
   }
 
   @media (min-width: 640px) {
@@ -209,6 +227,18 @@
     padding: 1rem;
     background: color-mix(in srgb, var(--sv-paper-solid) 95%, transparent);
     box-shadow: 0 18px 48px rgba(15, 23, 42, 0.06);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+
+  .sv-chat-card:hover {
+    background: var(--sv-soft-surface);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 52px rgba(15, 23, 42, 0.08);
+  }
+
+  .sv-chat-card:active {
+    transform: translateY(0) scale(0.98);
   }
 
   @media (min-width: 640px) {
@@ -558,7 +588,7 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   }
 
-  .sv-group-chat-textarea:focus {
+  .sv-group-chat-textarea:focus-visible {
     border-color: color-mix(in srgb, var(--sv-accent) 36%, transparent);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--sv-accent) 12%, transparent);
   }
@@ -1337,7 +1367,7 @@
     color: color-mix(in srgb, var(--sv-muted) 85%, transparent);
   }
 
-  .sv-spotlight-input:focus {
+  .sv-spotlight-input:focus-visible {
     outline: none;
   }
 

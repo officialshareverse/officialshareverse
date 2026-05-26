@@ -576,9 +576,9 @@
     }
   }
 
-  .sv-input:focus,
-  .sv-textarea:focus,
-  .sv-select:focus {
+  .sv-input:focus-visible,
+  .sv-textarea:focus-visible,
+  .sv-select:focus-visible {
     border-color: rgba(15, 118, 110, 0.52);
     box-shadow:
       0 0 0 4px rgba(15, 118, 110, 0.10),

@@ -1,4 +1,4 @@
-import { useEffect, useId } from "react";
+import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 
 export default function ActionDialog({
@@ -54,16 +54,33 @@ export default function ActionDialog({
     };
   }, [isSubmitting, onClose, open]);
 
-  if (!open || typeof document === "undefined") {
+  const [isExiting, setIsExiting] = useState(false);
+  const [shouldRender, setShouldRender] = useState(open);
+
+  useEffect(() => {
+    if (open) {
+      setShouldRender(true);
+      setIsExiting(false);
+    } else if (shouldRender) {
+      setIsExiting(true);
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+        setIsExiting(false);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [open, shouldRender]);
+
+  if (!shouldRender || typeof document === "undefined") {
     return null;
   }
 
   const InputTag = multiline ? "textarea" : "input";
 
   return createPortal(
-    <div className="sv-modal-backdrop" role="presentation">
+    <div className={`sv-modal-backdrop ${isExiting ? "is-exiting" : ""}`.trim()} role="presentation">
       <section
-        className="sv-action-dialog"
+        className={`sv-action-dialog ${isExiting ? "is-exiting" : ""}`.trim()}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
