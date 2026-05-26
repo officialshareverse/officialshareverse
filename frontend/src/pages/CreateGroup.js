@@ -190,7 +190,7 @@ function InputError({ message }) {
     return null;
   }
 
-  return <p className="mt-2 text-sm text-rose-600">{message}</p>;
+  return <p className="mt-2 text-sm text-rose-600" aria-live="polite">{message}</p>;
 }
 
 function StepBadge({ index, active, complete, label }) {
@@ -894,6 +894,7 @@ export default function CreateGroup() {
                       <button
                         type="button"
                         onClick={() => setShowPreview((current) => !current)}
+                        aria-label={showPreview ? "Hide card preview" : "Show card preview"}
                         className="sv-btn-secondary"
                       >
                         {showPreview ? "Hide preview" : "Preview card"}
@@ -1010,6 +1011,7 @@ export default function CreateGroup() {
                 <button
                   type="button"
                   onClick={() => setShowPreview((current) => !current)}
+                  aria-label={showPreview ? "Hide card preview" : "Show card preview"}
                   className="sv-btn-secondary"
                 >
                   {showPreview ? "Hide preview" : "Preview"}

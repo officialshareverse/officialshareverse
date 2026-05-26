@@ -442,7 +442,7 @@ export default function Profile() {
   if (error) {
     return (
       <div className="sv-page">
-        <div className="mx-auto max-w-4xl rounded-[length:var(--sv-radius-card-md)] border border-rose-200 bg-rose-50 px-6 py-12 text-center text-rose-900 shadow-sm">
+        <div className="mx-auto max-w-4xl rounded-[length:var(--sv-radius-card-md)] border border-rose-200 bg-rose-50 px-6 py-12 text-center text-rose-900 shadow-sm" aria-live="assertive">
           {error}
         </div>
       </div>
@@ -502,6 +502,7 @@ export default function Profile() {
                   <button
                     type="button"
                     className="sv-profile-avatar-overlay"
+                    aria-label={isEditing ? "Change profile photo" : "Edit profile photo"}
                     onClick={() => {
                       if (isEditing) {
                         fileInputRef.current?.click();
@@ -577,12 +578,12 @@ export default function Profile() {
         </section>
 
         {saveMessage ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" aria-live="polite">
             {saveMessage}
           </div>
         ) : null}
         {saveError ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900" aria-live="assertive">
             {saveError}
           </div>
         ) : null}

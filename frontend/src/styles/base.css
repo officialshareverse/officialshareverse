@@ -74,6 +74,24 @@
     color-scheme: dark;
   }
 
+  @media (prefers-contrast: more) {
+    :root, body, body.sv-dark {
+      --sv-muted: var(--sv-ink);
+      --sv-muted-dark: var(--sv-ink-dark);
+      --sv-border: var(--sv-ink);
+      --sv-border-dark: var(--sv-ink-dark);
+      --sv-shadow: none;
+      --sv-body-radial-a: transparent;
+      --sv-body-radial-b: transparent;
+      --sv-page-radial-a: transparent;
+      --sv-page-radial-b: transparent;
+    }
+    
+    * {
+      box-shadow: none !important;
+    }
+  }
+
   @media (prefers-color-scheme: dark) {
     body:not(.sv-light) {
       --sv-bg: var(--sv-bg-dark);

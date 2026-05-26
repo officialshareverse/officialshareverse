@@ -486,6 +486,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={dismissIntro}
+                aria-label="Skip introduction"
                 className="min-h-[44px] px-1 py-2 text-[13px] font-semibold text-slate-500 transition hover:text-slate-800 sm:text-sm"
               >
                 Skip
@@ -568,6 +569,8 @@ export default function Home() {
             </div>
           </div>
         </div>
+          </div>
+        </div>
       ) : showGuide ? (
         <div className="sv-modal-backdrop">
           <div className="sv-guide-modal">
@@ -576,6 +579,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={dismissGuide}
+                aria-label="Skip guide"
                 className="min-h-[44px] px-1 py-2 text-[13px] font-semibold text-slate-500 transition hover:text-slate-800 sm:text-sm"
               >
                 Skip
@@ -633,6 +637,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setGuideStep((current) => Math.max(0, current - 1))}
+                  aria-label="Previous step"
                   className="sv-btn-secondary min-w-[96px]"
                 >
                   Back
@@ -647,6 +652,7 @@ export default function Home() {
                       Math.min(totalGuideSlides - 1, current + 1)
                     )
                   }
+                  aria-label="Next step"
                   className="sv-btn-primary min-w-[96px]"
                 >
                   Next
@@ -660,21 +666,6 @@ export default function Home() {
                   Done
                 </button>
               )}
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
-        {error ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-900 sm:px-4 sm:py-3 sm:text-sm">
-            {error}
-          </div>
-        ) : null}
-
-        <section className="rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-white p-5 shadow-sm sv-animate-rise sm:p-6">
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.12fr)_320px] lg:items-start">
-            <div>
               <div className="flex flex-wrap items-center gap-3">
                 <BrandMark sizeClass="h-10 w-10 sm:h-11 sm:w-11" roundedClass="rounded-[14px] sm:rounded-[16px]" />
                 <span className="sv-chip">Dashboard</span>

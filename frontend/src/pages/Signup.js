@@ -693,14 +693,14 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
         </div>
 
         {error ? (
-          <div className="sv-signup-alert is-error mt-5">
+          <div className="sv-signup-alert is-error mt-5" aria-live="assertive">
             <strong>Something needs attention</strong>
             <span>{error}</span>
           </div>
         ) : null}
 
         {verificationNotice ? (
-          <div className="sv-signup-alert is-success mt-5">
+          <div className="sv-signup-alert is-success mt-5" aria-live="polite">
             <strong>Verification ready</strong>
             <span>{verificationNotice}</span>
           </div>
@@ -979,6 +979,7 @@ function SecurityStep({
                 <button
                   type="button"
                   onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-2.5 py-1 text-[13px] font-semibold text-slate-600 hover:bg-slate-200 sm:right-3 sm:px-3 sm:text-sm"
                 >
                   {showPassword ? "Hide" : "Show"}
@@ -1000,6 +1001,7 @@ function SecurityStep({
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword((current) => !current)}
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-2.5 py-1 text-[13px] font-semibold text-slate-600 hover:bg-slate-200 sm:right-3 sm:px-3 sm:text-sm"
                 >
                   {showConfirmPassword ? "Hide" : "Show"}
