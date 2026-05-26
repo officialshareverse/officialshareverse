@@ -10,6 +10,9 @@
     --sv-accent-soft: #d8f3ee;
     --sv-gold: #f6c453;
     --sv-border: rgba(148, 163, 184, 0.2);
+    --sv-success: var(--sv-success);
+    --sv-danger: var(--sv-danger);
+    --sv-warning: var(--sv-warning);
     --sv-shadow: 0 26px 70px rgba(15, 23, 42, 0.09);
     --sv-bg-dark: #0c0f14;
     --sv-paper-dark: rgba(22, 27, 38, 0.82);
@@ -34,6 +37,12 @@
     --sv-display-font: "Outfit", "Manrope", "Segoe UI", sans-serif;
     --sv-radius-card: 20px;
     --sv-radius-card-md: 26px;
+    --sv-radius-sm: 14px;
+    --sv-radius-md: 18px;
+    --sv-radius-lg: 24px;
+    --sv-radius-xl: 34px;
+    --sv-space-sm: 0.85rem;
+    --sv-space-md: 1.15rem;
     --sv-page-px: 0.75rem;
     --sv-page-py: 0.75rem;
   }
@@ -49,6 +58,9 @@
     --sv-accent-secondary: #a78bfa;
     --sv-accent-soft: rgba(45, 212, 191, 0.14);
     --sv-border: var(--sv-border-dark);
+    --sv-success: #34d399;
+    --sv-danger: #fb7185;
+    --sv-warning: #fbbf24;
     --sv-shadow: 0 28px 80px rgba(2, 6, 23, 0.4);
     --sv-body-radial-a: rgba(45, 212, 191, 0.12);
     --sv-body-radial-b: rgba(124, 58, 237, 0.16);
@@ -60,6 +72,35 @@
     --sv-input-surface: rgba(15, 23, 42, 0.92);
     --sv-hero-grid-line: rgba(148, 163, 184, 0.08);
     color-scheme: dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.sv-light) {
+      --sv-bg: var(--sv-bg-dark);
+      --sv-bg-soft: #11161f;
+      --sv-paper: var(--sv-paper-dark);
+      --sv-paper-solid: #161b26;
+      --sv-ink: var(--sv-ink-dark);
+      --sv-muted: var(--sv-muted-dark);
+      --sv-accent: var(--sv-accent-dark);
+      --sv-accent-secondary: #a78bfa;
+      --sv-accent-soft: rgba(45, 212, 191, 0.14);
+      --sv-border: var(--sv-border-dark);
+      --sv-success: #34d399;
+      --sv-danger: #fb7185;
+      --sv-warning: #fbbf24;
+      --sv-shadow: 0 28px 80px rgba(2, 6, 23, 0.4);
+      --sv-body-radial-a: rgba(45, 212, 191, 0.12);
+      --sv-body-radial-b: rgba(124, 58, 237, 0.16);
+      --sv-page-radial-a: rgba(45, 212, 191, 0.08);
+      --sv-page-radial-b: rgba(124, 58, 237, 0.1);
+      --sv-brand-shell-bg: rgba(15, 23, 42, 0.74);
+      --sv-soft-surface: rgba(19, 27, 39, 0.78);
+      --sv-elevated-surface: rgba(15, 23, 42, 0.9);
+      --sv-input-surface: rgba(15, 23, 42, 0.92);
+      --sv-hero-grid-line: rgba(148, 163, 184, 0.08);
+      color-scheme: dark;
+    }
   }
 
   @media (min-width: 640px) {

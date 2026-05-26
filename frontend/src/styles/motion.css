@@ -382,7 +382,7 @@
     z-index: 2;
     display: inline-flex;
     align-items: center;
-    gap: 0.85rem;
+    gap: var(--sv-space-sm);
     padding: 0.65rem 0.8rem;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.7);
@@ -433,7 +433,7 @@
   }
 
   .sv-auth-value-card {
-    padding: 1.15rem;
+    padding: var(--sv-space-md);
   }
 
   .sv-auth-value-badge {
@@ -453,7 +453,7 @@
 
   .sv-auth-testimonial {
     margin-top: 1.5rem;
-    padding: 1.15rem;
+    padding: var(--sv-space-md);
   }
 
   .sv-auth-quote-mark {
@@ -476,7 +476,7 @@
   }
 
   .sv-auth-mobile-banner {
-    margin-bottom: 0.85rem;
+    margin-bottom: var(--sv-space-sm);
   }
 
   .sv-auth-mobile-scroll {
@@ -496,7 +496,7 @@
     display: grid;
     gap: 0.4rem;
     padding: 0.95rem 1rem;
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid rgba(255, 255, 255, 0.76);
     background: rgba(255, 255, 255, 0.84);
     box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
@@ -537,9 +537,9 @@
 
   .sv-google-auth-shell {
     display: grid;
-    gap: 0.85rem;
+    gap: var(--sv-space-sm);
     padding: 1rem;
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid color-mix(in srgb, var(--sv-border) 88%, transparent);
     background:
       linear-gradient(135deg, color-mix(in srgb, var(--sv-paper-solid) 92%, transparent) 0%, color-mix(in srgb, var(--sv-soft-surface) 88%, transparent) 100%);
@@ -691,7 +691,7 @@
     margin-top: 1rem;
     min-height: 42px;
     padding: 0.6rem 0.8rem;
-    border-radius: 18px;
+    border-radius: var(--sv-radius-md);
     background: color-mix(in srgb, var(--sv-accent) 10%, transparent);
     color: var(--sv-ink);
     font-size: 12px;
@@ -842,7 +842,7 @@
   .sv-profile-hero {
     position: relative;
     overflow: hidden;
-    border-radius: 34px;
+    border-radius: var(--sv-radius-xl);
     border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 1rem;
     background:
@@ -870,7 +870,7 @@
     right: -0.35rem;
     bottom: -0.35rem;
     min-height: 44px;
-    padding: 0.6rem 0.85rem;
+    padding: 0.6rem var(--sv-space-sm);
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.14);
     background: rgba(15, 23, 42, 0.74);
@@ -913,7 +913,7 @@
   }
 
   .sv-profile-hero-metric {
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.09);
     padding: 1rem;
@@ -952,7 +952,7 @@
     justify-content: center;
     width: 2.6rem;
     height: 2.6rem;
-    border-radius: 18px;
+    border-radius: var(--sv-radius-md);
     background: rgba(15, 23, 42, 0.06);
     color: var(--sv-ink);
     box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
@@ -960,7 +960,7 @@
 
   .sv-profile-strength-panel {
     margin-top: 1.5rem;
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-soft-surface) 88%, transparent);
     padding: 1rem;
@@ -1019,7 +1019,7 @@
   .sv-profile-upload-label {
     display: flex;
     align-items: flex-start;
-    gap: 0.85rem;
+    gap: var(--sv-space-sm);
     cursor: pointer;
   }
 
@@ -1038,7 +1038,7 @@
   .sv-profile-photo-compare {
     margin-top: 1rem;
     display: grid;
-    gap: 0.85rem;
+    gap: var(--sv-space-sm);
   }
 
   @media (min-width: 640px) {
@@ -1078,7 +1078,7 @@
   }
 
   .sv-profile-field-hint.is-invalid {
-    color: #e11d48;
+    color: var(--sv-danger);
   }
 
   .sv-profile-field-hint.is-idle {
@@ -1106,7 +1106,7 @@
 
   .sv-profile-filter-chip {
     min-height: 42px;
-    padding: 0.6rem 0.85rem;
+    padding: 0.6rem var(--sv-space-sm);
     border-radius: 999px;
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper) 94%, transparent);
@@ -1133,7 +1133,7 @@
   }
 
   .sv-profile-review-card {
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper-solid) 92%, transparent);
     padding: 1rem;
@@ -1145,7 +1145,7 @@
     justify-content: center;
     width: 2.7rem;
     height: 2.7rem;
-    border-radius: 18px;
+    border-radius: var(--sv-radius-md);
     background: linear-gradient(135deg, #0f766e 0%, #7c3aed 100%);
     color: #ffffff;
     font-size: 12px;
@@ -1174,7 +1174,7 @@
     .sv-dark-hero,
     .sv-group-card,
     .sv-confirm-modal {
-      border-radius: 24px;
+      border-radius: var(--sv-radius-lg);
     }
 
     .sv-card,
@@ -1185,7 +1185,7 @@
 
     .sv-mobile-appbar {
       padding: 0.65rem 0.75rem;
-      border-radius: 18px;
+      border-radius: var(--sv-radius-md);
     }
 
     .sv-mobile-menu-surface {
@@ -1244,15 +1244,15 @@
 
     .sv-counter-card {
       min-height: 100%;
-      padding: 0.85rem;
-      border-radius: 18px;
+      padding: var(--sv-space-sm);
+      border-radius: var(--sv-radius-md);
     }
 
     .sv-wallet-trend,
     .sv-wallet-mini-chart {
       display: block;
       border-radius: 20px;
-      padding: 0.85rem;
+      padding: var(--sv-space-sm);
     }
 
     .sv-wallet-overview-stats {
@@ -1307,7 +1307,7 @@
     .sv-home-action-button {
       justify-content: center;
       padding: 0.75rem 0.8rem;
-      border-radius: 18px;
+      border-radius: var(--sv-radius-md);
       gap: 0.5rem;
     }
 
@@ -1347,8 +1347,8 @@
     .sv-notification-mobile-trigger,
     .sv-chat-mobile-trigger {
       min-height: 50px;
-      padding: 0.75rem 0.85rem;
-      border-radius: 18px;
+      padding: 0.75rem var(--sv-space-sm);
+      border-radius: var(--sv-radius-md);
     }
 
     .sv-notification-mobile-trigger-copy strong,
@@ -1359,7 +1359,7 @@
 
     .sv-notification-card {
       gap: 0.75rem;
-      padding: 0.85rem;
+      padding: var(--sv-space-sm);
       border-radius: 20px;
     }
 
@@ -1383,14 +1383,14 @@
     }
 
     .sv-chat-card {
-      padding: 0.85rem;
+      padding: var(--sv-space-sm);
       border-radius: 22px;
     }
 
     .sv-chat-group-avatar {
       width: 2.6rem;
       height: 2.6rem;
-      border-radius: 18px;
+      border-radius: var(--sv-radius-md);
       font-size: 12px;
     }
 
@@ -1410,7 +1410,7 @@
     }
 
     .sv-group-chat-hero-top {
-      gap: 0.85rem;
+      gap: var(--sv-space-sm);
     }
 
     .sv-group-chat-hero-copy p {
@@ -1422,7 +1422,7 @@
 
     .sv-group-chat-meta {
       gap: 0.45rem;
-      margin-top: 0.85rem;
+      margin-top: var(--sv-space-sm);
     }
 
     .sv-group-chat-meta-chip,
@@ -1439,12 +1439,12 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.85rem;
+      gap: var(--sv-space-sm);
       min-height: 56px;
       border-radius: 20px;
       border: 1px solid var(--sv-border);
       background: color-mix(in srgb, var(--sv-paper-solid) 96%, transparent);
-      padding: 0.85rem 0.95rem;
+      padding: var(--sv-space-sm) 0.95rem;
       box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
       text-align: left;
     }
@@ -1458,11 +1458,11 @@
 
     .sv-group-chat-thread-card {
       padding: 0.95rem;
-      border-radius: 24px;
+      border-radius: var(--sv-radius-lg);
     }
 
     .sv-group-chat-thread-header {
-      padding-bottom: 0.85rem;
+      padding-bottom: var(--sv-space-sm);
     }
 
     .sv-group-chat-thread-header h2 {
@@ -1487,7 +1487,7 @@
     .sv-group-chat-textarea {
       min-height: 104px;
       border-radius: 20px;
-      padding: 0.85rem 0.95rem;
+      padding: var(--sv-space-sm) 0.95rem;
     }
 
     .sv-group-chat-composer-footer {
@@ -1509,7 +1509,7 @@
 
     .sv-group-chat-participant {
       gap: 0.75rem;
-      border-radius: 18px;
+      border-radius: var(--sv-radius-md);
       padding: 0.75rem 0.8rem;
     }
 
@@ -1537,7 +1537,7 @@
     .sv-group-mobile-summary-item {
       display: grid;
       gap: 0.15rem;
-      border-radius: 14px;
+      border-radius: var(--sv-radius-sm);
       border: 1px solid var(--sv-border);
       background: color-mix(in srgb, var(--sv-paper-solid) 94%, transparent);
       padding: 0.55rem 0.6rem;
@@ -1698,8 +1698,8 @@
 
     .sv-wallet-mobile-action {
       min-height: 52px;
-      padding: 0.8rem 0.85rem;
-      border-radius: 18px;
+      padding: 0.8rem var(--sv-space-sm);
+      border-radius: var(--sv-radius-md);
     }
 
     .sv-wallet-mobile-action-icon {
@@ -1719,8 +1719,8 @@
 
     .sv-wallet-history-mobile-trigger {
       min-height: 50px;
-      padding: 0.75rem 0.85rem;
-      border-radius: 18px;
+      padding: 0.75rem var(--sv-space-sm);
+      border-radius: var(--sv-radius-md);
     }
 
     .sv-wallet-history-mobile-trigger-copy strong {
@@ -1735,8 +1735,8 @@
 
     .sv-wallet-amount-chip {
       min-height: 52px;
-      padding: 0.75rem 0.85rem;
-      border-radius: 18px;
+      padding: 0.75rem var(--sv-space-sm);
+      border-radius: var(--sv-radius-md);
     }
 
     .sv-wallet-amount-note {
@@ -1769,7 +1769,7 @@
     .sv-wallet-payout-card.is-compact,
     .sv-wallet-transaction-card.is-compact {
       padding: 0.8rem;
-      border-radius: 18px;
+      border-radius: var(--sv-radius-md);
     }
 
     .sv-profile-hero {
@@ -1822,7 +1822,7 @@
     gap: 0.55rem;
     min-height: 46px;
     padding: 0.8rem 1rem;
-    border-radius: 18px;
+    border-radius: var(--sv-radius-md);
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper-solid) 94%, transparent);
     color: var(--sv-ink);
@@ -1850,7 +1850,7 @@
   .sv-share-btn--copy.is-copied {
     border-color: rgba(16, 185, 129, 0.24);
     background: rgba(236, 253, 245, 0.95);
-    color: #047857;
+    color: var(--sv-success);
     animation: sv-pop 0.24s ease both;
   }
 
@@ -1875,7 +1875,7 @@
     display: grid;
     gap: 1rem;
     align-items: center;
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid var(--sv-border);
     background:
       radial-gradient(circle at top right, rgba(45, 212, 191, 0.12), transparent 42%),
@@ -1891,7 +1891,7 @@
     justify-content: center;
     width: min(100%, 220px);
     margin: 0 auto;
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid rgba(148, 163, 184, 0.18);
     background: #ffffff;
     padding: 0.9rem;
@@ -1965,7 +1965,7 @@
   .sv-invite-links-list,
   .sv-referral-code-card,
   .sv-referral-list {
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper-solid) 95%, transparent);
     padding: 1rem;
@@ -2016,7 +2016,7 @@
   .sv-invite-links-items,
   .sv-referral-items {
     display: grid;
-    gap: 0.85rem;
+    gap: var(--sv-space-sm);
   }
 
   .sv-invite-link-card,
@@ -2171,11 +2171,11 @@
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
-    border-radius: 18px;
+    border-radius: var(--sv-radius-md);
     border: 1px solid rgba(16, 185, 129, 0.2);
     background: rgba(236, 253, 245, 0.92);
-    padding: 0.85rem 0.95rem;
-    color: #047857;
+    padding: var(--sv-space-sm) 0.95rem;
+    color: var(--sv-success);
     font-size: 13px;
     font-weight: 700;
     line-height: 1.6;
@@ -2184,7 +2184,7 @@
   .sv-invite-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.85rem;
+    gap: var(--sv-space-sm);
   }
 
   .sv-invite-disabled-note {
@@ -2330,7 +2330,7 @@
 
   .sv-referral-status.is-rewarded {
     background: rgba(16, 185, 129, 0.14);
-    color: #047857;
+    color: var(--sv-success);
   }
 
   .sv-referral-page-hero,
@@ -2406,14 +2406,14 @@
 
   .sv-referral-steps {
     display: grid;
-    gap: 0.85rem;
+    gap: var(--sv-space-sm);
   }
 
   .sv-referral-step,
   .sv-referral-terms-item {
     display: flex;
     align-items: flex-start;
-    gap: 0.85rem;
+    gap: var(--sv-space-sm);
     padding: 0.95rem 1rem;
     border-radius: 20px;
     border: 1px solid var(--sv-border);
@@ -2476,7 +2476,7 @@
 
   .sv-referral-terms-highlights {
     display: grid;
-    gap: 0.85rem;
+    gap: var(--sv-space-sm);
   }
 
   .sv-referral-terms-highlight {
@@ -2504,7 +2504,7 @@
 
   .sv-referral-terms-list {
     display: grid;
-    gap: 0.85rem;
+    gap: var(--sv-space-sm);
     margin: 0;
     padding: 0;
     list-style: none;

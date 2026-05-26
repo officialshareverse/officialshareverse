@@ -2,7 +2,7 @@
   .sv-notification-toggle.is-active {
     border-color: rgba(16, 185, 129, 0.24);
     background: rgba(16, 185, 129, 0.12);
-    color: #047857;
+    color: var(--sv-success);
   }
 
   .sv-tabs,
@@ -68,7 +68,7 @@
     grid-template-columns: auto minmax(0, 1fr);
     gap: 0.9rem;
     align-items: start;
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid var(--sv-border);
     padding: 1rem;
     background: color-mix(in srgb, var(--sv-paper-solid) 94%, transparent);
@@ -98,7 +98,7 @@
     justify-content: center;
     width: 2.75rem;
     height: 2.75rem;
-    border-radius: 18px;
+    border-radius: var(--sv-radius-md);
     background: rgba(148, 163, 184, 0.12);
     color: var(--sv-ink);
   }
@@ -291,7 +291,7 @@
 
   .sv-chat-status-pill.is-active {
     background: rgba(16, 185, 129, 0.14);
-    color: #047857;
+    color: var(--sv-success);
   }
 
   .sv-chat-status-pill.is-pending {
@@ -306,7 +306,7 @@
 
   .sv-chat-status-pill.is-alert {
     background: rgba(244, 63, 94, 0.14);
-    color: #be123c;
+    color: var(--sv-danger);
   }
 
   .sv-chat-mode-pill {
@@ -334,7 +334,7 @@
 
   .sv-chat-live-pill {
     background: rgba(16, 185, 129, 0.12);
-    color: #047857;
+    color: var(--sv-success);
   }
 
   .sv-chat-typing-pill {
@@ -356,7 +356,7 @@
     justify-content: center;
     width: 42px;
     height: 42px;
-    border-radius: 14px;
+    border-radius: var(--sv-radius-sm);
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper) 94%, transparent);
     color: var(--sv-muted);
@@ -414,7 +414,7 @@
 
   .sv-chat-unread-badge {
     background: rgba(16, 185, 129, 0.14);
-    color: #047857;
+    color: var(--sv-success);
   }
 
   .sv-chat-card-body {
@@ -434,9 +434,9 @@
   }
 
   .sv-chat-card-body.is-compact {
-    margin-top: 0.85rem;
-    padding: 0.85rem 0.9rem;
-    border-radius: 18px;
+    margin-top: var(--sv-space-sm);
+    padding: var(--sv-space-sm) 0.9rem;
+    border-radius: var(--sv-radius-md);
   }
 
   .sv-group-chat-live-strip {
@@ -463,7 +463,7 @@
     min-height: 2rem;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.1);
-    padding: 0.45rem 0.85rem;
+    padding: 0.45rem var(--sv-space-sm);
     font-size: 0.875rem;
     color: rgb(226 232 240);
   }
@@ -547,7 +547,7 @@
   width: 100%;
   margin-top: 0.5rem;
   min-height: 88px;
-  border-radius: 24px;
+  border-radius: var(--sv-radius-lg);
   border: 1px solid var(--sv-border);
   background: color-mix(in srgb, var(--sv-paper) 94%, transparent);
     padding: 0.95rem 1rem;
@@ -572,7 +572,7 @@
 
   .sv-group-chat-message {
     max-width: 85%;
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid rgba(148, 163, 184, 0.2);
     background: color-mix(in srgb, var(--sv-paper) 96%, transparent);
     color: var(--sv-ink);
@@ -594,7 +594,7 @@
     border-radius: 22px;
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper) 92%, transparent);
-    padding: 0.85rem 0.9rem;
+    padding: var(--sv-space-sm) 0.9rem;
   }
 
   .sv-group-chat-participant-avatar {
@@ -854,7 +854,7 @@
     justify-content: center;
     gap: 0.5rem;
     min-height: 48px;
-    border-radius: 18px;
+    border-radius: var(--sv-radius-md);
     border: 1px solid var(--sv-border);
     background: var(--sv-paper-solid);
     color: var(--sv-ink);
@@ -871,10 +871,10 @@
   }
 
   .sv-mobile-menu-item {
-    border-radius: 18px;
+    border-radius: var(--sv-radius-md);
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper) 92%, transparent);
-    padding: 0.85rem 0.9rem;
+    padding: var(--sv-space-sm) 0.9rem;
     color: var(--sv-ink);
     font-size: 13px;
     font-weight: 700;
@@ -898,10 +898,10 @@
     width: 100%;
     min-height: 48px;
     margin-top: 0.875rem;
-    border-radius: 18px;
+    border-radius: var(--sv-radius-md);
     border: 1px solid rgba(244, 63, 94, 0.25);
     background: color-mix(in srgb, #fff1f2 84%, transparent);
-    color: #e11d48;
+    color: var(--sv-danger);
     font-size: 13px;
     font-weight: 700;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -1149,7 +1149,7 @@
 
   .sv-error-boundary-details {
     margin-top: 1.25rem;
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper) 92%, transparent);
     padding: 0.95rem 1rem;
@@ -1304,7 +1304,7 @@
     gap: 0.75rem;
     margin: 0 1.2rem;
     padding: 0.55rem 0.75rem;
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid color-mix(in srgb, var(--sv-border) 90%, transparent);
     background: color-mix(in srgb, var(--sv-paper) 92%, transparent);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
@@ -1316,7 +1316,7 @@
     justify-content: center;
     width: 2.75rem;
     height: 2.75rem;
-    border-radius: 18px;
+    border-radius: var(--sv-radius-md);
     background: color-mix(in srgb, var(--sv-accent) 12%, transparent);
     color: var(--sv-accent);
     flex-shrink: 0;
@@ -1366,7 +1366,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.85rem 1.2rem 0;
+    padding: var(--sv-space-sm) 1.2rem 0;
     color: var(--sv-muted);
     font-size: 12px;
     font-weight: 700;
@@ -1376,7 +1376,7 @@
     display: grid;
     gap: 0.9rem;
     max-height: calc(min(82vh, 46rem) - 12rem);
-    padding: 0.85rem 1rem 1rem;
+    padding: var(--sv-space-sm) 1rem 1rem;
     overflow-y: auto;
   }
 
@@ -1401,8 +1401,8 @@
     align-items: center;
     gap: 0.9rem;
     min-height: 76px;
-    padding: 0.85rem 0.95rem;
-    border-radius: 24px;
+    padding: var(--sv-space-sm) 0.95rem;
+    border-radius: var(--sv-radius-lg);
     border: 1px solid transparent;
     background: transparent;
     text-align: left;
@@ -1487,7 +1487,7 @@
     align-items: center;
     gap: 0.9rem;
     padding: 1rem;
-    border-radius: 24px;
+    border-radius: var(--sv-radius-lg);
     border: 1px dashed color-mix(in srgb, var(--sv-border) 90%, transparent);
     background: color-mix(in srgb, var(--sv-soft-surface) 88%, transparent);
   }
