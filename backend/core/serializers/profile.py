@@ -1,4 +1,4 @@
-﻿from .common import *
+from .common import *
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -33,9 +33,17 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         if getattr(value, "size", 0) > max_size_bytes:
             raise serializers.ValidationError("Profile picture must be 5 MB or smaller.")
 
-        content_type = getattr(value, "content_type", "") or ""
-        if content_type and not content_type.startswith("image/"):
-            raise serializers.ValidationError("Upload a valid image file.")
+        try:
+            import magic
+            file_header = value.read(2048)
+            value.seek(0)
+            mime_type = magic.from_buffer(file_header, mime=True)
+            if not mime_type.startswith("image/"):
+                raise serializers.ValidationError("Upload a valid image file.")
+        except ImportError:
+            content_type = getattr(value, "content_type", "") or ""
+            if content_type and not content_type.startswith("image/"):
+                raise serializers.ValidationError("Upload a valid image file.")
 
         return value
 

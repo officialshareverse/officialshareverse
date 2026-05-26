@@ -1,4 +1,4 @@
-﻿from .common import *
+from .common import *
 
 class SubmitPurchaseProofSerializer(serializers.Serializer):
     purchase_proof = serializers.FileField()
@@ -10,6 +10,28 @@ class SubmitPurchaseProofSerializer(serializers.Serializer):
 
     def validate_purchase_notes(self, value):
         return (value or "").strip()
+
+    def validate_purchase_proof(self, value):
+        if not value:
+            return value
+
+        max_size_bytes = 5 * 1024 * 1024
+        if getattr(value, "size", 0) > max_size_bytes:
+            raise serializers.ValidationError("Purchase proof must be 5 MB or smaller.")
+
+        try:
+            import magic
+            file_header = value.read(2048)
+            value.seek(0)
+            mime_type = magic.from_buffer(file_header, mime=True)
+            if not mime_type.startswith("image/") and mime_type != "application/pdf":
+                raise serializers.ValidationError("Upload a valid image or PDF file.")
+        except ImportError:
+            content_type = getattr(value, "content_type", "") or ""
+            if not content_type.startswith("image/") and content_type != "application/pdf":
+                raise serializers.ValidationError("Upload a valid image or PDF file.")
+
+        return value
 
 
 class SubmitReviewSerializer(serializers.Serializer):
