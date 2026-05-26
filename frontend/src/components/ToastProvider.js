@@ -11,6 +11,9 @@ const TOAST_DEFAULT_TITLES = {
   info: "ShareVerse",
 };
 
+const TOAST_SWIPE_DISMISS_PX = 88;
+const TOAST_SWIPE_MAX_OFFSET_PX = 160;
+
 let toastSequence = 0;
 
 function createToast(tone, message, options = {}) {
@@ -107,6 +110,14 @@ export function useToast() {
 }
 
 function ToastCard({ toast, onDismiss }) {
+  const swipeRef = useRef({
+    pointerId: null,
+    startX: 0,
+    currentX: 0,
+  });
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       onDismiss(toast.id);
@@ -127,9 +138,140 @@ function ToastCard({ toast, onDismiss }) {
           : { icon: SparkIcon, className: "is-info" };
 
   const Icon = toneConfig.icon;
+  const resetSwipe = () => {
+    swipeRef.current = {
+      pointerId: null,
+      startX: 0,
+      currentX: 0,
+    };
+    setSwipeOffset(0);
+    setIsSwiping(false);
+  };
+
+  const handlePointerDown = (event) => {
+    if (event.button !== undefined && event.button !== 0) {
+      return;
+    }
+    if (event.target?.closest?.("button")) {
+      return;
+    }
+
+    swipeRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      currentX: event.clientX,
+    };
+    setIsSwiping(true);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handlePointerMove = (event) => {
+    if (swipeRef.current.pointerId !== event.pointerId) {
+      return;
+    }
+
+    swipeRef.current.currentX = event.clientX;
+    const rawOffset = event.clientX - swipeRef.current.startX;
+    const boundedOffset = Math.max(
+      -TOAST_SWIPE_MAX_OFFSET_PX,
+      Math.min(TOAST_SWIPE_MAX_OFFSET_PX, rawOffset)
+    );
+    setSwipeOffset(boundedOffset);
+  };
+
+  const handlePointerUp = (event) => {
+    if (swipeRef.current.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const finalOffset = swipeRef.current.currentX - swipeRef.current.startX;
+    if (Math.abs(finalOffset) >= TOAST_SWIPE_DISMISS_PX) {
+      onDismiss(toast.id);
+      return;
+    }
+
+    resetSwipe();
+  };
+
+  const handlePointerCancel = (event) => {
+    if (swipeRef.current.pointerId !== event.pointerId) {
+      return;
+    }
+    resetSwipe();
+  };
+
+  const handleTouchStart = (event) => {
+    if (typeof window !== "undefined" && typeof window.PointerEvent !== "undefined") {
+      return;
+    }
+    if (event.target?.closest?.("button")) {
+      return;
+    }
+
+    const touch = event.touches?.[0];
+    if (!touch) {
+      return;
+    }
+
+    swipeRef.current = {
+      pointerId: "touch",
+      startX: touch.clientX,
+      currentX: touch.clientX,
+    };
+    setIsSwiping(true);
+  };
+
+  const handleTouchMove = (event) => {
+    if (swipeRef.current.pointerId !== "touch") {
+      return;
+    }
+
+    const touch = event.touches?.[0];
+    if (!touch) {
+      return;
+    }
+
+    swipeRef.current.currentX = touch.clientX;
+    const rawOffset = touch.clientX - swipeRef.current.startX;
+    const boundedOffset = Math.max(
+      -TOAST_SWIPE_MAX_OFFSET_PX,
+      Math.min(TOAST_SWIPE_MAX_OFFSET_PX, rawOffset)
+    );
+    setSwipeOffset(boundedOffset);
+  };
+
+  const handleTouchEnd = (event) => {
+    if (swipeRef.current.pointerId !== "touch") {
+      return;
+    }
+
+    const touch = event.changedTouches?.[0];
+    if (touch) {
+      swipeRef.current.currentX = touch.clientX;
+    }
+
+    const finalOffset = swipeRef.current.currentX - swipeRef.current.startX;
+    if (Math.abs(finalOffset) >= TOAST_SWIPE_DISMISS_PX) {
+      onDismiss(toast.id);
+      return;
+    }
+
+    resetSwipe();
+  };
 
   return (
-    <div className={`sv-toast ${toneConfig.className}`} role="status">
+    <div
+      className={`sv-toast ${toneConfig.className} ${isSwiping ? "is-swiping" : ""}`}
+      role="status"
+      style={{ "--sv-toast-swipe-x": `${swipeOffset}px` }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="sv-toast-icon">
         <Icon className="h-4.5 w-4.5" />
       </div>

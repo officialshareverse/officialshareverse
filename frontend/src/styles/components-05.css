@@ -675,6 +675,28 @@
     box-shadow: 0 20px 36px rgba(15, 23, 42, 0.16);
   }
 
+  @media (max-width: 374px) {
+    .sv-home-action-row,
+    .sv-home-action-aux-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.6rem;
+    }
+
+    .sv-home-inline-action,
+    .sv-home-action-aux-row .sv-btn-secondary {
+      width: 100%;
+      justify-content: flex-start;
+      border-radius: 18px;
+      padding-inline: 0.75rem;
+    }
+
+    .sv-home-inline-action > span:last-child {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+
   .sv-home-action-icon {
     display: inline-flex;
     align-items: center;

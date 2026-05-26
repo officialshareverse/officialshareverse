@@ -1214,7 +1214,6 @@
     }
 
     .sv-live-badge,
-    .sv-counter-grid,
     .sv-landing-highlight-grid,
     .sv-mode-mock,
     .sv-join-ticker,
@@ -1229,15 +1228,51 @@
     .sv-join-support-copy,
     .sv-join-flow-card,
     .sv-wallet-balance-backdrop,
-    .sv-wallet-trend,
-    .sv-wallet-overview-stats,
     .sv-wallet-support-cards,
     .sv-wallet-mobile-secondary,
-    .sv-wallet-mini-chart,
     .sv-profile-tagline,
     .sv-profile-hero-chips,
     .sv-profile-activity-card {
       display: none;
+    }
+
+    .sv-counter-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+
+    .sv-counter-card {
+      min-height: 100%;
+      padding: 0.85rem;
+      border-radius: 18px;
+    }
+
+    .sv-wallet-trend,
+    .sv-wallet-mini-chart {
+      display: block;
+      border-radius: 20px;
+      padding: 0.85rem;
+    }
+
+    .sv-wallet-overview-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+
+    .sv-wallet-trend-grid {
+      gap: 0.35rem;
+      min-height: 5.75rem;
+    }
+
+    .sv-wallet-trend-bars,
+    .sv-wallet-trend-column.is-compact .sv-wallet-trend-bars {
+      min-height: 4.5rem;
+    }
+
+    .sv-wallet-trend-bar {
+      width: 0.42rem;
     }
 
     .sv-landing-feature-notes {
@@ -1280,9 +1315,17 @@
       text-align: center;
     }
 
-    .sv-home-sparkline,
+    .sv-home-sparkline {
+      display: block;
+      width: 4.2rem;
+      height: 2.35rem;
+      opacity: 0.88;
+    }
+
     .sv-home-avatar-stack {
-      display: none;
+      display: flex;
+      transform: scale(0.88);
+      transform-origin: right center;
     }
 
     .sv-home-recent-grid > :nth-child(n + 3),

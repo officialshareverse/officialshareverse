@@ -351,6 +351,15 @@
     backdrop-filter: blur(20px);
     animation: sv-pop 0.35s ease both;
     pointer-events: auto;
+    touch-action: pan-y;
+    transform: translate3d(var(--sv-toast-swipe-x, 0px), 0, 0);
+    transition: transform 0.18s ease, opacity 0.18s ease;
+    user-select: none;
+    will-change: transform;
+  }
+
+  .sv-toast.is-swiping {
+    transition: none;
   }
 
   .sv-toast::before {
@@ -467,6 +476,36 @@
       grid-column: 1 / -1;
       width: 100%;
       justify-self: stretch;
+    }
+  }
+
+  @media (max-width: 374px) {
+    .sv-toast-viewport {
+      right: 0.5rem;
+      bottom: calc(0.5rem + env(safe-area-inset-bottom));
+      left: 0.5rem;
+      gap: 0.5rem;
+    }
+
+    .sv-toast {
+      gap: 0.6rem;
+      border-radius: 18px;
+      padding: 0.8rem 0.85rem;
+    }
+
+    .sv-toast-icon {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 13px;
+    }
+
+    .sv-toast-message {
+      line-height: 1.55;
+    }
+
+    .sv-toast-close {
+      min-height: 38px;
+      padding: 0.4rem 0.65rem;
     }
   }
 
@@ -1601,6 +1640,27 @@
     .sv-signup-mobile-submit {
       border-radius: 20px;
       padding: 0.85rem 0.9rem;
+    }
+  }
+
+  @media (max-width: 374px) {
+    .sv-signup-stage-card {
+      padding: 0.8rem;
+    }
+
+    .sv-signup-otp-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+
+    .sv-signup-otp-input {
+      min-height: 46px;
+      border-radius: 14px;
+      font-size: 0.95rem;
+    }
+
+    .sv-signup-nav {
+      gap: 0.65rem;
     }
   }
 

@@ -314,7 +314,7 @@ export default function Home() {
     ]
   );
 
-  const visibleStats = isMobile ? stats.slice(0, 2) : stats;
+  const visibleStats = stats;
 
   const quickChecks = useMemo(
     () => [
@@ -696,7 +696,7 @@ export default function Home() {
                 {heroSummary}
               </div>
 
-              <div className="mt-5 flex flex-wrap gap-3">
+              <div className="sv-home-action-row mt-5 flex flex-wrap gap-3">
                 <QuickActionButton
                   icon={<PlusIcon className="h-4.5 w-4.5" />}
                   title="Create split"
@@ -714,7 +714,7 @@ export default function Home() {
                 />
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="sv-home-action-aux-row mt-4 flex flex-wrap gap-3">
                 <button type="button" onClick={openGuide} className="sv-btn-secondary">
                   Quick guide
                 </button>
@@ -886,7 +886,7 @@ function QuickActionButton({ icon, title, note, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex min-h-[48px] items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:shadow-sm"
+      className="sv-home-inline-action inline-flex min-h-[48px] items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:shadow-sm"
     >
       <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700">
         {icon}

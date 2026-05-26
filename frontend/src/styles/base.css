@@ -86,6 +86,15 @@
     }
   }
 
+  @media (max-width: 374px) {
+    :root {
+      --sv-radius-card: 16px;
+      --sv-radius-card-md: 20px;
+      --sv-page-px: 0.5rem;
+      --sv-page-py: 0.5rem;
+    }
+  }
+
   @keyframes sv-float {
     0%,
     100% {
