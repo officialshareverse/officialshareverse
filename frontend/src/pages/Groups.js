@@ -1076,7 +1076,7 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
 
         <div className="sv-join-hero">
           <div className={`sv-group-icon ${planMeta.toneClass} shrink-0 sv-join-hero-icon`}>
-            <span>{planMeta.badge}</span>
+            <SubscriptionLogo name={planName} size="100%" className="w-full h-full" />
           </div>
 
           <div className="min-w-0 flex-1 sv-join-hero-copy">
