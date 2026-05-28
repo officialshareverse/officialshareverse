@@ -7,6 +7,7 @@ import Drawer from "../components/Drawer";
 import EmptyState from "../components/EmptyState";
 import FirstVisitHint from "../components/FirstVisitHint";
 import InviteShareModal from "../components/InviteShareModal";
+import SubscriptionLogo from "../components/SubscriptionLogo";
 import Tooltip from "../components/Tooltip";
 import { SkeletonList } from "../components/SkeletonFactory";
 import { useToast } from "../components/ToastProvider";
@@ -1224,9 +1225,12 @@ export default function MyShared() {
           return (
             <div key={group.id} style={{ ...card, ...(isMobile ? cardMobile : {}) }}>
               <div style={{ ...cardHeader, ...(isMobile ? cardHeaderMobile : {}) }}>
-                <div>
-                  <h3 style={{ margin: 0 }}>{group.subscription_name}</h3>
-                  <p style={cardSubheading}>{group.mode_label}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <SubscriptionLogo name={group.subscription_name} size={40} />
+                  <div>
+                    <h3 style={{ margin: 0 }}>{group.subscription_name}</h3>
+                    <p style={cardSubheading}>{group.mode_label}</p>
+                  </div>
                 </div>
                 <span style={badge}>{group.status_label}</span>
               </div>
@@ -1887,9 +1891,12 @@ export default function MyShared() {
             return (
               <div key={group.id} style={{ ...joinedCard, ...(isMobile ? joinedCardMobile : {}) }}>
                 <div style={{ ...cardHeader, ...(isMobile ? cardHeaderMobile : {}) }}>
-                  <div>
-                    <h3 style={{ margin: 0 }}>{group.subscription_name}</h3>
-                    <p style={cardSubheading}>{group.mode_label}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <SubscriptionLogo name={group.subscription_name} size={40} />
+                    <div>
+                      <h3 style={{ margin: 0 }}>{group.subscription_name}</h3>
+                      <p style={cardSubheading}>{group.mode_label}</p>
+                    </div>
                   </div>
                   <span style={badge}>{group.status_label}</span>
                 </div>

@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
+import SubscriptionLogo from "../../components/SubscriptionLogo";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors, radius, shadows, spacing } from "../../theme/tokens";
 import { formatCurrency, formatRelativeTime } from "../../utils/formatters";
@@ -38,7 +39,12 @@ function SplitCard({ group, onPress }) {
         <Text style={styles.statusText}>{group.status_label || group.status}</Text>
       </View>
 
-      <Text style={styles.cardTitle}>{group.subscription_name}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, marginTop: 12 }}>
+        <SubscriptionLogo name={group.subscription_name} size={32} style={{ marginRight: 8 }} />
+        <Text style={[styles.cardTitle, { marginBottom: 0, flex: 1, marginTop: 0 }]} numberOfLines={1}>
+          {group.subscription_name}
+        </Text>
+      </View>
       <Text style={styles.cardMeta}>
         {group.filled_slots || 0}/{group.total_slots || 0} slots filled -{" "}
         {formatCurrency(group.price_per_slot || 0)} per slot

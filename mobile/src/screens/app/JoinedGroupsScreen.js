@@ -5,6 +5,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../auth/AuthProvider";
 import Screen, { SectionCard } from "../../components/Screen";
 import { colors, radius, shadows, spacing } from "../../theme/tokens";
+import SubscriptionLogo from "../../components/SubscriptionLogo";
 import { formatCurrency, formatRelativeTime } from "../../utils/formatters";
 
 const FILTERS = [
@@ -55,7 +56,12 @@ function JoinedGroupCard({ group, onPress }) {
         <Text style={styles.statusText}>{group.status_label || group.status}</Text>
       </View>
 
-      <Text style={styles.cardTitle}>{group.subscription_name}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, marginTop: 12 }}>
+        <SubscriptionLogo name={group.subscription_name} size={32} style={{ marginRight: 8 }} />
+        <Text style={[styles.cardTitle, { marginBottom: 0, flex: 1, marginTop: 0 }]} numberOfLines={1}>
+          {group.subscription_name}
+        </Text>
+      </View>
       <Text style={styles.cardMeta}>Hosted by @{group.owner_name || "shareverse"}</Text>
 
       <View style={styles.metricRow}>

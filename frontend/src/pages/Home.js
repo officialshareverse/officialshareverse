@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
+import SubscriptionLogo from "../components/SubscriptionLogo";
 import BrandMark from "../components/BrandMark";
 import {
   SkeletonBlock,
@@ -1023,9 +1024,12 @@ function RecentSplitCard({ group, onClick }) {
               {statusMeta.label}
             </span>
           </div>
-          <h3 className="mt-3 truncate text-lg font-bold text-slate-950">
-            {group.subscription_name}
-          </h3>
+          <div className="flex items-center gap-2.5 mt-3">
+            <SubscriptionLogo name={group.subscription_name} size={32} />
+            <h3 className="truncate text-lg font-bold text-slate-950">
+              {group.subscription_name}
+            </h3>
+          </div>
           <p className="mt-2 text-sm text-slate-500">
             {group.mode_label} by {group.owner_name}
           </p>

@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
 import FirstVisitHint from "../components/FirstVisitHint";
+import SubscriptionLogo from "../components/SubscriptionLogo";
 import { useToast } from "../components/ToastProvider";
 import {
   CheckCircleIcon,
@@ -833,7 +834,7 @@ export default function Groups() {
                 >
                   <div className="sv-group-card-shell">
                     <div className={`sv-group-icon ${planMeta.toneClass}`}>
-                      <span>{planMeta.badge}</span>
+                      <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full" />
                     </div>
 
                     <div className="min-w-0 flex-1">

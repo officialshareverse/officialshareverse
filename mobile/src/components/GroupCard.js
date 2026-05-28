@@ -4,6 +4,7 @@ import { ArrowRight, Coins, Users } from "./Icons";
 import { colors, radius, shadows, spacing } from "../theme/tokens";
 import { formatCurrency, getInitials } from "../utils/formatters";
 import AppButton from "./AppButton";
+import SubscriptionLogo from "./SubscriptionLogo";
 
 function modeLabel(mode) {
   return mode === "group_buy" ? "Buy together" : "Sharing";
@@ -33,7 +34,12 @@ export default function GroupCard({ group, onOpen, onJoin, joining = false }) {
         )}
       </View>
 
-      <Text style={styles.name}>{group.subscription_name || group.subscription?.name}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+        <SubscriptionLogo name={group.subscription_name || group.subscription?.name} size={36} style={{ marginRight: 10 }} />
+        <Text style={[styles.name, { marginBottom: 0, flex: 1 }]} numberOfLines={1}>
+          {group.subscription_name || group.subscription?.name}
+        </Text>
+      </View>
       <View style={styles.ownerRow}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{getInitials(hostName)}</Text>
