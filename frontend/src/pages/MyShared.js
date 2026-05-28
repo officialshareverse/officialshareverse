@@ -1843,7 +1843,8 @@ export default function MyShared() {
               ) : null}
             </div>
           );
-        })
+        })}
+        </>
       )}
       
       {hasMoreGroups && (

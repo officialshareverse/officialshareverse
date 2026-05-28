@@ -665,7 +665,15 @@ export default function Home() {
                   Done
                 </button>
               )}
-              <div className="flex flex-wrap items-center gap-3">
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mx-auto max-w-6xl space-y-8 sm:space-y-10">
+          <section className="sv-animate-rise">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
+              <div>
+                <div className="flex flex-wrap items-center gap-3">
                 <BrandMark sizeClass="h-10 w-10 sm:h-11 sm:w-11" roundedClass="rounded-[14px] sm:rounded-[16px]" />
                 <span className="sv-chip">Dashboard</span>
                 {!isMobile ? <span className="sv-chip">{activeGroups} active groups</span> : null}
@@ -867,6 +875,7 @@ export default function Home() {
           )}
         </section>
       </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import useIsMobile from "../hooks/useIsMobile";
 import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
