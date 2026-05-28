@@ -570,8 +570,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-          </div>
-        </div>
       ) : showGuide ? (
         <div className="sv-modal-backdrop">
           <div className="sv-guide-modal">
