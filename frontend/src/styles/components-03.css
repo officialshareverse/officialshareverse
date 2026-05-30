@@ -1,4 +1,4 @@
-﻿
+
   @media (max-width: 767px) {
     .sv-spotlight-trigger {
       display: none;
@@ -1129,6 +1129,13 @@
     font-weight: 800;
     letter-spacing: 0.08em;
     box-shadow: 0 22px 44px rgba(15, 23, 42, 0.12);
+    overflow: hidden;
+  }
+
+  /* When a real logo is inside, remove the gradient so the logo is visible */
+  .sv-group-icon:has(.sv-sub-logo-wrapper) {
+    background: none !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
   }
 
   .sv-group-icon.is-streaming {
