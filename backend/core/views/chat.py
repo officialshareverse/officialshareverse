@@ -1,5 +1,24 @@
 ﻿from .common import *
 
+def _view_exports():
+    import core.views as views
+
+    return views
+
+
+def _log_group_chat_failure(request, endpoint, stage, exc, group_id=None):
+    _view_exports().log_operation_event(
+        f"{endpoint}_{stage}_failed",
+        level="error",
+        endpoint=endpoint,
+        stage=stage,
+        user_id=getattr(getattr(request, "user", None), "id", None),
+        group_id=group_id,
+        exception_type=type(exc).__name__,
+        exception_message=str(exc),
+    )
+
+
 class GroupChatView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -9,7 +28,7 @@ class GroupChatView(APIView):
         except Exception as exc:
             group = None
             group_id = kwargs.get("group_id")
-            log_group_chat_failure(
+            _log_group_chat_failure(
                 request,
                 endpoint="group_chat_detail",
                 stage="dispatch",
@@ -22,7 +41,7 @@ class GroupChatView(APIView):
                 except Exception:
                     group = None
             response = Response(
-                build_empty_group_chat_response(
+                _view_exports().build_empty_group_chat_response(
                     group=group,
                     group_id=group_id,
                     current_user=getattr(request, "user", None),
@@ -55,7 +74,7 @@ class GroupChatView(APIView):
                     context={"request": request},
                 ).data
             except Exception as exc:
-                log_group_chat_failure(
+                _log_group_chat_failure(
                     request,
                     endpoint="group_chat_detail",
                     stage="messages_load",
@@ -72,26 +91,26 @@ class GroupChatView(APIView):
                     presence.user_id: presence
                     for presence in GroupChatPresence.objects.filter(group=group).select_related("user")
                 }
-                activity_snapshot = build_group_chat_activity_snapshot(
+                activity_snapshot = _view_exports().build_group_chat_activity_snapshot(
                     group,
                     current_user=request.user,
                     presence_map=presence_map,
                 )
             except Exception as exc:
-                log_group_chat_failure(
+                _log_group_chat_failure(
                     request,
                     endpoint="group_chat_detail",
                     stage="activity_snapshot",
                     exc=exc,
                     group_id=group.id,
                 )
-                activity_snapshot = build_group_chat_fallback_snapshot(
+                activity_snapshot = _view_exports().build_group_chat_fallback_snapshot(
                     group,
                     current_user=request.user,
                 )
 
             return Response({
-                "group": build_safe_group_chat_group_payload(group),
+                "group": _view_exports().build_safe_group_chat_group_payload(group),
                 "participants": activity_snapshot["participants"],
                 "messages": serialized_messages,
                 "unread_chat_count": 0,
@@ -100,19 +119,19 @@ class GroupChatView(APIView):
                 "has_someone_typing": activity_snapshot["has_someone_typing"],
             })
         except Exception as exc:
-            log_group_chat_failure(
+            _log_group_chat_failure(
                 request,
                 endpoint="group_chat_detail",
                 stage="response_fallback",
                 exc=exc,
                 group_id=group.id,
             )
-            fallback_snapshot = build_group_chat_fallback_snapshot(
+            fallback_snapshot = _view_exports().build_group_chat_fallback_snapshot(
                 group,
                 current_user=request.user,
             )
             return Response({
-                "group": build_emergency_group_chat_group_payload(group),
+                "group": _view_exports().build_emergency_group_chat_group_payload(group),
                 "participants": fallback_snapshot["participants"],
                 "messages": [],
                 "unread_chat_count": 0,
@@ -204,7 +223,7 @@ class GroupChatInboxView(APIView):
         try:
             return super().dispatch(request, *args, **kwargs)
         except Exception as exc:
-            log_group_chat_failure(
+            _log_group_chat_failure(
                 request,
                 endpoint="group_chat_inbox",
                 stage="dispatch",
@@ -248,7 +267,7 @@ class GroupChatInboxView(APIView):
                     .distinct()
                 )
             except Exception as exc:
-                log_group_chat_failure(
+                _log_group_chat_failure(
                     request,
                     endpoint="group_chat_inbox",
                     stage="group_query",
@@ -283,7 +302,7 @@ class GroupChatInboxView(APIView):
                     .order_by("group_id", "user_id", "-updated_at", "-id")
                 )
             except Exception as exc:
-                log_group_chat_failure(
+                _log_group_chat_failure(
                     request,
                     endpoint="group_chat_inbox",
                     stage="presence_load",
@@ -337,7 +356,7 @@ class GroupChatInboxView(APIView):
                     for message in visible_messages.filter(id__in=last_message_ids).select_related("sender")
                 }
             except Exception as exc:
-                log_group_chat_failure(
+                _log_group_chat_failure(
                     request,
                     endpoint="group_chat_inbox",
                     stage="message_summary",
@@ -355,7 +374,7 @@ class GroupChatInboxView(APIView):
                     last_message = last_message_by_id.get(getattr(group, "last_message_id", None))
                     unread_count = unread_count_by_group.get(group.id, 0)
                     total_unread_count += unread_count
-                    activity_snapshot = build_group_chat_activity_snapshot(
+                    activity_snapshot = _view_exports().build_group_chat_activity_snapshot(
                         group,
                         current_user=user,
                         presence_map=presence_by_group.get(group.id, {}),
@@ -363,7 +382,7 @@ class GroupChatInboxView(APIView):
                     )
                     chat_items.append(
                         {
-                            "group": build_safe_group_chat_group_payload(group),
+                            "group": _view_exports().build_safe_group_chat_group_payload(group),
                             "is_owner": getattr(group, "owner_id", None) == user.id,
                             "unread_chat_count": unread_count,
                             "participant_count": activity_snapshot["participant_count"],
@@ -387,21 +406,21 @@ class GroupChatInboxView(APIView):
                             }
                         )
                 except Exception as exc:
-                    log_group_chat_failure(
+                    _log_group_chat_failure(
                         request,
                         endpoint="group_chat_inbox",
                         stage="group_item_build",
                         exc=exc,
                         group_id=group.id,
                     )
-                    activity_snapshot = build_group_chat_fallback_snapshot(
+                    activity_snapshot = _view_exports().build_group_chat_fallback_snapshot(
                         group,
                         current_user=user,
                         members=getattr(group, "prefetched_group_members", None),
                     )
                     chat_items.append(
                         {
-                            "group": build_emergency_group_chat_group_payload(group),
+                            "group": _view_exports().build_emergency_group_chat_group_payload(group),
                             "is_owner": getattr(group, "owner_id", None) == user.id,
                             "unread_chat_count": 0,
                             "participant_count": activity_snapshot["participant_count"],
@@ -428,7 +447,7 @@ class GroupChatInboxView(APIView):
                 }
             )
         except Exception as exc:
-            log_group_chat_failure(
+            _log_group_chat_failure(
                 request,
                 endpoint="group_chat_inbox",
                 stage="response_fallback",
