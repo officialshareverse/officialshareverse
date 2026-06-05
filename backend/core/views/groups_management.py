@@ -1,6 +1,8 @@
 ﻿from .common import *
 
 class SubscriptionListView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request):
         subs = Subscription.objects.all()
         data = [

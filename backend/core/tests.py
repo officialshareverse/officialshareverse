@@ -119,6 +119,27 @@ class GroupFlowTests(APITestCase):
     def authenticate(self, user):
         self.client.force_authenticate(user=user)
 
+    def test_rest_framework_defaults_require_authentication(self):
+        self.assertEqual(
+            settings.REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"],
+            ("rest_framework.permissions.IsAuthenticated",),
+        )
+
+        response = self.client.get("/api/profile/")
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_anonymous_public_endpoints_stay_available_with_secure_defaults(self):
+        health_response = self.client.get("/api/health/")
+        subscriptions_response = self.client.get("/api/subscriptions/")
+
+        self.assertEqual(health_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(subscriptions_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [subscription["name"] for subscription in subscriptions_response.data],
+            [self.subscription.name],
+        )
+
     def list_results(self, response):
         if isinstance(response.data, dict) and "results" in response.data:
             return response.data["results"]

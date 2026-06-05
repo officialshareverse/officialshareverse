@@ -819,6 +819,8 @@ def build_mobile_refresh_response(refresh_token):
 
 
 class SignupRequestOTPView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = SignupRequestOTPSerializer(data=request.data)
         if not serializer.is_valid():
@@ -877,6 +879,8 @@ class SignupAvailabilityView(APIView):
 
 
 class SignupView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = SignupConfirmSerializer(data=request.data)
         if not serializer.is_valid():
@@ -905,6 +909,8 @@ class MobileSignupView(APIView):
 
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         user, error_response = authenticate_login_request(request)
         if error_response:
@@ -1062,6 +1068,8 @@ class GoogleAuthView(APIView):
 
 
 class ForgotPasswordRequestOTPView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = ForgotPasswordRequestSerializer(data=request.data)
         if not serializer.is_valid():
@@ -1101,6 +1109,8 @@ class ForgotPasswordRequestOTPView(APIView):
 
 
 class ForgotPasswordConfirmOTPView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = ForgotPasswordConfirmSerializer(data=request.data)
         if not serializer.is_valid():
