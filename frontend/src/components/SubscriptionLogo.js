@@ -63,12 +63,13 @@ const domainMap = {
 };
 
 // Build logo URL candidates using free public services (no API key needed).
-// Google S2 favicons return high-res icons; DuckDuckGo icons are the fallback.
+// Logo.dev returns real high-res brand logos.
+// Google S2 favicon is a last resort before the colored-initial fallback.
 function getLogoUrls(domain) {
   if (!domain) return [];
   return [
+    `https://img.logo.dev/${domain}?size=128&retina=true&format=png&fallback=404`,
     `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
   ];
 }
 
