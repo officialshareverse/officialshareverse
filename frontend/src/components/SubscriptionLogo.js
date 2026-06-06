@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 // A set of colors to use for the fallback initials background
 const fallbackColors = [
@@ -62,6 +62,16 @@ const domainMap = {
   surfshark: 'surfshark.com',
 };
 
+// Build logo URL candidates using free public services (no API key needed).
+// Google S2 favicons return high-res icons; DuckDuckGo icons are the fallback.
+function getLogoUrls(domain) {
+  if (!domain) return [];
+  return [
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+  ];
+}
+
 function getDomain(name) {
   if (!name) return null;
   const lower = name.toLowerCase().trim();
@@ -90,10 +100,15 @@ function getFallbackColor(name) {
 }
 
 export default function SubscriptionLogo({ name, size = 40, className = '', style = {} }) {
-  const [imgError, setImgError] = useState(false);
+  const [urlIndex, setUrlIndex] = useState(0);
 
   const domain = getDomain(name);
-  const logoUrl = domain ? `https://logo.clearbit.com/${domain}` : null;
+  const logoUrls = getLogoUrls(domain);
+  const logoUrl = urlIndex < logoUrls.length ? logoUrls[urlIndex] : null;
+
+  useEffect(() => {
+    setUrlIndex(0);
+  }, [domain]);
 
   // Handle size being a string like "100%" or a number
   const isPercentSize = typeof size === 'string' && size.includes('%');
@@ -111,14 +126,14 @@ export default function SubscriptionLogo({ name, size = 40, className = '', styl
     ...style,
   };
 
-  if (!imgError && logoUrl) {
+  if (logoUrl) {
     return (
       <div style={defaultStyle} className={`sv-sub-logo-wrapper ${className}`}>
         <img
           src={logoUrl}
           alt={name}
           style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#fff' }}
-          onError={() => setImgError(true)}
+          onError={() => setUrlIndex((i) => i + 1)}
           loading="lazy"
         />
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image } from 'react-native';
 
 const fallbackColors = [
@@ -67,6 +67,16 @@ function getDomain(name) {
   return cleaned ? `${cleaned}.com` : null;
 }
 
+// Build logo URL candidates using free public services (no API key needed).
+// Google S2 favicons return high-res icons; DuckDuckGo icons are the fallback.
+function getLogoUrls(domain) {
+  if (!domain) return [];
+  return [
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+  ];
+}
+
 function getFallbackColor(name) {
   if (!name) return fallbackColors[0];
   let hash = 0;
@@ -78,10 +88,15 @@ function getFallbackColor(name) {
 }
 
 export default function SubscriptionLogo({ name, size = 40, style }) {
-  const [imgError, setImgError] = useState(false);
+  const [urlIndex, setUrlIndex] = useState(0);
 
   const domain = getDomain(name);
-  const logoUrl = domain ? `https://logo.clearbit.com/${domain}` : null;
+  const logoUrls = getLogoUrls(domain);
+  const logoUrl = urlIndex < logoUrls.length ? logoUrls[urlIndex] : null;
+
+  useEffect(() => {
+    setUrlIndex(0);
+  }, [domain]);
 
   const containerStyle = {
     width: size,
@@ -92,13 +107,13 @@ export default function SubscriptionLogo({ name, size = 40, style }) {
     alignItems: 'center',
   };
 
-  if (!imgError && logoUrl) {
+  if (logoUrl) {
     return (
       <View style={[containerStyle, { backgroundColor: '#fff' }, style]}>
         <Image
           source={{ uri: logoUrl }}
           style={{ width: '100%', height: '100%', resizeMode: 'contain' }}
-          onError={() => setImgError(true)}
+          onError={() => setUrlIndex((i) => i + 1)}
         />
       </View>
     );
