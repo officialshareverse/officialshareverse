@@ -214,6 +214,16 @@
     display: inline-flex;
   }
 
+  .sv-tooltip.sv-my-shared-empty-tip {
+    display: block;
+    width: 100%;
+  }
+
+  .sv-tooltip.sv-my-shared-empty-tip .sv-tooltip-trigger {
+    display: block;
+    width: 100%;
+  }
+
   .sv-tooltip-content {
     position: absolute;
     left: 50%;

@@ -1196,6 +1196,7 @@ export default function MyShared() {
         <Tooltip
           guided={joinedGroups.length === 0}
           side="bottom"
+          className="sv-my-shared-empty-tip"
           storageKey="sv-guided-tooltip-my-shared-empty-v1"
           title="Your split workspace"
           content="Groups you create or join appear here. Start by creating a split or exploring live groups."
