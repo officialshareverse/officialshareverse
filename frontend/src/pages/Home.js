@@ -100,6 +100,7 @@ export default function Home() {
   const [dashboard, setDashboard] = useState(null);
   const [profileSnapshot, setProfileSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
+  // eslint-disable-next-line no-unused-vars
   const [error, setError] = useState("");
   const [showIntro, setShowIntro] = useState(false);
   const [introStep, setIntroStep] = useState(0);
