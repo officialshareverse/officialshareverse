@@ -4,14 +4,12 @@ import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
-import CountUp from "../components/CountUp";
 import Drawer from "../components/Drawer";
 import EmptyState from "../components/EmptyState";
 import PullToRefreshIndicator from "../components/PullToRefreshIndicator";
 import {
   SkeletonCard,
   SkeletonList,
-  SkeletonMetricGrid,
   SkeletonTextGroup,
 } from "../components/SkeletonFactory";
 import Tabs from "../components/Tabs";
@@ -34,16 +32,7 @@ import useWebSocket from "../hooks/useWebSocket";
 const SOUND_TOGGLE_STORAGE_KEY = "sv-notification-sound-enabled";
 const HAPTICS_TOGGLE_STORAGE_KEY = "sv-notification-haptics-enabled";
 
-function SummaryCard({ label, value, tone = "text-slate-900", className = "" }) {
-  return (
-    <div className={`sv-stat-card ${className}`}>
-      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs sm:tracking-[0.2em]">{label}</p>
-      <p className={`mt-2 text-xl font-bold sm:mt-3 sm:text-2xl ${tone}`}>
-        <CountUp value={value} />
-      </p>
-    </div>
-  );
-}
+
 
 function formatRelativeTime(value) {
   if (!value) {
@@ -547,7 +536,6 @@ export default function NotificationsInbox() {
           <SkeletonCard>
             <SkeletonTextGroup eyebrowWidth="w-28" titleWidth="w-96" />
           </SkeletonCard>
-          <SkeletonMetricGrid count={4} className="grid gap-2 grid-cols-2 sm:grid-cols-4 sm:gap-4" />
           <SkeletonCard>
             <SkeletonList count={4} itemClassName="h-24 rounded-[length:var(--sv-radius-card)]" />
           </SkeletonCard>
@@ -582,14 +570,7 @@ export default function NotificationsInbox() {
           </div>
         </section>
 
-        {!isMobile ? (
-          <section className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
-            <SummaryCard label="All updates" value={counts.all} className="col-span-2 md:col-span-1" />
-            <SummaryCard label="Unread" value={counts.unread} tone={counts.unread > 0 ? "text-emerald-700" : "text-slate-900"} />
-            <SummaryCard label="Groups" value={counts.groups} tone="text-violet-700" />
-            <SummaryCard label="Wallet + System" value={counts.wallet + counts.system} tone="text-sky-700" />
-          </section>
-        ) : null}
+
 
         <section className="sv-card sv-reveal">
           <div className="flex flex-col gap-4">
