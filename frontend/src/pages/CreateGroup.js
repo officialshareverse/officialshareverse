@@ -138,11 +138,6 @@ function getModeConfig(mode) {
         "Members join first, money is held safely until both sides confirm, and payout is released only after access confirmation. Only share plans where the provider allows it.",
       accent: "amber",
       badge: "BUY",
-      previewSteps: [
-        "Open the group and collect commitments first.",
-        "Track who is ready before the purchase happens.",
-        "Share proof and wait for confirmations before payout.",
-      ],
     };
   }
 
@@ -159,11 +154,6 @@ function getModeConfig(mode) {
       "If members join late, they only pay for remaining days. Only share plans where the provider allows it and never for password-sharing requests.",
     accent: "teal",
     badge: "LIVE",
-    previewSteps: [
-      "Publish the split with pricing and dates.",
-      "Let members join the active cycle.",
-      "Coordinate access later from My Splits when everyone is ready.",
-    ],
   };
 }
 
@@ -566,23 +556,6 @@ export default function CreateGroup() {
                     />
                   </div>
 
-                  <div className="sv-create-flow-preview mt-5">
-                    {modeConfig.previewSteps.map((item, index) => (
-                      <div key={item} className="sv-create-flow-step">
-                        <span className="sv-create-flow-index">0{index + 1}</span>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-950">{item}</p>
-                          <p className="mt-1 text-sm leading-7 text-slate-600">
-                            {index === 0
-                              ? "Start with the right model so members understand what they are joining."
-                              : index === 1
-                                ? "Keep pricing, member count, and timing easy to scan before people commit."
-                                : "Move into live management only after the setup looks trustworthy."}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               ) : null}
 
@@ -762,23 +735,7 @@ export default function CreateGroup() {
                     </div>
                   </section>
 
-                  <section className="sv-create-flow-preview mt-5">
-                    {modeConfig.previewSteps.map((item, index) => (
-                      <div key={item} className="sv-create-flow-step">
-                        <span className="sv-create-flow-index">0{index + 1}</span>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-950">{item}</p>
-                          <p className="mt-1 text-sm leading-7 text-slate-600">
-                            {index === 0
-                              ? "Dates frame the billing cycle or collection window before members see the split."
-                              : index === 1
-                                ? "A clear window makes the amount easier to trust."
-                                : "Publishing feels much smoother when the timing already makes sense."}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </section>
+
                 </div>
               ) : null}
 
