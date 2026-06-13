@@ -5,7 +5,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { useToast } from "../components/ToastProvider";
 import {
-  CheckCircleIcon,
   ClockIcon,
   LayersIcon,
   LoadingSpinner,
@@ -705,23 +704,7 @@ export default function CreateGroup() {
 
 
 
-                  <section className="sv-create-checklist mt-5">
-                    <div className="sv-create-check-item">
-                      <CheckCircleIcon className="h-5 w-5 text-emerald-600" />
-                      <span>Mode matches the real flow members will follow.</span>
-                    </div>
-                    <div className="sv-create-check-item">
-                      <CheckCircleIcon className="h-5 w-5 text-emerald-600" />
-                      <span>Pricing, member count, and timing are easy to scan.</span>
-                    </div>
-                    <div className="sv-create-check-item">
-                      <CheckCircleIcon className="h-5 w-5 text-emerald-600" />
-                      <span>Preview looks clear enough to publish confidently.</span>
-                    </div>
-                    <div className="mt-3 rounded-xl bg-amber-50 p-4 border border-amber-200">
-                      <p className="text-sm font-semibold text-amber-800">Trust Guarantee: Members' money is held safely until they confirm they got access.</p>
-                    </div>
-                  </section>
+
                 </div>
               ) : null}
             </div>
