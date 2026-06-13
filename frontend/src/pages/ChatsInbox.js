@@ -5,14 +5,12 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import SubscriptionLogo from "../components/SubscriptionLogo";
 import AvatarStack from "../components/AvatarStack";
-import CountUp from "../components/CountUp";
 import Drawer from "../components/Drawer";
 import EmptyState from "../components/EmptyState";
 import PullToRefreshIndicator from "../components/PullToRefreshIndicator";
 import {
   SkeletonCard,
   SkeletonList,
-  SkeletonMetricGrid,
   SkeletonTextGroup,
 } from "../components/SkeletonFactory";
 import Tabs from "../components/Tabs";
@@ -67,16 +65,7 @@ function formatTypingLabel(usernames) {
   return `${usernames[0]} and ${usernames.length - 1} others are typing...`;
 }
 
-function SummaryCard({ label, value, tone = "text-slate-900", className = "" }) {
-  return (
-    <div className={`sv-stat-card ${className}`}>
-      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className={`mt-3 text-2xl font-bold ${tone}`}>
-        <CountUp value={value} />
-      </p>
-    </div>
-  );
-}
+
 
 function formatRelativeTime(value) {
   if (!value) {
@@ -326,7 +315,6 @@ export default function ChatsInbox() {
           <SkeletonCard>
             <SkeletonTextGroup eyebrowWidth="w-16" titleWidth="w-80" />
           </SkeletonCard>
-          <SkeletonMetricGrid count={4} />
           <SkeletonCard>
             <SkeletonList count={4} itemClassName="h-32 rounded-[length:var(--sv-radius-card)]" />
           </SkeletonCard>
@@ -353,14 +341,7 @@ export default function ChatsInbox() {
           </button>
         </section>
 
-        {!isMobile ? (
-          <section className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
-            <SummaryCard label="Total chats" value={stats.total} className="col-span-2 md:col-span-1" />
-            <SummaryCard label="Unread messages" value={stats.unreadMessages} tone={stats.unreadMessages > 0 ? "text-emerald-700" : "text-slate-900"} />
-            <SummaryCard label="Pinned" value={stats.pinned} tone="text-amber-700" />
-            <SummaryCard label="Hosted by you" value={stats.hosted} tone="text-violet-700" />
-          </section>
-        ) : null}
+
 
         <section className="sv-card sv-reveal">
           <div className="flex flex-col gap-4">
