@@ -1048,24 +1048,18 @@ export default function Wallet() {
         />
 
         <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-          <div className="sv-card-solid sv-wallet-balance-card sv-reveal">
-            <div className="sv-wallet-balance-backdrop" aria-hidden="true">
-              <span className="sv-wallet-orb sv-wallet-orb-a" />
-              <span className="sv-wallet-orb sv-wallet-orb-b" />
-              <span className="sv-wallet-orb sv-wallet-orb-c" />
-            </div>
-
+          <div className="sv-card-solid sv-reveal p-6 sm:p-8">
             <div className="relative z-[1]">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="sv-eyebrow-on-dark">Wallet</p>
-                  <h1 className="sv-display-on-dark mt-3 max-w-3xl">Balance</h1>
+                  <p className="text-[11px] uppercase tracking-[0.18em] font-bold text-slate-500">Wallet</p>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl mt-1">Balance</h1>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => focusActionTab("topup")}
-                    className="sv-wallet-quick-cta"
+                    className="sv-btn-secondary"
                   >
                     <CreditIcon className="h-4 w-4" />
                     Add money
@@ -1073,7 +1067,7 @@ export default function Wallet() {
                   <button
                     type="button"
                     onClick={() => focusActionTab("withdraw")}
-                    className="sv-wallet-quick-cta"
+                    className="sv-btn-secondary"
                     aria-label="Open withdrawal action"
                   >
                     <DebitIcon className="h-4 w-4" />
@@ -1082,55 +1076,55 @@ export default function Wallet() {
                 </div>
               </div>
 
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-300">Balance</p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div className="w-full">
+                  <p className="text-[11px] uppercase tracking-[0.18em] font-semibold text-slate-500">Balance</p>
                   <div className="mt-2 flex items-center gap-3">
-                    <span className="sv-wallet-glyph">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 sm:h-12 sm:w-12">
                       <WalletGlyph className="h-5 w-5 sm:h-6 sm:w-6" />
                     </span>
-                    <h2 className="sv-count-up text-3xl font-bold text-white sm:text-5xl">
+                    <h2 className="sv-count-up text-3xl font-black text-slate-900 sm:text-5xl">
                       <AnimatedValue value={formatCurrency(spendableBalance)} />
                     </h2>
                   </div>
-                  <p className={`mt-3 text-sm font-semibold ${walletDelta.tone === "is-up" ? "text-emerald-200" : "text-rose-200"}`}>
+                  <p className={`mt-3 text-sm font-semibold ${walletDelta.tone === "is-up" ? "text-emerald-600" : "text-rose-600"}`}>
                     {walletDelta.label}
                   </p>
-                  <details className="sv-wallet-balance-details mt-4">
-                    <summary>Cash and bonus details</summary>
-                    <div className="sv-wallet-balance-splits mt-3">
-                      <div className="sv-wallet-balance-split">
-                        <span>Cash</span>
-                        <strong>{formatCurrency(balance)}</strong>
+                  <details className="mt-4">
+                    <summary className="cursor-pointer text-sm font-medium text-slate-700">Cash and bonus details</summary>
+                    <div className="mt-3 flex flex-col gap-2 rounded-lg bg-slate-50 p-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">Cash</span>
+                        <strong className="text-slate-900">{formatCurrency(balance)}</strong>
                       </div>
-                      <div className="sv-wallet-balance-split">
-                        <span>Bonus</span>
-                        <strong>{formatCurrency(bonusBalance)}</strong>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">Bonus</span>
+                        <strong className="text-slate-900">{formatCurrency(bonusBalance)}</strong>
                       </div>
                     </div>
-                    <p className="mt-3 text-xs leading-6 text-slate-300">
+                    <p className="mt-3 text-xs leading-6 text-slate-500">
                       Bonus credit can be used to join groups and cannot be withdrawn.
                     </p>
                   </details>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {topupConfig ? <span className="sv-wallet-info-pill">Live payments</span> : null}
-                  <span className={`sv-wallet-info-pill ${payoutsLive ? "is-light" : "is-warning"}`}>
+                <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
+                  {topupConfig ? <span className="sv-chip">Live payments</span> : null}
+                  <span className={`sv-chip ${payoutsLive ? "" : "bg-amber-100 text-amber-800"}`}>
                     {payoutConfig?.mode_label || (payoutsLive ? "Payouts live" : "Payouts processed within 24 hours")}
                   </span>
                 </div>
               </div>
 
-              <div className="sv-wallet-trend mt-6">
+              <div className="mt-8 border-t border-slate-100 pt-6">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-300">7-day flow</p>
-                    <p className="mt-1 text-sm text-slate-200">Credits vs debits in your recent activity.</p>
+                    <p className="text-[11px] uppercase tracking-[0.16em] font-semibold text-slate-500">7-day flow</p>
+                    <p className="mt-1 text-sm text-slate-600">Credits vs debits in your recent activity.</p>
                   </div>
-                  <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-300">
-                    <span className="sv-wallet-legend"><span className="sv-wallet-legend-dot is-credit" /> Credit</span>
-                    <span className="sv-wallet-legend"><span className="sv-wallet-legend-dot is-debit" /> Debit</span>
+                  <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Credit</span>
+                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-rose-500" /> Debit</span>
                   </div>
                 </div>
 

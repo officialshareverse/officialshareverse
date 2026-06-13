@@ -486,37 +486,29 @@ export default function GroupChat() {
       ) : null}
 
       <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
-        <section className="sv-dark-hero sv-group-chat-hero">
-          <div className="sv-group-chat-hero-top flex flex-wrap items-start justify-between gap-4">
-            <div className="sv-group-chat-hero-copy">
-              <p className="sv-eyebrow-on-dark">Group chat</p>
-              <h1 className="sv-display-on-dark mt-3 max-w-4xl">{group.subscription_name}</h1>
-              <p className="mt-3 max-w-3xl text-slate-300">
-                {isMobile
-                  ? "Send a quick update, check who is live, and keep the split moving."
-                  : "See who is active, catch live typing signals, and keep the group coordinated without refreshing the whole page manually."}
-              </p>
-            </div>
+        <section className="pb-2 sm:pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{group.subscription_name}</h1>
             <button
               type="button"
               onClick={() => navigate("/chats")}
-              className="sv-btn-ghost-dark"
+              className="sv-btn-ghost"
             >
               Back to Chats
             </button>
           </div>
 
-          <div className="sv-group-chat-meta mt-5 text-sm text-slate-200">
-            <span className="sv-group-chat-meta-chip">{group.mode_label}</span>
-            <span className="sv-group-chat-meta-chip">{group.status_label}</span>
-            <span className="sv-group-chat-meta-chip">Host: {group.owner_name}</span>
-            <span className="sv-group-chat-meta-chip">
+          <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600">
+            <span className="sv-chip">{group.mode_label}</span>
+            <span className="sv-chip">{group.status_label}</span>
+            <span className="sv-chip">Host: {group.owner_name}</span>
+            <span className="sv-chip">
               <span className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${connectionMeta.dot}`} />
               {connectionMeta.label}
             </span>
-            {typingLabel ? <span className="sv-chat-typing-pill">{typingLabel}</span> : null}
+            {typingLabel ? <span className="sv-chip bg-emerald-100 text-emerald-800">{typingLabel}</span> : null}
             {!typingLabel && onlineParticipants.length > 0 ? (
-              <span className="sv-chat-live-pill">{onlineParticipants.length} active now</span>
+              <span className="sv-chip bg-emerald-100 text-emerald-800">{onlineParticipants.length} active now</span>
             ) : null}
           </div>
         </section>

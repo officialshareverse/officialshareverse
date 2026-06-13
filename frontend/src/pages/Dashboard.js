@@ -64,20 +64,10 @@ export default function Dashboard() {
   return (
     <main className="sv-page pb-20">
       <div className="sv-container max-w-6xl mt-6 lg:mt-10">
-        <div className="sv-dark-hero rounded-[length:var(--sv-radius-card-md)] p-8 mb-8 relative overflow-hidden">
-          <div className="relative z-10">
-            <p className="sv-eyebrow-on-dark text-amber-300">Platform dashboard</p>
-            <h1 className="sv-display-on-dark mt-3 max-w-3xl text-2xl sm:text-3xl lg:text-4xl">Track what you spend, what you earn, and what still needs members.</h1>
-            <p className="sv-landing-hero-body mt-4 max-w-3xl text-slate-300">
-              This dashboard combines your member activity with your owner activity across sharing groups and buy-together groups.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard title="Wallet Balance" value={`Rs ${data.wallet_balance}`} accent="text-green-600" />
-          <StatCard title="Groups Joined" value={data.total_groups} />
-          <StatCard title="Total Spent" value={`Rs ${data.total_spent}`} accent="text-red-500" />
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-2 sm:pb-4">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Dashboard
+          </h1>
         </div>
 
         <div className="mt-8">

@@ -436,7 +436,7 @@ export default function Profile() {
     return (
       <div className="sv-page">
         <div className="sv-container max-w-6xl space-y-6">
-          <section className="sv-dark-hero">
+          <section className="pb-2 sm:pb-4">
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
               <div className="space-y-4">
                 <SkeletonBlock className="h-5 w-20" />
@@ -475,10 +475,10 @@ export default function Profile() {
   return (
     <div className="sv-page">
       <div className="sv-container max-w-6xl space-y-6">
-        <section className="sv-profile-hero sv-reveal">
+        <section className="pb-2 sm:pb-4 sv-reveal">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.12fr)_minmax(290px,0.88fr)]">
             <div className="min-w-0">
-              <p className="sv-eyebrow-on-dark">Profile</p>
+              <p className="text-[11px] uppercase tracking-[0.18em] font-bold text-slate-500">Profile</p>
               <div className="mt-4 flex flex-col gap-5 md:flex-row md:items-center">
                 <div className="sv-profile-avatar-shell">
                   <ProfileAvatar imageUrl={liveProfilePicture} initials={initials} size="large" />
@@ -500,22 +500,22 @@ export default function Profile() {
 
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <h1 className="sv-display-on-dark">{isEditing ? draftDisplayName : displayName}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{isEditing ? draftDisplayName : displayName}</h1>
                     <span className={`sv-profile-verify-chip ${profile.is_verified ? "is-verified" : "is-pending"}`}>
                       <ShieldIcon className="h-3.5 w-3.5" />
                       {profile.is_verified ? "Verified" : "Pending"}
                     </span>
                   </div>
 
-                  <p className="mt-3 text-sm text-slate-200 md:text-base">{isMobile ? `@${profile.username}` : `@${profile.username}`}</p>
-                  <p className="sv-profile-tagline mt-3 max-w-2xl text-sm leading-7 text-slate-300 md:text-base md:leading-8">
+                  <p className="mt-3 text-sm text-slate-600 md:text-base">{isMobile ? `@${profile.username}` : `@${profile.username}`}</p>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base md:leading-8">
                     {profileTagline}
                   </p>
 
-                  <div className="sv-profile-hero-chips mt-5 flex flex-wrap gap-2">
-                    <span className="sv-chip-dark">Joined {formatDate(profile.date_joined)}</span>
-                    <span className="sv-chip-dark">{profile.has_profile_picture ? "Photo added" : "Photo missing"}</span>
-                    <span className="sv-chip-dark">{profile.profile_completion}% complete</span>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <span className="sv-chip">Joined {formatDate(profile.date_joined)}</span>
+                    <span className="sv-chip">{profile.has_profile_picture ? "Photo added" : "Photo missing"}</span>
+                    <span className="sv-chip">{profile.profile_completion}% complete</span>
                   </div>
                 </div>
               </div>
@@ -919,10 +919,10 @@ function ProfileAvatar({ imageUrl, initials, size = "default" }) {
 
 function HeroMetricCard({ label, value, note }) {
   return (
-    <article className="sv-profile-hero-metric">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-300">{label}</p>
-      <p className="mt-3 text-3xl font-black text-white">{value}</p>
-      <p className="mt-3 text-sm leading-7 text-slate-300">{note}</p>
+    <article className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5">
+      <p className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-500">{label}</p>
+      <p className="mt-3 text-3xl font-black text-slate-900">{value}</p>
+      <p className="mt-3 text-sm leading-7 text-slate-600">{note}</p>
     </article>
   );
 }
