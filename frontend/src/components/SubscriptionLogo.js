@@ -48,10 +48,18 @@ const domainMap = {
   nordvpn: 'nordvpn.com',
   expressvpn: 'expressvpn.com',
   surfshark: 'surfshark.com',
+  'apna college': 'apnacollege.in',
+  'apna college sigma': 'apnacollege.in',
 };
 
 // Inline SVG brand logos for major services — no network needed
 const brandLogos = {
+  'apnacollege.in': (
+    <svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg" width="90%" height="90%">
+      <text x="60" y="26" textAnchor="middle" fontFamily="Arial,Helvetica,sans-serif" fontWeight="900" fontSize="26" fill="#1a1a1a">APNA</text>
+      <text x="60" y="52" textAnchor="middle" fontFamily="Arial,Helvetica,sans-serif" fontWeight="900" fontSize="22" fill="#F5A623">COLLEGE</text>
+    </svg>
+  ),
   'netflix.com': (
     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#E50914" width="70%" height="70%">
       <path d="M5.398 0v.006c3.028 8.556 5.37 15.175 8.348 23.596 2.344.058 4.85.398 4.854.398-2.8-7.924-5.923-16.747-8.487-24zm8.489 0v9.63L18.6 22.951c.04.007 0 0 .41.065V0zM5.398 1.05V24c1.873-.225 2.81-.312 4.715-.398v-9.22z"/>
