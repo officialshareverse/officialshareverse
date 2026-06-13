@@ -471,9 +471,9 @@ export default function Groups() {
         : null}
 
       <div className="sv-container space-y-4 sm:space-y-6">
-        <section className="mx-auto max-w-3xl">
-          <div className={`sv-card sv-reveal sv-groups-panel ${isMobile ? "is-mobile" : ""}`}>
-            <label className={`block ${isMobile ? "sv-groups-panel-search" : ""}`}>
+        <section className="mx-auto max-w-4xl sticky z-20" style={{ top: '4.5rem' }}>
+          <div className={`sv-card sv-reveal sv-groups-panel flex flex-col sm:flex-row items-end gap-3 sm:gap-4 ${isMobile ? "is-mobile" : ""}`}>
+            <label className={`block flex-1 w-full ${isMobile ? "sv-groups-panel-search" : ""}`}>
               <span className={`mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs ${isMobile ? "sv-groups-search-label" : ""}`}>
                 {isMobile ? "Plan or host" : "Search groups"}
               </span>
@@ -524,7 +524,7 @@ export default function Groups() {
               ) : null}
             </label>
 
-            <div className="mt-4">
+            <div className="w-full sm:w-48">
               <label className="block">
                 <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs">
                   Sort by
