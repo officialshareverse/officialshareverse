@@ -327,7 +327,7 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
 
   return (
     <>
-      <header className="sticky top-0 z-40" style={{ padding: "var(--sv-page-px)", paddingBottom: 0 }}>
+      <header className="sticky top-0 z-40" style={{ padding: "var(--sv-page-px)", paddingBottom: 0, paddingTop: "var(--sv-page-px)", background: "linear-gradient(180deg, var(--sv-bg) 60%, transparent 100%)" }}>
         <div className="sv-container">
           <div className="hidden items-center gap-3 px-3 py-2 sm:px-4 sm:py-2.5 md:px-4 lg:flex sv-brand-shell">
             <div className="sv-navbar-desktop">
