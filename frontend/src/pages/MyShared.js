@@ -1104,6 +1104,7 @@ export default function MyShared() {
         <div>
           <p style={sectionEyebrow}>Created splits</p>
           <h3 style={{ ...sectionTitle, ...(isMobile ? sectionTitleMobile : {}) }}>Splits you host</h3>
+        </div>
       </div>
 
       <div style={{ ...filterRow, ...(isMobile ? filterRowMobile : {}) }}>
@@ -1785,6 +1786,7 @@ export default function MyShared() {
         <div>
           <p style={sectionEyebrow}>Joined groups</p>
           <h3 style={{ ...sectionTitle, ...(isMobile ? sectionTitleMobile : {}) }}>Subscriptions you are part of</h3>
+        </div>
       </div>
 
       {loading ? (
