@@ -702,9 +702,9 @@ export default function CreateGroup() {
                     </div>
                   </section>
 
-
-
-
+                  <div className="mt-5 rounded-xl bg-amber-50 p-4 border border-amber-200">
+                    <p className="text-sm font-semibold text-amber-800">Trust Guarantee: Members' money is held safely until they confirm they got access.</p>
+                  </div>
                 </div>
               ) : null}
             </div>
