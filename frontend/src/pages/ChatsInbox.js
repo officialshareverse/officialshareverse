@@ -344,26 +344,13 @@ export default function ChatsInbox() {
           loadingLabel="Refreshing chats..."
         />
 
-        <section className="sv-dark-hero sv-reveal">
-          <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
-            <div>
-              <p className="sv-eyebrow-on-dark">Chats</p>
-              <h1 className="sv-display-on-dark mt-2 max-w-4xl sm:mt-3">
-                {isMobile ? "Find the right thread fast." : "Pinned threads, faster scans, and clearer group context"}
-              </h1>
-              <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-4 sm:text-base sm:leading-8">
-                {isMobile
-                  ? "Open one control sheet for search and filters, then scan a much simpler chat list."
-                  : "Separate hosted chats from joined ones, keep important threads pinned, and jump in with a clearer sense of status and who is inside the conversation."}
-              </p>
-              <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
-                Pull down on mobile to refresh this inbox quickly.
-              </p>
-            </div>
-            <button type="button" onClick={() => navigate("/my-shared")} className="sv-btn-ghost-dark">
-              Back to My Splits
-            </button>
-          </div>
+        <section className="flex flex-wrap items-center justify-between gap-4 pb-2 sm:pb-4">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Chats
+          </h1>
+          <button type="button" onClick={() => navigate("/my-shared")} className="sv-btn-secondary">
+            Back to My Splits
+          </button>
         </section>
 
         {!isMobile ? (
