@@ -483,29 +483,9 @@ export default function CreateGroup() {
                 <h2 className="sv-title mt-2">{formHeadTitle}</h2>
                 <p className="sv-create-step-helper mt-3 max-w-3xl text-sm leading-7 text-slate-600">{formHeadHelper}</p>
               </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <button type="button" onClick={resetWizard} className="sv-btn-secondary sv-create-reset-button">
-                  Reset form
-                </button>
-                <button type="submit" disabled={loading} className="sv-btn-primary">
-                  {loading ? (
-                    <>
-                      <LoadingSpinner />
-                      Creating...
-                    </>
-                  ) : isSinglePageMobile || currentStep === finalStepIndex ? (
-                    <>
-                      <SparkIcon className="h-4 w-4" />
-                      {isSharing ? "Create sharing group" : "Create buy-together group"}
-                    </>
-                  ) : (
-                    <>
-                      Next step
-                      <SparkIcon className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
-              </div>
+              <button type="button" onClick={resetWizard} className="sv-btn-secondary sv-create-reset-button">
+                Reset form
+              </button>
             </div>
 
             {activationPrefill?.template ? (
@@ -844,7 +824,7 @@ export default function CreateGroup() {
               ) : null}
             </div>
 
-            <div className="sv-create-nav mt-6">
+            <div className="sv-create-nav mt-0 pt-4 border-t border-slate-100">
               {!isSinglePageMobile && currentStep > 0 ? (
                 <button type="button" onClick={moveToPreviousStep} className="sv-btn-secondary">
                   Back
@@ -856,11 +836,25 @@ export default function CreateGroup() {
                 <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
                   {isSinglePageMobile ? "Mobile create flow" : `Step ${currentStep + 1} of ${WIZARD_STEPS.length}`}
                 </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  {isSinglePageMobile ? "Fill the essentials here, then publish when the split is ready." : currentStepConfig.helper}
-                </p>
               </div>
-              <div />
+              <button type="submit" disabled={loading} className="sv-btn-primary">
+                {loading ? (
+                  <>
+                    <LoadingSpinner />
+                    Creating...
+                  </>
+                ) : isSinglePageMobile || currentStep === finalStepIndex ? (
+                  <>
+                    <SparkIcon className="h-4 w-4" />
+                    {isSharing ? "Create sharing group" : "Create buy-together group"}
+                  </>
+                ) : (
+                  <>
+                    Next step
+                    <SparkIcon className="h-4 w-4" />
+                  </>
+                )}
+              </button>
             </div>
           </form>
 
