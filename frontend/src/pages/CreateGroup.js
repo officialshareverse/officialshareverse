@@ -475,14 +475,14 @@ export default function CreateGroup() {
 
   return (
     <div className="sv-page">
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="mx-auto max-w-3xl space-y-6">
         <section className="flex flex-wrap items-center justify-between gap-4 pb-2 sm:pb-4">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Create Split
           </h1>
         </section>
 
-        <div className="mx-auto max-w-3xl">
+        <div>
           <form
             onSubmit={handleWizardSubmit}
             className={`sv-card-solid sv-create-wizard ${isSinglePageMobile ? "is-mobile-single" : ""}`}
