@@ -11,7 +11,12 @@
 
   .sv-route-stage {
     min-height: 100vh;
+    padding-top: 4.5rem; /* offset for fixed navbar */
     animation: sv-page-enter 0.45s ease-out both;
+  }
+
+  body.sv-auth-shell-active .sv-route-stage {
+    padding-top: clamp(5.9rem, 5.8vw, 7.5rem);
   }
 
   .sv-route-loading {

@@ -655,8 +655,10 @@
   }
 
   .sv-app-navbar {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 80;
     width: 100%;
     padding: var(--sv-page-px) var(--sv-page-px) 0;
