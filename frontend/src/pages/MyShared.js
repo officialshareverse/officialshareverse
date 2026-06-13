@@ -33,7 +33,6 @@ import {
   getReviewKey,
 } from "./mySharedUtils";
 import {
-  SummaryCard,
   MobileDrawerAction,
   FilterButton,
   MetricBlock,
@@ -69,7 +68,6 @@ import {
   detailStatsMobile,
   editPanel,
   editPanelHeader,
-  eyebrow,
   factsRow,
   factsRowMobile,
   field,
@@ -78,11 +76,6 @@ import {
   filterRow,
   filterRowMobile,
   formGrid,
-  hero,
-  heroMobile,
-  heroText,
-  heroTitle,
-  heroTitleMobile,
   input,
   joinedCard,
   joinedCardMobile,
@@ -128,8 +121,6 @@ import {
   sectionText,
   sectionTitle,
   sectionTitleMobile,
-  statsGrid,
-  statsGridMobile,
   subtleText,
   subtleTextCompact,
   textarea,
@@ -254,61 +245,7 @@ export default function MyShared() {
   const displayedJoinedGroups = joinedGroups.slice(0, joinedPage * 50);
   const hasMoreJoinedGroups = displayedJoinedGroups.length < joinedGroups.length;
 
-  const totals = useMemo(() => {
-    return groups.reduce(
-      (acc, group) => {
-        acc.created += 1;
-        acc.revenue += Number(group.owner_revenue || 0);
-        acc.held += Number(group.held_amount || 0);
-        if (
-          group.mode === "group_buy" &&
-          !["active", "closed", "refunding", "refunded", "failed"].includes(group.status)
-        ) {
-          acc.buyWaiting += 1;
-        }
-        if (group.mode === "sharing") {
-          acc.sharing += 1;
-        }
-        return acc;
-      },
-      { created: 0, revenue: 0, held: 0, buyWaiting: 0, sharing: 0 }
-    );
-  }, [groups]);
 
-  const joinedSummary = useMemo(() => {
-    return joinedGroups.reduce(
-      (acc, group) => {
-        acc.joined += 1;
-        if (group.status === "active") {
-          acc.active += 1;
-        }
-        if (group.credentials?.available) {
-          acc.readyAccess += 1;
-        }
-        return acc;
-      },
-      { joined: 0, active: 0, readyAccess: 0 }
-    );
-  }, [joinedGroups]);
-
-  const summaryCards = useMemo(() => {
-    if (isMobile) {
-      return [
-        { label: "Created", value: totals.created },
-        { label: "Joined", value: joinedSummary.joined },
-        { label: "Revenue", value: `Rs ${totals.revenue.toFixed(2)}`, highlight: true },
-      ];
-    }
-
-    return [
-      { label: "Groups created", value: totals.created },
-      { label: "Groups joined", value: joinedSummary.joined },
-      { label: "Sharing revenue", value: `Rs ${totals.revenue.toFixed(2)}`, highlight: true },
-      { label: "Held safely", value: `Rs ${totals.held.toFixed(2)}` },
-      { label: "Buy-together waiting", value: totals.buyWaiting },
-      { label: "Active memberships", value: joinedSummary.active },
-    ];
-  }, [isMobile, joinedSummary.active, joinedSummary.joined, totals.buyWaiting, totals.created, totals.held, totals.revenue]);
 
   const activeMobileOwnerGroup = useMemo(
     () => groups.find((group) => group.id === mobileOwnerActionGroupId) || null,
@@ -1150,14 +1087,10 @@ export default function MyShared() {
 
     <div style={{ ...container, ...(isMobile ? containerMobile : {}) }}>
       <div style={{ ...pageShell, ...(isMobile ? pageShellMobile : {}) }}>
-      <div style={{ ...hero, ...(isMobile ? heroMobile : {}) }}>
-        <p style={eyebrow}>My splits</p>
-        <h2 style={{ ...heroTitle, ...(isMobile ? heroTitleMobile : {}) }}>See the splits you created and the splits you joined</h2>
-        {!isMobile ? (
-        <p style={heroText}>
-          Manage the splits you host, keep track of your memberships, and follow access status from one place.
-        </p>
-        ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-2 sm:pb-4">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          My Splits
+        </h1>
       </div>
 
       <div style={{ marginBottom: "24px" }}>
@@ -1166,12 +1099,6 @@ export default function MyShared() {
           title="Manage your created and joined groups"
           body="Groups you create or join appear here. Start by creating a split or exploring the marketplace."
         />
-      </div>
-
-      <div style={{ ...statsGrid, ...(isMobile ? statsGridMobile : {}) }}>
-        {summaryCards.map((item) => (
-          <SummaryCard key={item.label} label={item.label} value={item.value} highlight={item.highlight} compact={isMobile} />
-        ))}
       </div>
 
       <div style={{ ...sectionHeader, ...(isMobile ? sectionHeaderMobile : {}) }}>
