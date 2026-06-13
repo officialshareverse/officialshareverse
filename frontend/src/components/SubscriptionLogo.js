@@ -127,8 +127,7 @@ function getDomain(name) {
   for (const [key, domain] of Object.entries(domainMap)) {
     if (lower.includes(key)) return domain;
   }
-  const cleaned = lower.replace(/[^a-z0-9]/g, '');
-  return cleaned ? `${cleaned}.com` : null;
+  return null; // Unknown brand — don't guess a domain
 }
 
 // Public favicon services allowed by CSP
