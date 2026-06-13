@@ -634,29 +634,7 @@ export default function CreateGroup() {
                     </div>
                   </section>
 
-                  <section className="sv-create-calculator mt-5">
-                    <div>
-                      <p className="sv-eyebrow">Live calculator</p>
-                      <h3 className="sv-title mt-2">See the numbers update before you move to dates</h3>
-                    </div>
-                    <div className="sv-create-calculator-grid mt-4">
-                      <SummaryMetric
-                        label={modeConfig.amountLabel}
-                        value={amountPerMember > 0 ? `Rs ${amountPerMember.toFixed(2)}` : "Add pricing"}
-                        muted={amountPerMember <= 0}
-                      />
-                      <SummaryMetric
-                        label="Members"
-                        value={memberCount > 0 ? `${memberCount}` : "Add count"}
-                        muted={memberCount <= 0}
-                      />
-                      <SummaryMetric
-                        label={modeConfig.targetLabel}
-                        value={estimatedTotal > 0 ? `Rs ${estimatedTotal.toFixed(2)}` : "Waiting for inputs"}
-                        muted={estimatedTotal <= 0}
-                      />
-                    </div>
-                  </section>
+
                 </div>
               ) : null}
 
