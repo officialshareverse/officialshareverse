@@ -465,8 +465,8 @@ export default function CreateGroup() {
 
   return (
     <div className="sv-page">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <section className="flex flex-wrap items-center justify-between gap-4 pb-2 sm:pb-4">
+      <div className="mx-auto max-w-3xl space-y-3">
+        <section className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Create Split
           </h1>
@@ -524,7 +524,7 @@ export default function CreateGroup() {
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-3">
               {isSinglePageMobile || currentStep === 0 ? (
                 <div className="sv-create-stage sv-animate-rise">
                   <div className="grid gap-4 lg:grid-cols-2">
