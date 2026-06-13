@@ -565,31 +565,20 @@ export default function NotificationsInbox() {
           loadingLabel="Refreshing notifications..."
         />
 
-        <section className="sv-dark-hero">
-          <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
-            <div>
-              <p className="sv-eyebrow-on-dark">Notifications</p>
-              <h1 className="sv-display-on-dark mt-2 max-w-4xl sm:mt-3">
-                {isMobile ? "Stay on top of the updates that matter." : "Smart inbox for groups, wallet, and system updates"}
-              </h1>
-              <p className="mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-4 sm:text-base sm:leading-8">
-                {isMobile
-                  ? "Use one simple control panel to filter unread updates and keep the list easy to scan."
-                  : "Filter by category, keep repeated chat alerts bundled, and control whether new unread activity plays a chime."}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {!isMobile ? (
-                <button type="button" onClick={() => setSoundEnabled((current) => !current)} className="sv-btn-ghost-dark">
-                  <BellIcon className="h-4 w-4" />
-                  {soundEnabled ? "Sound on" : "Sound off"}
-                </button>
-              ) : null}
-              <button type="button" onClick={() => navigate("/home")} className="sv-btn-ghost-dark">
-                Back to Home
+        <section className="flex flex-wrap items-center justify-between gap-4 pb-2 sm:pb-4">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Notifications
+          </h1>
+          <div className="flex flex-wrap gap-2">
+            {!isMobile ? (
+              <button type="button" onClick={() => setSoundEnabled((current) => !current)} className="sv-btn-secondary">
+                <BellIcon className="h-4 w-4" />
+                {soundEnabled ? "Sound on" : "Sound off"}
               </button>
-            </div>
+            ) : null}
+            <button type="button" onClick={() => navigate("/home")} className="sv-btn-secondary">
+              Back to Home
+            </button>
           </div>
         </section>
 
