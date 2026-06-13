@@ -586,11 +586,7 @@ export default function CreateGroup() {
                           <InputError message={errors.subscription_name} />
                         </div>
 
-                        {!isMobile ? (
-                          <div className="rounded-[length:var(--sv-radius-card)] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-7 text-emerald-950">
-                            Only share plans where the provider allows it. Do not create listings that require password uploads, credential transfers, or off-platform secret sharing.
-                          </div>
-                        ) : null}
+
 
                       <div className="grid gap-5 md:grid-cols-2">
                         <div>
