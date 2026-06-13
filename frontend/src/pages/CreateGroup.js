@@ -27,24 +27,6 @@ const PRESET_WINDOWS = [
   { label: "90 days", days: 89 },
 ];
 
-const COMPARISON_ROWS = [
-  {
-    label: "Best when",
-    sharing: "You already manage the plan and want members to join the current cycle.",
-    group_buy: "The group should commit first and purchase only after enough members are ready.",
-  },
-  {
-    label: "Money flow",
-    sharing: "Members pay to join the active cycle, with late-join proration when needed.",
-    group_buy: "Member contributions are held until the purchase and confirmation flow is complete.",
-  },
-  {
-    label: "After it fills",
-    sharing: "You coordinate access later from My Splits when the group is ready.",
-    group_buy: "You buy the plan, upload proof, and wait for member confirmations before payout.",
-  },
-];
-
 function formatDateInput(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -582,20 +564,6 @@ export default function CreateGroup() {
                         "Payout waits for proof and confirmations.",
                       ]}
                     />
-                  </div>
-
-                  <div className="sv-create-comparison mt-5">
-                    <div className="sv-create-comparison-head">
-                      <span>Compare the flows</span>
-                      <span>Sharing vs buy-together</span>
-                    </div>
-                    {COMPARISON_ROWS.map((row) => (
-                      <div key={row.label} className="sv-create-comparison-row">
-                        <div className="sv-create-comparison-label">{row.label}</div>
-                        <div className="sv-create-comparison-cell">{row.sharing}</div>
-                        <div className="sv-create-comparison-cell">{row.group_buy}</div>
-                      </div>
-                    ))}
                   </div>
 
                   <div className="sv-create-flow-preview mt-5">
