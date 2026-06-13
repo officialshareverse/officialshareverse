@@ -10,13 +10,11 @@ import SubscriptionLogo from "../components/SubscriptionLogo";
 import { useToast } from "../components/ToastProvider";
 import {
   CheckCircleIcon,
-  ClockIcon,
   CompassIcon,
   LoadingSpinner,
   SearchIcon,
   ShieldIcon,
   SparkIcon,
-  WalletIcon,
 } from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
@@ -27,13 +25,6 @@ const SORT_OPTIONS = [
   { value: "almost_full", label: "Almost full" },
 ];
 
-const CATEGORY_FILTERS = [
-  { value: "all", label: "All" },
-  { value: "subscriptions", label: "Subscriptions" },
-  { value: "courses", label: "Courses" },
-  { value: "software", label: "Software" },
-  { value: "memberships", label: "Memberships" },
-];
 
 function getCardTone(mode) {
   if (mode === "group_buy") {
@@ -378,49 +369,9 @@ export default function Groups() {
     }
   };
 
-  const stats = useMemo(() => {
-    return groups.reduce(
-      (acc, group) => {
-        acc.total += 1;
-        if (group.mode === "sharing") {
-          acc.sharing += 1;
-        } else {
-          acc.groupBuy += 1;
-        }
-        if (group.filled_slots < group.total_slots) {
-          acc.open += 1;
-        }
-        return acc;
-      },
-      { total: 0, sharing: 0, groupBuy: 0, open: 0 }
-    );
-  }, [groups]);
 
-  const filterOptions = useMemo(
-    () => [
-      { value: "all", label: "All groups", count: stats.total },
-      { value: "sharing", label: "Sharing", count: stats.sharing },
-      { value: "group_buy", label: "Buy together", count: stats.groupBuy },
-    ],
-    [stats]
-  );
 
-  const categoryFilterOptions = useMemo(() => {
-    const counts = groups.reduce(
-      (acc, group) => {
-        const category = getPlanMeta(group.subscription_name || group.subscription).category;
-        acc.all += 1;
-        acc[category] = (acc[category] || 0) + 1;
-        return acc;
-      },
-      { all: 0, subscriptions: 0, courses: 0, software: 0, memberships: 0 }
-    );
 
-    return CATEGORY_FILTERS.map((option) => ({
-      ...option,
-      count: counts[option.value] || 0,
-    }));
-  }, [groups]);
 
   const searchSuggestions = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -1084,23 +1035,7 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
   );
 }
 
-function FilterButton({ active, count, onClick, children, showCount = true }) {
-  return (
-    <button type="button" onClick={onClick} className={`sv-groups-filter-button ${active ? "is-active" : ""}`}>
-      <span>{children}</span>
-      {showCount ? <span className="sv-groups-filter-count">{count}</span> : null}
-    </button>
-  );
-}
 
-function StatCard({ label, value }) {
-  return (
-    <div className="sv-groups-stat-card">
-      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">{label}</p>
-      <p className="mt-1.5 text-xl font-bold text-slate-950 sm:mt-2 sm:text-2xl">{value}</p>
-    </div>
-  );
-}
 
 function MetricTile({ label, value }) {
   return (
@@ -1122,12 +1057,3 @@ function BreakdownCard({ label, value, note, featured = false }) {
 }
 
 
-function MarketHeroStat({ label, value, note }) {
-  return (
-    <div className="sv-counter-card">
-      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-400 sm:text-[11px]">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-white sm:text-3xl">{value}</p>
-      <p className="mt-2 text-[12px] leading-5 text-slate-300 sm:text-[13px] sm:leading-6">{note}</p>
-    </div>
-  );
-}
