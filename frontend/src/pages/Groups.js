@@ -520,99 +520,9 @@ export default function Groups() {
         : null}
 
       <div className="sv-container space-y-4 sm:space-y-6">
-        <section className="grid gap-4 sm:gap-6 xl:grid-cols-[1.08fr_0.92fr]">
-          <div className="sv-dark-hero sv-reveal">
-            <p className="sv-eyebrow-on-dark">Marketplace</p>
-            <h1 className="sv-display-on-dark mt-3 max-w-4xl sm:mt-4">
-              {isMobile
-                ? "Browse live groups."
-                : "Browse live groups and join in one click."}
-            </h1>
-            {!isMobile ? (
-              <>
-                <p className="sv-groups-hero-body mt-3 max-w-3xl text-[13px] leading-6 text-slate-200 sm:mt-5 sm:text-base sm:leading-8">
-                  Filter by subscriptions, courses, software, and memberships, then compare price,
-                  slots, and status before you commit.
-                </p>
-
-                <div className="sv-groups-hero-chips mt-4 flex flex-wrap gap-1.5 sm:mt-8 sm:gap-2">
-                  <span className="sv-chip-dark">
-                    <SearchIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    Search by plan or host
-                  </span>
-                  <span className="sv-chip-dark">
-                    <ClockIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    Sort by urgency or price
-                  </span>
-                  <span className="sv-chip-dark">
-                    <WalletIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    Wallet-backed joining
-                  </span>
-                  <span className="hidden sm:inline-flex sv-chip-dark">
-                    <ShieldIcon className="h-3.5 w-3.5" />
-                    Only share plans where the provider allows it
-                  </span>
-                </div>
-
-                <div className="sv-groups-hero-stats mt-5">
-                  <MarketHeroStat label="Open now" value={stats.open} note="ready to browse" />
-                  <MarketHeroStat label="Sharing" value={stats.sharing} note="existing plan hosts" />
-                  <MarketHeroStat label="Buy together" value={stats.groupBuy} note="group purchase flows" />
-                </div>
-              </>
-            ) : (
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="sv-chip-dark">
-                  <CompassIcon className="h-3.5 w-3.5" />
-                  {stats.open} open now
-                </span>
-                <span className="sv-chip-dark">
-                  <WalletIcon className="h-3.5 w-3.5" />
-                  Wallet-backed join
-                </span>
-              </div>
-            )}
-          </div>
-
+        <section className="mx-auto max-w-3xl">
           <div className={`sv-card sv-reveal sv-groups-panel ${isMobile ? "is-mobile" : ""}`}>
-            <div className={`sv-groups-panel-header ${isMobile ? "is-mobile" : ""}`}>
-              <div className="sv-groups-panel-copy">
-                <p className="sv-eyebrow">Filter groups</p>
-                <h2 className="sv-groups-panel-title mt-2 text-lg font-bold leading-tight text-slate-950 sm:mt-3 sm:text-2xl md:text-[1.9rem]">
-                  {isMobile ? "Find a group" : "Search, sort, and scan what matters"}
-                </h2>
-                {isMobile ? (
-                  <p className="sv-groups-panel-subtitle">
-                    Search a plan or host.
-                  </p>
-                ) : null}
-              </div>
-              {!isMobile ? (
-                <span className="sv-chip">
-                  {filteredGroups.length} match{filteredGroups.length === 1 ? "" : "es"}
-                </span>
-              ) : (
-                <span className="sv-groups-mobile-count">
-                  {filteredGroups.length} live
-                </span>
-              )}
-            </div>
-
-            <div className={`mt-4 ${isMobile ? "sv-groups-category-row is-mobile" : "sv-groups-category-row"}`}>
-              {categoryFilterOptions.map((option) => (
-                <FilterButton
-                  key={option.value}
-                  active={categoryFilter === option.value}
-                  count={option.count}
-                  showCount={!isMobile}
-                  onClick={() => setCategoryFilter(option.value)}
-                >
-                  {option.label}
-                </FilterButton>
-              ))}
-            </div>
-
-            <label className={`mt-4 block sm:mt-5 ${isMobile ? "sv-groups-panel-search" : ""}`}>
+            <label className={`block ${isMobile ? "sv-groups-panel-search" : ""}`}>
               <span className={`mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs ${isMobile ? "sv-groups-search-label" : ""}`}>
                 {isMobile ? "Plan or host" : "Search groups"}
               </span>
@@ -663,71 +573,24 @@ export default function Groups() {
               ) : null}
             </label>
 
-            <div className={isMobile ? "mt-3 sv-groups-filter-row" : "mt-4 flex flex-wrap gap-2"}>
-              {filterOptions.map((option) => (
-                <FilterButton
-                  key={option.value}
-                  active={filter === option.value}
-                  count={option.count}
-                  showCount={!isMobile}
-                  onClick={() => setFilter(option.value)}
-                >
-                  {isMobile
-                    ? option.value === "all"
-                      ? "All"
-                      : option.value === "group_buy"
-                        ? "Group buy"
-                        : option.label
-                    : option.label}
-                </FilterButton>
-              ))}
-            </div>
-
-            <div className="mt-4 rounded-[length:var(--sv-radius-card)] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-7 text-emerald-950">
-              Only share plans where the provider allows it. ShareVerse does not support password-upload or credential-sharing listings.
-            </div>
-
-            {!isMobile ? (
-              <>
-                <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-                  <label className="block">
-                    <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs">
-                      Sort by
-                    </span>
-                    <select
-                      value={sortBy}
-                      onChange={(event) => setSortBy(event.target.value)}
-                      className="sv-groups-sort-select"
-                    >
-                      {SORT_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <div className="sv-groups-summary-strip">
-                    <span>{stats.total} total listed</span>
-                    <span>{stats.open} still open</span>
-                  </div>
-                </div>
-
-                <div className="sv-groups-stats-grid mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
-                  <StatCard label="Total groups" value={stats.total} />
-                  <StatCard label="Open now" value={stats.open} />
-                  <StatCard label="Sharing" value={stats.sharing} />
-                  <StatCard label="Buy together" value={stats.groupBuy} />
-                </div>
-              </>
-            ) : (
-              <div className="sv-groups-mobile-note">
-                <span className="sv-groups-mobile-note-dot" aria-hidden="true" />
-                <span>
-                  {filteredGroups.length} group{filteredGroups.length === 1 ? "" : "s"} showing, popular first.
+            <div className="mt-4">
+              <label className="block">
+                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs">
+                  Sort by
                 </span>
-              </div>
-            )}
+                <select
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value)}
+                  className="sv-groups-sort-select"
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </div>
         </section>
 
