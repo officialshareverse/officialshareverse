@@ -118,7 +118,6 @@ import {
   sectionEyebrow,
   sectionHeader,
   sectionHeaderMobile,
-  sectionText,
   sectionTitle,
   sectionTitleMobile,
   subtleText,
@@ -1105,10 +1104,6 @@ export default function MyShared() {
         <div>
           <p style={sectionEyebrow}>Created splits</p>
           <h3 style={{ ...sectionTitle, ...(isMobile ? sectionTitleMobile : {}) }}>Splits you host</h3>
-        </div>
-        {!isMobile ? (
-          <p style={sectionText}>Your owner tools stay here, including proof upload, member-confirmation tracking, refunds, edits, closure, and cleanup.</p>
-        ) : null}
       </div>
 
       <div style={{ ...filterRow, ...(isMobile ? filterRowMobile : {}) }}>
@@ -1790,10 +1785,6 @@ export default function MyShared() {
         <div>
           <p style={sectionEyebrow}>Joined groups</p>
           <h3 style={{ ...sectionTitle, ...(isMobile ? sectionTitleMobile : {}) }}>Subscriptions you are part of</h3>
-        </div>
-        {!isMobile ? (
-          <p style={sectionText}>This section shows the groups you joined as a member, including join status, confirmations, and owner coordination updates.</p>
-        ) : null}
       </div>
 
       {loading ? (
