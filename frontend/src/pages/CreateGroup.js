@@ -668,7 +668,7 @@ export default function CreateGroup() {
                       </div>
                       </div>
 
-                    <div className="sv-create-review-grid mt-5">
+                    <div className="sv-create-review-grid mt-3">
                       <SummaryMetric
                         label="Split name"
                         value={form.subscription_name.trim() || "Name not set yet"}
@@ -702,14 +702,14 @@ export default function CreateGroup() {
                     </div>
                   </section>
 
-                  <div className="mt-5 rounded-xl bg-amber-50 p-4 border border-amber-200">
+                  <div className="mt-3 rounded-xl bg-amber-50 p-3 border border-amber-200">
                     <p className="text-sm font-semibold text-amber-800">Trust Guarantee: Members' money is held safely until they confirm they got access.</p>
                   </div>
                 </div>
               ) : null}
             </div>
 
-            <div className="sv-create-nav mt-0 pt-4 border-t border-slate-100">
+            <div className="sv-create-nav mt-0 pt-3 border-t border-slate-100">
               {!isSinglePageMobile && currentStep > 0 ? (
                 <button type="button" onClick={moveToPreviousStep} className="sv-btn-secondary">
                   Back
