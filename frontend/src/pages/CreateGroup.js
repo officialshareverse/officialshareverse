@@ -203,60 +203,6 @@ function SummaryMetric({ label, value, muted = false }) {
   );
 }
 
-function PreviewCard({ form, memberCount, amountPerMember, durationDays, modeConfig, compact = false }) {
-  const planName = form.subscription_name.trim() || "Your split name will appear here";
-  const toneClass = form.mode === "sharing" ? "is-sharing" : "is-buy";
-
-  return (
-    <div className={`sv-create-preview-card ${compact ? "is-compact" : ""} ${toneClass}`}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{modeConfig.eyebrow}</p>
-          <h3 className="mt-2 text-lg font-semibold text-slate-950">{planName}</h3>
-        </div>
-        <span className={`sv-create-preview-pill ${toneClass}`}>{modeConfig.badge}</span>
-      </div>
-
-      <div className="sv-create-preview-grid mt-4">
-        <SummaryMetric
-          label={modeConfig.amountLabel}
-          value={amountPerMember > 0 ? `Rs ${amountPerMember.toFixed(2)}` : "Add pricing"}
-          muted={amountPerMember <= 0}
-        />
-        <SummaryMetric
-          label="Members"
-          value={memberCount > 0 ? `${memberCount} slots` : "Add slots"}
-          muted={memberCount <= 0}
-        />
-        <SummaryMetric
-          label={modeConfig.scheduleLabel}
-          value={
-            form.start_date && form.end_date
-              ? `${formatLongDate(form.start_date)} to ${formatLongDate(form.end_date)}`
-              : "Choose dates"
-          }
-          muted={!form.start_date || !form.end_date}
-        />
-        <SummaryMetric
-          label="Duration"
-          value={durationDays > 0 ? `${durationDays} days` : "Choose valid dates"}
-          muted={durationDays <= 0}
-        />
-      </div>
-
-      <div className="mt-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Preview fill</p>
-          <span className="text-xs text-slate-500">0/{memberCount || 0} joined</span>
-        </div>
-        <div className="sv-create-preview-progress mt-2">
-          <span className="sv-create-preview-progress-fill" style={{ width: memberCount > 0 ? "18%" : "0%" }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 
 export default function CreateGroup() {
   const location = useLocation();
@@ -281,7 +227,7 @@ export default function CreateGroup() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [showPreview, setShowPreview] = useState(true);
+
   const isMobile = useIsMobile();
 
   const isSharing = form.mode === "sharing";
@@ -363,7 +309,7 @@ export default function CreateGroup() {
     setForm(initialForm);
     setErrors({});
     setCurrentStep(0);
-    setShowPreview(true);
+
   };
 
   const moveToNextStep = () => {
@@ -721,15 +667,7 @@ export default function CreateGroup() {
                           <p className="sv-eyebrow">Review</p>
                         <h3 className="sv-title mt-2">Check the listing before you publish it</h3>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowPreview((current) => !current)}
-                        aria-label={showPreview ? "Hide card preview" : "Show card preview"}
-                        className="sv-btn-secondary"
-                      >
-                        {showPreview ? "Hide preview" : "Preview card"}
-                      </button>
-                    </div>
+                      </div>
 
                     <div className="sv-create-review-grid mt-5">
                       <SummaryMetric
@@ -765,17 +703,7 @@ export default function CreateGroup() {
                     </div>
                   </section>
 
-                  {showPreview ? (
-                    <div className="mt-5">
-                      <PreviewCard
-                        form={form}
-                        memberCount={memberCount}
-                        amountPerMember={amountPerMember}
-                        durationDays={durationDays}
-                        modeConfig={modeConfig}
-                      />
-                    </div>
-                  ) : null}
+
 
                   <section className="sv-create-checklist mt-5">
                     <div className="sv-create-check-item">
