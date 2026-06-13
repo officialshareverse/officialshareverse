@@ -1,4 +1,4 @@
-﻿
+
 /* â”€â”€â”€ Reduced Motion â”€â”€â”€ */
   body.sv-dark .text-slate-950,
   body.sv-dark .text-slate-900,
@@ -1171,7 +1171,7 @@
   @media (max-width: 767px) {
     .sv-card,
     .sv-card-solid,
-    .sv-dark-hero,
+    .sv-marketing-hero,
     .sv-group-card,
     .sv-confirm-modal {
       border-radius: var(--sv-radius-lg);
@@ -1179,7 +1179,7 @@
 
     .sv-card,
     .sv-card-solid,
-    .sv-dark-hero {
+    .sv-marketing-hero {
       padding: 1rem;
     }
 

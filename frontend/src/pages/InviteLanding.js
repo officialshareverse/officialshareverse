@@ -95,7 +95,7 @@ export default function InviteLanding() {
   return (
     <div className="sv-page">
       <div className="sv-container max-w-5xl">
-        <section className="sv-dark-hero sv-reveal sv-invite-landing-shell">
+        <section className="sv-marketing-hero sv-reveal sv-invite-landing-shell">
           <div className="sv-invite-landing-copy">
             <p className="sv-eyebrow-on-dark">Group invite</p>
             <h1 className="sv-display-on-dark mt-3">

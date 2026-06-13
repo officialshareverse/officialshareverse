@@ -312,7 +312,7 @@
   }
 
   /* â”€â”€â”€ Hero Sections â”€â”€â”€ */
-  .sv-dark-hero {
+  .sv-marketing-hero {
     @apply overflow-hidden border text-white;
     border-radius: var(--sv-radius-card);
     padding: 1rem;
@@ -327,7 +327,7 @@
   }
 
   @media (min-width: 768px) {
-    .sv-dark-hero {
+    .sv-marketing-hero {
       border-radius: var(--sv-radius-xl);
       padding: 2rem;
     }

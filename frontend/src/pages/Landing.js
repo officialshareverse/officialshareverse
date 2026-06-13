@@ -202,7 +202,7 @@ export default function Landing() {
           </div>
         </header>
 
-        <section className="sv-dark-hero sv-landing-hero relative overflow-hidden">
+        <section className="sv-marketing-hero sv-landing-hero relative overflow-hidden">
           <div className="grid gap-6 lg:items-center">
             <div className="relative z-[1]">
               <span className="sv-live-badge sv-animate-glow">Popular apps, one shared wallet</span>
@@ -430,7 +430,7 @@ export default function Landing() {
           </section>
         </section>
 
-        <section id="cta" className="sv-dark-hero sv-landing-cta scroll-mt-24">
+        <section id="cta" className="sv-marketing-hero sv-landing-cta scroll-mt-24">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-center">
             <div>
               <p className="sv-eyebrow-on-dark">Ready to start</p>
