@@ -194,18 +194,7 @@ function InputError({ message }) {
   return <p className="mt-2 text-sm text-rose-600" aria-live="polite">{message}</p>;
 }
 
-function StepBadge({ index, active, complete, label }) {
-  return (
-    <div className={`sv-create-step ${active ? "is-active" : ""} ${complete ? "is-complete" : ""}`}>
-      <span className="sv-create-step-index">
-        {complete ? <CheckCircleIcon className="h-4 w-4" /> : `0${index + 1}`}
-      </span>
-      <div>
-        <p className="sv-create-step-label">{label}</p>
-      </div>
-    </div>
-  );
-}
+
 
 function ModeCard({ active, title, description, badgeTone, badge, onClick, steps }) {
   return (
@@ -514,42 +503,10 @@ export default function CreateGroup() {
   return (
     <div className="sv-page">
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="sv-dark-hero sv-create-hero px-6 py-8 md:px-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-4xl">
-                <p className="sv-eyebrow-on-dark">Create Split</p>
-                <h1 className="sv-display-on-dark mt-4 max-w-4xl">
-                  {isSinglePageMobile
-                    ? "List your plan in 2 minutes."
-                    : "List your plan, set the price, and publish when the basics are ready."}
-                </h1>
-                <p className="sv-create-hero-body mt-4 max-w-3xl text-sm leading-7 text-slate-200 sm:text-base sm:leading-8">
-                  {isSinglePageMobile
-                    ? "Choose the mode, add the price and slots, set the timing, and publish."
-                    : `Step ${currentStep + 1} of ${WIZARD_STEPS.length}: ${currentStepConfig.label}. Add the plan details, confirm the timing, and review the listing before it goes live.`}
-                </p>
-              </div>
-
-            <div className="sv-create-hero-stats">
-              <span className="sv-chip-dark">2 setup modes</span>
-              <span className="sv-chip-dark">Live preview</span>
-              <span className="sv-chip-dark">Guardrails before publish</span>
-            </div>
-          </div>
-
-          {!isSinglePageMobile ? (
-            <div className="sv-create-stepbar mt-6">
-              {WIZARD_STEPS.map((step, index) => (
-                <StepBadge
-                  key={step.id}
-                  index={index}
-                  label={step.label}
-                  active={index === currentStep}
-                  complete={index < currentStep}
-                />
-              ))}
-            </div>
-          ) : null}
+        <section className="flex flex-wrap items-center justify-between gap-4 pb-2 sm:pb-4">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Create Split
+          </h1>
         </section>
 
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
