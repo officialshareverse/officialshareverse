@@ -3,6 +3,7 @@ import useIsMobile from "../hooks/useIsMobile";
 import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
+import SubscriptionLogo from "../components/SubscriptionLogo";
 import AvatarStack from "../components/AvatarStack";
 import CountUp from "../components/CountUp";
 import Drawer from "../components/Drawer";
@@ -517,8 +518,8 @@ function ChatCard({ chat, pinned, onTogglePinned, onOpen, compact = false }) {
     <article className={`sv-chat-card ${chat.unread_chat_count > 0 ? "is-unread" : ""}`}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className={`sv-chat-group-avatar ${tone} ${onlineCount > 0 ? "has-online" : ""}`}>
-            <span>{getAvatarToken(chat.group.subscription_name)}</span>
+          <div className={`sv-chat-group-avatar ${tone} ${onlineCount > 0 ? "has-online" : ""}`} style={{ background: 'none', boxShadow: 'none' }}>
+            <SubscriptionLogo name={chat.group.subscription_name} size={48} style={{ borderRadius: 20 }} />
             <span className={`sv-chat-group-avatar-dot ${hasTyping || onlineCount > 0 ? "is-online" : ""}`} />
           </div>
 
