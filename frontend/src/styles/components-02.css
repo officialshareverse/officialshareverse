@@ -654,6 +654,29 @@
     background: linear-gradient(135deg, rgba(15, 118, 110, 0.16) 0%, rgba(124, 58, 237, 0.16) 100%);
   }
 
+  .sv-app-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    width: 100%;
+    padding: var(--sv-page-px) var(--sv-page-px) 0;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--sv-bg) 98%, transparent) 0%,
+        color-mix(in srgb, var(--sv-bg) 94%, transparent) 72%,
+        transparent 100%
+      );
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    isolation: isolate;
+  }
+
+  .sv-app-navbar > .sv-container {
+    position: relative;
+    z-index: 1;
+  }
+
   .sv-brand-shell {
     @apply relative border backdrop-blur;
     overflow: visible;
