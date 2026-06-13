@@ -9,7 +9,6 @@ import {
   ClockIcon,
   LayersIcon,
   LoadingSpinner,
-  ShieldIcon,
   SparkIcon,
   WalletIcon,
 } from "../components/UiIcons";
@@ -286,14 +285,6 @@ function PreviewCard({ form, memberCount, amountPerMember, durationDays, modeCon
   );
 }
 
-function WizardTip({ title, body }) {
-  return (
-    <div className="sv-create-note-card">
-      <h3 className="text-sm font-semibold text-slate-950">{title}</h3>
-      <p className="mt-2 text-sm leading-7 text-slate-600">{body}</p>
-    </div>
-  );
-}
 
 export default function CreateGroup() {
   const location = useLocation();
@@ -509,7 +500,7 @@ export default function CreateGroup() {
           </h1>
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="mx-auto max-w-3xl">
           <form
             onSubmit={handleWizardSubmit}
             className={`sv-card-solid sv-create-wizard ${isSinglePageMobile ? "is-mobile-single" : ""}`}
@@ -941,101 +932,7 @@ export default function CreateGroup() {
             </div>
           </form>
 
-          <aside className="space-y-6 sv-create-sidepanel">
-            <section className="sv-card-solid sv-create-sidebar">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="sv-eyebrow">Live summary</p>
-                  <h2 className="sv-title mt-2">{modeConfig.summaryTitle}</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPreview((current) => !current)}
-                  aria-label={showPreview ? "Hide card preview" : "Show card preview"}
-                  className="sv-btn-secondary"
-                >
-                  {showPreview ? "Hide preview" : "Preview"}
-                </button>
-              </div>
 
-              <p className="mt-3 text-sm leading-7 text-slate-600">{modeConfig.helper}</p>
-
-              <div className="sv-create-summary-grid mt-5">
-                <SummaryMetric
-                  label="Plan"
-                  value={form.subscription_name.trim() || "Name not set yet"}
-                  muted={!form.subscription_name.trim()}
-                />
-                <SummaryMetric label="Mode" value={modeConfig.eyebrow} />
-                <SummaryMetric
-                  label={modeConfig.amountLabel}
-                  value={amountPerMember > 0 ? `Rs ${amountPerMember.toFixed(2)}` : "Add pricing"}
-                  muted={amountPerMember <= 0}
-                />
-                <SummaryMetric
-                  label="Members"
-                  value={memberCount > 0 ? `${memberCount}` : "Add member count"}
-                  muted={memberCount <= 0}
-                />
-                <SummaryMetric
-                  label={modeConfig.targetLabel}
-                  value={estimatedTotal > 0 ? `Rs ${estimatedTotal.toFixed(2)}` : "Waiting for inputs"}
-                  muted={estimatedTotal <= 0}
-                />
-                <SummaryMetric
-                  label="Duration"
-                  value={durationDays > 0 ? `${durationDays} days` : "Choose valid dates"}
-                  muted={durationDays <= 0}
-                />
-              </div>
-
-              {showPreview ? (
-                <div className="mt-5">
-                  <PreviewCard
-                    form={form}
-                    memberCount={memberCount}
-                    amountPerMember={amountPerMember}
-                    durationDays={durationDays}
-                    modeConfig={modeConfig}
-                    compact
-                  />
-                </div>
-              ) : null}
-            </section>
-
-            <section className="sv-card-solid">
-              <p className="sv-eyebrow">Setup notes</p>
-              <div className="mt-4 space-y-4">
-                <WizardTip
-                  title="Keep pricing simple"
-                  body="Use one clean per-member amount that feels easy to trust. You can clarify edge cases later in chat."
-                />
-                <WizardTip
-                  title="Only share plans where the provider allows it"
-                  body="Household, team, or membership plans should match the underlying provider rules. If the provider does not allow the arrangement, do not publish it on ShareVerse."
-                />
-                <WizardTip
-                  title="Choose realistic timing"
-                  body="Match the billing cycle or funding window so members immediately understand what they are paying for."
-                />
-                <WizardTip
-                  title="Preview before publish"
-                  body="A quick visual check helps you catch vague names, confusing dates, or pricing that needs tightening."
-                />
-                <div className="sv-create-note-card">
-                  <div className="flex items-start gap-3">
-                    <ShieldIcon className="mt-0.5 h-5 w-5 text-emerald-600" />
-                    <div>
-                      <h3 className="text-sm font-semibold text-slate-950">Creator guardrails</h3>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">
-                        You can edit empty groups later. Once members join, pricing and core details lock to protect active joins. ShareVerse also expects hosts to avoid credential-sharing or provider-restricted listings.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </aside>
         </div>
       </div>
     </div>
