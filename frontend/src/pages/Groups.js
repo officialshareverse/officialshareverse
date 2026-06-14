@@ -646,7 +646,7 @@ export default function Groups() {
             </div>
           </div>
         ) : (
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {filteredGroups.map((group, index) => {
               const filledSlots = Number(group.filled_slots || 0);
               const totalSlots = Math.max(Number(group.total_slots || 1), 1);
@@ -659,30 +659,33 @@ export default function Groups() {
               return (
                 <article
                   key={group.id}
-                  className={`relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
+                  className={`relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-row sm:flex-col h-[104px] sm:h-auto ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
                 >
-                  <div className={`h-16 sm:h-28 w-full relative ${getCoverGradient(group.subscription_name || group.subscription)}`}>
-                    <div className="absolute top-2 sm:top-3 left-3 bg-white/20 backdrop-blur-md rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
-                      {isHot ? "Trending" : "Popular"}
+                  <div className={`w-28 sm:w-full shrink-0 h-full sm:h-28 relative flex items-center justify-center sm:block ${getCoverGradient(group.subscription_name || group.subscription)}`}>
+                    <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-white/20 backdrop-blur-md rounded-full px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[8px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
+                      {isHot ? "Hot" : "Pop"}
                     </div>
-                  </div>
-                  
-                  <div className="absolute top-10 sm:top-20 left-4 sm:left-5 h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-white p-1 shadow-sm border sm:border-2 border-white z-10 flex items-center justify-center overflow-hidden">
-                    <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full rounded-lg sm:rounded-xl" />
+                    
+                    <div className="sm:absolute sm:top-20 sm:left-5 h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-white p-1 shadow-sm border sm:border-2 border-white z-10 flex items-center justify-center overflow-hidden">
+                      <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full rounded-lg sm:rounded-xl" />
+                    </div>
                   </div>
 
-                  <div className="pt-8 sm:pt-10 px-4 sm:px-5 pb-4 sm:pb-5 flex flex-col h-[calc(100%-4rem)] sm:h-[calc(100%-7rem)]">
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="text-[15px] sm:text-base font-bold text-slate-900 truncate">{group.subscription_name || group.subscription}</h3>
-                      <CheckCircleIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500 shrink-0" />
+                  <div className="flex-1 p-3 sm:pt-10 sm:px-5 sm:pb-5 flex flex-col justify-between min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1">
+                          <h3 className="text-[14px] sm:text-base font-bold text-slate-900 truncate">{group.subscription_name || group.subscription}</h3>
+                          <CheckCircleIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500 shrink-0" />
+                        </div>
+                        <p className="text-[10px] sm:text-xs font-medium text-slate-500 mt-0.5 truncate">{planMeta.category} • Host: {hostDisplayName}</p>
+                      </div>
+                      <p className="text-[13px] sm:text-sm font-bold text-slate-900 shrink-0">
+                        ₹{Number(group.join_price).toFixed(0)}
+                      </p>
                     </div>
-                    <p className="text-[11px] sm:text-xs font-medium text-slate-500 mt-0.5">{planMeta.category}</p>
                     
-                    <p className="mt-2.5 sm:mt-4 text-[13px] sm:text-sm font-bold text-slate-900">
-                      ₹{Number(group.join_price).toFixed(0)}
-                    </p>
-                    
-                    <div className="mt-3 sm:mt-4 flex items-center gap-1.5 border-t border-slate-100 pt-3 sm:pt-4">
+                    <div className="hidden sm:flex mt-3 sm:mt-4 items-center gap-1.5 border-t border-slate-100 pt-3 sm:pt-4">
                       <UserIcon className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                       <p className="text-[11px] sm:text-xs text-slate-600 truncate">Host: {hostDisplayName}</p>
                       <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
@@ -691,16 +694,16 @@ export default function Groups() {
                       </span>
                     </div>
                     
-                    <div className="mt-auto pt-3 sm:pt-5 flex items-center justify-between gap-3">
+                    <div className="mt-2 sm:mt-auto pt-2 sm:pt-5 border-t border-slate-100 sm:border-none flex items-center justify-between gap-2">
                       <span className="rounded-md bg-emerald-50 px-2 py-1 sm:px-2.5 sm:py-1.5 text-[10px] sm:text-[11px] font-bold text-emerald-700 whitespace-nowrap">
-                        {remainingSlots} slots left
+                        {remainingSlots} left
                       </span>
                       <button
                         onClick={() => setPendingJoinGroup(group)}
                         disabled={isFull || joiningId === group.id}
-                        className={`rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-xs font-bold text-white transition-colors whitespace-nowrap ${isFull ? "bg-slate-300" : "bg-brand hover:bg-brand-dark"}`}
+                        className={`rounded-full px-3 py-1 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-bold text-white transition-colors whitespace-nowrap ${isFull ? "bg-slate-300" : "bg-brand hover:bg-brand-dark"}`}
                       >
-                        {joiningId === group.id ? "Joining..." : isFull ? "Full" : "Join Now"}
+                        {joiningId === group.id ? "Wait" : isFull ? "Full" : "Join"}
                       </button>
                     </div>
                   </div>
