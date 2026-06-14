@@ -703,7 +703,7 @@ export default function CreateGroup() {
               ) : null}
             </div>
 
-            <div className="sv-create-nav fixed sm:relative bottom-0 left-0 right-0 z-50 bg-white sm:bg-transparent px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:p-0 sm:mt-0 sm:pt-3 border-t border-slate-100 shadow-[0_-4px_24px_rgba(0,0,0,0.04)] sm:shadow-none flex items-center justify-between">
+            <div className="sv-create-nav sticky sm:relative bottom-0 z-50 bg-white sm:bg-transparent -mx-4 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:m-0 sm:p-0 sm:mt-0 sm:pt-3 border-t border-slate-100 shadow-[0_-4px_24px_rgba(0,0,0,0.04)] sm:shadow-none flex items-center justify-between">
               {currentStep > 0 ? (
                 <button type="button" onClick={moveToPreviousStep} className="sv-btn-secondary">
                   Back
