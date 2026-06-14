@@ -538,8 +538,8 @@ export default function Groups() {
 
         {/* CATEGORY & SORT ROW */}
         <section className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sticky z-20" style={{ top: '4.5rem' }}>
-          <div className="flex-1 overflow-x-auto pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 hide-scrollbar">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-max">
+          <div className="w-full flex-1 overflow-x-auto overflow-y-hidden touch-pan-x pb-4 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 sv-hide-scrollbar" style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+            <div className="flex items-center gap-2 sm:gap-3 w-max pr-8 sm:pr-0">
               <button
                 type="button"
                 onClick={() => setCategoryFilter("all")}

@@ -1558,3 +1558,8 @@
     color: var(--sv-accent);
     flex-shrink: 0;
   }
+
+  /* UTILS */
+  .sv-hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
