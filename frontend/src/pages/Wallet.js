@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import useIsMobile from "../hooks/useIsMobile";
-import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
@@ -298,7 +297,6 @@ function getEstimatedPayoutLabel(payout, payoutsLive) {
 }
 
 export default function Wallet() {
-  const navigate = useNavigate();
   const [balance, setBalance] = useState("0.00");
   const [bonusBalance, setBonusBalance] = useState("0.00");
   const [spendableBalance, setSpendableBalance] = useState("0.00");
