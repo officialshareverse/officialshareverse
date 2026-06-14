@@ -94,9 +94,7 @@ import {
   membersList,
   memberStatus,
   metaLine,
-  ownerCredentialCard,
   ownerCredentialEyebrow,
-  ownerCredentialLine,
   pageShell,
   pageShellMobile,
   primaryButton,
@@ -1578,47 +1576,6 @@ export default function MyShared() {
                             </div>
                           </div>
                         ) : null}
-                      </div>
-                    ) : detail.credentials ? (
-                      <div style={{ ...detailSectionCard, ...(isMobile ? detailSectionCardMobile : {}) }}>
-                        <div style={detailSectionHeader}>
-                          <div>
-                            <p style={detailEyebrow}>Access</p>
-                            <h4 style={{ ...detailSectionTitle, ...(isMobile ? detailSectionTitleMobile : {}) }}>Owner credential panel</h4>
-                          </div>
-                        </div>
-
-                        <div style={{ ...ownerCredentialCard, marginBottom: 0 }}>
-                          <p style={ownerCredentialEyebrow}>Shared access</p>
-                          {detail.credentials.available ? (
-                            revealedCredentials[group.id] ? (
-                              <>
-                                <p style={ownerCredentialLine}>
-                                  Login: <strong>{revealedCredentials[group.id].login_identifier}</strong>
-                                </p>
-                                <p style={ownerCredentialLine}>
-                                  Password: <strong>{revealedCredentials[group.id].password}</strong>
-                                </p>
-                                {revealedCredentials[group.id].notes ? (
-                                  <p style={subtleText}>Notes: {revealedCredentials[group.id].notes}</p>
-                                ) : null}
-                              </>
-                            ) : (
-                              <>
-                                <p style={subtleText}>{detail.credentials.message}</p>
-                                <button
-                                  style={primaryButton}
-                                  onClick={() => revealCredentials(group.id)}
-                                  disabled={revealingGroupId === group.id}
-                                >
-                                  {revealingGroupId === group.id ? "Revealing..." : "Reveal once"}
-                                </button>
-                              </>
-                            )
-                          ) : (
-                            <p style={subtleText}>Add the subscription login details so you can manage the sharing plan cleanly.</p>
-                          )}
-                        </div>
                       </div>
                     ) : null}
 
