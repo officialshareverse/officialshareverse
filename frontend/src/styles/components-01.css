@@ -15,6 +15,12 @@
     animation: sv-page-enter 0.45s ease-out both;
   }
 
+  @media (max-width: 1023px) {
+    .sv-route-stage {
+      padding-bottom: calc(85px + env(safe-area-inset-bottom));
+    }
+  }
+
   body.sv-auth-shell-active .sv-route-stage {
     padding-top: clamp(5.9rem, 5.8vw, 7.5rem);
   }
