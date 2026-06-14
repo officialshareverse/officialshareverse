@@ -1044,7 +1044,7 @@ export default function Wallet() {
           body="Add money here to join paid groups instantly. You can withdraw anytime to your bank or UPI."
         />
 
-        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+        <section className="grid gap-4 sm:gap-6">
           <div className="relative overflow-hidden rounded-[32px] border border-white/60 bg-white/60 p-8 shadow-sm backdrop-blur-2xl sm:p-12 sv-animate-rise">
             <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-100 to-purple-50 opacity-50 blur-3xl"></div>
             <div className="relative z-[1]">
@@ -1135,81 +1135,7 @@ export default function Wallet() {
             </div>
           </div>
 
-          <aside className="rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-sm sv-animate-rise sv-delay-1">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="sv-eyebrow">Add Money</p>
-                <h2 className="sv-title mt-2">{isMobile ? "Pick an amount" : "Choose an amount, then add money or withdraw"}</h2>
-              </div>
-              <span className="sv-chip">{sortedTransactions.length} wallet records</span>
-            </div>
 
-            <div className="sv-wallet-quick-amounts mt-5">
-              {QUICK_AMOUNTS.map((amount, index) => (
-                <button
-                  key={amount}
-                  type="button"
-                  onClick={() => {
-                    setTopupAmount(amount);
-                    focusActionTab("topup");
-                  }}
-                  className={`sv-wallet-amount-chip ${topupAmount === amount ? "is-active" : ""} ${index === 2 ? "is-popular" : ""}`}
-                >
-                  <span className="sv-wallet-amount-main">Rs {amount}</span>
-                  <span className="sv-wallet-amount-note">
-                    {index === 2 ? "Popular" : index === 0 ? "Starter" : index === 3 ? "Fast refill" : "Quick pick"}
-                  </span>
-                  {topupAmount === amount ? <CheckCircleIcon className="h-4 w-4" /> : null}
-                </button>
-              ))}
-            </div>
-
-            <details className="sv-wallet-helper-disclosure mt-5">
-              <summary>More wallet details</summary>
-              <div className="sv-wallet-overview-stats mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-                <WalletOverviewStat
-                  label="Balance"
-                  value={formatCurrency(spendableBalance)}
-                  note="cash plus bonus usable for joins"
-                />
-                <WalletOverviewStat
-                  label="Withdrawable"
-                  value={formatCurrency(balance)}
-                  note="cash available for payouts"
-                />
-                <WalletOverviewStat
-                  label="Bonus"
-                  value={formatCurrency(bonusBalance)}
-                  note="join-only referral credit"
-                />
-              </div>
-
-              <div className="sv-wallet-support-cards mt-4 space-y-3">
-                {topupConfig ? (
-                  <div className="sv-wallet-helper-card">
-                    <p className="sv-wallet-helper-title">Add money</p>
-                    <p className="sv-wallet-helper-body">{topupConfig.helper_text}</p>
-                  </div>
-                ) : null}
-
-                <div className={`sv-wallet-helper-card ${payoutsLive ? "" : "is-warning"}`}>
-                  <p className="sv-wallet-helper-title">Withdraw</p>
-                  <p className="sv-wallet-helper-body">
-                    {payoutsLive
-                      ? payoutConfig?.helper_text || "Withdrawals move to your saved payout method through the live payout rail."
-                      : "Save a destination and request a withdrawal. Payouts are usually processed within 24 hours."}
-                  </p>
-                </div>
-
-                <div className="sv-wallet-helper-card">
-                  <p className="sv-wallet-helper-title">Bonus</p>
-                  <p className="sv-wallet-helper-body">
-                    Bonus credit can be used only for joining groups and cannot be withdrawn or paid out.
-                  </p>
-                </div>
-              </div>
-            </details>
-          </aside>
         </section>
 
         {isMobile ? (
