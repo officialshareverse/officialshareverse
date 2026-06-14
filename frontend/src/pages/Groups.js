@@ -588,48 +588,6 @@ export default function Groups() {
           </div>
         </section>
 
-        {/* STATS ROW */}
-        <section className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8 relative overflow-hidden">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 divide-x-0 lg:divide-x divide-slate-100">
-             <div className="flex items-center gap-4 lg:px-4">
-                <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-                  <UserIcon className="h-6 w-6" />
-                </div>
-                <div>
-                   <p className="text-xl sm:text-2xl font-bold text-slate-900">1,245</p>
-                   <p className="text-[11px] sm:text-xs font-medium text-slate-500">Active Groups</p>
-                </div>
-             </div>
-             <div className="flex items-center gap-4 lg:px-4">
-                <div className="h-12 w-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
-                  <GridIcon className="h-6 w-6" />
-                </div>
-                <div>
-                   <p className="text-xl sm:text-2xl font-bold text-slate-900">18</p>
-                   <p className="text-[11px] sm:text-xs font-medium text-slate-500">Services</p>
-                </div>
-             </div>
-             <div className="flex items-center gap-4 lg:px-4">
-                <div className="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
-                  <UserIcon className="h-6 w-6" />
-                </div>
-                <div>
-                   <p className="text-xl sm:text-2xl font-bold text-slate-900">4,200</p>
-                   <p className="text-[11px] sm:text-xs font-medium text-slate-500">Members</p>
-                </div>
-             </div>
-             <div className="flex items-center gap-4 lg:px-4">
-                <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-                  <span className="font-bold text-lg">₹</span>
-                </div>
-                <div>
-                   <p className="text-xl sm:text-2xl font-bold text-slate-900">18L+</p>
-                   <p className="text-[11px] sm:text-xs font-medium text-slate-500">Total Saved</p>
-                </div>
-             </div>
-          </div>
-        </section>
-
         {loading ? (
           <section className="grid gap-4 xl:gap-5">
             {Array.from({ length: 5 }).map((_, index) => (
@@ -735,6 +693,9 @@ export default function Groups() {
                       <UserIcon className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                       <p className="text-xs text-slate-600 truncate">Host: {hostDisplayName}</p>
                       <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                      <span className="ml-auto text-xs font-semibold text-amber-500 flex items-center gap-0.5">
+                        ★ {getMockReputation(group.owner_name).rating}
+                      </span>
                     </div>
                     
                     <div className="mt-auto pt-5 flex items-center justify-between gap-3">
