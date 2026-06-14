@@ -678,7 +678,12 @@ export default function Groups() {
                           <h3 className="text-[14px] sm:text-base font-bold text-slate-900 truncate">{group.subscription_name || group.subscription}</h3>
                           <CheckCircleIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500 shrink-0" />
                         </div>
-                        <p className="text-[10px] sm:text-xs font-medium text-slate-500 mt-0.5 truncate">{planMeta.category} • Host: {hostDisplayName}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <p className="text-[10px] sm:text-xs font-medium text-slate-500 truncate">{planMeta.category} • Host: {hostDisplayName}</p>
+                          <span className="text-[10px] sm:hidden font-semibold text-amber-500 shrink-0">
+                            ★ {getMockReputation(group.owner_name).rating}
+                          </span>
+                        </div>
                       </div>
                       <p className="text-[13px] sm:text-sm font-bold text-slate-900 shrink-0">
                         ₹{Number(group.join_price).toFixed(0)}
