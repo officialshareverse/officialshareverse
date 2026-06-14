@@ -336,9 +336,6 @@ export default function ChatsInbox() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Chats
           </h1>
-          <button type="button" onClick={() => navigate("/my-shared")} className="sv-btn-secondary">
-            Back to My Splits
-          </button>
         </section>
 
 
@@ -460,15 +457,6 @@ export default function ChatsInbox() {
         />
 
         <div className="sv-drawer-stack">
-          <button type="button" onClick={() => navigate("/my-shared")} className="sv-drawer-action">
-            <span className="sv-drawer-action-icon">
-              <ChatIcon className="h-4.5 w-4.5" />
-            </span>
-            <span className="sv-drawer-action-copy">
-              <strong>Back to My Splits</strong>
-              <span>Return to the dashboard for the groups behind these chats.</span>
-            </span>
-          </button>
         </div>
       </Drawer>
     </div>

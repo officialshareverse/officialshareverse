@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useIsMobile from "../hooks/useIsMobile";
-import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
@@ -19,7 +18,6 @@ import {
   ChatIcon,
   CheckCircleIcon,
   ClockIcon,
-  HomeIcon,
   LoadingSpinner,
   ShieldIcon,
   StarIcon,
@@ -206,7 +204,6 @@ function markNotificationsRead(current, notificationIds) {
 }
 
 export default function NotificationsInbox() {
-  const navigate = useNavigate();
   const toast = useToast();
   const [notifications, setNotifications] = useState([]);
   const [page, setPage] = useState(1);
@@ -564,9 +561,6 @@ export default function NotificationsInbox() {
                 {soundEnabled ? "Sound on" : "Sound off"}
               </button>
             ) : null}
-            <button type="button" onClick={() => navigate("/home")} className="sv-btn-secondary">
-              Back to Home
-            </button>
           </div>
         </section>
 
@@ -739,16 +733,6 @@ export default function NotificationsInbox() {
             meta={counts.unread > 0 ? `${counts.unread} unread` : "All caught up"}
             disabled={markingAll || counts.unread === 0}
             onClick={markAllRead}
-          />
-
-          <MobileDrawerAction
-            icon={HomeIcon}
-            label="Back to Home"
-            description="Jump out of the inbox and return to your dashboard."
-            onClick={() => {
-              setIsMobileDrawerOpen(false);
-              navigate("/home");
-            }}
           />
         </div>
       </Drawer>
