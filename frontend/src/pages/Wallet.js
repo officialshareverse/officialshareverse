@@ -974,17 +974,13 @@ export default function Wallet() {
         <Drawer
           open={isMobileActionDrawerOpen}
           onClose={() => setIsMobileActionDrawerOpen(false)}
-          eyebrow="Wallet actions"
-          title={ACTION_TABS.find((tab) => tab.id === activeTab)?.label}
-          description={ACTION_TAB_META[activeTab]?.drawerDescription}
           className="sv-wallet-mobile-drawer"
           footer={(
             <p className="sv-drawer-footnote">
-              <strong>Tip:</strong> choose the action you need, finish it here, then come back to the wallet summary.
+              <strong>Tip:</strong> finish your action here, then close this panel to return to your wallet summary.
             </p>
           )}
         >
-          {renderActionTabs("sv-wallet-tab-row-drawer")}
           {activeActionPanel}
         </Drawer>
       ) : null}
