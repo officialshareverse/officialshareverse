@@ -476,24 +476,25 @@ export default function Groups() {
 
       <div className="sv-container space-y-4 sm:space-y-6">
         {/* HERO BANNER */}
-        <section className="relative overflow-hidden rounded-[32px] bg-[#004b3b] px-6 py-12 sm:px-12 sm:py-16 shadow-xl sv-animate-rise">
-          <div className="absolute right-0 top-0 opacity-20 hidden md:block">
-            {/* Mock abstract shapes or devices for right side graphic */}
-            <div className="h-64 w-64 translate-x-1/4 -translate-y-1/4 rotate-12 rounded-3xl border border-white/20 bg-white/10 backdrop-blur-md" />
-            <div className="absolute right-12 top-24 h-24 w-24 rounded-2xl bg-rose-600/40 blur-xl" />
-            <div className="absolute bottom-12 right-32 h-20 w-20 rounded-full bg-emerald-400/30 blur-lg" />
+        <section className="relative rounded-2xl sm:rounded-[28px] mb-8 mt-4 -mx-4 sm:mx-0 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-8 px-6 py-6 sm:px-10 lg:py-8 shadow-xl sv-animate-rise z-30">
+          <div className="absolute inset-0 bg-[#004b3b] rounded-2xl sm:rounded-[28px] overflow-hidden border border-emerald-900/20">
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:block w-[400px] xl:w-[450px]">
+               <img src="/streaming-services-collage.png" className="w-full h-auto object-contain translate-x-12 scale-110" alt="" />
+            </div>
           </div>
-
-          <div className="relative z-10 max-w-2xl">
-            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-              Find your next <br />
-              <span className="text-[#34d399]">subscription.</span>
+          
+          <div className="relative z-10 shrink-0 text-left w-full lg:w-auto xl:pl-2">
+            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-[2.2rem] sm:leading-[1.15]">
+              Find your next <br className="hidden lg:block" />
+              <span className="text-[#34d399] ml-1.5 lg:ml-0">subscription.</span>
             </h1>
-            <p className="mt-4 text-sm font-medium text-[#a7f3d0] sm:text-base">
+            <p className="mt-2.5 text-[13px] sm:text-sm font-medium text-[#a7f3d0]">
               Join premium services at a fraction of the cost.
             </p>
+          </div>
 
-            <div className="mt-8 flex w-full max-w-xl items-center gap-3 rounded-full bg-white px-5 py-3.5 shadow-lg focus-within:ring-2 focus-within:ring-[#34d399] transition-all">
+          <div className="relative z-20 w-full max-w-[28rem] xl:max-w-[32rem] flex-1 lg:mx-6 xl:mx-10 mt-2 lg:mt-0">
+            <div className="flex w-full items-center gap-3 rounded-full bg-white px-5 py-3.5 shadow-md focus-within:ring-2 focus-within:ring-[#34d399] transition-all">
               <SearchIcon className="h-5 w-5 text-slate-400 shrink-0" />
               <input
                 type="text"
@@ -504,7 +505,7 @@ export default function Groups() {
                   window.setTimeout(() => setSearchFocused(false), 120);
                 }}
                 placeholder="Search Netflix, Spotify, Canva, host name..."
-                className="w-full bg-transparent text-slate-900 placeholder-slate-400 outline-none sm:text-sm"
+                className="w-full bg-transparent text-slate-900 placeholder-slate-400 outline-none sm:text-[15px]"
               />
               {searchTerm && (
                 <button type="button" onClick={() => setSearchTerm("")} className="text-slate-400 hover:text-slate-600">
@@ -515,7 +516,7 @@ export default function Groups() {
             </div>
 
             {searchFocused && searchSuggestions.length > 0 ? (
-              <div className="absolute mt-2 w-full max-w-xl rounded-2xl border border-slate-100 bg-white p-2 shadow-xl z-50">
+              <div className="absolute mt-2 w-full rounded-2xl border border-slate-100 bg-white p-2 shadow-xl z-50">
                 {searchSuggestions.map((item) => (
                   <button
                     key={`${item.helper}-${item.label}`}
