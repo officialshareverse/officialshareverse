@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
-import FirstVisitHint from "../components/FirstVisitHint";
 import SubscriptionLogo from "../components/SubscriptionLogo";
 import { useToast } from "../components/ToastProvider";
 import {
@@ -15,6 +14,11 @@ import {
   SearchIcon,
   ShieldIcon,
   SparkIcon,
+  PlayIcon,
+  AcademicCapIcon,
+  GridIcon,
+  MusicIcon,
+  ControllerIcon
 } from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
@@ -48,21 +52,24 @@ function getPlanCategory(name) {
   const normalized = String(name || "").toLowerCase();
 
   if (
-    normalized.includes("netflix") ||
     normalized.includes("spotify") ||
+    normalized.includes("music")
+  ) {
+    return "Music";
+  }
+
+  if (
+    normalized.includes("netflix") ||
     normalized.includes("hotstar") ||
     normalized.includes("disney") ||
     normalized.includes("prime") ||
     normalized.includes("youtube") ||
     normalized.includes("jiocinema") ||
     normalized.includes("sonyliv") ||
-    normalized.includes("family") ||
-    normalized.includes("household") ||
-    normalized.includes("screen") ||
-    normalized.includes("music") ||
-    normalized.includes("video")
+    normalized.includes("video") ||
+    normalized.includes("screen")
   ) {
-    return "subscriptions";
+    return "Streaming";
   }
 
   if (
@@ -71,10 +78,19 @@ function getPlanCategory(name) {
     normalized.includes("duolingo") ||
     normalized.includes("course") ||
     normalized.includes("academy") ||
-    normalized.includes("class") ||
     normalized.includes("learn")
   ) {
-    return "courses";
+    return "Education";
+  }
+
+  if (
+    normalized.includes("chatgpt") ||
+    normalized.includes("claude") ||
+    normalized.includes("midjourney") ||
+    normalized.includes("ai") ||
+    normalized.includes("gpt")
+  ) {
+    return "AI Tools";
   }
 
   if (
@@ -82,25 +98,22 @@ function getPlanCategory(name) {
     normalized.includes("notion") ||
     normalized.includes("google one") ||
     normalized.includes("github") ||
-    normalized.includes("software") ||
-    normalized.includes("workspace") ||
-    normalized.includes("design") ||
-    normalized.includes("tool") ||
-    normalized.includes("seat")
+    normalized.includes("figma") ||
+    normalized.includes("workspace")
   ) {
-    return "software";
+    return "Productivity";
   }
 
   if (
-    normalized.includes("membership") ||
-    normalized.includes("club") ||
-    normalized.includes("gym") ||
-    normalized.includes("community")
+    normalized.includes("xbox") ||
+    normalized.includes("playstation") ||
+    normalized.includes("nintendo") ||
+    normalized.includes("game")
   ) {
-    return "memberships";
+    return "Gaming";
   }
 
-  return "subscriptions";
+  return "Streaming"; // default fallback
 }
 
 function getPlanMeta(name) {
@@ -471,85 +484,121 @@ export default function Groups() {
         : null}
 
       <div className="sv-container space-y-4 sm:space-y-6">
-        <section className="mx-auto max-w-4xl sticky z-20" style={{ top: '4.5rem' }}>
-          <div className={`sv-card sv-reveal sv-groups-panel flex flex-col sm:flex-row items-end gap-3 sm:gap-4 ${isMobile ? "is-mobile" : ""}`}>
-            <label className={`block flex-1 w-full ${isMobile ? "sv-groups-panel-search" : ""}`}>
-              <span className={`mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs ${isMobile ? "sv-groups-search-label" : ""}`}>
-                {isMobile ? "Plan or host" : "Search groups"}
-              </span>
-              <div className="sv-groups-search-shell">
-                <SearchIcon className="h-4 w-4 shrink-0 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  onFocus={() => setSearchFocused(true)}
-                  onBlur={() => {
-                    window.setTimeout(() => setSearchFocused(false), 120);
-                  }}
-                  placeholder={isMobile ? "Search plan..." : "Netflix, Spotify, Canva, host name..."}
-                  className="sv-groups-search-input"
-                />
-                {searchTerm ? (
-                  <button
-                    type="button"
-                    onClick={() => setSearchTerm("")}
-                    className="sv-groups-clear-button"
-                  >
-                    Clear
-                  </button>
-                ) : null}
-              </div>
+        {/* HERO BANNER */}
+        <section className="relative overflow-hidden rounded-[32px] bg-[#004b3b] px-6 py-12 sm:px-12 sm:py-16 shadow-xl sv-animate-rise">
+          <div className="absolute right-0 top-0 opacity-20 hidden md:block">
+            {/* Mock abstract shapes or devices for right side graphic */}
+            <div className="h-64 w-64 translate-x-1/4 -translate-y-1/4 rotate-12 rounded-3xl border border-white/20 bg-white/10 backdrop-blur-md" />
+            <div className="absolute right-12 top-24 h-24 w-24 rounded-2xl bg-rose-600/40 blur-xl" />
+            <div className="absolute bottom-12 right-32 h-20 w-20 rounded-full bg-emerald-400/30 blur-lg" />
+          </div>
 
-              {searchFocused && searchSuggestions.length > 0 ? (
-                <div className="sv-groups-search-suggestions">
-                  {searchSuggestions.map((item) => (
-                    <button
-                      key={`${item.helper}-${item.label}`}
-                      type="button"
-                      onMouseDown={(event) => {
-                        event.preventDefault();
-                        setSearchTerm(item.label);
-                        setSearchFocused(false);
-                      }}
-                      className="sv-groups-suggestion-item"
-                    >
-                      <span className="font-semibold text-slate-900">{item.label}</span>
-                      <span className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
-                        {item.helper}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </label>
+          <div className="relative z-10 max-w-2xl">
+            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+              Find your next <br />
+              <span className="text-[#34d399]">subscription.</span>
+            </h1>
+            <p className="mt-4 text-sm font-medium text-[#a7f3d0] sm:text-base">
+              Join premium services at a fraction of the cost.
+            </p>
 
-            <div className="w-full sm:w-48">
-              <label className="block">
-                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:mb-2 sm:text-xs">
-                  Sort by
-                </span>
-                <select
-                  value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value)}
-                  className="sv-groups-sort-select"
-                >
-                  {SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <div className="mt-8 flex w-full max-w-xl items-center gap-3 rounded-full bg-white px-5 py-3.5 shadow-lg focus-within:ring-2 focus-within:ring-[#34d399] transition-all">
+              <SearchIcon className="h-5 w-5 text-slate-400 shrink-0" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => {
+                  window.setTimeout(() => setSearchFocused(false), 120);
+                }}
+                placeholder="Search Netflix, Spotify, Canva, host name..."
+                className="w-full bg-transparent text-slate-900 placeholder-slate-400 outline-none sm:text-sm"
+              />
+              {searchTerm && (
+                <button type="button" onClick={() => setSearchTerm("")} className="text-slate-400 hover:text-slate-600">
+                  <span className="sr-only">Clear</span>
+                  &times;
+                </button>
+              )}
             </div>
+
+            {searchFocused && searchSuggestions.length > 0 ? (
+              <div className="absolute mt-2 w-full max-w-xl rounded-2xl border border-slate-100 bg-white p-2 shadow-xl z-50">
+                {searchSuggestions.map((item) => (
+                  <button
+                    key={`${item.helper}-${item.label}`}
+                    type="button"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      setSearchTerm(item.label);
+                      setSearchFocused(false);
+                    }}
+                    className="flex w-full flex-col rounded-xl px-4 py-2.5 text-left transition-colors hover:bg-slate-50 focus:bg-slate-50 outline-none"
+                  >
+                    <span className="font-semibold text-slate-900">{item.label}</span>
+                    <span className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                      {item.helper}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
         </section>
 
-        <FirstVisitHint
-          storageKey="explore-v1"
-          title="These are live groups people have created"
-          body="Tap any card to see pricing and join with your wallet balance. Filter by type, search by plan name, and sort by what matters most."
-        />
+        {/* CATEGORY & SORT ROW */}
+        <section className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sticky z-20" style={{ top: '4.5rem' }}>
+          <div className="flex-1 overflow-x-auto pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 hide-scrollbar">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-max">
+              <button
+                type="button"
+                onClick={() => setFilter("all")}
+                className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+                  filter === "all" ? "bg-[#004b3b] text-white shadow-md" : "bg-white text-slate-700 shadow-sm hover:bg-slate-50 border border-slate-200/60"
+                }`}
+              >
+                {filter === "all" ? <SparkIcon className="h-4 w-4" /> : null} All
+              </button>
+              
+              {[
+                { id: "Streaming", icon: PlayIcon },
+                { id: "Education", icon: AcademicCapIcon },
+                { id: "AI Tools", icon: SparkIcon },
+                { id: "Productivity", icon: GridIcon },
+                { id: "Music", icon: MusicIcon },
+                { id: "Gaming", icon: ControllerIcon }
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setFilter(cat.id)}
+                  className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all ${
+                    filter === cat.id ? "bg-[#004b3b] text-white shadow-md" : "bg-white text-slate-700 shadow-sm hover:bg-slate-50 border border-slate-200/60"
+                  }`}
+                >
+                  <cat.icon className="h-4 w-4" />
+                  {cat.id}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="w-full sm:w-auto shrink-0 flex items-center bg-white rounded-full border border-slate-200/60 shadow-sm px-4 py-2.5">
+            <select
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value)}
+              className="bg-transparent text-sm font-medium text-slate-700 outline-none border-none pr-6 cursor-pointer appearance-none w-full sm:w-36"
+              style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748b\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundPosition: 'right center', backgroundRepeat: 'no-repeat', backgroundSize: '1.2em' }}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </section>
 
         {loading ? (
           <section className="grid gap-4 xl:gap-5">

@@ -20,7 +20,8 @@
       "expo-secure-store",
       "expo-asset",
       "expo-web-browser",
-      "expo-font"
+      "expo-font",
+      "@sentry/react-native"
     ],
     "ios": {
       "supportsTablet": true,

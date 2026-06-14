@@ -298,3 +298,62 @@ export function RatingStars({ rating = 0, count = 5 }) {
     </div>
   );
 }
+
+export function PlayIcon(props) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="m6 3 14 9-14 9V3z" />
+    </svg>
+  );
+}
+
+export function AcademicCapIcon(props) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="M4 11.2V16a8 8 0 0 0 16 0v-4.8" />
+      <polygon points="12 4 2 9 12 14 22 9 12 4" />
+      <path d="M12 14v7" />
+    </svg>
+  );
+}
+
+export function GridIcon(props) {
+  return (
+    <svg {...iconProps(props)}>
+      <rect width="7" height="7" x="3" y="3" rx="1" />
+      <rect width="7" height="7" x="14" y="3" rx="1" />
+      <rect width="7" height="7" x="14" y="14" rx="1" />
+      <rect width="7" height="7" x="3" y="14" rx="1" />
+    </svg>
+  );
+}
+
+export function MusicIcon(props) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </svg>
+  );
+}
+
+export function ControllerIcon(props) {
+  return (
+    <svg {...iconProps(props)}>
+      <rect width="20" height="12" x="2" y="6" rx="2" />
+      <path d="M6 12h4" />
+      <path d="M8 10v4" />
+      <path d="M15 13h.01" />
+      <path d="M18 11h.01" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon(props) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}

@@ -24,6 +24,7 @@ _HAS_DJ_DATABASE_URL = importlib.util.find_spec("dj_database_url") is not None
 _HAS_WHITENOISE = importlib.util.find_spec("whitenoise") is not None
 _HAS_CHANNELS = importlib.util.find_spec("channels") is not None
 _HAS_DAPHNE = importlib.util.find_spec("daphne") is not None
+_HAS_SENTRY_SDK = importlib.util.find_spec("sentry_sdk") is not None
 
 if _HAS_DJ_DATABASE_URL:
     import dj_database_url
@@ -41,6 +42,17 @@ def _get_env_bool(name, default=False):
     if value is None:
         return default
     return _parse_env_value(value).lower() == "true"
+
+
+def _get_env_float(name, default=0.0):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+
+    try:
+        return float(_parse_env_value(value))
+    except (TypeError, ValueError):
+        return default
 
 
 def _get_env_list(name, default_values=None):
@@ -126,6 +138,40 @@ DEBUG = _get_env_bool('DJANGO_DEBUG', IS_DEV_ENV)
 EXPOSE_DEV_OTP = _get_env_bool('DJANGO_EXPOSE_DEV_OTP', IS_DEV_ENV or IS_TEST_ENV)
 if IS_PRODUCTION_ENV and EXPOSE_DEV_OTP:
     raise ImproperlyConfigured("DJANGO_EXPOSE_DEV_OTP cannot be enabled outside development and tests.")
+
+SENTRY_DSN = (
+    os.environ.get("DJANGO_SENTRY_DSN", "").strip()
+    or os.environ.get("SENTRY_DSN", "").strip()
+)
+SENTRY_ENVIRONMENT = (
+    os.environ.get("DJANGO_SENTRY_ENVIRONMENT", "").strip()
+    or os.environ.get("SENTRY_ENVIRONMENT", "").strip()
+    or ENVIRONMENT
+)
+SENTRY_RELEASE = (
+    os.environ.get("DJANGO_SENTRY_RELEASE", "").strip()
+    or os.environ.get("SENTRY_RELEASE", "").strip()
+)
+SENTRY_TRACES_SAMPLE_RATE = _get_env_float("DJANGO_SENTRY_TRACES_SAMPLE_RATE", 0.0)
+SENTRY_PROFILES_SAMPLE_RATE = _get_env_float("DJANGO_SENTRY_PROFILES_SAMPLE_RATE", 0.0)
+SENTRY_SEND_DEFAULT_PII = _get_env_bool("DJANGO_SENTRY_SEND_DEFAULT_PII", False)
+
+if SENTRY_DSN:
+    if not _HAS_SENTRY_SDK:
+        raise ImproperlyConfigured("Install sentry-sdk[django] before setting DJANGO_SENTRY_DSN.")
+
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        environment=SENTRY_ENVIRONMENT,
+        release=SENTRY_RELEASE or None,
+        traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+        profiles_sample_rate=SENTRY_PROFILES_SAMPLE_RATE,
+        send_default_pii=SENTRY_SEND_DEFAULT_PII,
+    )
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
 SERVE_MEDIA_FILES = DEBUG or _get_env_bool('DJANGO_SERVE_MEDIA', False)

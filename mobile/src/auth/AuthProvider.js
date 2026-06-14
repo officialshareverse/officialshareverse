@@ -7,6 +7,7 @@ import {
   setSessionTokens,
 } from "../api/client";
 import { syncPushRegistrationAsync, unregisterPushTokenAsync } from "../notifications/push";
+import { clearSentryUser, setSentryUser } from "../utils/sentry";
 import { clearStoredSession, readStoredSession, writeStoredSession } from "./session";
 
 const AuthContext = createContext(null);
@@ -21,6 +22,7 @@ async function applySessionPayload(payload, setSession, setUser) {
   setSessionTokens(nextSession);
   setSession(nextSession);
   setUser(payload.user || null);
+  setSentryUser(payload.user || null);
 }
 
 export function AuthProvider({ children }) {
@@ -42,6 +44,7 @@ export function AuthProvider({ children }) {
       await clearStoredSession();
       setSession(null);
       setUser(null);
+      clearSentryUser();
     }
   }, [session?.refreshToken]);
 
@@ -82,6 +85,7 @@ export function AuthProvider({ children }) {
           return;
         }
         setUser(profileResponse.data || null);
+        setSentryUser(profileResponse.data || null);
       } catch {
         if (!isMounted) {
           return;
@@ -90,6 +94,7 @@ export function AuthProvider({ children }) {
         await clearStoredSession();
         setSession(null);
         setUser(null);
+        clearSentryUser();
       } finally {
         if (isMounted) {
           setIsBootstrapping(false);
@@ -149,7 +154,9 @@ export function AuthProvider({ children }) {
 
   const refreshProfile = useCallback(async () => {
     const response = await api.get("profile/");
-    setUser(response.data || null);
+    const nextUser = response.data || null;
+    setUser(nextUser);
+    setSentryUser(nextUser);
     return response.data;
   }, []);
 

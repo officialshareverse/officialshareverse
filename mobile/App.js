@@ -6,8 +6,11 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AuthProvider } from "./src/auth/AuthProvider";
 import RootNavigator from "./src/navigation/RootNavigator";
+import { initSentry, Sentry } from "./src/utils/sentry";
 
-export default function App() {
+initSentry();
+
+function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -19,3 +22,5 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
+
+export default Sentry.wrap(App);

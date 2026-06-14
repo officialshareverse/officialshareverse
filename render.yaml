@@ -66,6 +66,16 @@ services:
         sync: false
       - key: DJANGO_GOOGLE_CLIENT_ID
         sync: false
+      - key: DJANGO_SENTRY_DSN
+        sync: false
+      - key: DJANGO_SENTRY_ENVIRONMENT
+        value: production
+      - key: DJANGO_SENTRY_TRACES_SAMPLE_RATE
+        value: "0"
+      - key: DJANGO_SENTRY_PROFILES_SAMPLE_RATE
+        value: "0"
+      - key: DJANGO_SENTRY_SEND_DEFAULT_PII
+        value: "false"
 
   - type: cron
     name: shareverse-refund-processor
@@ -99,6 +109,16 @@ services:
         fromDatabase:
           name: shareverse-db
           property: connectionString
+      - key: DJANGO_SENTRY_DSN
+        sync: false
+      - key: DJANGO_SENTRY_ENVIRONMENT
+        value: production
+      - key: DJANGO_SENTRY_TRACES_SAMPLE_RATE
+        value: "0"
+      - key: DJANGO_SENTRY_PROFILES_SAMPLE_RATE
+        value: "0"
+      - key: DJANGO_SENTRY_SEND_DEFAULT_PII
+        value: "false"
 
   - type: web
     name: shareverse-web
@@ -116,6 +136,16 @@ services:
         value: https://api.shareverse.in/api/
       - key: REACT_APP_GOOGLE_CLIENT_ID
         sync: false
+      - key: REACT_APP_SENTRY_DSN
+        sync: false
+      - key: REACT_APP_SENTRY_ENVIRONMENT
+        value: production
+      - key: REACT_APP_SENTRY_TRACES_SAMPLE_RATE
+        value: "0"
+      - key: REACT_APP_SENTRY_REPLAYS_SESSION_SAMPLE_RATE
+        value: "0"
+      - key: REACT_APP_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE
+        value: "0"
     routes:
       - type: rewrite
         source: /*

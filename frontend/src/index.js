@@ -11,11 +11,18 @@ import './styles/motion.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+import { initSentry, Sentry } from './sentry';
+
+initSentry();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <Sentry.ErrorBoundary
+      fallback={<div role="alert">Something went wrong. Please reload ShareVerse.</div>}
+    >
+      <App />
+    </Sentry.ErrorBoundary>
   </React.StrictMode>
 );
 
