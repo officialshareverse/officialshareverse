@@ -180,38 +180,6 @@ function getCoverGradient(name) {
   return "bg-gradient-to-br from-slate-800 to-slate-900";
 }
 
-function formatRelativeTime(value) {
-  if (!value) {
-    return "Updated recently";
-  }
-
-  const timestamp = new Date(value).getTime();
-  if (Number.isNaN(timestamp)) {
-    return "Updated recently";
-  }
-
-  const deltaMs = Date.now() - timestamp;
-  const minutes = Math.max(1, Math.round(deltaMs / 60000));
-
-  if (minutes < 60) {
-    return `Updated ${minutes}m ago`;
-  }
-
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) {
-    return `Updated ${hours}h ago`;
-  }
-
-  const days = Math.round(hours / 24);
-  if (days < 7) {
-    return `Updated ${days}d ago`;
-  }
-
-  return `Updated ${new Date(value).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-  })}`;
-}
 
 function formatDate(value) {
   if (!value) {
@@ -1008,14 +976,6 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
   );
 }
 
-function MetricTile({ label, value }) {
-  return (
-    <div className="sv-group-metric-tile">
-      <p className="text-[10px] uppercase tracking-[0.15em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm font-semibold leading-6 text-slate-950 sm:text-[15px]">{value}</p>
-    </div>
-  );
-}
 
 function BreakdownCard({ label, value, note, featured = false }) {
   return (
