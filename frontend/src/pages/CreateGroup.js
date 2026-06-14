@@ -461,22 +461,7 @@ export default function CreateGroup() {
               </div>
             ) : null}
 
-            <div className="sv-create-mobile-summary hidden mt-5">
-              <div className="sv-create-mobile-summary-item">
-                <span className="sv-create-mobile-summary-label">Mode</span>
-                <span className="sv-create-mobile-summary-value">{modeConfig.eyebrow}</span>
-              </div>
-              <div className="sv-create-mobile-summary-item">
-                <span className="sv-create-mobile-summary-label">Price</span>
-                <span className="sv-create-mobile-summary-value">
-                  {amountPerMember > 0 ? `Rs ${amountPerMember.toFixed(0)}` : "Add"}
-                </span>
-              </div>
-              <div className="sv-create-mobile-summary-item">
-                <span className="sv-create-mobile-summary-label">Slots</span>
-                <span className="sv-create-mobile-summary-value">{memberCount > 0 ? memberCount : "Add"}</span>
-              </div>
-            </div>
+
 
             <div className="mt-3">
               {isSinglePageMobile || currentStep === 0 ? (
