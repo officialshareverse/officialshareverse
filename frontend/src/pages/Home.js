@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
@@ -11,26 +11,18 @@ import {
   SkeletonList,
 } from "../components/SkeletonFactory";
 import {
-  BellIcon,
   CompassIcon,
   LayersIcon,
   PlusIcon,
   WalletIcon,
 } from "../components/UiIcons";
-import useIsMobile from "../hooks/useIsMobile";
 
 function formatCurrency(value) {
   const numeric = Number(value || 0);
   return `Rs ${numeric.toFixed(2)}`;
 }
 
-function formatMetricValue(value, { prefix = "", suffix = "", decimals = 0 } = {}) {
-  const numeric = Number(value || 0);
-  if (decimals > 0) {
-    return `${prefix}${numeric.toFixed(decimals)}${suffix}`;
-  }
-  return `${prefix}${numeric}${suffix}`;
-}
+
 
 function formatGroupType(value) {
   if (!value) {
@@ -95,7 +87,6 @@ function getRecentSplitStatusMeta(status) {
 
 export default function Home() {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const [groups, setGroups] = useState([]);
   const [dashboard, setDashboard] = useState(null);
   const [profileSnapshot, setProfileSnapshot] = useState(null);
@@ -150,31 +141,12 @@ export default function Home() {
     ? `sv-home-guide-seen-${onboardingGuideVersion}-${currentUserId}`
     : "";
 
-  const ownerSummary = dashboard?.owner_summary || {};
-  const notifications = useMemo(
-    () => (Array.isArray(dashboard?.notifications) ? dashboard.notifications : []),
-    [dashboard?.notifications]
-  );
-  const memberships = useMemo(
-    () => (Array.isArray(dashboard?.groups) ? dashboard.groups : []),
-    [dashboard?.groups]
-  );
-  const unreadNotifications = notifications.filter((item) => !item.is_read).length;
-  const membershipNeedsAttention = memberships.filter(
-    (group) => group.access_confirmation_required || group.has_reported_access_issue
-  ).length;
   const greetingMeta = getGreetingMeta();
   const currentUserFirstName =
     profileSnapshot?.first_name?.trim() || dashboard?.current_user?.username || "there";
-  const walletBalanceValue = Number(dashboard?.wallet_balance || 0);
-  const activeGroups = Number(dashboard?.active_groups || 0);
 
   const totalGuideSlides = 3;
-  const marketplaceGroups = groups.slice(0, isMobile ? 2 : 4);
-  const activeActionCount =
-    membershipNeedsAttention + Number(ownerSummary.buy_together_waiting || 0);
-
-
+  const marketplaceGroups = groups.slice(0, 4);
   useEffect(() => {
     if (!currentUserId) {
       return;
@@ -202,55 +174,7 @@ export default function Home() {
 
 
 
-  const stats = useMemo(
-    () => [
-      {
-        label: "Wallet balance",
-        numericValue: walletBalanceValue,
-        decimals: 2,
-        prefix: "Rs ",
-        icon: <WalletIcon className="h-4 w-4" />,
-        onClick: () => navigate("/wallet"),
-        note: walletBalanceValue > 0 ? "Ready for paid groups" : "Top up to join faster",
-      },
-      {
-        label: "Active groups",
-        numericValue: activeGroups,
-        icon: <LayersIcon className="h-4 w-4" />,
-        onClick: () => navigate("/my-shared"),
-        note: `${memberships.length} total memberships`,
-      },
-      {
-        label: "Hosting now",
-        numericValue: Number(ownerSummary.total_groups_created || 0),
-        icon: <PlusIcon className="h-4 w-4" />,
-        onClick: () => navigate("/my-shared"),
-        note:
-          ownerSummary.buy_together_waiting > 0
-            ? `${ownerSummary.buy_together_waiting} waiting on you`
-            : "Your hosted split queue",
-      },
-      {
-        label: "Unread updates",
-        numericValue: unreadNotifications,
-        icon: <BellIcon className="h-4 w-4" />,
-        onClick: () => navigate("/notifications"),
-        note: unreadNotifications > 0 ? `${activeActionCount} open actions` : "Inbox is clear",
-      },
-    ],
-    [
-      activeActionCount,
-      activeGroups,
-      memberships.length,
-      navigate,
-      ownerSummary.buy_together_waiting,
-      ownerSummary.total_groups_created,
-      unreadNotifications,
-      walletBalanceValue,
-    ]
-  );
 
-  const visibleStats = stats;
 
 
 
@@ -346,10 +270,7 @@ export default function Home() {
     setShowGuide(false);
   };
 
-  const openGuide = () => {
-    setGuideStep(0);
-    setShowGuide(true);
-  };
+
 
   if (loading) {
     return (
@@ -572,133 +493,114 @@ export default function Home() {
           </div>
         </div>
       ) : (
-        <div className="mx-auto max-w-6xl space-y-8 sm:space-y-10">
-          <section className="sv-animate-rise">
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
+        <div className="mx-auto max-w-5xl space-y-12 sm:space-y-16 px-4 py-8 sm:px-6 lg:px-8">
+          {/* HERO SECTION */}
+          <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-slate-900 to-slate-800 p-8 sm:p-12 shadow-2xl sv-animate-rise">
+            <div className="absolute top-0 right-0 -mt-16 -mr-16 h-64 w-64 rounded-full bg-white opacity-5 blur-3xl"></div>
+            
+            <div className="relative z-10 flex flex-col gap-6">
+              <BrandMark sizeClass="h-12 w-12 sm:h-14 sm:w-14" roundedClass="rounded-2xl" />
+              
               <div>
-                <div className="flex flex-wrap items-center gap-3">
-                <BrandMark sizeClass="h-10 w-10 sm:h-11 sm:w-11" roundedClass="rounded-[14px] sm:rounded-[16px]" />
-                <span className="sv-chip">Dashboard</span>
-                {!isMobile ? <span className="sv-chip">{activeGroups} active groups</span> : null}
-              </div>
-              <p className="sv-eyebrow mt-5">
-                {greetingMeta.text}, {currentUserFirstName}.
-              </p>
-
-
-              <div className="sv-home-action-row mt-5 flex flex-wrap gap-3">
-                <QuickActionButton
-                  icon={<PlusIcon className="h-4.5 w-4.5" />}
-                  title="Create split"
-                  onClick={() => navigate("/create")}
-                />
-                <QuickActionButton
-                  icon={<LayersIcon className="h-4.5 w-4.5" />}
-                  title="My Splits"
-                  onClick={() => navigate("/my-shared")}
-                />
-                <QuickActionButton
-                  icon={<WalletIcon className="h-4.5 w-4.5" />}
-                  title="Wallet"
-                  onClick={() => navigate("/wallet")}
-                />
-              </div>
-
-              <div className="sv-home-action-aux-row mt-4 flex flex-wrap gap-3">
-                <button type="button" onClick={openGuide} className="sv-btn-secondary">
-                  Quick guide
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate("/groups")}
-                  className="sv-btn-secondary"
-                >
-                  Explore splits
-                </button>
-              </div>
-            </div>
-
-
-          </div>
-        </section>
-
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 sv-animate-rise sv-delay-1">
-          {visibleStats.map((item) => (
-            <StatCard key={item.label} {...item} />
-          ))}
-        </section>
-
-
-
-        <section className="sv-animate-rise sv-delay-3">
-          <div className="sv-divider" />
-          <div className="mt-4 sm:mt-5">
-            <p className="sv-eyebrow">Recent splits</p>
-            <h2 className="sv-title mt-1.5">Fresh activity on ShareVerse</h2>
-          </div>
-
-          {marketplaceGroups.length > 0 ? (
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
-              {marketplaceGroups.map((group) => (
-                <RecentSplitCard
-                  key={group.id}
-                  group={group}
-                  onClick={() => navigate("/groups")}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm">
-              <div>
-                <p className="text-lg font-bold text-slate-950">No splits are visible yet.</p>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
-                  Create the first one or check back after more groups go live.
+                <p className="text-sm font-semibold uppercase tracking-widest text-slate-400">
+                  {greetingMeta.text}
+                </p>
+                <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+                  {currentUserFirstName}.
+                </h1>
+                <p className="mt-4 max-w-xl text-lg leading-relaxed text-slate-300">
+                  Manage your shared subscriptions, track wallet balances, and explore new groups—all from your command center.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-3">
+
+              <div className="mt-6 flex flex-wrap gap-4">
                 <button
                   type="button"
                   onClick={() => navigate("/create")}
-                  className="sv-btn-primary"
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-slate-900 shadow-sm transition-all hover:scale-105 hover:bg-slate-50 active:scale-95"
                 >
-                  Create split
+                  <PlusIcon className="h-5 w-5" />
+                  Create Split
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate("/groups")}
-                  className="sv-btn-secondary"
+                  onClick={() => navigate("/my-shared")}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/50 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-all hover:scale-105 hover:bg-slate-700 active:scale-95"
                 >
-                  Explore splits
+                  <LayersIcon className="h-5 w-5" />
+                  My Splits
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/wallet")}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/50 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-all hover:scale-105 hover:bg-slate-700 active:scale-95"
+                >
+                  <WalletIcon className="h-5 w-5" />
+                  Wallet
                 </button>
               </div>
             </div>
-          )}
-        </section>
-      </div>
+          </section>
+
+          {/* RECENT SPLITS */}
+          <section className="space-y-6 sv-animate-rise sv-delay-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight text-slate-900">Fresh Activity</h2>
+                <p className="mt-1 text-sm text-slate-500">Discover new splits just added to ShareVerse.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/groups")}
+                className="hidden items-center gap-2 text-sm font-semibold text-emerald-600 transition-colors hover:text-emerald-700 sm:inline-flex"
+              >
+                Explore all &rarr;
+              </button>
+            </div>
+
+            {marketplaceGroups.length > 0 ? (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
+                {marketplaceGroups.map((group) => (
+                  <RecentSplitCard
+                    key={group.id}
+                    group={group}
+                    onClick={() => navigate("/groups")}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-[32px] border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center">
+                <CompassIcon className="h-12 w-12 text-slate-400" />
+                <h3 className="mt-4 text-lg font-bold text-slate-900">No splits are visible yet</h3>
+                <p className="mt-2 max-w-sm text-sm text-slate-500">
+                  Create the first one or check back after more groups go live.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/create")}
+                  className="mt-6 inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition-all hover:scale-105 hover:bg-slate-800 active:scale-95"
+                >
+                  <PlusIcon className="h-4.5 w-4.5" />
+                  Create Split
+                </button>
+              </div>
+            )}
+            
+            <button
+              type="button"
+              onClick={() => navigate("/groups")}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-6 py-3.5 text-sm font-semibold text-slate-900 transition-all hover:bg-slate-200 active:scale-95 sm:hidden"
+            >
+              Explore all &rarr;
+            </button>
+          </section>
+        </div>
       )}
     </div>
   );
 }
 
-function QuickActionButton({ icon, title, note, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="sv-home-inline-action inline-flex min-h-[48px] items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:shadow-sm"
-    >
-      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700">
-        {icon}
-      </span>
-      <span className="min-w-0 text-left">
-        <span className="block">{title}</span>
-        {note ? (
-          <span className="mt-0.5 block text-xs font-normal text-slate-500">{note}</span>
-        ) : null}
-      </span>
-    </button>
-  );
-}
+
 
 function ShareVerseIntroVisual({ type }) {
   return (
@@ -756,48 +658,7 @@ function WalkthroughVisual({ type }) {
   );
 }
 
-function StatCard({
-  label,
-  numericValue,
-  icon,
-  onClick,
-  note,
-  prefix = "",
-  suffix = "",
-  decimals = 0,
-}) {
-  const handleKeyDown = (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onClick?.();
-    }
-  };
 
-  return (
-    <article
-      className="cursor-pointer rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md sm:p-5"
-      onClick={onClick}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-[16px] bg-slate-100 text-slate-700">
-            {icon}
-          </span>
-          <p className="mt-3 text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">
-            {label}
-          </p>
-        </div>
-      </div>
-      <p className="mt-3 text-2xl font-bold text-slate-950">
-        {formatMetricValue(numericValue, { prefix, suffix, decimals })}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{note}</p>
-    </article>
-  );
-}
 
 
 function RecentSplitCard({ group, onClick }) {
