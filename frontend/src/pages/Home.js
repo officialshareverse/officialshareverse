@@ -694,7 +694,7 @@ function RecentSplitCard({ group, onClick }) {
             {group.mode_label} by {group.owner_name}
           </p>
         </div>
-        <span className="sv-chip">
+        <span className="sv-chip shrink-0 whitespace-nowrap">
           {remainingSlots} slot{remainingSlots === 1 ? "" : "s"} left
         </span>
       </div>
