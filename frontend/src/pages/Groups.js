@@ -679,7 +679,7 @@ export default function Groups() {
                     <p className="text-xs font-medium text-slate-500 mt-0.5">{planMeta.category}</p>
                     
                     <p className="mt-4 text-sm font-bold text-slate-900">
-                      ₹{Number(group.join_price).toFixed(0)} <span className="text-slate-500 font-medium text-xs">/month</span>
+                      ₹{Number(group.join_price).toFixed(0)}
                     </p>
                     
                     <div className="mt-4 flex items-center gap-1.5 border-t border-slate-100 pt-4">
