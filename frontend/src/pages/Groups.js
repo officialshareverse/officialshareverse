@@ -450,11 +450,6 @@ export default function Groups() {
       .sort((left, right) => compareGroups(effectiveSortBy, left, right));
   }, [categoryFilter, effectiveSortBy, filter, groups, searchTerm]);
 
-  const spotlightGroup = filteredGroups[0] || groups[0] || null;
-  const categoryChips = useMemo(() => {
-    const labels = new Set(groups.map((group) => getPlanMeta(group.subscription_name || group.subscription).label));
-    return Array.from(labels).slice(0, 4);
-  }, [groups]);
 
   const pendingJoinSummary = pendingJoinGroup
     ? {
@@ -738,34 +733,7 @@ export default function Groups() {
           </div>
         )}
 
-        {spotlightGroup && !isMobile ? (
-          <section className="sv-card-solid sv-reveal">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="sv-eyebrow">Browse by signal</p>
-                  <h2 className="sv-title mt-2">Categories worth checking next</h2>
-                </div>
-                <span className="sv-chip">
-                  Example listing: {spotlightGroup.subscription_name || spotlightGroup.subscription}
-                </span>
-              </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-              {(categoryChips.length > 0 ? categoryChips : ["Digital plan", "Learning", "Software", "Membership"]).map(
-                  (item) => (
-                    <button
-                    key={item}
-                    type="button"
-                    onClick={() => setSearchTerm(item)}
-                    className="sv-group-empty-chip"
-                  >
-                    {item}
-                  </button>
-                )
-              )}
-            </div>
-          </section>
-        ) : null}
       </div>
     </div>
   );
