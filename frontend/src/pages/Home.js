@@ -168,20 +168,12 @@ export default function Home() {
     profileSnapshot?.first_name?.trim() || dashboard?.current_user?.username || "there";
   const walletBalanceValue = Number(dashboard?.wallet_balance || 0);
   const activeGroups = Number(dashboard?.active_groups || 0);
-  const totalSpent = Number(profileSnapshot?.total_spent || dashboard?.total_spent || 0);
-  const profileCompletion = Number(profileSnapshot?.profile_completion || 0);
+
   const totalGuideSlides = 3;
   const marketplaceGroups = groups.slice(0, isMobile ? 2 : 4);
   const activeActionCount =
     membershipNeedsAttention + Number(ownerSummary.buy_together_waiting || 0);
-  const heroSummary =
-    totalSpent > 0
-      ? `${formatCurrency(totalSpent)} has moved through your ShareVerse activity so far.`
-      : activeActionCount > 0
-        ? `${activeActionCount} item${activeActionCount === 1 ? "" : "s"} need your attention right now.`
-        : groups.length > 0
-          ? "Everything looks calm right now. You can browse new splits or open the next one."
-          : "You are ready to create your first split whenever you want.";
+
 
   useEffect(() => {
     if (!currentUserId) {
@@ -208,65 +200,7 @@ export default function Home() {
     onboardingStorageKey,
   ]);
 
-  const primaryCard = useMemo(() => {
-    if (ownerSummary.buy_together_waiting > 0) {
-      return {
-        label: "Waiting on you",
-        title: "Buy-together groups need the next host action.",
-        body: "Upload proof, confirm the purchase step, or update members so the whole flow keeps moving.",
-        cta: "Open My Splits",
-        onClick: () => navigate("/my-shared"),
-        icon: <LayersIcon className="h-5 w-5" />,
-        progressCurrent: Number(ownerSummary.buy_together_waiting || 0),
-        progressTotal: Math.max(
-          Number(ownerSummary.total_groups_created || 0),
-          Number(ownerSummary.buy_together_waiting || 0),
-          1
-        ),
-      };
-    }
-    if (membershipNeedsAttention > 0) {
-      return {
-        label: "Needs attention",
-        title: "A joined split is waiting for your response.",
-        body: "Review confirmations, issue reports, and unread context from My Splits before anything stalls.",
-        cta: "Review My Splits",
-        onClick: () => navigate("/my-shared"),
-        icon: <BellIcon className="h-5 w-5" />,
-        progressCurrent: membershipNeedsAttention,
-        progressTotal: Math.max(memberships.length, membershipNeedsAttention, 1),
-      };
-    }
-    if (groups.length > 0) {
-      return {
-        label: "Explore next",
-        title: "Fresh splits are open and ready to browse.",
-        body: "Scan recent listings, compare slots and pricing, and jump into the ones that fit your plan stack.",
-        cta: "Explore Splits",
-        onClick: () => navigate("/groups"),
-        icon: <CompassIcon className="h-5 w-5" />,
-        progressCurrent: Math.min(groups.length, 4),
-        progressTotal: Math.max(groups.length, 4),
-      };
-    }
-    return {
-      label: "Get started",
-      title: "Create your first split with a guided launch flow.",
-      body: "Start with a plan you already manage or open a buy-together group and publish it in a few steps.",
-      cta: "Create Split",
-      onClick: () => navigate("/create"),
-      icon: <PlusIcon className="h-5 w-5" />,
-      progressCurrent: 1,
-      progressTotal: 4,
-    };
-  }, [
-    groups.length,
-    membershipNeedsAttention,
-    memberships.length,
-    navigate,
-    ownerSummary.buy_together_waiting,
-    ownerSummary.total_groups_created,
-  ]);
+
 
   const stats = useMemo(
     () => [
@@ -318,39 +252,7 @@ export default function Home() {
 
   const visibleStats = stats;
 
-  const quickChecks = useMemo(
-    () => [
-      {
-        label: "Profile",
-        value: profileCompletion > 0 ? `${profileCompletion}% complete` : "Needs setup",
-        note:
-          profileCompletion > 0
-            ? "Trust checks look better with a complete profile."
-            : "Add profile basics and payout details.",
-        onClick: () => navigate("/profile"),
-      },
-      {
-        label: "Wallet",
-        value: walletBalanceValue > 0 ? formatCurrency(walletBalanceValue) : "No balance",
-        note:
-          walletBalanceValue > 0
-            ? "Available now for paid groups."
-            : "Top up before joining paid groups.",
-        onClick: () => navigate("/wallet"),
-      },
-      {
-        label: "Attention",
-        value: activeActionCount > 0 ? `${activeActionCount} open` : "All clear",
-        note:
-          activeActionCount > 0
-            ? "Open My Splits or notifications to clear them."
-            : "No urgent action is waiting right now.",
-        onClick: () =>
-          activeActionCount > 0 ? navigate("/my-shared") : navigate("/notifications"),
-      },
-    ],
-    [activeActionCount, navigate, profileCompletion, walletBalanceValue]
-  );
+
 
   const introSlides = [
     {
@@ -682,18 +584,7 @@ export default function Home() {
               <p className="sv-eyebrow mt-5">
                 {greetingMeta.text}, {currentUserFirstName}.
               </p>
-              <h1 className="mt-3 max-w-3xl text-3xl font-bold leading-tight text-slate-950 sm:text-4xl">
-                {isMobile
-                  ? "Your dashboard"
-                  : "Your dashboard for savings, wallet balance, and active splits."}
-              </h1>
-              <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7 md:text-base">
-                See what you can join, what you host, and what needs action next.
-              </p>
 
-              <div className="mt-4 rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-700">
-                {heroSummary}
-              </div>
 
               <div className="sv-home-action-row mt-5 flex flex-wrap gap-3">
                 <QuickActionButton
@@ -737,83 +628,7 @@ export default function Home() {
           ))}
         </section>
 
-        <section
-          className={`grid gap-4 sm:gap-6 sv-animate-rise sv-delay-2 ${
-            isMobile ? "" : "lg:grid-cols-[minmax(0,1.08fr)_minmax(260px,0.92fr)]"
-          }`}
-        >
-          <section className="rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="sv-eyebrow">{primaryCard.label}</p>
-                <h2 className="mt-2 text-xl font-bold text-slate-950 sm:text-[1.75rem]">
-                  {primaryCard.title}
-                </h2>
-                <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
-                  {primaryCard.body}
-                </p>
-              </div>
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-[18px] bg-slate-100 text-slate-700">
-                {primaryCard.icon}
-              </span>
-            </div>
 
-            <div className="mt-5 rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 px-4 py-4">
-              <div className="flex items-center justify-between gap-3 text-[12px] font-semibold text-slate-500">
-                <span>Progress snapshot</span>
-                <span>
-                  {primaryCard.progressCurrent} of {primaryCard.progressTotal}
-                </span>
-              </div>
-              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                <span
-                  className="block h-full rounded-full bg-slate-900 transition-all"
-                  style={{
-                    width: `${Math.max(
-                      8,
-                      Math.min(
-                        100,
-                        Math.round(
-                          (primaryCard.progressCurrent / primaryCard.progressTotal) * 100
-                        )
-                      )
-                    )}%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="mt-5">
-              <button
-                type="button"
-                onClick={primaryCard.onClick}
-                className="sv-btn-primary"
-              >
-                {primaryCard.cta}
-              </button>
-            </div>
-          </section>
-
-          <aside className="rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-slate-50 p-5">
-            <p className="sv-eyebrow">Quick checks</p>
-            <div className="mt-4 space-y-3">
-              {quickChecks.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={item.onClick}
-                  className="w-full rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-slate-300 hover:shadow-sm"
-                >
-                  <p className="text-sm font-semibold text-slate-950">{item.label}</p>
-                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                    {item.value}
-                  </p>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">{item.note}</p>
-                </button>
-              ))}
-            </div>
-          </aside>
-        </section>
 
         <section className="sv-animate-rise sv-delay-3">
           <div className="sv-divider" />
