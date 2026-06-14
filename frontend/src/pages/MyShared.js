@@ -51,7 +51,7 @@ import {
   cardSubheading,
   container,
   containerMobile,
-  credentialEditPanel,
+
   dangerButton,
   descriptionText,
   detailEyebrow,
@@ -1401,50 +1401,7 @@ export default function MyShared() {
                     </label>
                   </div>
 
-                  {group.mode === "sharing" ? (
-                    <div style={credentialEditPanel}>
-                      <div style={editPanelHeader}>
-                        <h4 style={{ margin: 0 }}>Member access credentials</h4>
-                        <p style={subtleText}>
-                          Add new values here only when credentials change. If you leave all three fields blank, existing credentials stay unchanged.
-                        </p>
-                      </div>
 
-                      <div style={formGrid}>
-                        <label style={field}>
-                          <span style={fieldLabel}>Login email or username</span>
-                          <input
-                            type="text"
-                            name="access_identifier"
-                            value={editForm.access_identifier}
-                            onChange={handleEditChange}
-                            style={input(false)}
-                          />
-                        </label>
-
-                        <label style={field}>
-                          <span style={fieldLabel}>Password</span>
-                          <input
-                            type="text"
-                            name="access_password"
-                            value={editForm.access_password}
-                            onChange={handleEditChange}
-                            style={input(false)}
-                          />
-                        </label>
-
-                        <label style={{ ...field, gridColumn: "1 / -1" }}>
-                          <span style={fieldLabel}>Access notes</span>
-                          <textarea
-                            name="access_notes"
-                            value={editForm.access_notes}
-                            onChange={handleEditChange}
-                            style={textarea}
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  ) : null}
 
                   {hasMembers ? (
                     <p style={lockedNote}>
