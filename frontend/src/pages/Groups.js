@@ -120,20 +120,28 @@ function getPlanCategory(name) {
 function getPlanMeta(name) {
   const category = getPlanCategory(name);
 
-  if (category === "subscriptions") {
-    return { badge: "TV", label: "Subscription", toneClass: "is-streaming", category };
+  if (category === "Streaming") {
+    return { badge: "TV", label: "Streaming", toneClass: "is-streaming", category };
   }
 
-  if (category === "courses") {
-    return { badge: "EDU", label: "Course", toneClass: "is-learning", category };
+  if (category === "Education") {
+    return { badge: "EDU", label: "Education", toneClass: "is-learning", category };
   }
 
-  if (category === "software") {
-    return { badge: "APP", label: "Software", toneClass: "is-software", category };
+  if (category === "AI Tools") {
+    return { badge: "AI", label: "AI Tools", toneClass: "is-software", category };
   }
 
-  if (category === "memberships") {
-    return { badge: "VIP", label: "Membership", toneClass: "is-membership", category };
+  if (category === "Productivity") {
+    return { badge: "PRO", label: "Productivity", toneClass: "is-software", category };
+  }
+  
+  if (category === "Gaming") {
+    return { badge: "GAM", label: "Gaming", toneClass: "is-streaming", category };
+  }
+  
+  if (category === "Music") {
+    return { badge: "MUS", label: "Music", toneClass: "is-streaming", category };
   }
 
   return { badge: "SV", label: "Digital plan", toneClass: "is-default", category };
@@ -541,12 +549,12 @@ export default function Groups() {
             <div className="flex items-center gap-2 sm:gap-3 min-w-max">
               <button
                 type="button"
-                onClick={() => setFilter("all")}
+                onClick={() => setCategoryFilter("all")}
                 className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
-                  filter === "all" ? "bg-[#004b3b] text-white shadow-md" : "bg-white text-slate-700 shadow-sm hover:bg-slate-50 border border-slate-200/60"
+                  categoryFilter === "all" ? "bg-[#004b3b] text-white shadow-md" : "bg-white text-slate-700 shadow-sm hover:bg-slate-50 border border-slate-200/60"
                 }`}
               >
-                {filter === "all" ? <SparkIcon className="h-4 w-4" /> : null} All
+                {categoryFilter === "all" ? <SparkIcon className="h-4 w-4" /> : null} All
               </button>
               
               {[
@@ -560,9 +568,9 @@ export default function Groups() {
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => setFilter(cat.id)}
+                  onClick={() => setCategoryFilter(cat.id)}
                   className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all ${
-                    filter === cat.id ? "bg-[#004b3b] text-white shadow-md" : "bg-white text-slate-700 shadow-sm hover:bg-slate-50 border border-slate-200/60"
+                    categoryFilter === cat.id ? "bg-[#004b3b] text-white shadow-md" : "bg-white text-slate-700 shadow-sm hover:bg-slate-50 border border-slate-200/60"
                   }`}
                 >
                   <cat.icon className="h-4 w-4" />
