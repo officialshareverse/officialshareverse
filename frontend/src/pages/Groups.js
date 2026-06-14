@@ -18,7 +18,8 @@ import {
   AcademicCapIcon,
   GridIcon,
   MusicIcon,
-  ControllerIcon
+  ControllerIcon,
+  UserIcon
 } from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
 
@@ -159,6 +160,26 @@ function formatCurrency(value) {
   return `Rs ${Number(value || 0).toFixed(2)}`;
 }
 
+function getCoverGradient(name) {
+  const normalized = String(name || "").toLowerCase();
+  if (normalized.includes("netflix") || normalized.includes("youtube") || normalized.includes("hotstar") || normalized.includes("nintendo")) {
+    return "bg-gradient-to-br from-red-500 to-rose-900";
+  }
+  if (normalized.includes("spotify") || normalized.includes("xbox")) {
+    return "bg-gradient-to-br from-emerald-400 to-emerald-900";
+  }
+  if (normalized.includes("disney") || normalized.includes("prime") || normalized.includes("canva") || normalized.includes("playstation")) {
+    return "bg-gradient-to-br from-blue-500 to-indigo-900";
+  }
+  if (normalized.includes("chatgpt") || normalized.includes("claude") || normalized.includes("midjourney") || normalized.includes("ai")) {
+    return "bg-gradient-to-br from-purple-500 to-purple-900";
+  }
+  if (normalized.includes("notion") || normalized.includes("github")) {
+    return "bg-gradient-to-br from-slate-700 to-slate-900";
+  }
+  return "bg-gradient-to-br from-slate-800 to-slate-900";
+}
+
 function formatRelativeTime(value) {
   if (!value) {
     return "Updated recently";
@@ -287,7 +308,6 @@ export default function Groups() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [pendingJoinGroup, setPendingJoinGroup] = useState(null);
-  const [expandedMobileCardId, setExpandedMobileCardId] = useState(null);
   const toast = useToast();
   const fetchGroupsRef = useRef(null);
 
@@ -600,6 +620,48 @@ export default function Groups() {
           </div>
         </section>
 
+        {/* STATS ROW */}
+        <section className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8 relative overflow-hidden">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 divide-x-0 lg:divide-x divide-slate-100">
+             <div className="flex items-center gap-4 lg:px-4">
+                <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                  <UserIcon className="h-6 w-6" />
+                </div>
+                <div>
+                   <p className="text-xl sm:text-2xl font-bold text-slate-900">1,245</p>
+                   <p className="text-[11px] sm:text-xs font-medium text-slate-500">Active Groups</p>
+                </div>
+             </div>
+             <div className="flex items-center gap-4 lg:px-4">
+                <div className="h-12 w-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
+                  <GridIcon className="h-6 w-6" />
+                </div>
+                <div>
+                   <p className="text-xl sm:text-2xl font-bold text-slate-900">18</p>
+                   <p className="text-[11px] sm:text-xs font-medium text-slate-500">Services</p>
+                </div>
+             </div>
+             <div className="flex items-center gap-4 lg:px-4">
+                <div className="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
+                  <UserIcon className="h-6 w-6" />
+                </div>
+                <div>
+                   <p className="text-xl sm:text-2xl font-bold text-slate-900">4,200</p>
+                   <p className="text-[11px] sm:text-xs font-medium text-slate-500">Members</p>
+                </div>
+             </div>
+             <div className="flex items-center gap-4 lg:px-4">
+                <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                  <span className="font-bold text-lg">₹</span>
+                </div>
+                <div>
+                   <p className="text-xl sm:text-2xl font-bold text-slate-900">18L+</p>
+                   <p className="text-[11px] sm:text-xs font-medium text-slate-500">Total Saved</p>
+                </div>
+             </div>
+          </div>
+        </section>
+
         {loading ? (
           <section className="grid gap-4 xl:gap-5">
             {Array.from({ length: 5 }).map((_, index) => (
@@ -665,194 +727,59 @@ export default function Groups() {
             </div>
           </div>
         ) : (
-          <section className="sv-group-grid">
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredGroups.map((group, index) => {
               const filledSlots = Number(group.filled_slots || 0);
               const totalSlots = Math.max(Number(group.total_slots || 1), 1);
               const remainingSlots = Math.max(Number(group.remaining_slots ?? totalSlots - filledSlots) || 0, 0);
               const isFull = filledSlots >= totalSlots;
               const isHot = !isFull && remainingSlots <= 1;
-              const tone = getCardTone(group.mode);
-              const statusTone = getStatusTone(group.status);
               const planMeta = getPlanMeta(group.subscription_name || group.subscription);
-              const progress = Math.min(100, Number(group.progress_percent || Math.round((filledSlots / totalSlots) * 100)));
-              const activityLabel = formatRelativeTime(group.created_at);
               const hostDisplayName = formatHostDisplayName(group.owner_name);
-              const hostReputation = getMockReputation(group.owner_name);
-              const timelineLabel =
-                group.mode === "group_buy"
-                  ? formatDate(group.purchase_deadline_at)
-                    ? `Purchase target ${formatDate(group.purchase_deadline_at)}`
-                    : formatDate(group.auto_refund_at)
-                      ? `Auto refund ${formatDate(group.auto_refund_at)}`
-                      : activityLabel
-                  : formatDate(group.end_date)
-                    ? `Runs through ${formatDate(group.end_date)}`
-                    : activityLabel;
-              const isMobileExpanded = expandedMobileCardId === group.id;
 
               return (
                 <article
                   key={group.id}
-                  className={`sv-group-card ${tone.key} ${isMobileExpanded ? "is-mobile-open" : ""} ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
+                  className={`relative overflow-hidden rounded-[24px] bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
                 >
-                  <div className="sv-group-card-shell !p-3 sm:!p-4 !gap-4">
-                    <div className={`sv-group-icon ${planMeta.toneClass}`}>
-                      <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full" />
+                  <div className={`h-28 w-full relative ${getCoverGradient(group.subscription_name || group.subscription)}`}>
+                    <div className="absolute top-3 left-3 bg-white/20 backdrop-blur-md rounded-full px-2.5 py-1 text-[10px] font-bold text-white uppercase tracking-wider">
+                      {isHot ? "Trending" : "Popular"}
                     </div>
+                  </div>
+                  
+                  <div className="absolute top-20 left-5 h-14 w-14 rounded-2xl bg-white p-1 shadow-sm border-2 border-white z-10 flex items-center justify-center overflow-hidden">
+                    <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full rounded-xl" />
+                  </div>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="min-w-0">
-                          <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-[11px]">
-                            {planMeta.label}
-                          </p>
-                          <h3 className="mt-1 truncate text-base font-bold leading-tight text-slate-950 sm:mt-1.5 sm:text-2xl">
-                            {group.subscription_name || group.subscription}
-                          </h3>
-                        </div>
-
-                        <div className="sv-group-badge-row">
-                          <span className={`sv-group-mode-pill ${tone.modeClass}`}>{group.mode_label}</span>
-                          <span className={`sv-group-status-pill ${statusTone.className}`}>
-                            <span className={`sv-group-status-dot ${statusTone.dotClass}`} />
-                            {group.status_label}
-                          </span>
-                          {isHot ? (
-                            <span className="sv-group-urgency-pill">
-                              <SparkIcon className="h-3.5 w-3.5" />
-                              1 slot left
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      <div className="sv-group-mobile-summary">
-                        <div className="sv-group-mobile-summary-item">
-                          <span className="sv-group-mobile-summary-label">
-                            {group.is_prorated ? "Pay now" : "Join price"}
-                          </span>
-                          <span className="sv-group-mobile-summary-value">{formatCurrency(group.join_price)}</span>
-                        </div>
-                        <div className="sv-group-mobile-summary-item">
-                          <span className="sv-group-mobile-summary-label">Slots left</span>
-                          <span className="sv-group-mobile-summary-value">{remainingSlots}</span>
-                        </div>
-                        {!isMobile ? (
-                          <div className="sv-group-mobile-summary-item">
-                            <span className="sv-group-mobile-summary-label">Filled</span>
-                            <span className="sv-group-mobile-summary-value">{progress}%</span>
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <div className="sv-group-owner-row">
-                        <div className="flex w-full items-start justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <span className="sv-group-owner-avatar">{getInitials(hostDisplayName)}</span>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-950">
-                                Hosted by {hostDisplayName}
-                              </p>
-                              <p className="mt-0.5 text-[12px] font-semibold text-amber-600 sm:text-[13px]">
-                                ★ {hostReputation.rating} • {hostReputation.hostedCount} groups hosted
-                              </p>
-                              <p className="mt-0.5 text-[12px] text-slate-500 sm:text-[13px]">{timelineLabel}</p>
-                            </div>
-                          </div>
-                          <span className="sv-group-activity-pill mt-1 shrink-0">
-                            {group.unread_chat_count > 0
-                              ? `${group.unread_chat_count} unread`
-                              : activityLabel}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="sv-group-metric-grid">
-                        <MetricTile
-                          label={group.is_prorated ? "Pay now" : "Join price"}
-                          value={formatCurrency(group.join_price)}
-                        />
-                        <MetricTile
-                          label="Plan contribution"
-                          value={formatCurrency(group.join_subtotal || group.price_per_slot)}
-                        />
-                        <MetricTile label="Slots filled" value={`${filledSlots}/${totalSlots}`} />
-                        <MetricTile
-                          label={group.mode === "group_buy" ? "Remaining slots" : "Paid members"}
-                          value={group.mode === "group_buy" ? `${remainingSlots}` : `${group.paid_members || 0}`}
-                        />
-                      </div>
-
-                      <div className="sv-group-progress-section mt-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 sm:text-xs">
-                            Group fill
-                          </p>
-                          <span className="sv-group-progress-value">{progress}%</span>
-                        </div>
-                        <div className="sv-group-progress-track">
-                          <span
-                            className={`sv-group-progress-fill ${tone.progressClass} ${progress >= 80 ? "is-hot" : ""}`}
-                            style={{ "--sv-progress": `${progress}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="sv-group-footer">
-                        <div className="min-w-0 sv-group-footer-copy">
-                          <div className="mb-2 flex flex-wrap gap-2">
-                            {Number(group.platform_fee_amount || 0) > 0 ? (
-                              <span className="sv-group-inline-note">
-                                Includes 5% platform fee: {formatCurrency(group.platform_fee_amount)}
-                              </span>
-                            ) : null}
-                            {group.is_prorated ? (
-                              <span className="sv-group-inline-note sv-group-inline-note-success">
-                                If you join mid-month, you only pay for the remaining days
-                              </span>
-                            ) : null}
-                          </div>
-                          <p className="sv-group-next-action">{group.next_action}</p>
-                        </div>
-
-                        <div className="sv-group-footer-actions">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setExpandedMobileCardId((current) => (current === group.id ? null : group.id))
-                            }
-                            className="sv-group-mobile-toggle"
-                            aria-expanded={isMobileExpanded}
-                          >
-                            <span>{isMobileExpanded ? "Hide details" : "Details"}</span>
-                            <span className={`sv-group-mobile-chevron ${isMobileExpanded ? "is-open" : ""}`} aria-hidden="true">
-                              ▾
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setPendingJoinGroup(group)}
-                            disabled={isFull || joiningId === group.id}
-                            className={`sv-group-join-button ${isFull ? "is-disabled" : tone.buttonClass}`}
-                          >
-                            {joiningId === group.id ? (
-                              <>
-                                <LoadingSpinner />
-                                Joining...
-                              </>
-                            ) : isFull ? (
-                              "Group full"
-                            ) : (
-                              <>
-                                <SparkIcon className="h-4 w-4" />
-                                {group.join_cta}
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
+                  <div className="pt-10 px-5 pb-5 flex flex-col h-[calc(100%-7rem)]">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-base font-bold text-slate-900 truncate">{group.subscription_name || group.subscription}</h3>
+                      <CheckCircleIcon className="h-4 w-4 text-emerald-500 shrink-0" />
+                    </div>
+                    <p className="text-xs font-medium text-slate-500 mt-0.5">{planMeta.category}</p>
+                    
+                    <p className="mt-4 text-sm font-bold text-slate-900">
+                      ₹{Number(group.join_price).toFixed(0)} <span className="text-slate-500 font-medium text-xs">/month</span>
+                    </p>
+                    
+                    <div className="mt-4 flex items-center gap-1.5 border-t border-slate-100 pt-4">
+                      <UserIcon className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <p className="text-xs text-slate-600 truncate">Host: {hostDisplayName}</p>
+                      <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    </div>
+                    
+                    <div className="mt-auto pt-5 flex items-center justify-between gap-3">
+                      <span className="rounded-md bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 whitespace-nowrap">
+                        {remainingSlots} slots left
+                      </span>
+                      <button
+                        onClick={() => setPendingJoinGroup(group)}
+                        disabled={isFull || joiningId === group.id}
+                        className={`rounded-full px-4 py-2 text-xs font-bold text-white transition-colors whitespace-nowrap ${isFull ? "bg-slate-300" : "bg-[#004b3b] hover:bg-[#003b2b]"}`}
+                      >
+                        {joiningId === group.id ? "Joining..." : isFull ? "Full" : "Join Now"}
+                      </button>
                     </div>
                   </div>
                 </article>
@@ -1080,8 +1007,6 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
     </div>
   );
 }
-
-
 
 function MetricTile({ label, value }) {
   return (
