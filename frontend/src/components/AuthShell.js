@@ -148,17 +148,19 @@ export default function AuthShell({
             }`}
           >
             <div className={`w-full ${panelWidthClass}`}>
-              <div className="sv-auth-mobile-banner lg:hidden">
-                <div className="sv-auth-mobile-scroll">
-                  {valueProps.map((item) => (
-                    <article key={item.title} className="sv-auth-mobile-chip">
-                      <span className="sv-auth-value-badge">{item.badge}</span>
-                      <strong>{item.title}</strong>
-                      <small>{item.description}</small>
-                    </article>
-                  ))}
+              {!compact ? (
+                <div className="sv-auth-mobile-banner lg:hidden">
+                  <div className="sv-auth-mobile-scroll">
+                    {valueProps.map((item) => (
+                      <article key={item.title} className="sv-auth-mobile-chip">
+                        <span className="sv-auth-value-badge">{item.badge}</span>
+                        <strong>{item.title}</strong>
+                        <small>{item.description}</small>
+                      </article>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : null}
 
               <div className={`mb-3 flex items-center justify-between gap-3 ${compact ? "" : "lg:hidden"}`}>
                 <Link to="/" className="inline-flex items-center gap-2 rounded-2xl border border-white/70 bg-white/80 px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur">

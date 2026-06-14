@@ -298,6 +298,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
       subtitle="Log in to manage your group activity, join active digital plans, or complete a buy-together group."
       themeMode={themeMode}
       toggleTheme={toggleTheme}
+      compact
       footer={
         <div className="space-y-2.5">
           <p className="text-[13px] text-slate-600 sm:text-sm">
