@@ -647,7 +647,7 @@ export default function Groups() {
                   key={group.id}
                   className={`sv-group-card ${tone.key} ${isMobileExpanded ? "is-mobile-open" : ""} ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
                 >
-                  <div className="sv-group-card-shell">
+                  <div className="sv-group-card-shell !p-3 sm:!p-4 !gap-4">
                     <div className={`sv-group-icon ${planMeta.toneClass}`}>
                       <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full" />
                     </div>
@@ -661,9 +661,6 @@ export default function Groups() {
                           <h3 className="mt-1 truncate text-base font-bold leading-tight text-slate-950 sm:mt-1.5 sm:text-2xl">
                             {group.subscription_name || group.subscription}
                           </h3>
-                          <p className="sv-group-card-description mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
-                            {group.mode_description}
-                          </p>
                         </div>
 
                         <div className="sv-group-badge-row">
