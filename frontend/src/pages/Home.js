@@ -519,7 +519,7 @@ export default function Home() {
                   onClick={() => navigate("/create")}
                   className="col-span-2 sm:col-span-1 inline-flex justify-center items-center gap-2 rounded-full bg-slate-900 dark:bg-white px-6 py-3.5 text-[13px] sm:text-sm font-semibold text-white dark:text-slate-900 shadow-md transition-all hover:scale-105 hover:bg-slate-800 dark:hover:bg-slate-100 hover:shadow-lg active:scale-95"
                 >
-                  <PlusIcon className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
+                  <PlusIcon className="h-5 w-5 sm:h-5 sm:w-5" />
                   Create Split
                 </button>
                 <button
