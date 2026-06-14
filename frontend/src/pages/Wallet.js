@@ -26,23 +26,7 @@ const ACTION_TABS = [
   { id: "payout", label: "Payout Method" },
   { id: "withdraw", label: "Withdraw" },
 ];
-const ACTION_TAB_META = {
-  topup: {
-    summary: "Add money with Razorpay in a few taps.",
-    drawerDescription: "Use UPI, cards, or netbanking, then come back with balance ready to join groups.",
-    icon: CreditIcon,
-  },
-  payout: {
-    summary: "Save your bank account or UPI destination.",
-    drawerDescription: "Keep one payout destination ready so withdrawals do not need setup every time.",
-    icon: BankIcon,
-  },
-  withdraw: {
-    summary: "Move wallet money back out when you need it.",
-    drawerDescription: "Request a withdrawal to your saved destination with the same wallet balance and status controls.",
-    icon: DebitIcon,
-  },
-};
+
 let razorpayLoaderPromise;
 
 function loadRazorpayCheckout() {
