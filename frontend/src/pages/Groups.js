@@ -79,7 +79,8 @@ function getPlanCategory(name) {
     normalized.includes("duolingo") ||
     normalized.includes("course") ||
     normalized.includes("academy") ||
-    normalized.includes("learn")
+    normalized.includes("learn") ||
+    normalized.includes("college")
   ) {
     return "Education";
   }
