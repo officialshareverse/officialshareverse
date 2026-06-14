@@ -179,13 +179,13 @@ function ModeCard({ active, title, description, badgeTone, badge, onClick, steps
         </div>
         <span className="sv-create-mode-badge">{badge}</span>
       </div>
-      <h3 className="mt-4 text-xl font-semibold">{title}</h3>
-      <p className={`mt-3 text-sm leading-7 ${active ? "text-slate-100" : "text-slate-600"}`}>{description}</p>
-      <div className="mt-4 space-y-2">
+      <h3 className="mt-2 sm:mt-4 text-lg sm:text-xl font-semibold text-left">{title}</h3>
+      <p className={`mt-1 sm:mt-3 text-xs sm:text-sm leading-5 sm:leading-7 text-left ${active ? "text-slate-100" : "text-slate-600"}`}>{description}</p>
+      <div className="hidden sm:block mt-4 space-y-2">
         {steps.map((item) => (
           <div key={item} className={`sv-create-mode-bullet ${active ? "is-active" : ""}`}>
             <span className="sv-create-mode-dot" />
-            <span>{item}</span>
+            <span className="text-left text-sm">{item}</span>
           </div>
         ))}
       </div>
@@ -461,7 +461,7 @@ export default function CreateGroup() {
               </div>
             ) : null}
 
-            <div className="sv-create-mobile-summary mt-5">
+            <div className="sv-create-mobile-summary hidden mt-5">
               <div className="sv-create-mobile-summary-item">
                 <span className="sv-create-mobile-summary-label">Mode</span>
                 <span className="sv-create-mobile-summary-value">{modeConfig.eyebrow}</span>
