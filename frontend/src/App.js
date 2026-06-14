@@ -150,12 +150,13 @@ function App() {
 
   useEffect(() => {
     document.body.classList.toggle("sv-dark", themeMode === "dark");
+    document.body.classList.toggle("dark", themeMode === "dark");
     document.body.classList.toggle("sv-light", themeMode === "light");
     document.documentElement.style.colorScheme = themeMode;
     window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
 
     return () => {
-      document.body.classList.remove("sv-dark", "sv-light");
+      document.body.classList.remove("sv-dark", "sv-light", "dark");
     };
   }, [themeMode]);
 
