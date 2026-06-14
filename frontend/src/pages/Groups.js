@@ -626,7 +626,7 @@ export default function Groups() {
             </p>
 
             <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {(categoryChips.length > 0 ? categoryChips : ["Digital plan", "Learning", "Software", "Membership"]).map(
+              {["Streaming", "Education", "AI Tools", "Productivity", "Music", "Gaming"].map(
                 (item) => (
                   <span key={item} className="sv-group-empty-chip">
                     {item}
