@@ -477,7 +477,7 @@ export default function Groups() {
 
       <div className="sv-container space-y-4 sm:space-y-6">
         {/* HERO BANNER */}
-        <section className="relative rounded-2xl sm:rounded-[28px] mb-8 mt-4 -mx-4 sm:mx-0 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-8 px-6 py-6 sm:px-10 lg:py-8 shadow-sm border border-white/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl sv-animate-rise z-30 overflow-hidden">
+        <section className="relative rounded-2xl sm:rounded-4xl mb-8 mt-4 -mx-4 sm:mx-0 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-8 px-6 py-6 sm:px-10 lg:py-8 shadow-sm sv-glass-panel sv-animate-rise z-30 overflow-hidden">
           <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-100 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 opacity-50 blur-3xl pointer-events-none"></div>
           
           <div className="relative z-10 shrink-0 text-left w-full lg:w-auto xl:pl-2">
@@ -659,7 +659,7 @@ export default function Groups() {
               return (
                 <article
                   key={group.id}
-                  className={`relative overflow-hidden rounded-[24px] bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
+                  className={`relative overflow-hidden rounded-3xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
                 >
                   <div className={`h-28 w-full relative ${getCoverGradient(group.subscription_name || group.subscription)}`}>
                     <div className="absolute top-3 left-3 bg-white/20 backdrop-blur-md rounded-full px-2.5 py-1 text-[10px] font-bold text-white uppercase tracking-wider">

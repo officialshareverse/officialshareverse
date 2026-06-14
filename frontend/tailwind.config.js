@@ -9,6 +9,9 @@ module.exports = {
           DEFAULT: "#004b3b",
           light: "#34d399",
         }
+      },
+      borderRadius: {
+        '4xl': '32px',
       }
     },
   },

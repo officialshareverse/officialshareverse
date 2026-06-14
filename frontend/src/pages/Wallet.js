@@ -1045,7 +1045,7 @@ export default function Wallet() {
         />
 
         <section className="grid gap-4 sm:gap-6">
-          <div className="relative overflow-hidden rounded-[32px] border border-white/60 bg-white/60 p-8 shadow-sm backdrop-blur-2xl sm:p-12 sv-animate-rise">
+          <div className="relative overflow-hidden rounded-4xl sv-glass-panel p-8 shadow-sm sm:p-12 sv-animate-rise">
             <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-100 to-purple-50 opacity-50 blur-3xl"></div>
             <div className="relative z-[1]">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

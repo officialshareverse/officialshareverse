@@ -495,7 +495,7 @@ export default function Home() {
       ) : (
         <div className="mx-auto max-w-5xl space-y-12 sm:space-y-16 px-4 py-8 sm:px-6 lg:px-8">
           {/* HERO SECTION */}
-          <section className="relative overflow-hidden rounded-[32px] border border-white/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/60 p-8 shadow-sm backdrop-blur-2xl sm:p-12 sv-animate-rise">
+          <section className="relative overflow-hidden rounded-4xl sv-glass-panel p-8 shadow-sm sm:p-12 sv-animate-rise">
             <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-100 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 opacity-50 blur-3xl"></div>
             
             <div className="relative z-10 flex flex-col gap-6">
@@ -569,7 +569,7 @@ export default function Home() {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center rounded-[32px] border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center">
+              <div className="flex flex-col items-center justify-center rounded-4xl border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center">
                 <CompassIcon className="h-12 w-12 text-slate-400" />
                 <h3 className="mt-4 text-lg font-bold text-slate-900">No splits are visible yet</h3>
                 <p className="mt-2 max-w-sm text-sm text-slate-500">
