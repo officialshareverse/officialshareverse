@@ -495,20 +495,20 @@ export default function Home() {
       ) : (
         <div className="mx-auto max-w-5xl space-y-12 sm:space-y-16 px-4 py-8 sm:px-6 lg:px-8">
           {/* HERO SECTION */}
-          <section className="relative overflow-hidden rounded-[32px] border border-white/60 bg-white/60 p-8 shadow-sm backdrop-blur-2xl sm:p-12 sv-animate-rise">
-            <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-100 to-teal-50 opacity-50 blur-3xl"></div>
+          <section className="relative overflow-hidden rounded-[32px] border border-white/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/60 p-8 shadow-sm backdrop-blur-2xl sm:p-12 sv-animate-rise">
+            <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-100 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 opacity-50 blur-3xl"></div>
             
             <div className="relative z-10 flex flex-col gap-6">
               <BrandMark sizeClass="h-12 w-12 sm:h-14 sm:w-14" roundedClass="rounded-2xl shadow-sm" />
               
               <div>
-                <p className="text-sm font-semibold uppercase tracking-widest text-emerald-600">
+                <p className="text-sm font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
                   {greetingMeta.text}
                 </p>
-                <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+                <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
                   {currentUserFirstName}.
                 </h1>
-                <p className="mt-4 max-w-xl text-lg leading-relaxed text-slate-600">
+                <p className="mt-4 max-w-xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">
                   Manage your shared subscriptions, track wallet balances, and explore new groups—all from your command center.
                 </p>
               </div>
@@ -517,15 +517,15 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => navigate("/create")}
-                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:scale-105 hover:bg-slate-800 hover:shadow-lg active:scale-95"
+                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 dark:bg-white px-6 py-3.5 text-sm font-semibold text-white dark:text-slate-900 shadow-md transition-all hover:scale-105 hover:bg-slate-800 dark:hover:bg-slate-100 hover:shadow-lg active:scale-95"
                 >
                   <PlusIcon className="h-5 w-5" />
                   Create Split
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate("/my-shared")}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-6 py-3.5 text-sm font-semibold text-slate-700 backdrop-blur-md transition-all hover:scale-105 hover:bg-white hover:shadow-sm active:scale-95"
+                  onClick={() => navigate("/splits")}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 px-6 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-200 backdrop-blur-md transition-all hover:scale-105 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm active:scale-95"
                 >
                   <LayersIcon className="h-5 w-5" />
                   My Splits
@@ -533,7 +533,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => navigate("/wallet")}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-6 py-3.5 text-sm font-semibold text-slate-700 backdrop-blur-md transition-all hover:scale-105 hover:bg-white hover:shadow-sm active:scale-95"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 px-6 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-200 backdrop-blur-md transition-all hover:scale-105 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm active:scale-95"
                 >
                   <WalletIcon className="h-5 w-5" />
                   Wallet
