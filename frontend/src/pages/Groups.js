@@ -478,7 +478,7 @@ export default function Groups() {
       <div className="sv-container space-y-4 sm:space-y-6">
         {/* HERO BANNER */}
         <section className="relative rounded-2xl sm:rounded-4xl mb-6 sm:mb-8 mt-4 -mx-4 sm:mx-0 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-6 lg:gap-8 px-5 py-5 sm:px-10 lg:py-8 shadow-sm sv-glass-panel sv-animate-rise z-30 overflow-hidden">
-          <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-100 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 opacity-50 blur-3xl pointer-events-none"></div>
+          <div className="absolute inset-0 sm:inset-auto sm:right-0 sm:top-0 sm:-mr-16 sm:-mt-16 h-full w-full sm:h-64 sm:w-64 rounded-none sm:rounded-full bg-gradient-to-br from-emerald-100 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 opacity-60 sm:opacity-50 blur-3xl pointer-events-none"></div>
           
           <div className="relative z-10 shrink-0 text-left w-full lg:w-auto xl:pl-2">
             <h1 className="text-[26px] leading-[1.2] sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-[2.2rem] sm:leading-[1.15]">

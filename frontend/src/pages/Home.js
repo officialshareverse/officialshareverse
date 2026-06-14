@@ -496,7 +496,7 @@ export default function Home() {
         <div className="mx-auto max-w-5xl space-y-12 sm:space-y-16 px-4 py-8 sm:px-6 lg:px-8">
           {/* HERO SECTION */}
           <section className="relative overflow-hidden rounded-2xl sm:rounded-4xl sv-glass-panel p-5 sm:p-12 shadow-sm sv-animate-rise">
-            <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-100 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 opacity-50 blur-3xl pointer-events-none"></div>
+            <div className="absolute inset-0 sm:inset-auto sm:right-0 sm:top-0 sm:-mr-16 sm:-mt-16 h-full w-full sm:h-64 sm:w-64 rounded-none sm:rounded-full bg-gradient-to-br from-emerald-100 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 opacity-60 sm:opacity-50 blur-3xl pointer-events-none"></div>
             
             <div className="relative z-10 flex flex-col gap-5 sm:gap-6">
               <BrandMark sizeClass="h-10 w-10 sm:h-14 sm:w-14" roundedClass="rounded-xl sm:rounded-2xl shadow-sm" />
