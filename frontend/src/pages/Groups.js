@@ -461,7 +461,7 @@ export default function Groups() {
     : null;
 
   return (
-    <div className="sv-page">
+    <div className="sv-page pb-24 sm:pb-8">
       {pendingJoinGroup && typeof document !== "undefined"
         ? createPortal(
             <JoinConfirmModal
@@ -477,21 +477,21 @@ export default function Groups() {
 
       <div className="sv-container space-y-4 sm:space-y-6">
         {/* HERO BANNER */}
-        <section className="relative rounded-2xl sm:rounded-4xl mb-8 mt-4 -mx-4 sm:mx-0 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-8 px-6 py-6 sm:px-10 lg:py-8 shadow-sm sv-glass-panel sv-animate-rise z-30 overflow-hidden">
+        <section className="relative rounded-2xl sm:rounded-4xl mb-6 sm:mb-8 mt-4 -mx-4 sm:mx-0 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-6 lg:gap-8 px-5 py-5 sm:px-10 lg:py-8 shadow-sm sv-glass-panel sv-animate-rise z-30 overflow-hidden">
           <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-100 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 opacity-50 blur-3xl pointer-events-none"></div>
           
           <div className="relative z-10 shrink-0 text-left w-full lg:w-auto xl:pl-2">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-[2.2rem] sm:leading-[1.15]">
+            <h1 className="text-[26px] leading-[1.2] sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-[2.2rem] sm:leading-[1.15]">
               Find your next <br className="hidden lg:block" />
-              <span className="text-emerald-600 dark:text-emerald-400 ml-1.5 lg:ml-0">subscription.</span>
+              <span className="text-emerald-600 dark:text-emerald-400 ml-1 lg:ml-0">subscription.</span>
             </h1>
-            <p className="mt-2.5 text-[13px] sm:text-sm font-medium text-slate-600 dark:text-slate-300">
+            <p className="mt-2 text-[13px] sm:text-sm font-medium text-slate-600 dark:text-slate-300">
               Join premium services at a fraction of the cost.
             </p>
           </div>
 
-          <div className="relative z-20 w-full max-w-[28rem] xl:max-w-[32rem] flex-1 lg:mx-6 xl:mx-10 mt-2 lg:mt-0">
-            <div className="flex w-full items-center gap-3 rounded-full bg-white px-5 py-3.5 shadow-md focus-within:ring-2 focus-within:ring-brand-light transition-all">
+          <div className="relative z-20 w-full max-w-[28rem] xl:max-w-[32rem] flex-1 lg:mx-6 xl:mx-10 mt-1 sm:mt-2 lg:mt-0">
+            <div className="flex w-full items-center gap-3 rounded-full bg-white px-4 sm:px-5 py-3 sm:py-3.5 shadow-md focus-within:ring-2 focus-within:ring-brand-light transition-all">
               <SearchIcon className="h-5 w-5 text-slate-400 shrink-0" />
               <input
                 type="text"
