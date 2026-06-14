@@ -16,7 +16,6 @@ import {
   LoadingSpinner,
   SearchIcon,
   ShieldIcon,
-  SparkIcon,
   WalletIcon as WalletGlyph,
 } from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
@@ -1048,29 +1047,30 @@ export default function Wallet() {
         />
 
         <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-          <div className="sv-card-solid sv-reveal p-6 sm:p-8">
+          <div className="relative overflow-hidden rounded-[32px] border border-white/60 bg-white/60 p-8 shadow-sm backdrop-blur-2xl sm:p-12 sv-animate-rise">
+            <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-100 to-purple-50 opacity-50 blur-3xl"></div>
             <div className="relative z-[1]">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] font-bold text-slate-500">Wallet</p>
-                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl mt-1">Balance</h1>
+                  <p className="text-[11px] uppercase tracking-[0.18em] font-bold text-indigo-600">Wallet</p>
+                  <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl mt-1">Balance</h1>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-3">
                   <button
                     type="button"
                     onClick={() => focusActionTab("topup")}
-                    className="sv-btn-secondary"
+                    className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:scale-105 hover:bg-slate-800 hover:shadow-lg active:scale-95"
                   >
-                    <CreditIcon className="h-4 w-4" />
+                    <CreditIcon className="h-4.5 w-4.5" />
                     Add money
                   </button>
                   <button
                     type="button"
                     onClick={() => focusActionTab("withdraw")}
-                    className="sv-btn-secondary"
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-6 py-3 text-sm font-semibold text-slate-700 backdrop-blur-md transition-all hover:scale-105 hover:bg-white hover:shadow-sm active:scale-95"
                     aria-label="Open withdrawal action"
                   >
-                    <DebitIcon className="h-4 w-4" />
+                    <DebitIcon className="h-4.5 w-4.5" />
                     Withdraw
                   </button>
                 </div>
@@ -1080,10 +1080,10 @@ export default function Wallet() {
                 <div className="w-full">
                   <p className="text-[11px] uppercase tracking-[0.18em] font-semibold text-slate-500">Balance</p>
                   <div className="mt-2 flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 sm:h-12 sm:w-12">
-                      <WalletGlyph className="h-5 w-5 sm:h-6 sm:w-6" />
+                    <span className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-slate-100/80 text-slate-700 shadow-sm sm:h-14 sm:w-14">
+                      <WalletGlyph className="h-6 w-6 sm:h-7 sm:w-7" />
                     </span>
-                    <h2 className="sv-count-up text-3xl font-black text-slate-900 sm:text-5xl">
+                    <h2 className="sv-count-up text-4xl font-black text-slate-900 sm:text-6xl">
                       <AnimatedValue value={formatCurrency(spendableBalance)} />
                     </h2>
                   </div>
@@ -1091,15 +1091,15 @@ export default function Wallet() {
                     {walletDelta.label}
                   </p>
                   <details className="mt-4">
-                    <summary className="cursor-pointer text-sm font-medium text-slate-700">Cash and bonus details</summary>
-                    <div className="mt-3 flex flex-col gap-2 rounded-lg bg-slate-50 p-4">
+                    <summary className="cursor-pointer text-sm font-medium text-slate-700 hover:text-slate-900">Cash and bonus details</summary>
+                    <div className="mt-3 flex flex-col gap-2 rounded-[20px] bg-white/50 backdrop-blur-sm border border-slate-200/50 p-5 shadow-sm">
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-600">Cash</span>
-                        <strong className="text-slate-900">{formatCurrency(balance)}</strong>
+                        <strong className="text-slate-900 text-base">{formatCurrency(balance)}</strong>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-600">Bonus</span>
-                        <strong className="text-slate-900">{formatCurrency(bonusBalance)}</strong>
+                        <strong className="text-slate-900 text-base">{formatCurrency(bonusBalance)}</strong>
                       </div>
                     </div>
                     <p className="mt-3 text-xs leading-6 text-slate-500">
@@ -1109,8 +1109,8 @@ export default function Wallet() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
-                  {topupConfig ? <span className="sv-chip">Live payments</span> : null}
-                  <span className={`sv-chip ${payoutsLive ? "" : "bg-amber-100 text-amber-800"}`}>
+                  {topupConfig ? <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Live payments</span> : null}
+                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${payoutsLive ? "bg-indigo-100 text-indigo-800" : "bg-amber-100 text-amber-800"}`}>
                     {payoutConfig?.mode_label || (payoutsLive ? "Payouts live" : "Payouts processed within 24 hours")}
                   </span>
                 </div>
@@ -1137,7 +1137,7 @@ export default function Wallet() {
             </div>
           </div>
 
-          <aside className="sv-card sv-reveal sv-wallet-overview">
+          <aside className="rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-sm sv-animate-rise sv-delay-1">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="sv-eyebrow">Add Money</p>
@@ -1269,27 +1269,6 @@ export default function Wallet() {
         </section>
         ) : null}
 
-        <section className="sv-card sv-reveal sv-referral-wallet-card">
-          <div className="sv-referral-wallet-copy">
-            <span className="sv-referral-wallet-icon" aria-hidden="true">
-              <SparkIcon className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="sv-eyebrow">Referrals</p>
-              <h2 className="sv-title mt-2">Manage referrals on a dedicated page</h2>
-              <p className="sv-referral-wallet-subtitle">
-                Open your referral page to copy your code, share the signup link, track rewards, and read the referral terms and bonus-credit rules.
-              </p>
-            </div>
-          </div>
-
-          <div className="sv-referral-wallet-actions">
-            <span className="sv-chip">Referral rewards become join-only bonus credit</span>
-            <button type="button" className="sv-btn-primary" onClick={() => navigate("/referrals")}>
-              Open referrals
-            </button>
-          </div>
-        </section>
 
         <section className="grid gap-4 xl:grid-cols-[0.94fr_1.06fr]">
           <section className="sv-card sv-reveal">
