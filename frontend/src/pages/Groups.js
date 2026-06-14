@@ -624,15 +624,7 @@ export default function Groups() {
               see the plan you want right now.
             </p>
 
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {["Streaming", "Education", "AI Tools", "Productivity", "Music", "Gaming"].map(
-                (item) => (
-                  <span key={item} className="sv-group-empty-chip">
-                    {item}
-                  </span>
-                )
-              )}
-            </div>
+
 
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
               {(searchTerm || filter !== "all" || categoryFilter !== "all") && (
