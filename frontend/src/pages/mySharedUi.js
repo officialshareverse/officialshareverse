@@ -124,7 +124,7 @@ export const pageShell = {
 };
 
 export const containerMobile = {
-  padding: "16px 14px 34px",
+  padding: "16px 8px 34px",
 };
 
 export const pageShellMobile = {
@@ -141,9 +141,9 @@ export const hero = {
 };
 
 export const heroMobile = {
-  borderRadius: "24px",
-  padding: "18px 16px",
-  marginBottom: "18px",
+  borderRadius: "20px",
+  padding: "16px 12px",
+  marginBottom: "16px",
 };
 
 export const eyebrow = {
@@ -301,9 +301,11 @@ export const card = {
 };
 
 export const cardMobile = {
-  padding: "16px",
-  marginBottom: "12px",
-  borderRadius: "22px",
+  padding: "12px",
+  marginBottom: "10px",
+  borderRadius: "18px",
+  border: "none",
+  boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
 };
 
 export const cardHeader = {
@@ -443,13 +445,13 @@ export const actionRow = {
 };
 
 export const actionRowMobile = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
+  display: "flex",
+  flexWrap: "wrap",
   gap: "8px",
 };
 
 export const actionButtonMobile = {
-  width: "100%",
+  flex: "1 1 auto",
 };
 
 export const secondaryButton = {
@@ -603,8 +605,10 @@ export const joinedCard = {
 };
 
 export const joinedCardMobile = {
-  padding: "16px",
-  borderRadius: "22px",
+  padding: "12px",
+  borderRadius: "18px",
+  border: "none",
+  boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
 };
 
 export const ownerCredentialCard = {
