@@ -727,23 +727,7 @@ export default function Home() {
               </div>
             </div>
 
-            <aside className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5">
-              <p className="sv-eyebrow">Overview</p>
-              <div className="mt-4 grid gap-3">
-                <SummaryLine label="Wallet balance" value={formatCurrency(walletBalanceValue)} />
-                <SummaryLine label="Active groups" value={`${activeGroups}`} />
-                <SummaryLine label="Unread updates" value={`${unreadNotifications}`} />
-                <SummaryLine
-                  label="Hosting now"
-                  value={`${Number(ownerSummary.total_groups_created || 0)}`}
-                />
-              </div>
-              <div className="mt-4 rounded-[18px] border border-slate-200 bg-white px-4 py-4 text-sm leading-7 text-slate-700">
-                {activeActionCount > 0
-                  ? `${activeActionCount} action item${activeActionCount === 1 ? "" : "s"} still need your touch.`
-                  : "No urgent item is blocking you right now."}
-              </div>
-            </aside>
+
           </div>
         </section>
 
@@ -1000,14 +984,6 @@ function StatCard({
   );
 }
 
-function SummaryLine({ label, value }) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-[18px] border border-slate-200 bg-white px-4 py-3">
-      <span className="text-sm text-slate-600">{label}</span>
-      <span className="text-sm font-semibold text-slate-950">{value}</span>
-    </div>
-  );
-}
 
 function RecentSplitCard({ group, onClick }) {
   const statusMeta = getRecentSplitStatusMeta(group.status);
