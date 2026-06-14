@@ -251,7 +251,7 @@ export default function CreateGroup() {
   const estimatedTotal = memberCount * amountPerMember;
   const finalStepIndex = WIZARD_STEPS.length - 1;
   const currentStepConfig = WIZARD_STEPS[currentStep];
-  const isSinglePageMobile = isMobile;
+  const isSinglePageMobile = false; // Disabled mobile one-page flow for step-by-step wizard
   const formHeadTitle = isSinglePageMobile ? "Create your split" : currentStepConfig.label;
   const formHeadHelper = isSinglePageMobile
     ? activationPrefill?.template
@@ -417,11 +417,20 @@ export default function CreateGroup() {
           </h1>
         </section>
 
-        <div>
+        <div className="-mx-4 sm:mx-0 px-4 sm:px-0">
           <form
             onSubmit={handleWizardSubmit}
-            className={`sv-card-solid sv-create-wizard ${isSinglePageMobile ? "is-mobile-single" : ""}`}
+            className={`sv-create-wizard pb-24 sm:pb-0 ${isMobile ? "" : "sv-card-solid"}`}
           >
+            {isMobile && (
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex gap-1.5 flex-1">
+                  {WIZARD_STEPS.map((_, idx) => (
+                    <div key={idx} className={`h-1.5 flex-1 rounded-full ${idx <= currentStep ? "bg-brand" : "bg-slate-100"}`} />
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="sv-create-form-head flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="sv-eyebrow">{isSinglePageMobile ? "One-page flow" : "Wizard flow"}</p>
@@ -709,17 +718,17 @@ export default function CreateGroup() {
               ) : null}
             </div>
 
-            <div className="sv-create-nav mt-0 pt-3 border-t border-slate-100">
-              {!isSinglePageMobile && currentStep > 0 ? (
+            <div className="sv-create-nav fixed sm:relative bottom-0 left-0 right-0 z-50 bg-white sm:bg-transparent px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:p-0 sm:mt-0 sm:pt-3 border-t border-slate-100 shadow-[0_-4px_24px_rgba(0,0,0,0.04)] sm:shadow-none flex items-center justify-between">
+              {currentStep > 0 ? (
                 <button type="button" onClick={moveToPreviousStep} className="sv-btn-secondary">
                   Back
                 </button>
               ) : (
                 <div />
               )}
-              <div className="text-center">
+              <div className="text-center hidden sm:block">
                 <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
-                  {isSinglePageMobile ? "Mobile create flow" : `Step ${currentStep + 1} of ${WIZARD_STEPS.length}`}
+                  Step {currentStep + 1} of {WIZARD_STEPS.length}
                 </p>
               </div>
               <button type="submit" disabled={loading} className="sv-btn-primary">
@@ -728,14 +737,14 @@ export default function CreateGroup() {
                     <LoadingSpinner />
                     Creating...
                   </>
-                ) : isSinglePageMobile || currentStep === finalStepIndex ? (
+                ) : currentStep === finalStepIndex ? (
                   <>
                     <SparkIcon className="h-4 w-4" />
-                    {isSharing ? "Create sharing group" : "Create buy-together group"}
+                    {isSharing ? "Publish" : "Publish"}
                   </>
                 ) : (
                   <>
-                    Next step
+                    Next
                     <SparkIcon className="h-4 w-4" />
                   </>
                 )}
