@@ -1045,7 +1045,7 @@ export default function Wallet() {
         />
 
         <section className="grid gap-4 sm:gap-6">
-          <div className="relative overflow-hidden rounded-4xl sv-glass-panel p-8 shadow-sm sm:p-12 sv-animate-rise">
+          <div className="relative overflow-hidden rounded-3xl sm:rounded-4xl sv-glass-panel p-5 sm:p-12 shadow-sm sv-animate-rise">
             <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-100 to-purple-50 opacity-50 blur-3xl"></div>
             <div className="relative z-[1]">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -1053,23 +1053,30 @@ export default function Wallet() {
                   <p className="text-[11px] uppercase tracking-[0.18em] font-bold text-indigo-600">Wallet</p>
                   <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl mt-1">Balance</h1>
                 </div>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap w-full sm:w-auto gap-2 sm:gap-3 mt-4 sm:mt-0">
                   <button
                     type="button"
                     onClick={() => focusActionTab("topup")}
-                    className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:scale-105 hover:bg-slate-800 hover:shadow-lg active:scale-95"
+                    className="flex-1 sm:flex-none inline-flex justify-center items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-full bg-slate-900 px-4 sm:px-6 py-2.5 sm:py-3 text-[13px] sm:text-sm font-semibold text-white shadow-md transition-all hover:scale-105 hover:bg-slate-800 hover:shadow-lg active:scale-95"
                   >
-                    <CreditIcon className="h-4.5 w-4.5" />
-                    Add money
+                    <CreditIcon className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+                    Add
                   </button>
                   <button
                     type="button"
                     onClick={() => focusActionTab("withdraw")}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-6 py-3 text-sm font-semibold text-slate-700 backdrop-blur-md transition-all hover:scale-105 hover:bg-white hover:shadow-sm active:scale-95"
-                    aria-label="Open withdrawal action"
+                    className="flex-1 sm:flex-none inline-flex justify-center items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-full border border-slate-200 bg-white/80 px-4 sm:px-6 py-2.5 sm:py-3 text-[13px] sm:text-sm font-semibold text-slate-700 backdrop-blur-md transition-all hover:scale-105 hover:bg-white hover:shadow-sm active:scale-95"
                   >
-                    <DebitIcon className="h-4.5 w-4.5" />
+                    <DebitIcon className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                     Withdraw
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => focusActionTab("payout")}
+                    className="sm:hidden flex-1 inline-flex justify-center items-center gap-1.5 rounded-xl border border-slate-200 bg-white/80 px-4 py-2.5 text-[13px] font-semibold text-slate-700 backdrop-blur-md transition-all active:scale-95"
+                  >
+                    <BankIcon className="h-4 w-4" />
+                    Setup
                   </button>
                 </div>
               </div>
@@ -1138,43 +1145,7 @@ export default function Wallet() {
 
         </section>
 
-        {isMobile ? (
-          <section className="sv-card sv-reveal sv-wallet-mobile-actions-card">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="sv-eyebrow">Wallet actions</p>
-                <h2 className="sv-title mt-2">Add money or withdraw</h2>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
-                  Use one action at a time so the wallet stays focused.
-                </p>
-              </div>
-              <span className="sv-chip">3 actions</span>
-            </div>
 
-            <div className="sv-wallet-mobile-action-list mt-5">
-              {ACTION_TABS.map((tab) => {
-                const meta = ACTION_TAB_META[tab.id];
-                const Icon = meta.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => focusActionTab(tab.id)}
-                    className={`sv-wallet-mobile-action ${activeTab === tab.id ? "is-active" : ""}`}
-                  >
-                    <span className="sv-wallet-mobile-action-icon">
-                      <Icon className="h-4.5 w-4.5" />
-                    </span>
-                    <span className="sv-wallet-mobile-action-copy">
-                      <strong>{tab.label}</strong>
-                      <span>{meta.summary}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        ) : null}
 
         {!isMobile ? (
         <section id="wallet-actions" className="sv-card sv-reveal">
@@ -1195,7 +1166,7 @@ export default function Wallet() {
 
 
         <section className="grid gap-4 xl:grid-cols-[0.94fr_1.06fr]">
-          <section className="sv-card sv-reveal">
+          <section className={`sv-reveal ${isMobile ? "" : "sv-card"}`}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="sv-eyebrow">Payout Requests</p>
@@ -1270,7 +1241,7 @@ export default function Wallet() {
             </div>
           </section>
 
-          <section className="sv-card sv-reveal">
+          <section className={`sv-reveal ${isMobile ? "" : "sv-card"}`}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="sv-eyebrow">History</p>
