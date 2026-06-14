@@ -478,9 +478,6 @@ export default function Groups() {
         {/* HERO BANNER */}
         <section className="relative rounded-2xl sm:rounded-[28px] mb-8 mt-4 -mx-4 sm:mx-0 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-8 px-6 py-6 sm:px-10 lg:py-8 shadow-xl sv-animate-rise z-30">
           <div className="absolute inset-0 bg-[#004b3b] rounded-2xl sm:rounded-[28px] overflow-hidden border border-emerald-900/20">
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:block w-[400px] xl:w-[450px]">
-               <img src="/streaming-services-collage.png" className="w-full h-auto object-contain translate-x-12 scale-110" alt="" />
-            </div>
           </div>
           
           <div className="relative z-10 shrink-0 text-left w-full lg:w-auto xl:pl-2">
