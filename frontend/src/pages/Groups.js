@@ -491,7 +491,7 @@ export default function Groups() {
           </div>
 
           <div className="relative z-20 w-full max-w-[28rem] xl:max-w-[32rem] flex-1 lg:mx-6 xl:mx-10 mt-2 lg:mt-0">
-            <div className="flex w-full items-center gap-3 rounded-full bg-white px-5 py-3.5 shadow-md focus-within:ring-2 focus-within:ring-[#34d399] transition-all">
+            <div className="flex w-full items-center gap-3 rounded-full bg-white px-5 py-3.5 shadow-md focus-within:ring-2 focus-within:ring-brand-light transition-all">
               <SearchIcon className="h-5 w-5 text-slate-400 shrink-0" />
               <input
                 type="text"
@@ -544,7 +544,7 @@ export default function Groups() {
                 type="button"
                 onClick={() => setCategoryFilter("all")}
                 className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
-                  categoryFilter === "all" ? "bg-[#004b3b] text-white shadow-md" : "bg-white text-slate-700 shadow-sm hover:bg-slate-50 border border-slate-200/60"
+                  categoryFilter === "all" ? "bg-brand text-white shadow-md" : "bg-white text-slate-700 shadow-sm hover:bg-slate-50 border border-slate-200/60"
                 }`}
               >
                 {categoryFilter === "all" ? <SparkIcon className="h-4 w-4" /> : null} All
@@ -563,7 +563,7 @@ export default function Groups() {
                   type="button"
                   onClick={() => setCategoryFilter(cat.id)}
                   className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all ${
-                    categoryFilter === cat.id ? "bg-[#004b3b] text-white shadow-md" : "bg-white text-slate-700 shadow-sm hover:bg-slate-50 border border-slate-200/60"
+                    categoryFilter === cat.id ? "bg-brand text-white shadow-md" : "bg-white text-slate-700 shadow-sm hover:bg-slate-50 border border-slate-200/60"
                   }`}
                 >
                   <cat.icon className="h-4 w-4" />
@@ -698,7 +698,7 @@ export default function Groups() {
                       <button
                         onClick={() => setPendingJoinGroup(group)}
                         disabled={isFull || joiningId === group.id}
-                        className={`rounded-full px-4 py-2 text-xs font-bold text-white transition-colors whitespace-nowrap ${isFull ? "bg-slate-300" : "bg-[#004b3b] hover:bg-[#003b2b]"}`}
+                        className={`rounded-full px-4 py-2 text-xs font-bold text-white transition-colors whitespace-nowrap ${isFull ? "bg-slate-300" : "bg-brand hover:bg-brand-dark"}`}
                       >
                         {joiningId === group.id ? "Joining..." : isFull ? "Full" : "Join Now"}
                       </button>
