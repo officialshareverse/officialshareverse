@@ -477,16 +477,15 @@ export default function Groups() {
 
       <div className="sv-container space-y-4 sm:space-y-6">
         {/* HERO BANNER */}
-        <section className="relative rounded-2xl sm:rounded-[28px] mb-8 mt-4 -mx-4 sm:mx-0 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-8 px-6 py-6 sm:px-10 lg:py-8 shadow-xl sv-animate-rise z-30">
-          <div className="absolute inset-0 bg-[#004b3b] rounded-2xl sm:rounded-[28px] overflow-hidden border border-emerald-900/20">
-          </div>
+        <section className="relative rounded-2xl sm:rounded-[28px] mb-8 mt-4 -mx-4 sm:mx-0 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-8 px-6 py-6 sm:px-10 lg:py-8 shadow-sm border border-white/60 bg-white/60 backdrop-blur-2xl sv-animate-rise z-30 overflow-hidden">
+          <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-100 to-teal-50 opacity-50 blur-3xl pointer-events-none"></div>
           
           <div className="relative z-10 shrink-0 text-left w-full lg:w-auto xl:pl-2">
-            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-[2.2rem] sm:leading-[1.15]">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-[2.2rem] sm:leading-[1.15]">
               Find your next <br className="hidden lg:block" />
-              <span className="text-[#34d399] ml-1.5 lg:ml-0">subscription.</span>
+              <span className="text-emerald-600 ml-1.5 lg:ml-0">subscription.</span>
             </h1>
-            <p className="mt-2.5 text-[13px] sm:text-sm font-medium text-[#a7f3d0]">
+            <p className="mt-2.5 text-[13px] sm:text-sm font-medium text-slate-600">
               Join premium services at a fraction of the cost.
             </p>
           </div>
