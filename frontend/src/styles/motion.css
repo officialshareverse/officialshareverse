@@ -2584,7 +2584,25 @@
     }
 
     .sv-invite-modal {
-      width: min(100%, 100vw - 1rem);
+      width: 100%;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-bottom-left-radius: 0 !important;
+      border-bottom-right-radius: 0 !important;
+      border: none !important;
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .sv-invite-generator,
+    .sv-invite-link-panel,
+    .sv-invite-links-list {
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      padding-inline: 0;
     }
   }
 
