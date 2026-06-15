@@ -602,11 +602,6 @@ export default function GroupChat() {
                         void syncPresence(false);
                       }
                     }}
-                    onFocus={(e) => {
-                      setTimeout(() => {
-                        e.target.scrollIntoView({ behavior: "smooth", block: "center" });
-                      }, 300);
-                    }}
                     rows={1}
                     className="flex-1 resize-none bg-transparent py-3 pl-4 pr-2 text-[15px] outline-none placeholder:text-slate-400 min-h-[46px] max-h-[140px]"
                     placeholder="Message..."
