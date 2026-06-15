@@ -348,17 +348,17 @@ export default function MyShared() {
     }
 
     if (!details[groupId]) {
-
-    try {
-      setLoadingDetailId(groupId);
-      const res = await API.get(`my-groups/${groupId}/`);
-      storeDetail(groupId, res.data);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load group details");
-      return;
-    } finally {
-      setLoadingDetailId(null);
+      try {
+        setLoadingDetailId(groupId);
+        const res = await API.get(`my-groups/${groupId}/`);
+        storeDetail(groupId, res.data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load group details");
+        return;
+      } finally {
+        setLoadingDetailId(null);
+      }
     }
     setExpandedGroups((current) => ({ ...current, [groupId]: true }));
   };
