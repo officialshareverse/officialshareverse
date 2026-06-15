@@ -2593,7 +2593,8 @@
       border: none !important;
       padding: 1.5rem 1.25rem max(2rem, env(safe-area-inset-bottom));
       box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
       transform: translateZ(0); /* Fix iOS Safari overflow border-radius bug */
     }
 
