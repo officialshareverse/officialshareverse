@@ -1514,9 +1514,17 @@
     }
 
     .sv-group-chat-message {
-      max-width: 92%;
-      border-radius: 20px;
-      padding: 0.8rem 0.9rem;
+      max-width: 85%;
+      border-radius: 12px;
+      padding: 6px 10px;
+    }
+
+    .flex.justify-end > .sv-group-chat-message {
+      border-top-right-radius: 4px;
+    }
+
+    .flex.justify-start > .sv-group-chat-message {
+      border-top-left-radius: 4px;
     }
 
     .sv-group-chat-participant {

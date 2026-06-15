@@ -602,12 +602,12 @@
 
   .sv-group-chat-message {
     max-width: 85%;
-    border-radius: var(--sv-radius-lg);
+    border-radius: 12px;
     border: 1px solid rgba(148, 163, 184, 0.2);
     background: color-mix(in srgb, var(--sv-paper) 96%, transparent);
     color: var(--sv-ink);
-    padding: 0.9rem 1rem;
-    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+    padding: 6px 10px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
   }
 
   .sv-group-chat-message.is-own {

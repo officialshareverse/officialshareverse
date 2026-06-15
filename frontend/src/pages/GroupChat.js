@@ -571,13 +571,13 @@ export default function GroupChat() {
                 messages.map((item) => (
                   <div key={item.id} className={`flex ${item.is_own ? "justify-end" : "justify-start"}`}>
                     <div className={`sv-group-chat-message ${item.is_own ? "is-own" : ""}`}>
-                      <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${item.is_own ? "text-emerald-100" : "text-slate-500"}`}>
-                        {item.sender_username}
+                      <p className={`text-[11px] font-bold leading-tight ${item.is_own ? "text-emerald-50" : "text-emerald-600"}`}>
+                        {item.sender_username.split('@')[0].toUpperCase()}
                       </p>
-                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{item.message}</p>
-                      <p className={`mt-3 text-xs ${item.is_own ? "text-emerald-100" : "text-slate-400"}`}>
-                        {new Date(item.created_at).toLocaleString()}
-                      </p>
+                      <p className="mt-0.5 whitespace-pre-wrap text-[15px] leading-[1.35]">{item.message}</p>
+                      <div className={`mt-0.5 text-right text-[10px] ${item.is_own ? "text-emerald-100" : "text-slate-400"}`}>
+                        {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
                     </div>
                   </div>
                 ))
