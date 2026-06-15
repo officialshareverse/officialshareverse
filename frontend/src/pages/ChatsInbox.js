@@ -368,7 +368,7 @@ export default function ChatsInbox() {
           ) : (
             <div className="flex flex-col gap-3 px-4">
               <label className="flex items-center gap-2 rounded-full bg-slate-100/80 px-4 py-2.5 text-slate-600 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500 dark:bg-slate-800/80 dark:text-slate-300 dark:focus-within:bg-slate-800">
-                <SearchIcon className="h-4.5 w-4.5 shrink-0" />
+                <SearchIcon className="h-5 w-5 shrink-0" />
                 <input
                   type="text"
                   value={searchTerm}
