@@ -157,11 +157,6 @@ export default function ChatsInbox() {
 
   
 
-  useEffect(() => {
-    if (!isMobile) {
-      setIsMobileDrawerOpen(false);
-    }
-  }, [isMobile]);
 
   useEffect(() => {
     window.localStorage.setItem(PINNED_CHATS_STORAGE_KEY, JSON.stringify(pinnedChatIds));
