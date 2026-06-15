@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import API from "../api/axios";
 import Drawer from "../components/Drawer";
-import { CheckCircleIcon, ClockIcon } from "../components/UiIcons";
+import { CheckCircleIcon, ClockIcon, SendIcon } from "../components/UiIcons";
 import useWebSocket from "../hooks/useWebSocket";
 
 function formatRelativeTime(value) {
@@ -199,6 +199,7 @@ export default function GroupChat() {
   const navigate = useNavigate();
   const { groupId } = useParams();
   const threadEndRef = useRef(null);
+  const textareaRef = useRef(null);
   const typingTimerRef = useRef(null);
   const isTypingRef = useRef(false);
   const [chat, setChat] = useState(null);
@@ -322,8 +323,6 @@ export default function GroupChat() {
     };
   }, [groupId, sendWebSocketMessage, webSocketStatus]);
 
-  
-
   useEffect(() => {
     if (!isMobile) {
       setIsMobileDrawerOpen(false);
@@ -333,6 +332,11 @@ export default function GroupChat() {
   const handleMessageChange = (nextValue) => {
     setMessage(nextValue);
     window.clearTimeout(typingTimerRef.current);
+
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 140)}px`;
+    }
 
     if (!nextValue.trim()) {
       if (isTypingRef.current) {
@@ -586,45 +590,75 @@ export default function GroupChat() {
                 <p className="mb-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>
               ) : null}
 
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-700">{isMobile ? "Message" : "Type a message"}</span>
-                <textarea
-                  value={message}
-                  onChange={(event) => handleMessageChange(event.target.value)}
-                  onBlur={() => {
-                    window.clearTimeout(typingTimerRef.current);
-                    if (isTypingRef.current) {
-                      void syncPresence(false);
-                    }
-                  }}
-                  onFocus={(e) => {
-                    setTimeout(() => {
-                      e.target.scrollIntoView({ behavior: "smooth", block: "center" });
-                    }, 300);
-                  }}
-                  rows={isMobile ? 3 : 4}
-                  className="sv-group-chat-textarea"
-                  placeholder="Write to your group here..."
-                />
-              </label>
+              {isMobile ? (
+                <div className="flex items-end gap-2 bg-slate-50 p-2 rounded-[24px] border border-slate-200 focus-within:border-slate-300 focus-within:ring-2 focus-within:ring-slate-100 transition-all">
+                  <textarea
+                    ref={textareaRef}
+                    value={message}
+                    onChange={(event) => handleMessageChange(event.target.value)}
+                    onBlur={() => {
+                      window.clearTimeout(typingTimerRef.current);
+                      if (isTypingRef.current) {
+                        void syncPresence(false);
+                      }
+                    }}
+                    onFocus={(e) => {
+                      setTimeout(() => {
+                        e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }, 300);
+                    }}
+                    rows={1}
+                    className="flex-1 resize-none bg-transparent py-3 pl-4 pr-2 text-[15px] outline-none placeholder:text-slate-400 min-h-[46px] max-h-[140px]"
+                    placeholder="Message..."
+                    style={{ overflowY: "auto" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={sendMessage}
+                    disabled={sending || !message.trim()}
+                    className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white transition-all active:scale-95 disabled:pointer-events-none disabled:bg-emerald-200 mb-0.5 mr-0.5"
+                    aria-label="Send message"
+                  >
+                    <SendIcon className="h-5 w-5 -ml-0.5" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-700">Type a message</span>
+                    <textarea
+                      ref={textareaRef}
+                      value={message}
+                      onChange={(event) => handleMessageChange(event.target.value)}
+                      onBlur={() => {
+                        window.clearTimeout(typingTimerRef.current);
+                        if (isTypingRef.current) {
+                          void syncPresence(false);
+                        }
+                      }}
+                      rows={4}
+                      className="sv-group-chat-textarea resize-none"
+                      placeholder="Write to your group here..."
+                    />
+                  </label>
 
-              <div className="sv-group-chat-composer-footer mt-4 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-slate-500">
-                  {message.trim()
-                    ? "Typing presence fades automatically after a short pause."
-                    : isMobile
-                      ? "Share the next step, reminder, or access update."
-                      : "Share join updates, renewal reminders, and access follow-ups here."}
-                </p>
-                <button
-                  type="button"
-                  onClick={sendMessage}
-                  disabled={sending}
-                  className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                >
-                  {sending ? "Sending..." : "Send message"}
-                </button>
-              </div>
+                  <div className="sv-group-chat-composer-footer mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs text-slate-500">
+                      {message.trim()
+                        ? "Typing presence fades automatically after a short pause."
+                        : "Share join updates, renewal reminders, and access follow-ups here."}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={sendMessage}
+                      disabled={sending || !message.trim()}
+                      className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    >
+                      {sending ? "Sending..." : "Send message"}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

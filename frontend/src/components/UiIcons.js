@@ -21,6 +21,15 @@ export function HomeIcon(props) {
   );
 }
 
+export function SendIcon(props) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="M22 2 11 13" />
+      <path d="m22 2-7 20-4-9-9-4Z" />
+    </svg>
+  );
+}
+
 export function CompassIcon(props) {
   return (
     <svg {...iconProps(props)}>
