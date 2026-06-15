@@ -1,6 +1,7 @@
   /* â”€â”€â”€ Pages â”€â”€â”€ */
   .sv-page {
     min-height: 100vh;
+    min-height: 100dvh;
     padding: var(--sv-page-py) var(--sv-page-px);
     background:
       radial-gradient(circle at top left, var(--sv-page-radial-a), transparent 28%),
@@ -11,6 +12,7 @@
 
   .sv-route-stage {
     min-height: 100vh;
+    min-height: 100dvh;
     padding-top: 4.5rem; /* offset for fixed navbar */
     animation: sv-page-enter 0.45s ease-out both;
   }
@@ -54,6 +56,7 @@
 
   .sv-auth-bootstrap {
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
