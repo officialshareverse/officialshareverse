@@ -1195,7 +1195,7 @@ export default function MyShared() {
 
               <div style={{ ...actionRow, ...(isMobile ? actionRowMobile : {}) }}>
                 <button style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }} onClick={() => toggleDetails(group.id)}>
-                  {loadingDetailId === group.id ? "Loading..." : expandedGroups[group.id] ? (isMobile ? "Hide details" : "Hide members") : (isMobile ? "Manage" : "View members")}
+                  {loadingDetailId === group.id ? "Loading..." : expandedGroups[group.id] ? "Hide members" : "View members"}
                 </button>
 
                 {isMobile ? (
