@@ -1642,6 +1642,9 @@
     .sv-route-stage-chat-mobile {
       padding-top: 0 !important;
       padding-bottom: 0 !important;
+      animation: none !important;
+      overflow: hidden !important;
+      min-height: 0 !important;
     }
 
     .sv-group-chat-textarea {
