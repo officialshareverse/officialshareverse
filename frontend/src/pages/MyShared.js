@@ -1411,22 +1411,23 @@ export default function MyShared() {
                       </div>
 
                       <div style={{ ...detailStats, ...(isMobile ? detailStatsMobile : {}) }}>
-                        <MetricBlock label={isMobile ? "Filled" : "Filled members"} value={`${detail.filled_slots} / ${detail.total_slots}`} />
+                        <MetricBlock label={isMobile ? "Filled" : "Filled members"} value={`${detail.filled_slots} / ${detail.total_slots}`} compact={isMobile} />
                         {!isMobile ? (
-                          <MetricBlock label="Paid members" value={`${detail.paid_members} / ${detail.total_slots}`} />
+                          <MetricBlock label="Paid members" value={`${detail.paid_members} / ${detail.total_slots}`} compact={isMobile} />
                         ) : null}
-                        <MetricBlock label={isMobile ? "Stage" : "Current stage"} value={detail.status_label} />
+                        <MetricBlock label={isMobile ? "Stage" : "Current stage"} value={detail.status_label} compact={isMobile} />
                         <MetricBlock
                           label={detail.mode === "group_buy" ? (isMobile ? "Released" : "Released amount") : (isMobile ? "Revenue" : "Released amount")}
                           value={detail.mode === "group_buy" ? `Rs ${detail.released_amount}` : `Rs ${detail.owner_revenue}`}
+                          compact={isMobile}
                         />
                         {detail.mode === "group_buy" ? (
                           <>
-                            <MetricBlock label={isMobile ? "Confirmed" : "Confirmed access"} value={`${detail.confirmed_members} / ${detail.paid_members}`} />
+                            <MetricBlock label={isMobile ? "Confirmed" : "Confirmed access"} value={`${detail.confirmed_members} / ${detail.paid_members}`} compact={isMobile} />
                             {!isMobile ? (
                               <>
-                                <MetricBlock label="Reported issues" value={detail.reported_issues} />
-                                <MetricBlock label="Held amount" value={`Rs ${detail.held_amount}`} />
+                                <MetricBlock label="Reported issues" value={detail.reported_issues} compact={isMobile} />
+                                <MetricBlock label="Held amount" value={`Rs ${detail.held_amount}`} compact={isMobile} />
                               </>
                             ) : null}
                           </>

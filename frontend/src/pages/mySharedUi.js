@@ -60,11 +60,11 @@ export function FilterButton({ active, onClick, children, compact = false }) {
   );
 }
 
-export function MetricBlock({ label, value }) {
+export function MetricBlock({ label, value, compact }) {
   return (
-    <div style={metricBlock}>
-      <p style={summaryLabel}>{label}</p>
-      <p style={metricValue}>{value}</p>
+    <div style={{ ...metricBlock, ...(compact ? metricBlockMobile : {}) }}>
+      <p style={{ ...summaryLabel, ...(compact ? summaryLabelMobile : {}) }}>{label}</p>
+      <p style={{ ...metricValue, ...(compact ? metricValueMobile : {}) }}>{value}</p>
     </div>
   );
 }
@@ -418,10 +418,21 @@ const metricBlock = {
   border: `1px solid ${svBorder}`,
 };
 
+export const metricBlockMobile = {
+  background: "transparent",
+  borderRadius: 0,
+  padding: 0,
+  border: "none",
+};
+
 const metricValue = {
   margin: "8px 0 0",
   fontWeight: 700,
   color: svInk,
+};
+
+export const metricValueMobile = {
+  fontSize: "18px",
 };
 
 export const progressBar = {
