@@ -1486,7 +1486,7 @@
 
     .sv-route-stage-chat-mobile {
       padding-top: max(0.5rem, env(safe-area-inset-top)) !important;
-      padding-bottom: 110px !important;
+      padding-bottom: 86px !important;
     }
 
     .sv-group-chat-composer {
