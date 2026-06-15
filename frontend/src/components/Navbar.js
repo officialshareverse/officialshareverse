@@ -7,7 +7,6 @@ import { clearAuthSession } from "../auth/session";
 import useWebSocket from "../hooks/useWebSocket";
 import BrandMark from "./BrandMark";
 import ThemeToggle from "./ThemeToggle";
-import Tooltip from "./Tooltip";
 import {
   BellIcon,
   ChatIcon,
@@ -25,7 +24,8 @@ const navItems = [
   { to: "/groups", label: "Explore", mobileLabel: "Explore", icon: CompassIcon, mobileTab: true, desktopGroup: "primary" },
   { to: "/create", label: "Create", mobileLabel: "Create", icon: PlusIcon, mobileTab: true, desktopGroup: "primary" },
   { to: "/chats", label: "Chats", mobileLabel: "Chats", icon: ChatIcon, badgeKey: "chat", desktopGroup: "signals", mobileTab: true },
-  { to: "/my-shared", label: "My Splits", mobileLabel: "Splits", icon: LayersIcon, mobileTab: true, desktopGroup: "workspace" },
+  { to: "/account", label: "Account", mobileLabel: "Account", icon: UserIcon, mobileTab: true, desktopGroup: "hidden", badgeKey: "notification" },
+  { to: "/my-shared", label: "My Splits", mobileLabel: "Splits", icon: LayersIcon, mobileTab: false, desktopGroup: "workspace" },
   { to: "/wallet", label: "Wallet", mobileLabel: "Wallet", icon: WalletIcon, mobileTab: false, desktopGroup: "workspace" },
   { to: "/referrals", label: "Refer and earn", mobileLabel: "Refer", icon: SparkIcon, mobileMenu: true },
   { to: "/notifications", label: "Notifications", mobileLabel: "Alerts", icon: BellIcon, badgeKey: "notification", desktopGroup: "signals" },
@@ -39,7 +39,6 @@ const desktopNavGroups = [
 ];
 
 const mobileTabItems = navItems.filter((item) => item.mobileTab);
-const mobileMenuItems = navItems.filter((item) => item.mobileMenu || !item.mobileTab);
 
 function resolveCurrentPath(pathname) {
   if (/^\/groups\/[^/]+\/chat/.test(pathname)) {
@@ -72,16 +71,6 @@ function resolveCurrentPath(pathname) {
   return "/home";
 }
 
-function HamburgerIcon({ open }) {
-  return (
-    <span className={`sv-hamburger ${open ? "is-open" : ""}`} aria-hidden="true">
-      <span className="sv-hamburger-line" />
-      <span className="sv-hamburger-line" />
-      <span className="sv-hamburger-line" />
-    </span>
-  );
-}
-
 function UserAvatar({ profile, initials, className = "" }) {
   if (profile?.profile_picture_url) {
     return <img src={profile.profile_picture_url} alt="" className={`sv-nav-avatar ${className}`.trim()} />;
@@ -97,7 +86,6 @@ function UserAvatar({ profile, initials, className = "" }) {
 export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
@@ -107,10 +95,8 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
   const groupRefs = useRef({});
   const itemRefs = useRef({});
   const currentPath = resolveCurrentPath(location.pathname);
-  const currentItem = navItems.find((item) => item.to === currentPath) || navItems[0];
 
   useEffect(() => {
-    setIsMenuOpen(false);
     setIsProfileMenuOpen(false);
   }, [location.pathname]);
 
@@ -452,111 +438,7 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
             </div>
           </div>
 
-          <div className="lg:hidden sv-mobile-appbar">
-            <div className="min-w-0 flex items-center gap-3">
-              <BrandMark glow sizeClass="h-9 w-9" roundedClass="rounded-[14px]" />
-              <p className="min-w-0 truncate text-[15px] font-bold leading-none text-slate-950">{currentItem.label}</p>
-            </div>
 
-            <div className="flex items-center gap-2">
-              {profile && typeof profile.wallet_balance !== "undefined" ? (
-                <button
-                  type="button"
-                  onClick={() => navigate("/wallet")}
-                  className="flex items-center gap-1.5 rounded-full bg-slate-100/80 px-2.5 py-1 text-xs font-bold text-slate-800 mr-1 dark:bg-slate-800/80 dark:text-slate-200"
-                >
-                  <WalletIcon className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                  Rs {Number(profile.wallet_balance || 0).toFixed(0)}
-                </button>
-              ) : null}
-              <Tooltip content="Notifications">
-                <button
-                  type="button"
-                  onClick={() => navigate("/notifications")}
-                  className="sv-mobile-icon-button"
-                  aria-label="Open notifications"
-                >
-                  <BellIcon className="h-4.5 w-4.5" />
-                  {unreadNotificationCount > 0 ? <span className="sv-mobile-icon-dot" /> : null}
-                </button>
-              </Tooltip>
-              <Tooltip content={isMenuOpen ? "Close menu" : "Open menu"}>
-                <button
-                  type="button"
-                  onClick={() => setIsMenuOpen((current) => !current)}
-                  className="sv-mobile-icon-button"
-                  aria-label="Toggle navigation"
-                  aria-expanded={isMenuOpen}
-                >
-                  <HamburgerIcon open={isMenuOpen} />
-                  {(unreadChatCount > 0 || unreadNotificationCount > 0) && !isMenuOpen ? <span className="sv-mobile-icon-dot" /> : null}
-                </button>
-              </Tooltip>
-            </div>
-          </div>
-
-          {isMenuOpen ? (
-            <>
-              <button
-                type="button"
-                className="sv-mobile-menu-overlay lg:hidden"
-                onClick={() => setIsMenuOpen(false)}
-                aria-label="Close menu"
-              />
-
-              <div className="sv-slide-down sv-mobile-menu-panel lg:hidden">
-                <div className="sv-mobile-menu-surface">
-                  <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Quick access</p>
-                      <p className="mt-1 truncate text-sm font-semibold text-slate-900">Hi, {profileFirstName}</p>
-                    </div>
-                    <ThemeToggle themeMode={themeMode} onToggle={toggleTheme} compact />
-                  </div>
-
-                  <nav className="mt-3 grid gap-2">
-                    {mobileMenuItems.map((item, index) => {
-                      const Icon = item.icon;
-                      const count = getBadgeCount(item);
-                      const isActive = currentPath === item.to;
-
-                      return (
-                        <NavLink
-                          key={item.to}
-                          to={item.to}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`sv-mobile-menu-item ${isActive ? "is-active" : ""}`}
-                          style={{ animationDelay: `${0.04 * (index + 1)}s` }}
-                        >
-                          <span className="flex items-center justify-between gap-3">
-                            <span className="inline-flex items-center gap-3">
-                              <span className={`inline-flex h-9 w-9 items-center justify-center rounded-2xl ${isActive ? "bg-white/10 text-white" : "bg-white text-slate-700"}`}>
-                                <Icon className="h-4.5 w-4.5" />
-                              </span>
-                              <span>{item.label}</span>
-                            </span>
-                            {count > 0 ? (
-                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${isActive ? "bg-emerald-400 text-slate-950" : "bg-emerald-100 text-emerald-800"}`}>
-                                {count > 99 ? "99+" : count}
-                              </span>
-                            ) : null}
-                          </span>
-                        </NavLink>
-                      );
-                    })}
-                  </nav>
-
-                  <button
-                    type="button"
-                    onClick={logout}
-                    className="sv-mobile-logout"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : null}
         </div>
       </header>
 
@@ -566,6 +448,7 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
             const Icon = item.icon;
             const isActive = currentPath === item.to;
             const isCreate = item.to === "/create";
+            const badgeCount = getBadgeCount(item);
 
             return (
               <NavLink
@@ -573,8 +456,13 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
                 to={item.to}
                 className={`sv-mobile-tab ${isActive ? "sv-mobile-tab-active" : ""} ${isCreate ? "sv-mobile-tab-create" : ""}`}
               >
-                <span className="sv-mobile-tab-icon">
+                <span className="sv-mobile-tab-icon relative">
                   <Icon className="h-4.5 w-4.5" />
+                  {badgeCount > 0 && !isCreate ? (
+                    <span className="absolute -top-1.5 -right-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-bold text-white shadow-sm ring-2 ring-white">
+                      {badgeCount > 99 ? "99+" : badgeCount}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="sv-mobile-tab-label">{item.mobileLabel}</span>
               </NavLink>

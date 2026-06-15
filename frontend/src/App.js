@@ -14,6 +14,7 @@ import SpotlightSearch from "./components/SpotlightSearch";
 import { ToastProvider } from "./components/ToastProvider";
 import { DownloadIcon } from "./components/UiIcons";
 import AboutPage from "./pages/AboutPage";
+import Account from "./pages/Account";
 import AccountDeletionPage from "./pages/AccountDeletionPage";
 import ChatsInbox from "./pages/ChatsInbox";
 import CreateGroup from "./pages/CreateGroup";
@@ -384,6 +385,17 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               <ErrorBoundary>
                 <PrivateRoute>
                   <Profile />
+                </PrivateRoute>
+              </ErrorBoundary>
+            }
+          />
+
+          <Route
+            path="/account"
+            element={
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <Account />
                 </PrivateRoute>
               </ErrorBoundary>
             }
