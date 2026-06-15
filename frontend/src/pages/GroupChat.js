@@ -133,17 +133,17 @@ function ParticipantsSection({ participants }) {
 
           return (
             <div key={`${participant.role}-${participant.username}`} className="sv-group-chat-participant">
-              <div className="flex items-center gap-3">
-                <span className={`sv-group-chat-participant-avatar ${presenceMeta.className}`}>
+              <div className="flex items-center gap-3 min-w-0">
+                <span className={`sv-group-chat-participant-avatar ${presenceMeta.className} shrink-0`}>
                   {participant.initials || getAvatarToken(participant.username)}
                   <span className={`sv-chat-avatar-chip-dot ${presenceMeta.className}`} />
                 </span>
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900 truncate">
                     {participant.username}
                     {participant.is_self ? " (you)" : ""}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-slate-500 truncate">
                     {presenceMeta.label}
                     {participant.presence?.last_seen_at
                       ? ` - seen ${formatRelativeTime(participant.presence.last_seen_at)}`
@@ -152,7 +152,7 @@ function ParticipantsSection({ participants }) {
                 </div>
               </div>
 
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-col items-end gap-2 shrink-0 pl-2">
                 <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
                   {participant.role}
                 </span>
