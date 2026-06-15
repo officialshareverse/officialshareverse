@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import SubscriptionLogo from "../components/SubscriptionLogo";
 import AvatarStack from "../components/AvatarStack";
-import Drawer from "../components/Drawer";
 import EmptyState from "../components/EmptyState";
 import PullToRefreshIndicator from "../components/PullToRefreshIndicator";
 import {
@@ -132,7 +131,6 @@ export default function ChatsInbox() {
   const isMobile = useIsMobile();
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const previousUnreadCountRef = useRef(null);
   const isMountedRef = useRef(true);
   const [pinnedChatIds, setPinnedChatIds] = useState(() => {
