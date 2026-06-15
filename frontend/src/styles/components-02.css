@@ -602,18 +602,19 @@
 
   .sv-group-chat-message {
     max-width: 85%;
-    border-radius: 12px;
+    border-radius: 18px;
     border: 1px solid rgba(148, 163, 184, 0.2);
-    background: color-mix(in srgb, var(--sv-paper) 96%, transparent);
+    background: color-mix(in srgb, var(--sv-paper-solid) 96%, transparent);
     color: var(--sv-ink);
-    padding: 6px 10px;
+    padding: 10px 14px;
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
   }
 
   .sv-group-chat-message.is-own {
-    border-color: rgba(16, 185, 129, 0.22);
-    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: #ffffff;
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.18);
   }
 
   .sv-group-chat-participant {
