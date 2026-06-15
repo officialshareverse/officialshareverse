@@ -426,10 +426,6 @@ export default function GroupChat() {
     }
     return { dot: "bg-rose-500", label: "Polling fallback active" };
   }, [webSocketStatus]);
-  const mobileDrawerSummary = typingLabel
-    || (onlineParticipants.length > 0
-      ? `${onlineParticipants.length} active right now`
-      : `${participants.length} participant${participants.length === 1 ? "" : "s"} in this chat`);
 
   useEffect(() => {
     if (webSocketStatus !== "connected" || messages.length === 0) {
@@ -474,8 +470,24 @@ export default function GroupChat() {
     );
   }
 
+  /* ── Chat message bubble (shared between mobile & desktop) ── */
+  const renderMessage = (item) => (
+    <div key={item.id} className={`flex ${item.is_own ? "justify-end" : "justify-start"}`}>
+      <div className={`sv-group-chat-message ${item.is_own ? "is-own" : ""}`}>
+        <p className={`text-[11px] font-bold leading-tight ${item.is_own ? "text-emerald-50" : "text-emerald-600"}`}>
+          {item.sender_username.split('@')[0].toUpperCase()}
+        </p>
+        <p className="mt-0.5 whitespace-pre-wrap text-[15px] leading-[1.35]">{item.message}</p>
+        <div className={`mt-0.5 text-right text-[10px] ${item.is_own ? "text-emerald-100" : "text-slate-400"}`}>
+          {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="sv-page">
+      {/* Drawer for mobile participant list */}
       {isMobile ? (
         <Drawer
           open={isMobileDrawerOpen}
@@ -491,157 +503,54 @@ export default function GroupChat() {
         </Drawer>
       ) : null}
 
-      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
-        <section className="pb-2 sm:pb-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{group.subscription_name}</h1>
+      {/* ═══════════════════════════════════════
+          MOBILE LAYOUT — WhatsApp-style
+         ═══════════════════════════════════════ */}
+      {isMobile ? (
+        <div className="sv-mobile-chat-shell">
+          {/* ── Fixed top header bar ── */}
+          <div className="sv-mobile-chat-header">
             <button
               type="button"
               onClick={() => navigate("/chats")}
-              className="sv-btn-ghost"
+              className="sv-mobile-chat-back"
+              aria-label="Back to chats"
             >
-              Back to Chats
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
             </button>
+            <div className="sv-mobile-chat-header-info" onClick={() => setIsMobileDrawerOpen(true)}>
+              <h1 className="sv-mobile-chat-title">{group.subscription_name}</h1>
+              <p className="sv-mobile-chat-subtitle">
+                {typingLabel || (onlineParticipants.length > 0
+                  ? `${onlineParticipants.length} online · ${participants.length} participants`
+                  : `${participants.length} participant${participants.length === 1 ? "" : "s"} · tap for info`)}
+              </p>
+            </div>
+            <span className={`sv-mobile-chat-status-dot ${connectionMeta.dot}`} title={connectionMeta.label} />
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600">
-            <span className="sv-chip">{group.mode_label}</span>
-            <span className="sv-chip">{group.status_label}</span>
-            <span className="sv-chip">Host: {group.owner_name}</span>
-            <span className="sv-chip">
-              <span className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${connectionMeta.dot}`} />
-              {connectionMeta.label}
-            </span>
-            {typingLabel ? <span className="sv-chip bg-emerald-100 text-emerald-800">{typingLabel}</span> : null}
-            {!typingLabel && onlineParticipants.length > 0 ? (
-              <span className="sv-chip bg-emerald-100 text-emerald-800">{onlineParticipants.length} active now</span>
-            ) : null}
-          </div>
-        </section>
-
-        {isMobile ? (
-          <button
-            type="button"
-            onClick={() => setIsMobileDrawerOpen(true)}
-            className="sv-group-chat-mobile-trigger"
-          >
-            <span className="sv-chat-mobile-trigger-copy">
-              <strong>{participants.length} people in this split</strong>
-              <span>{mobileDrawerSummary}</span>
-            </span>
-            <span className="sv-group-chat-mobile-trigger-badge">Open</span>
-          </button>
-        ) : null}
-
-        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_21rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
-          <div className="sv-card sv-group-chat-thread-card">
-            <div className="sv-group-chat-thread-header flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Conversation</p>
-                <h2 className="mt-2 text-xl font-bold text-slate-900">{isMobile ? "Chat" : "Messages"}</h2>
+          {/* ── Scrollable messages area ── */}
+          <div className="sv-mobile-chat-messages">
+            {messages.length === 0 ? (
+              <div className="sv-mobile-chat-empty">
+                <p>No messages yet</p>
+                <span>Start the conversation with your group</span>
               </div>
-              <button
-                type="button"
-                onClick={() => fetchChat(false)}
-                className={`rounded-xl border border-slate-300 bg-white font-semibold text-slate-700 transition hover:bg-slate-50 ${
-                  isMobile ? "px-3 py-2 text-xs" : "px-4 py-2 text-sm"
-                }`}
-              >
-                {isMobile ? "Reload" : "Refresh"}
-              </button>
-            </div>
-
-            {typingLabel || onlineParticipants.length > 0 ? (
-              <div className="sv-group-chat-live-strip">
-                {typingLabel ? (
-                  <span className="sv-chat-typing-pill">{typingLabel}</span>
-                ) : (
-                  <span className="sv-chat-live-pill">
-                    {onlineParticipants.length} participant{onlineParticipants.length === 1 ? "" : "s"} active now
-                  </span>
-                )}
-              </div>
-            ) : null}
-
-            <div className="sv-group-chat-thread mt-5 space-y-4">
-              {messages.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
-                  No messages yet. Start the conversation with your group.
-                </div>
-              ) : (
-                messages.map((item) => (
-                  <div key={item.id} className={`flex ${item.is_own ? "justify-end" : "justify-start"}`}>
-                    <div className={`sv-group-chat-message ${item.is_own ? "is-own" : ""}`}>
-                      <p className={`text-[11px] font-bold leading-tight ${item.is_own ? "text-emerald-50" : "text-emerald-600"}`}>
-                        {item.sender_username.split('@')[0].toUpperCase()}
-                      </p>
-                      <p className="mt-0.5 whitespace-pre-wrap text-[15px] leading-[1.35]">{item.message}</p>
-                      <div className={`mt-0.5 text-right text-[10px] ${item.is_own ? "text-emerald-100" : "text-slate-400"}`}>
-                        {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-              <div ref={threadEndRef} />
-            </div>
-
-            <div className="sv-group-chat-composer">
-              {error ? (
-                <p className="mb-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>
-              ) : null}
-
-              {!isMobile && (
-                <>
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-700">Type a message</span>
-                    <textarea
-                      ref={textareaRef}
-                      value={message}
-                      onChange={(event) => handleMessageChange(event.target.value)}
-                      onBlur={() => {
-                        window.clearTimeout(typingTimerRef.current);
-                        if (isTypingRef.current) {
-                          void syncPresence(false);
-                        }
-                      }}
-                      rows={4}
-                      className="sv-group-chat-textarea resize-none"
-                      placeholder="Write to your group here..."
-                    />
-                  </label>
-
-                  <div className="sv-group-chat-composer-footer mt-4 flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs text-slate-500">
-                      {message.trim()
-                        ? "Typing presence fades automatically after a short pause."
-                        : "Share join updates, renewal reminders, and access follow-ups here."}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={sendMessage}
-                      disabled={sending || !message.trim()}
-                      className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                    >
-                      {sending ? "Sending..." : "Send message"}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+            ) : (
+              messages.map(renderMessage)
+            )}
+            <div ref={threadEndRef} />
           </div>
 
-          <aside className="sv-group-chat-sidebar hidden space-y-6 lg:block">
-            <ParticipantsSection participants={participants} />
-            <QuickReadSection />
-          </aside>
-
-          {isMobile && createPortal(
-            <div className="sv-group-chat-composer">
+          {/* ── Fixed bottom composer (portalled to body) ── */}
+          {createPortal(
+            <div className="sv-mobile-chat-composer">
               {error ? (
-                <p className="mb-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>
+                <p className="mb-2 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</p>
               ) : null}
-              <div className="flex items-end gap-2 bg-slate-50 p-2 rounded-[24px] border border-slate-200 focus-within:border-slate-300 focus-within:ring-2 focus-within:ring-slate-100 transition-all">
+              <div className="sv-mobile-chat-input-row">
                 <textarea
                   ref={textareaRef}
                   value={message}
@@ -653,7 +562,7 @@ export default function GroupChat() {
                     }
                   }}
                   rows={1}
-                  className="flex-1 resize-none bg-transparent py-3 pl-4 pr-2 text-[15px] outline-none placeholder:text-slate-400 min-h-[46px] max-h-[140px]"
+                  className="sv-mobile-chat-input"
                   placeholder="Message..."
                   style={{ overflowY: "auto" }}
                 />
@@ -661,17 +570,135 @@ export default function GroupChat() {
                   type="button"
                   onClick={sendMessage}
                   disabled={sending || !message.trim()}
-                  className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white transition-all active:scale-95 disabled:pointer-events-none disabled:bg-emerald-200 mb-0.5 mr-0.5"
+                  className="sv-mobile-chat-send"
                   aria-label="Send message"
                 >
-                  <SendIcon className="h-5 w-5 -ml-0.5" />
+                  <SendIcon className="h-5 w-5" />
                 </button>
               </div>
             </div>,
             document.body
           )}
-        </section>
-      </div>
+        </div>
+      ) : (
+        /* ═══════════════════════════════════════
+           DESKTOP LAYOUT — unchanged
+           ═══════════════════════════════════════ */
+        <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
+          <section className="pb-2 sm:pb-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{group.subscription_name}</h1>
+              <button
+                type="button"
+                onClick={() => navigate("/chats")}
+                className="sv-btn-ghost"
+              >
+                Back to Chats
+              </button>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-600">
+              <span className="sv-chip">{group.mode_label}</span>
+              <span className="sv-chip">{group.status_label}</span>
+              <span className="sv-chip">Host: {group.owner_name}</span>
+              <span className="sv-chip">
+                <span className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${connectionMeta.dot}`} />
+                {connectionMeta.label}
+              </span>
+              {typingLabel ? <span className="sv-chip bg-emerald-100 text-emerald-800">{typingLabel}</span> : null}
+              {!typingLabel && onlineParticipants.length > 0 ? (
+                <span className="sv-chip bg-emerald-100 text-emerald-800">{onlineParticipants.length} active now</span>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_21rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <div className="sv-card sv-group-chat-thread-card">
+              <div className="sv-group-chat-thread-header flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Conversation</p>
+                  <h2 className="mt-2 text-xl font-bold text-slate-900">Messages</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fetchChat(false)}
+                  className="rounded-xl border border-slate-300 bg-white font-semibold text-slate-700 transition hover:bg-slate-50 px-4 py-2 text-sm"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              {typingLabel || onlineParticipants.length > 0 ? (
+                <div className="sv-group-chat-live-strip">
+                  {typingLabel ? (
+                    <span className="sv-chat-typing-pill">{typingLabel}</span>
+                  ) : (
+                    <span className="sv-chat-live-pill">
+                      {onlineParticipants.length} participant{onlineParticipants.length === 1 ? "" : "s"} active now
+                    </span>
+                  )}
+                </div>
+              ) : null}
+
+              <div className="sv-group-chat-thread mt-5 space-y-4">
+                {messages.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
+                    No messages yet. Start the conversation with your group.
+                  </div>
+                ) : (
+                  messages.map(renderMessage)
+                )}
+                <div ref={threadEndRef} />
+              </div>
+
+              <div className="sv-group-chat-composer">
+                {error ? (
+                  <p className="mb-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>
+                ) : null}
+
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-700">Type a message</span>
+                  <textarea
+                    ref={textareaRef}
+                    value={message}
+                    onChange={(event) => handleMessageChange(event.target.value)}
+                    onBlur={() => {
+                      window.clearTimeout(typingTimerRef.current);
+                      if (isTypingRef.current) {
+                        void syncPresence(false);
+                      }
+                    }}
+                    rows={4}
+                    className="sv-group-chat-textarea resize-none"
+                    placeholder="Write to your group here..."
+                  />
+                </label>
+
+                <div className="sv-group-chat-composer-footer mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs text-slate-500">
+                    {message.trim()
+                      ? "Typing presence fades automatically after a short pause."
+                      : "Share join updates, renewal reminders, and access follow-ups here."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={sendMessage}
+                    disabled={sending || !message.trim()}
+                    className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                  >
+                    {sending ? "Sending..." : "Send message"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <aside className="sv-group-chat-sidebar hidden space-y-6 lg:block">
+              <ParticipantsSection participants={participants} />
+              <QuickReadSection />
+            </aside>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
