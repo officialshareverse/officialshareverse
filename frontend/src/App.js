@@ -256,7 +256,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
         />
       ) : null}
 
-      <div key={location.pathname} className="sv-route-stage">
+      <div key={location.pathname} className={`sv-route-stage ${isMobile && isChatPage ? 'sv-route-stage-chat-mobile' : ''}`}>
         <Routes location={location}>
           <Route
             path="/"

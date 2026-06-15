@@ -1484,6 +1484,11 @@
       padding-bottom: 110px;
     }
 
+    .sv-route-stage-chat-mobile {
+      padding-top: max(0.5rem, env(safe-area-inset-top)) !important;
+      padding-bottom: 0 !important;
+    }
+
     .sv-group-chat-composer {
       position: fixed;
       bottom: 0;
