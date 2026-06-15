@@ -596,6 +596,11 @@ export default function GroupChat() {
                       void syncPresence(false);
                     }
                   }}
+                  onFocus={(e) => {
+                    setTimeout(() => {
+                      e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 300);
+                  }}
                   rows={isMobile ? 3 : 4}
                   className="sv-group-chat-textarea"
                   placeholder="Write to your group here..."
