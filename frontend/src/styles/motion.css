@@ -1482,12 +1482,11 @@
     .sv-group-chat-thread {
       gap: 0.8rem;
       margin-top: 0.95rem;
-      padding-bottom: 110px;
     }
 
     .sv-route-stage-chat-mobile {
       padding-top: max(0.5rem, env(safe-area-inset-top)) !important;
-      padding-bottom: 0 !important;
+      padding-bottom: 110px !important;
     }
 
     .sv-group-chat-composer {
