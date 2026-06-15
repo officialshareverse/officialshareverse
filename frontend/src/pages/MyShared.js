@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
-import { revealGroupCredentials } from "../api/credentials";
+
 import ActionDialog from "../components/ActionDialog";
 import Drawer from "../components/Drawer";
 import EmptyState from "../components/EmptyState";
@@ -146,8 +146,7 @@ export default function MyShared() {
   const [reportingIssueId, setReportingIssueId] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [proofForms, setProofForms] = useState({});
-  const [revealedCredentials, setRevealedCredentials] = useState({});
-  const [revealingGroupId, setRevealingGroupId] = useState(null);
+
   const [reviewForms, setReviewForms] = useState({});
   const [submittingReviewKey, setSubmittingReviewKey] = useState("");
   const [mobileOwnerActionGroupId, setMobileOwnerActionGroupId] = useState(null);
@@ -632,21 +631,7 @@ export default function MyShared() {
     }
   };
 
-  const revealCredentials = async (groupId) => {
-    try {
-      setRevealingGroupId(groupId);
-      const credentials = await revealGroupCredentials(groupId);
-      setRevealedCredentials((current) => ({
-        ...current,
-        [groupId]: credentials,
-      }));
-    } catch (err) {
-      console.error(err);
-      toast.error(getActionError(err.response?.data, "Failed to reveal credentials"));
-    } finally {
-      setRevealingGroupId(null);
-    }
-  };
+
 
   const handleProofChange = (groupId, field, value) => {
     setProofForms((current) => ({
