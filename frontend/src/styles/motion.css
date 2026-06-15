@@ -2593,11 +2593,12 @@
       border: none !important;
       padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
       box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
     }
 
     .sv-invite-modal::before {
-      border-top-left-radius: inherit;
-      border-top-right-radius: inherit;
+      border-top-left-radius: var(--sv-radius-lg) !important;
+      border-top-right-radius: var(--sv-radius-lg) !important;
     }
 
     .sv-invite-generator,
