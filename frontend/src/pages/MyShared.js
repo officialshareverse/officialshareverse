@@ -1569,7 +1569,7 @@ export default function MyShared() {
                       </div>
                     ) : null}
 
-                    <div style={{ ...detailSectionCard, ...(isMobile ? detailSectionCardMobile : {}), gridColumn: "1 / -1" }}>
+                    <div style={{ ...detailSectionCard, ...(isMobile ? detailSectionCardMobile : {}) }}>
                       <div style={detailSectionHeader}>
                         <div>
                           <p style={detailEyebrow}>Members</p>
