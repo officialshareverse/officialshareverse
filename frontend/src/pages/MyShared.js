@@ -145,6 +145,7 @@ export default function MyShared() {
   const [confirmingId, setConfirmingId] = useState(null);
   const [reportingIssueId, setReportingIssueId] = useState(null);
   const [editForm, setEditForm] = useState(null);
+  const [expandedGroups, setExpandedGroups] = useState({});
   const [proofForms, setProofForms] = useState({});
 
   const [reviewForms, setReviewForms] = useState({});
@@ -337,14 +338,16 @@ export default function MyShared() {
   };
 
   const toggleDetails = async (groupId) => {
-    if (details[groupId]) {
-      setDetails((current) => {
+    if (expandedGroups[groupId]) {
+      setExpandedGroups((current) => {
         const next = { ...current };
         delete next[groupId];
         return next;
       });
       return;
     }
+
+    if (!details[groupId]) {
 
     try {
       setLoadingDetailId(groupId);
@@ -353,26 +356,28 @@ export default function MyShared() {
     } catch (err) {
       console.error(err);
       toast.error("Failed to load group details");
+      return;
     } finally {
       setLoadingDetailId(null);
     }
+    setExpandedGroups((current) => ({ ...current, [groupId]: true }));
   };
 
   const openProofPanel = async (groupId) => {
-    if (details[groupId]) {
-      return;
+    if (!details[groupId]) {
+      try {
+        setLoadingDetailId(groupId);
+        const res = await API.get(`my-groups/${groupId}/`);
+        storeDetail(groupId, res.data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load the proof upload panel");
+        return;
+      } finally {
+        setLoadingDetailId(null);
+      }
     }
-
-    try {
-      setLoadingDetailId(groupId);
-      const res = await API.get(`my-groups/${groupId}/`);
-      storeDetail(groupId, res.data);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load the proof upload panel");
-    } finally {
-      setLoadingDetailId(null);
-    }
+    setExpandedGroups((current) => ({ ...current, [groupId]: true }));
   };
 
   const confirmMemberAccess = async (groupId) => {
@@ -1190,7 +1195,7 @@ export default function MyShared() {
 
               <div style={{ ...actionRow, ...(isMobile ? actionRowMobile : {}) }}>
                 <button style={{ ...secondaryButton, ...(isMobile ? actionButtonMobile : {}) }} onClick={() => toggleDetails(group.id)}>
-                  {loadingDetailId === group.id ? "Loading..." : detail ? (isMobile ? "Hide details" : "Hide members") : (isMobile ? "Manage" : "View members")}
+                  {loadingDetailId === group.id ? "Loading..." : expandedGroups[group.id] ? (isMobile ? "Hide details" : "Hide members") : (isMobile ? "Manage" : "View members")}
                 </button>
 
                 {isMobile ? (
@@ -1394,7 +1399,7 @@ export default function MyShared() {
                 </div>
               ) : null}
 
-              {detail ? (
+              {expandedGroups[group.id] && detail ? (
                 <div style={{ ...detailPanel, ...(isMobile ? detailPanelMobile : {}) }}>
                   <div style={{ ...detailGridLayout, ...(isMobile ? detailGridLayoutMobile : {}) }}>
                     <div style={{ ...detailSectionCard, ...(isMobile ? detailSectionCardMobile : {}) }}>
