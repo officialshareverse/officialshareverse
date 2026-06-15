@@ -581,8 +581,9 @@ export const detailPanel = {
 };
 
 export const detailPanelMobile = {
-  marginTop: "14px",
-  paddingTop: "14px",
+  marginTop: "8px",
+  borderTop: "none",
+  paddingTop: "4px",
 };
 
 export const joinedGrid = {
@@ -736,8 +737,11 @@ export const detailSectionCard = {
 };
 
 export const detailSectionCardMobile = {
-  borderRadius: "18px",
-  padding: "14px",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
+  padding: "12px 0",
+  backdropFilter: "none",
 };
 
 export const detailSectionHeader = {
