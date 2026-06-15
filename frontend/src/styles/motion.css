@@ -1477,11 +1477,23 @@
     .sv-group-chat-thread {
       gap: 0.8rem;
       margin-top: 0.95rem;
+      padding-bottom: 110px;
     }
 
     .sv-group-chat-composer {
-      margin-top: 1rem;
-      padding-top: 0.95rem;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 0.75rem 1rem;
+      padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+      border-top: 1px solid var(--sv-border);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+      margin: 0;
     }
 
     .sv-group-chat-textarea {
