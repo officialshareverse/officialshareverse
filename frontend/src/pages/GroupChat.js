@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import useIsMobile from "../hooks/useIsMobile";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -635,7 +636,7 @@ export default function GroupChat() {
             <QuickReadSection />
           </aside>
 
-          {isMobile && (
+          {isMobile && createPortal(
             <div className="sv-group-chat-composer">
               {error ? (
                 <p className="mb-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>
@@ -666,7 +667,8 @@ export default function GroupChat() {
                   <SendIcon className="h-5 w-5 -ml-0.5" />
                 </button>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </section>
       </div>
