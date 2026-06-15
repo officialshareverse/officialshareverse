@@ -590,34 +590,7 @@ export default function GroupChat() {
                 <p className="mb-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>
               ) : null}
 
-              {isMobile ? (
-                <div className="flex items-end gap-2 bg-slate-50 p-2 rounded-[24px] border border-slate-200 focus-within:border-slate-300 focus-within:ring-2 focus-within:ring-slate-100 transition-all">
-                  <textarea
-                    ref={textareaRef}
-                    value={message}
-                    onChange={(event) => handleMessageChange(event.target.value)}
-                    onBlur={() => {
-                      window.clearTimeout(typingTimerRef.current);
-                      if (isTypingRef.current) {
-                        void syncPresence(false);
-                      }
-                    }}
-                    rows={1}
-                    className="flex-1 resize-none bg-transparent py-3 pl-4 pr-2 text-[15px] outline-none placeholder:text-slate-400 min-h-[46px] max-h-[140px]"
-                    placeholder="Message..."
-                    style={{ overflowY: "auto" }}
-                  />
-                  <button
-                    type="button"
-                    onClick={sendMessage}
-                    disabled={sending || !message.trim()}
-                    className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white transition-all active:scale-95 disabled:pointer-events-none disabled:bg-emerald-200 mb-0.5 mr-0.5"
-                    aria-label="Send message"
-                  >
-                    <SendIcon className="h-5 w-5 -ml-0.5" />
-                  </button>
-                </div>
-              ) : (
+              {!isMobile && (
                 <>
                   <label className="block">
                     <span className="text-sm font-semibold text-slate-700">Type a message</span>
@@ -661,6 +634,40 @@ export default function GroupChat() {
             <ParticipantsSection participants={participants} />
             <QuickReadSection />
           </aside>
+
+          {isMobile && (
+            <div className="sv-group-chat-composer">
+              {error ? (
+                <p className="mb-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>
+              ) : null}
+              <div className="flex items-end gap-2 bg-slate-50 p-2 rounded-[24px] border border-slate-200 focus-within:border-slate-300 focus-within:ring-2 focus-within:ring-slate-100 transition-all">
+                <textarea
+                  ref={textareaRef}
+                  value={message}
+                  onChange={(event) => handleMessageChange(event.target.value)}
+                  onBlur={() => {
+                    window.clearTimeout(typingTimerRef.current);
+                    if (isTypingRef.current) {
+                      void syncPresence(false);
+                    }
+                  }}
+                  rows={1}
+                  className="flex-1 resize-none bg-transparent py-3 pl-4 pr-2 text-[15px] outline-none placeholder:text-slate-400 min-h-[46px] max-h-[140px]"
+                  placeholder="Message..."
+                  style={{ overflowY: "auto" }}
+                />
+                <button
+                  type="button"
+                  onClick={sendMessage}
+                  disabled={sending || !message.trim()}
+                  className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white transition-all active:scale-95 disabled:pointer-events-none disabled:bg-emerald-200 mb-0.5 mr-0.5"
+                  aria-label="Send message"
+                >
+                  <SendIcon className="h-5 w-5 -ml-0.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </section>
       </div>
     </div>
