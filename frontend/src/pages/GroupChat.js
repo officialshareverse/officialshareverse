@@ -399,6 +399,10 @@ export default function GroupChat() {
       setError(err.response?.data?.error || "Failed to send chat message.");
     } finally {
       setSending(false);
+      // Re-focus the input so the mobile keyboard stays open after sending
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+      });
     }
   };
 
