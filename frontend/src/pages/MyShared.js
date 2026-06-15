@@ -1701,7 +1701,7 @@ export default function MyShared() {
           title="No joined groups yet"
           description="You haven't joined any splits. Explore the marketplace to find subscriptions."
           actions={
-            <button style={primaryButton} onClick={() => navigate("/explore")}>
+            <button style={primaryButton} onClick={() => navigate("/groups")}>
               Explore Marketplace
             </button>
           }
