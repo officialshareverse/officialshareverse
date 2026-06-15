@@ -1457,8 +1457,12 @@
     }
 
     .sv-group-chat-thread-card {
-      padding: 0.95rem;
-      border-radius: var(--sv-radius-lg);
+      padding: 0.5rem 0.25rem;
+      border-radius: 0;
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+      backdrop-filter: none !important;
     }
 
     .sv-group-chat-thread-header {
