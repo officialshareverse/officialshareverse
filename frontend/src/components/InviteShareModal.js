@@ -3,9 +3,6 @@ import { createPortal } from "react-dom";
 
 import API from "../api/axios";
 import { useToast } from "./ToastProvider";
-import {
-  CheckCircleIcon,
-  LinkIcon,
   LoadingSpinner,
   SparkIcon,
 } from "./UiIcons";
@@ -39,7 +36,6 @@ export default function InviteShareModal({ group, onClose }) {
   const [selectedLinkId, setSelectedLinkId] = useState(null);
   const [maxUses, setMaxUses] = useState("");
   const [expiresHours, setExpiresHours] = useState("");
-  const [copied, setCopied] = useState(false);
 
   const groupId = group?.id;
 
@@ -113,20 +109,6 @@ export default function InviteShareModal({ group, onClose }) {
     };
   }, [groupId, toast]);
 
-  useEffect(() => {
-    if (!copied) {
-      return undefined;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setCopied(false);
-    }, 1800);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [copied]);
-
   const selectedLink = useMemo(() => {
     if (!links.length) {
       return null;
@@ -142,20 +124,6 @@ export default function InviteShareModal({ group, onClose }) {
   if (!groupId || typeof document === "undefined") {
     return null;
   }
-
-  const copySelectedLink = async () => {
-    if (!selectedLink?.invite_url) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(selectedLink.invite_url);
-      setCopied(true);
-      toast.success("Link copied!", { title: "Copied" });
-    } catch {
-      toast.error("We could not copy that invite link right now.", { title: "Copy failed" });
-    }
-  };
 
   const generateInviteLink = async () => {
     if (!groupId) {
