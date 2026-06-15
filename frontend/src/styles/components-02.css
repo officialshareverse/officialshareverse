@@ -983,7 +983,7 @@
   }
 
   .sv-mobile-tabbar-inner {
-    @apply grid grid-cols-4 gap-1 border backdrop-blur;
+    @apply grid grid-cols-5 gap-1 border backdrop-blur;
     pointer-events: auto;
     border-radius: 26px;
     padding: 0.45rem;
