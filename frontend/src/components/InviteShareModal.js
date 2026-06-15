@@ -304,17 +304,6 @@ export default function InviteShareModal({ group, onClose }) {
                     <span className="sv-profile-field-label">Selected invite URL</span>
                     <input type="text" readOnly value={selectedLink.invite_url} className="sv-input" />
                   </label>
-
-                  <button
-                    type="button"
-                    className={`sv-share-btn sv-share-btn--copy ${copied ? "is-copied" : ""}`}
-                    onClick={() => {
-                      void copySelectedLink();
-                    }}
-                  >
-                    {copied ? <CheckCircleIcon className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
-                    <span>{copied ? "Copied" : "Copy link"}</span>
-                  </button>
                 </div>
 
                 <ShareActions
