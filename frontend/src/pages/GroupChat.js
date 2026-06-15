@@ -437,9 +437,10 @@ export default function GroupChat() {
     }
   }, [messages, sendWebSocketMessage, webSocketStatus]);
 
+  const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
   useEffect(() => {
     threadEndRef.current?.scrollIntoView?.({ block: "end" });
-  }, [messages]);
+  }, [lastMessageId]);
 
   if (loading) {
     return (
