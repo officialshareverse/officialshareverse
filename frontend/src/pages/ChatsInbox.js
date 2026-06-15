@@ -340,27 +340,15 @@ export default function ChatsInbox() {
 
 
 
-        <section className="sv-card sv-reveal">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Inbox</p>
-                <h2 className="mt-2 text-2xl font-bold text-slate-900">{isMobile ? "Chat list" : "Your conversations"}</h2>
-              </div>
+        <section className={isMobile ? "sv-reveal mt-2 mb-20" : "sv-card sv-reveal"}>
+          {!isMobile ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Inbox</p>
+                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Your conversations</h2>
+                </div>
 
-              {isMobile ? (
-                <button
-                  type="button"
-                  onClick={() => setIsMobileDrawerOpen(true)}
-                  className="sv-chat-mobile-trigger"
-                >
-                  <span className="sv-chat-mobile-trigger-copy">
-                    <span>Search &amp; filters</span>
-                    <strong>{searchTerm ? `Searching "${searchTerm}"` : filter === "all" ? "All chats" : filter.charAt(0).toUpperCase() + filter.slice(1)}</strong>
-                  </span>
-                  <SearchIcon className="h-4 w-4" />
-                </button>
-              ) : (
                 <label className="sv-chat-search">
                   <SearchIcon className="h-4 w-4 text-slate-400" />
                   <input
@@ -371,10 +359,8 @@ export default function ChatsInbox() {
                     className="sv-chat-search-input"
                   />
                 </label>
-              )}
-            </div>
+              </div>
 
-            {!isMobile ? (
               <Tabs
                 tabs={[
                   { value: "all", label: "All chats", count: stats.total },
@@ -385,22 +371,64 @@ export default function ChatsInbox() {
                 value={filter}
                 onChange={setFilter}
               />
-            ) : null}
-          </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 px-4">
+              <label className="flex items-center gap-2 rounded-full bg-slate-100/80 px-4 py-2.5 text-slate-600 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500 dark:bg-slate-800/80 dark:text-slate-300 dark:focus-within:bg-slate-800">
+                <SearchIcon className="h-4.5 w-4.5 shrink-0" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search chats..."
+                  className="w-full bg-transparent text-[15px] outline-none placeholder:text-slate-400"
+                />
+              </label>
+              
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 sv-hide-scrollbar" style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                {[
+                  { value: "all", label: "All" },
+                  { value: "unread", label: "Unread", count: stats.unreadThreads },
+                  { value: "pinned", label: "Pinned" },
+                  { value: "hosted", label: "Hosted" },
+                ].map((tab) => (
+                  <button
+                    key={tab.value}
+                    type="button"
+                    onClick={() => setFilter(tab.value)}
+                    className={`shrink-0 flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors ${
+                      filter === tab.value
+                        ? "bg-emerald-600 text-white shadow-sm"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                    }`}
+                  >
+                    {tab.label}
+                    {tab.count > 0 ? (
+                      <span className={`flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] ${filter === tab.value ? "bg-white/20" : "bg-emerald-100 text-emerald-700"}`}>
+                        {tab.count}
+                      </span>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {error ? (
-            <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <div className="mt-5 mx-4 sm:mx-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               {error}
             </div>
           ) : null}
 
-          <div className="mt-5 space-y-4">
+          <div className={isMobile ? "mt-2 divide-y divide-slate-100 dark:divide-slate-800" : "mt-5 space-y-4"}>
             {visibleChats.length === 0 ? (
-              <EmptyState
-                icon={ChatIcon}
-                title="Nothing matches this chat view yet."
-                description="Try another filter or clear the search to bring back the rest of your conversations."
-              />
+              <div className={isMobile ? "px-4 pt-10" : ""}>
+                <EmptyState
+                  icon={ChatIcon}
+                  title="Nothing matches this chat view yet."
+                  description="Try another filter or clear the search to bring back the rest of your conversations."
+                />
+              </div>
             ) : (
               visibleChats.map((chat) => (
                 <ChatCard
@@ -416,49 +444,6 @@ export default function ChatsInbox() {
           </div>
         </section>
       </div>
-
-      <Drawer
-        open={isMobile && isMobileDrawerOpen}
-        onClose={() => setIsMobileDrawerOpen(false)}
-        eyebrow="Chat controls"
-        title="Find the right thread"
-        description="Search chats, narrow the list, and then jump back to the compact inbox."
-        footer={(
-          <button
-            type="button"
-            onClick={() => setIsMobileDrawerOpen(false)}
-            className="sv-btn-secondary w-full justify-center"
-          >
-            Done
-          </button>
-        )}
-      >
-        <label className="sv-chat-search sv-chat-search-drawer">
-          <SearchIcon className="h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Search groups, hosts, or messages"
-            className="sv-chat-search-input"
-          />
-        </label>
-
-        <Tabs
-          tabs={[
-            { value: "all", label: "All chats", count: stats.total },
-            { value: "unread", label: "Unread", count: stats.unreadThreads },
-            { value: "pinned", label: "Pinned", count: stats.pinned },
-            { value: "hosted", label: "Hosted", count: stats.hosted },
-          ]}
-          value={filter}
-          onChange={setFilter}
-          className="sv-drawer-tabs"
-        />
-
-        <div className="sv-drawer-stack">
-        </div>
-      </Drawer>
     </div>
   );
 }
@@ -471,140 +456,168 @@ function ChatCard({ chat, pinned, onTogglePinned, onOpen, compact = false }) {
   const onlineCount = Math.max(0, Number(chat.online_participant_count) || 0);
 
   return (
-    <article className={`sv-chat-card ${chat.unread_chat_count > 0 ? "is-unread" : ""}`}>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className={`sv-chat-group-avatar ${tone} ${onlineCount > 0 ? "has-online" : ""}`} style={{ background: 'none', boxShadow: 'none' }}>
-            <SubscriptionLogo name={chat.group.subscription_name} size={48} style={{ borderRadius: 20 }} />
-            <span className={`sv-chat-group-avatar-dot ${hasTyping || onlineCount > 0 ? "is-online" : ""}`} />
-          </div>
-
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-lg font-semibold text-slate-900">{chat.group.subscription_name}</h3>
-              {!compact ? <span className={`sv-chat-status-pill ${statusMeta.className}`}>{statusMeta.label}</span> : null}
-              {!compact ? <span className="sv-chat-mode-pill">{chat.group.mode_label}</span> : null}
-              {pinned ? <span className="sv-chat-pinned-pill">Pinned</span> : null}
-            </div>
-
-            <p className="mt-2 text-sm text-slate-500">
-              {compact
-                ? chat.is_owner
-                  ? "Hosted by you"
-                  : `Host: ${chat.group.owner_name}`
-                : `${chat.is_owner ? "Hosted by you" : `Hosted by ${chat.group.owner_name}`} | ${chat.participant_count} participant${chat.participant_count === 1 ? "" : "s"}`}
-            </p>
-            {!compact ? <div className="mt-2 flex flex-wrap items-center gap-2">
-              {hasTyping ? <span className="sv-chat-typing-pill">{typingLabel}</span> : null}
-              {!hasTyping && onlineCount > 0 ? (
-                <span className="sv-chat-live-pill">
-                  {onlineCount} active now
-                </span>
-              ) : null}
-            </div> : null}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="sv-chat-time">{formatRelativeTime(chat.last_activity_at)}</span>
-          <Tooltip content={pinned ? "Unpin chat" : "Pin chat"}>
-            <button
-              type="button"
-              onClick={onTogglePinned}
-              className={`sv-chat-pin ${pinned ? "is-active" : ""}`}
-              aria-label={pinned ? "Unpin chat" : "Pin chat"}
-            >
-              <StarIcon className="h-4 w-4" />
-            </button>
-          </Tooltip>
-        </div>
-      </div>
-
-      {!compact ? (
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <AvatarStack
-            className="sv-chat-avatar-stack"
-            chipClassName="sv-chat-avatar-chip"
-            items={(chat.participant_preview || []).map((participant) => {
-              const presenceMeta = getPresenceMeta(participant.presence);
-              return {
-                id: `${chat.group.id}-${participant.username}`,
-                initials: participant.initials || getAvatarToken(participant.username),
-                label: participant.username,
-                title: `${participant.username} - ${presenceMeta.label}`,
-                className: presenceMeta.className,
-                indicatorClassName: presenceMeta.className,
-              };
-            })}
-          />
-          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-            {chat.message_count} message{chat.message_count === 1 ? "" : "s"}
-          </span>
-          {chat.unread_chat_count > 0 ? (
-            <span className="sv-chat-unread-badge">
-              {chat.unread_chat_count} unread
-            </span>
-          ) : (
-            <span className="sv-chat-read-badge">
-              <CheckCircleIcon className="h-3.5 w-3.5" />
-              Read
-            </span>
-          )}
-        </div>
-      ) : null}
-
-      <button type="button" onClick={onOpen} className={`sv-chat-card-body ${compact ? "is-compact" : ""}`}>
-        {hasTyping ? (
-          <>
-            {!compact ? (
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                  <span className="sv-chat-inline-dot is-online" />
-                  Live right now
-                </p>
-                <span className="text-xs text-slate-400">{formatRelativeTime(chat.last_activity_at)}</span>
-              </div>
-            ) : null}
-            <p className={`mt-2 text-sm font-semibold ${compact ? "sv-chat-message-compact text-emerald-700" : "leading-7 text-emerald-700"}`}>{typingLabel}</p>
-          </>
-        ) : chat.last_message ? (
-          <>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {chat.last_message.is_own ? "You" : chat.last_message.sender_username}
-              </p>
-              {!compact ? <span className="text-xs text-slate-400">{formatRelativeTime(chat.last_message.created_at)}</span> : null}
-            </div>
-            <p className={`mt-2 text-sm ${compact ? "sv-chat-message-compact leading-6" : "leading-7"} ${chat.unread_chat_count > 0 ? "font-semibold text-slate-900" : "text-slate-700"}`}>
-              {chat.last_message.message}
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              <ClockIcon className="h-3.5 w-3.5" />
-              No messages yet
-            </p>
-            <p className="mt-2 text-sm leading-7 text-slate-600">Open this chat to start coordinating with the group.</p>
-          </>
-        )}
-      </button>
-
+    <article className={compact ? "relative flex items-center bg-white dark:bg-slate-900 transition active:bg-slate-50 dark:active:bg-slate-800" : `sv-chat-card ${chat.unread_chat_count > 0 ? "is-unread" : ""}`}>
       {compact ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {chat.unread_chat_count > 0 ? (
-            <span className="sv-chat-unread-badge">
-              {chat.unread_chat_count} unread
+        <button type="button" onClick={onOpen} className="flex w-full items-center gap-3 px-4 py-3 text-left outline-none">
+          <div className="relative shrink-0">
+            <SubscriptionLogo name={chat.group.subscription_name} size={52} style={{ borderRadius: "50%" }} />
+            {onlineCount > 0 && !hasTyping ? (
+              <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-900" />
+            ) : null}
+          </div>
+          
+          <div className="flex min-w-0 flex-1 flex-col justify-center">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="truncate text-[16px] font-semibold text-slate-900 dark:text-white">
+                {chat.group.subscription_name}
+              </h3>
+              <span className={`shrink-0 text-xs ${chat.unread_chat_count > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-slate-500"}`}>
+                {hasTyping ? "Now" : formatRelativeTime(chat.last_activity_at)}
+              </span>
+            </div>
+            
+            <div className="mt-0.5 flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                {hasTyping ? (
+                  <p className="truncate text-[14px] font-medium text-emerald-600 dark:text-emerald-400">
+                    {typingLabel}
+                  </p>
+                ) : chat.last_message ? (
+                  <p className={`truncate text-[14px] ${chat.unread_chat_count > 0 ? "font-medium text-slate-800 dark:text-slate-200" : "text-slate-500"}`}>
+                    <span className="mr-1 inline-flex text-slate-400">{chat.last_message.is_own ? "You:" : `${chat.last_message.sender_username.split(" ")[0]}:`}</span>
+                    {chat.last_message.message}
+                  </p>
+                ) : (
+                  <p className="truncate text-[14px] italic text-slate-400">No messages yet</p>
+                )}
+              </div>
+              
+              <div className="flex shrink-0 items-center gap-1.5">
+                {pinned ? (
+                  <StarIcon className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />
+                ) : null}
+                {chat.unread_chat_count > 0 ? (
+                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[11px] font-bold text-white">
+                    {chat.unread_chat_count}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </button>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className={`sv-chat-group-avatar ${tone} ${onlineCount > 0 ? "has-online" : ""}`} style={{ background: 'none', boxShadow: 'none' }}>
+                <SubscriptionLogo name={chat.group.subscription_name} size={48} style={{ borderRadius: 20 }} />
+                <span className={`sv-chat-group-avatar-dot ${hasTyping || onlineCount > 0 ? "is-online" : ""}`} />
+              </div>
+
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg font-semibold text-slate-900">{chat.group.subscription_name}</h3>
+                  <span className={`sv-chat-status-pill ${statusMeta.className}`}>{statusMeta.label}</span>
+                  <span className="sv-chat-mode-pill">{chat.group.mode_label}</span>
+                  {pinned ? <span className="sv-chat-pinned-pill">Pinned</span> : null}
+                </div>
+
+                <p className="mt-2 text-sm text-slate-500">
+                  {`${chat.is_owner ? "Hosted by you" : `Hosted by ${chat.group.owner_name}`} | ${chat.participant_count} participant${chat.participant_count === 1 ? "" : "s"}`}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {hasTyping ? <span className="sv-chat-typing-pill">{typingLabel}</span> : null}
+                  {!hasTyping && onlineCount > 0 ? (
+                    <span className="sv-chat-live-pill">
+                      {onlineCount} active now
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="sv-chat-time">{formatRelativeTime(chat.last_activity_at)}</span>
+              <Tooltip content={pinned ? "Unpin chat" : "Pin chat"}>
+                <button
+                  type="button"
+                  onClick={onTogglePinned}
+                  className={`sv-chat-pin ${pinned ? "is-active" : ""}`}
+                  aria-label={pinned ? "Unpin chat" : "Pin chat"}
+                >
+                  <StarIcon className="h-4 w-4" />
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <AvatarStack
+              className="sv-chat-avatar-stack"
+              chipClassName="sv-chat-avatar-chip"
+              items={(chat.participant_preview || []).map((participant) => {
+                const presenceMeta = getPresenceMeta(participant.presence);
+                return {
+                  id: `${chat.group.id}-${participant.username}`,
+                  initials: participant.initials || getAvatarToken(participant.username),
+                  label: participant.username,
+                  title: `${participant.username} - ${presenceMeta.label}`,
+                  className: presenceMeta.className,
+                  indicatorClassName: presenceMeta.className,
+                };
+              })}
+            />
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              {chat.message_count} message{chat.message_count === 1 ? "" : "s"}
             </span>
-          ) : (
-            <span className="sv-chat-read-badge">
-              <CheckCircleIcon className="h-3.5 w-3.5" />
-              Read
-            </span>
-          )}
-          {!hasTyping && onlineCount > 0 ? <span className="sv-chat-live-pill">{onlineCount} active</span> : null}
-        </div>
-      ) : null}
+            {chat.unread_chat_count > 0 ? (
+              <span className="sv-chat-unread-badge">
+                {chat.unread_chat_count} unread
+              </span>
+            ) : (
+              <span className="sv-chat-read-badge">
+                <CheckCircleIcon className="h-3.5 w-3.5" />
+                Read
+              </span>
+            )}
+          </div>
+
+          <button type="button" onClick={onOpen} className="sv-chat-card-body">
+            {hasTyping ? (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                    <span className="sv-chat-inline-dot is-online" />
+                    Live right now
+                  </p>
+                  <span className="text-xs text-slate-400">{formatRelativeTime(chat.last_activity_at)}</span>
+                </div>
+                <p className="mt-2 text-sm font-semibold leading-7 text-emerald-700">{typingLabel}</p>
+              </>
+            ) : chat.last_message ? (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    {chat.last_message.is_own ? "You" : chat.last_message.sender_username}
+                  </p>
+                  <span className="text-xs text-slate-400">{formatRelativeTime(chat.last_message.created_at)}</span>
+                </div>
+                <p className={`mt-2 text-sm leading-7 ${chat.unread_chat_count > 0 ? "font-semibold text-slate-900" : "text-slate-700"}`}>
+                  {chat.last_message.message}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  <ClockIcon className="h-3.5 w-3.5" />
+                  No messages yet
+                </p>
+                <p className="mt-2 text-sm leading-7 text-slate-600">Open this chat to start coordinating with the group.</p>
+              </>
+            )}
+          </button>
+        </>
+      )}
     </article>
   );
 }
