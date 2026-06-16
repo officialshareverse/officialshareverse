@@ -204,29 +204,29 @@ export default function Landing() {
 
         <section className="sv-marketing-hero sv-landing-hero relative overflow-hidden">
           <div className="grid gap-6 lg:items-center">
-            <div className="relative z-[1]">
+            <div className="relative z-[1] flex flex-col items-center text-center sm:items-start sm:text-left">
               <span className="sv-live-badge sv-animate-glow">Popular apps, one shared wallet</span>
               <p className="sv-eyebrow-on-dark mt-5">Split more. Pay less.</p>
-              <h1 className="sv-display-on-dark mt-4 max-w-4xl">
+              <h1 className="sv-display-on-dark mt-4 max-w-4xl mx-auto sm:mx-0">
                 Save Rs 500/month on Netflix, Spotify, and everyday apps
                 <span className="sv-gradient-text"> by splitting costs safely.</span>
               </h1>
-              <p className="sv-landing-hero-body mt-4 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-sm sm:leading-7 md:text-base md:leading-8">
+              <p className="sv-landing-hero-body mt-4 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-sm sm:leading-7 md:text-base md:leading-8 mx-auto sm:mx-0">
                 Browse live groups or list a plan you already pay for. ShareVerse keeps slots,
                 pricing, wallet payments, chat, and withdrawal requests in one place so everyone
                 understands the split before joining.
               </p>
 
-              <div className="mt-5 grid gap-2.5 sm:inline-flex sm:flex-wrap sm:gap-3">
-                <Link to="/signup" className="sv-btn-primary justify-center">
+              <div className="mt-6 sm:mt-8 grid w-full gap-3 sm:w-auto sm:inline-flex sm:flex-wrap sm:gap-4">
+                <Link to="/signup" className="sv-btn-primary justify-center py-3.5 sm:py-3 text-[15px] sm:text-sm w-full sm:w-auto shadow-[0_0_20px_rgba(16,185,129,0.3)]">
                   Start saving
                 </Link>
-                <Link to="/login" className="sv-btn-secondary justify-center bg-white/90 text-slate-950 sm:bg-white/90">
+                <Link to="/login" className="sv-btn-secondary justify-center bg-white/90 text-slate-950 sm:bg-white/90 py-3.5 sm:py-3 text-[15px] sm:text-sm w-full sm:w-auto shadow-sm">
                   Browse live groups
                 </Link>
               </div>
 
-              <div className="sv-counter-grid mt-6">
+              <div className="sv-counter-grid mt-8 sm:mt-6 w-full max-w-sm sm:max-w-none">
                 {heroStats.map((item) => (
                   <CountUpMetric
                     key={item.label}
@@ -240,13 +240,13 @@ export default function Landing() {
                 ))}
               </div>
 
-              <div className="sv-landing-feature-notes mt-5 flex flex-wrap gap-2">
+              <div className="sv-landing-feature-notes mt-6 sm:mt-5 flex flex-wrap justify-center sm:justify-start gap-2">
                 {featureNotes.map((item) => (
                   <button
                     key={item.label}
                     type="button"
                     onClick={() => jumpToSection(item.targetId)}
-                    className="sv-feature-note"
+                    className="sv-feature-note sv-glass-panel border-white/10"
                   >
                     <span aria-hidden="true">{item.icon}</span>
                     <span>{item.label}</span>
@@ -254,25 +254,34 @@ export default function Landing() {
                 ))}
               </div>
 
-              <div className="sv-plan-logo-strip mt-5" aria-label="Popular plans on ShareVerse">
-                <span className="sv-plan-logo-strip-label">Popular plans</span>
-                {popularPlanLogos.map((item) => (
-                  <span key={item.name} className={`sv-plan-logo ${item.className}`}>
-                    {item.name}
-                  </span>
-                ))}
+              <div className="sv-plan-logo-strip mt-8 sm:mt-5 w-full overflow-hidden" aria-label="Popular plans on ShareVerse">
+                <span className="sv-plan-logo-strip-label hidden sm:inline-block">Popular plans</span>
+                <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-3 sm:hidden text-center">Popular plans on ShareVerse</p>
+                <div className="sv-marquee-container flex sm:inline-flex items-center gap-2 sm:gap-3 w-[200%] sm:w-auto">
+                  {popularPlanLogos.map((item) => (
+                    <span key={item.name} className={`sv-plan-logo ${item.className}`}>
+                      {item.name}
+                    </span>
+                  ))}
+                  {/* Duplicate for infinite scroll on mobile */}
+                  {popularPlanLogos.map((item) => (
+                    <span key={`${item.name}-dup`} className={`sv-plan-logo sm:hidden ${item.className}`}>
+                      {item.name}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
           </div>
 
-          <div className="sv-landing-highlight-grid mt-6 grid gap-3 md:grid-cols-3">
+          <div className="sv-landing-highlight-grid mt-8 sm:mt-6 flex overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:gap-3 md:grid-cols-3 sv-hide-scrollbar">
             {heroHighlights.map((item, index) => (
               <button
                 key={item.label}
                 type="button"
                 onClick={() => jumpToSection(item.targetId)}
-                className={`sv-highlight-card sv-hover-lift ${index === 0 ? "sv-animate-rise" : index === 1 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
+                className={`sv-highlight-card sv-hover-lift shrink-0 w-[85%] sm:w-auto snap-center mr-3 sm:mr-0 text-left ${index === 0 ? "sv-animate-rise" : index === 1 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
               >
                 <span className="sv-highlight-card-icon" aria-hidden="true">
                   {item.icon}
@@ -295,13 +304,13 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="sv-mode-toggle">
+            <div className="sv-mode-toggle flex w-full sm:w-auto sm:inline-flex mt-4 sm:mt-0 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
               {modes.map((mode) => (
                 <button
                   key={mode.id}
                   type="button"
                   onClick={() => setActiveMode(mode.id)}
-                  className={`sv-mode-toggle-button ${activeMode === mode.id ? "is-active" : ""}`}
+                  className={`sv-mode-toggle-button flex-1 sm:flex-none justify-center ${activeMode === mode.id ? "is-active" : ""}`}
                 >
                   {mode.tab}
                 </button>
@@ -333,8 +342,8 @@ export default function Landing() {
                 ))}
               </div>
 
-              <div className="mt-5">
-                <Link to={activeModeContent.ctaTo} className="sv-btn-primary justify-center text-[13px] sm:text-sm">
+              <div className="mt-6 sm:mt-5">
+                <Link to={activeModeContent.ctaTo} className="sv-btn-primary justify-center w-full sm:w-auto text-[15px] sm:text-sm py-3.5 sm:py-3 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
                   {activeModeContent.cta}
                 </Link>
               </div>

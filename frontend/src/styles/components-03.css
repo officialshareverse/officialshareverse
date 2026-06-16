@@ -435,6 +435,28 @@
     max-width: 44rem;
   }
 
+  @media (max-width: 639px) {
+    .sv-plan-logo-strip {
+      flex-wrap: nowrap;
+      position: relative;
+      -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+      mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    }
+    
+    .sv-marquee-container {
+      animation: sv-marquee 25s linear infinite;
+    }
+
+    .sv-marquee-container:hover {
+      animation-play-state: paused;
+    }
+  }
+
+  @keyframes sv-marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
   .sv-plan-logo-strip-label,
   .sv-plan-logo {
     display: inline-flex;
