@@ -6,8 +6,6 @@ import { useToast } from "../components/ToastProvider";
 import { CheckCircleIcon, ShieldIcon, LoadingSpinner } from "../components/UiIcons";
 import {
   getPlanMeta,
-  getCardTone,
-  getStatusTone,
   formatCurrency,
   formatDate,
   getInitials,
