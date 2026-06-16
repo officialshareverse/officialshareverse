@@ -191,6 +191,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
   const location = useLocation();
   const isMobile = useIsMobile();
   const isChatPage = Boolean(location.pathname.match(/^\/groups\/[^/]+\/chat\/?$/));
+  const isGroupDetailsPage = Boolean(location.pathname.match(/^\/groups\/[^/]+$/) && !location.pathname.match(/\/chat\/?$/));
   const [isRouteLoading, setIsRouteLoading] = useState(true);
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
   const openSpotlight = useCallback(() => setIsSpotlightOpen(true), []);
@@ -248,7 +249,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
         <span className="sv-route-loading-bar" />
       </div>
 
-      {isAuth && !(isMobile && isChatPage) ? (
+      {isAuth && !(isMobile && (isChatPage || isGroupDetailsPage)) ? (
         <Navbar
           setIsAuth={setIsAuth}
           themeMode={themeMode}
