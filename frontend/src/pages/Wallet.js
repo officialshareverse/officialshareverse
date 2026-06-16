@@ -991,7 +991,7 @@ export default function Wallet() {
                     <div className="h-11 w-11 flex items-center justify-center rounded-2xl border border-teal-100 text-teal-600 bg-teal-50/50">
                       <WalletGlyph className="h-5 w-5" />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-700">Method</span>
+                    <span className="text-[10px] font-bold text-slate-700">Payout Method</span>
                   </button>
                 </div>
               </div>
