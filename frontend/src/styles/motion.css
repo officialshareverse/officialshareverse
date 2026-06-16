@@ -1467,7 +1467,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      z-index: 40;
+      z-index: 200;
       background:
         radial-gradient(circle at top left, var(--sv-page-radial-a, rgba(45,212,191,0.06)), transparent 28%),
         radial-gradient(circle at bottom right, var(--sv-page-radial-b, rgba(124,58,237,0.05)), transparent 26%),
