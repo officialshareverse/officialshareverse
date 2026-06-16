@@ -144,8 +144,8 @@ export default function GroupDetails() {
 
   return (
     <div className="min-h-screen bg-white pb-32">
-      {/* Top Navigation - hidden on mobile, visible on desktop */}
-      <div className="hidden sm:flex sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 items-center justify-between">
+      {/* Top Navigation */}
+      <div className="flex sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 items-center justify-between">
         <button 
           onClick={() => navigate("/groups")}
           className="text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors"
