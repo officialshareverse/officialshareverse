@@ -254,14 +254,16 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
     () => normalizeReferralCode(new URLSearchParams(location.search || "").get("ref") || ""),
     [location.search]
   );
-  const loginHref = useMemo(
-    () => (redirectTarget !== "/home" ? `/login?redirect=${encodeURIComponent(redirectTarget)}` : "/login"),
-    [redirectTarget]
-  );
-  const loginDestination = useMemo(
-    () => (redirectTarget !== "/home" ? `/login?redirect=${encodeURIComponent(redirectTarget)}` : "/login"),
-    [redirectTarget]
-  );
+  const loginHref = useMemo(() => {
+    const base = isMobile ? "/" : "/login";
+    return redirectTarget !== "/home" ? `${base}?redirect=${encodeURIComponent(redirectTarget)}` : base;
+  }, [redirectTarget, isMobile]);
+
+  const loginDestination = useMemo(() => {
+    const base = isMobile ? "/" : "/login";
+    return redirectTarget !== "/home" ? `${base}?redirect=${encodeURIComponent(redirectTarget)}` : base;
+  }, [redirectTarget, isMobile]);
+
   const [form, setForm] = useState(() => ({
     first_name: "",
     last_name: "",
