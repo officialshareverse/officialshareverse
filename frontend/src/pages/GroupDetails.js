@@ -158,8 +158,8 @@ export default function GroupDetails() {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10 flex flex-col gap-6">
         
         {/* Hero Info Card */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100 relative overflow-hidden">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white shadow-md border border-slate-50 flex items-center justify-center p-2 mb-6">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-sm border border-slate-100 relative overflow-hidden">
+          <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white shadow-md border border-slate-50 flex items-center justify-center p-1.5 sm:p-2 mb-4 sm:mb-6">
             <SubscriptionLogo name={planName} size="100%" className="w-full h-full rounded-xl" />
           </div>
 
@@ -176,7 +176,7 @@ export default function GroupDetails() {
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
+          <h1 className="text-xl sm:text-3xl font-bold text-slate-900 leading-tight">
             {planName} Split Group
           </h1>
           <p className="mt-2 text-[15px] leading-relaxed text-slate-600">
@@ -186,8 +186,8 @@ export default function GroupDetails() {
           </p>
 
           {/* Host Mini Profile inside Hero */}
-          <div className="mt-8 flex items-center gap-4 pt-6 border-t border-slate-100">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[14px] font-bold text-slate-500 uppercase tracking-wider">
+          <div className="mt-6 sm:mt-8 flex items-center gap-3 sm:gap-4 pt-5 sm:pt-6 border-t border-slate-100">
+            <span className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[13px] sm:text-[14px] font-bold text-slate-500 uppercase tracking-wider">
               {getInitials(ownerName)}
             </span>
             <div className="flex flex-col justify-center">
@@ -201,7 +201,7 @@ export default function GroupDetails() {
         </div>
 
         {/* Pricing Card (Gradient) */}
-        <div className="bg-gradient-to-br from-teal-700 to-emerald-600 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+        <div className="bg-gradient-to-br from-teal-700 to-emerald-600 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-teal-900 opacity-20 rounded-full -ml-12 -mb-12 blur-xl"></div>
           
@@ -210,7 +210,7 @@ export default function GroupDetails() {
               <p className="text-[11px] font-bold tracking-widest uppercase opacity-80 mb-2">
                 {payNowLabel}
               </p>
-              <p className="text-4xl sm:text-5xl font-bold leading-none tracking-tight">
+              <p className="text-3xl sm:text-5xl font-bold leading-none tracking-tight">
                 {formatCurrency(joinPrice)}
               </p>
             </div>
@@ -225,29 +225,29 @@ export default function GroupDetails() {
         </div>
 
         {/* Breakdown & Cycle Details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between">
-            <p className="text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-1">Plan Contribution</p>
-            <p className="text-lg font-bold text-slate-900">{formatCurrency(subtotal)}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 flex flex-col justify-between">
+            <p className="text-[11px] sm:text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-1">Plan Contribution</p>
+            <p className="text-base sm:text-lg font-bold text-slate-900">{formatCurrency(subtotal)}</p>
             <p className="text-[12px] text-slate-400 mt-3 border-t border-slate-50 pt-3 flex justify-between">
               <span>Platform Fee</span>
               <span className="font-semibold text-slate-600">{formatCurrency(platformFee)}</span>
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between">
-            <p className="text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 flex flex-col justify-between">
+            <p className="text-[11px] sm:text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-1">
               {group.mode === "group_buy" ? "Members needed" : "Slots left"}
             </p>
-            <p className="text-lg font-bold text-slate-900">{remainingSlots} slot{remainingSlots !== 1 ? "s" : ""}</p>
+            <p className="text-base sm:text-lg font-bold text-slate-900">{remainingSlots} slot{remainingSlots !== 1 ? "s" : ""}</p>
             <p className="text-[12px] text-slate-400 mt-3 border-t border-slate-50 pt-3 flex justify-between">
               <span>Total capacity</span>
               <span className="font-semibold text-slate-600">{filledSlots}/{totalSlots} filled</span>
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 sm:col-span-2">
-            <p className="text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-1">Current Cycle</p>
+          <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 sm:col-span-2">
+            <p className="text-[11px] sm:text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-1">Current Cycle</p>
             <p className="text-[15px] font-bold text-slate-900 mt-1">{cycleLabel || "Dates shared after join"}</p>
             <p className="text-[13px] text-slate-500 mt-1.5">
               {group.pricing_note ? "Proration is already applied to this price." : "Matches the current plan cycle."}
@@ -256,10 +256,10 @@ export default function GroupDetails() {
         </div>
 
         {/* Buyer Protection */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 mt-2">
-          <div className="flex items-center gap-2 mb-6">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-100 mt-2">
+          <div className="flex items-center gap-2 mb-5 sm:mb-6">
             <ShieldIcon className="w-5 h-5 text-emerald-500" />
-            <h3 className="text-[15px] font-bold text-slate-900">How your money is protected</h3>
+            <h3 className="text-[14px] sm:text-[15px] font-bold text-slate-900">How your money is protected</h3>
           </div>
           
           <div className="flex flex-col gap-4 relative">
