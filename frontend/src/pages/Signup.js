@@ -6,6 +6,8 @@ import { setAuthToken } from "../auth/session";
 import AuthShell from "../components/AuthShell";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 import { useToast } from "../components/ToastProvider";
+import useIsMobile from "../hooks/useIsMobile";
+import MobileSignup from "./MobileSignup";
 import {
   CheckCircleIcon,
   LoadingSpinner,
@@ -669,6 +671,42 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
     );
     navigate(redirectTarget, { replace: true });
   };
+
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <MobileSignup
+        form={form}
+        handleChange={handleChange}
+        usernameStatus={usernameStatus}
+        usernameStatusCopy={usernameStatusCopy}
+        referralStatus={referralStatus}
+        referralStatusCopy={referralStatusCopy}
+        acceptedTerms={acceptedTerms}
+        setAcceptedTerms={setAcceptedTerms}
+        error={error}
+        setError={setError}
+        loading={loading}
+        otpLoading={otpLoading}
+        hasVerificationSession={hasVerificationSession}
+        verificationNotice={verificationNotice}
+        otpDigits={otpDigits}
+        handleOtpDigitChange={handleOtpDigitChange}
+        handleOtpKeyDown={handleOtpKeyDown}
+        handleOtpPaste={handleOtpPaste}
+        otpInputsRef={otpInputsRef}
+        handleRequestOtp={handleRequestOtp}
+        submitSignupRef={submitSignupRef}
+        handleGoogleSuccess={handleGoogleSuccess}
+        loginHref={loginHref}
+        validateIdentityStep={validateIdentityStep}
+        validateContactStep={validateContactStep}
+        validateSecurityStep={validateSecurityStep}
+        validateReferralStep={validateReferralStep}
+      />
+    );
+  }
 
   return (
     <AuthShell
