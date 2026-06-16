@@ -143,7 +143,6 @@ export default function GroupDetails() {
       : "PAY NOW";
 
   return (
-  return (
     <div className="min-h-screen bg-white pb-32">
       {/* Top Navigation - hidden on mobile, visible on desktop */}
       <div className="hidden sm:flex sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 items-center justify-between">
