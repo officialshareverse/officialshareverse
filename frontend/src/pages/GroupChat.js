@@ -400,10 +400,6 @@ export default function GroupChat() {
       setError(err.response?.data?.error || "Failed to send chat message.");
     } finally {
       setSending(false);
-      // Re-focus the input so the mobile keyboard stays open after sending
-      requestAnimationFrame(() => {
-        textareaRef.current?.focus();
-      });
     }
   };
 
@@ -604,6 +600,8 @@ export default function GroupChat() {
               <button
                 type="button"
                 onClick={sendMessage}
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
                 disabled={sending || !message.trim()}
                 className="sv-mobile-chat-send"
                 aria-label="Send message"
