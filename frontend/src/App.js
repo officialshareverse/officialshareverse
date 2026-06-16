@@ -459,12 +459,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
         toggleTheme={toggleTheme}
       />
 
-      {!(isMobile && isChatPage) && (
-        <ScrollTopButton
-          isVisible={isScrollTopVisible}
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        />
-      )}
+      {/* ScrollTopButton removed as requested */}
     </>
   );
 }

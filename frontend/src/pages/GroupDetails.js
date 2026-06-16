@@ -298,7 +298,7 @@ export default function GroupDetails() {
       </div>
 
       {/* Sticky Bottom Action Bar */}
-      <div className="fixed bottom-[64px] sm:bottom-0 left-0 right-0 px-4 py-3 bg-white/95 backdrop-blur-xl border-t border-slate-200 z-30 flex items-center justify-center">
+      <div className="fixed bottom-[56px] sm:bottom-0 left-0 right-0 px-4 py-3 bg-white/95 backdrop-blur-xl border-t border-slate-200 z-30 flex items-center justify-center">
         <div className="w-full max-w-2xl flex gap-3">
           <button 
             onClick={() => navigate("/groups")}
