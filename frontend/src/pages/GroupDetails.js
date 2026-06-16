@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useLocation, useNavigate, Link } from "react-router-dom";
-import useIsMobile from "../hooks/useIsMobile";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
+// useIsMobile hook removed since it was unused
 import SubscriptionLogo from "../components/SubscriptionLogo";
 import { useToast } from "../components/ToastProvider";
 import { CheckCircleIcon, ShieldIcon, LoadingSpinner } from "../components/UiIcons";
@@ -30,7 +30,6 @@ export default function GroupDetails() {
   const location = useLocation();
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const isMobile = useIsMobile();
 
   const [group, setGroup] = useState(location.state?.group || null);
   const [loading, setLoading] = useState(!group);
@@ -107,8 +106,6 @@ export default function GroupDetails() {
 
   const planName = group.subscription_name || group.subscription;
   const planMeta = getPlanMeta(planName);
-  const tone = getCardTone(group.mode);
-  const statusTone = getStatusTone(group.status);
   const ownerName = formatHostDisplayName(group.owner_name);
   const hostReputation = getMockReputation(group.owner_name);
   
