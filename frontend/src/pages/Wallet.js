@@ -384,8 +384,6 @@ export default function Wallet() {
     [filteredTransactions]
   );
 
-  const activeTransactionFilterLabel =
-    transactionFilter === "all" ? "All" : transactionFilter === "credit" ? "Credits" : "Debits";
 
   const sortedPayouts = useMemo(
     () => [...payouts].sort((left, right) => toTimestamp(right.requested_at) - toTimestamp(left.requested_at)),
