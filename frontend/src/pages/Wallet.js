@@ -298,7 +298,7 @@ export default function Wallet() {
   const [activeTab, setActiveTab] = useState("topup");
   const isMobile = useIsMobile();
   const [isMobileActionDrawerOpen, setIsMobileActionDrawerOpen] = useState(false);
-  const [isMobileHistoryDrawerOpen, setIsMobileHistoryDrawerOpen] = useState(false);
+
   const [transactionSearch, setTransactionSearch] = useState("");
   const [transactionFilter, setTransactionFilter] = useState("all");
   const payoutsLive = Boolean(payoutConfig?.payout_enabled);
@@ -316,7 +316,7 @@ export default function Wallet() {
   useEffect(() => {
     if (!isMobile) {
       setIsMobileActionDrawerOpen(false);
-      setIsMobileHistoryDrawerOpen(false);
+
     }
   }, [isMobile]);
 
@@ -969,54 +969,6 @@ export default function Wallet() {
         </Drawer>
       ) : null}
 
-      {isMobile ? (
-        <Drawer
-          open={isMobileHistoryDrawerOpen}
-          onClose={() => setIsMobileHistoryDrawerOpen(false)}
-          eyebrow="History filters"
-          title="Find wallet activity"
-          description="Search transactions or narrow the list before jumping back to the compact wallet feed."
-          className="sv-wallet-history-mobile-drawer"
-          footer={(
-            <button
-              type="button"
-              onClick={() => setIsMobileHistoryDrawerOpen(false)}
-              className="sv-btn-secondary w-full justify-center"
-            >
-              Done
-            </button>
-          )}
-        >
-          <label className="sv-wallet-search">
-            <SearchIcon className="h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              value={transactionSearch}
-              onChange={(event) => setTransactionSearch(event.target.value)}
-              placeholder="Search titles, groups, or descriptions"
-              className="sv-wallet-search-input"
-            />
-          </label>
-
-          <div className="sv-wallet-filter-row">
-            {[
-              { value: "all", label: "All" },
-              { value: "credit", label: "Credits" },
-              { value: "debit", label: "Debits" },
-            ].map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setTransactionFilter(option.value)}
-                className={`sv-wallet-filter-pill ${transactionFilter === option.value ? "is-active" : ""}`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </Drawer>
-      ) : null}
-
       <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
         <FirstVisitHint
           storageKey="wallet-v1"
@@ -1024,7 +976,118 @@ export default function Wallet() {
           body="Add money here to join paid groups instantly. You can withdraw anytime to your bank or UPI."
         />
 
-        <section className="grid gap-4 sm:gap-6">
+        {isMobile ? (
+          <div className="sv-mobile-wallet-redesign space-y-5 px-1 pb-8">
+            {/* Total Wallet Balance Card */}
+            <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm p-5 pb-6">
+              <div className="flex justify-between items-start">
+                <h2 className="text-lg font-extrabold text-slate-900 leading-snug w-28">Total Wallet Balance</h2>
+                <div className="flex gap-2">
+                  <button onClick={() => focusActionTab("withdraw")} className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform">
+                    <div className="h-11 w-11 flex items-center justify-center rounded-2xl border border-teal-100 text-teal-600 bg-teal-50/50">
+                      <BankIcon className="h-5 w-5" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-700">Withdrawal</span>
+                  </button>
+                  <button onClick={() => toast.info("Coming soon!")} className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform">
+                    <div className="h-11 w-11 flex items-center justify-center rounded-2xl border border-teal-100 text-teal-600 bg-teal-50/50">
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-700">Send</span>
+                  </button>
+                  <button onClick={() => toast.info("Coming soon!")} className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform">
+                    <div className="h-11 w-11 flex items-center justify-center rounded-2xl border border-teal-100 text-teal-600 bg-teal-50/50">
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-700">Earn</span>
+                  </button>
+                </div>
+              </div>
+              <div className="mt-5">
+                <h1 className="text-[40px] font-black text-teal-500 tracking-tight">
+                  ₹{Number(spendableBalance || 0).toFixed(2)}
+                </h1>
+              </div>
+              {Number(bonusBalance) > 0 && (
+                <div className="mt-6 flex gap-3">
+                  <div className="flex-1 bg-slate-50 border border-slate-100 rounded-[18px] py-3 px-4 text-center">
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bonus Balance</p>
+                    <p className="mt-1 text-base font-extrabold text-rose-600">₹{Number(bonusBalance || 0).toFixed(2)}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Add Money Card */}
+            <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm p-5 pb-6">
+              <h2 className="text-lg font-extrabold text-slate-900">Add Money to wallet</h2>
+              <div className="mt-5">
+                <input 
+                  type="number" 
+                  placeholder="Amount" 
+                  value={topupAmount}
+                  onChange={(e) => setTopupAmount(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-[16px] px-5 py-3.5 text-lg font-semibold text-slate-900 placeholder:text-slate-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all"
+                />
+                <p className="mt-2.5 text-xs font-medium text-slate-400">Amount range: ₹1 - ₹1,00,000</p>
+              </div>
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-1 sv-no-scrollbar">
+                {['100', '200', '500', '1000'].map(amount => (
+                  <button 
+                    key={amount}
+                    onClick={() => setTopupAmount(amount)}
+                    className={`shrink-0 px-4 py-2.5 rounded-[14px] border text-[13px] font-bold transition-all ${topupAmount === amount ? "border-teal-500 bg-teal-50 text-teal-700" : "border-teal-100 bg-teal-50/40 text-teal-600"}`}
+                  >
+                    + ₹{amount}
+                  </button>
+                ))}
+              </div>
+              <button 
+                onClick={startWalletTopup}
+                disabled={workingAction !== "" || !topupAmount || Number(topupAmount) < 1}
+                className="mt-6 w-full py-4 rounded-[16px] bg-teal-50/80 text-teal-600 font-extrabold text-[15px] flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {workingAction === "topup" ? "Processing..." : (
+                  <>Proceed to Pay <span className="text-lg leading-none">→</span></>
+                )}
+              </button>
+            </div>
+
+            {/* Recent Transactions */}
+            <div className="pt-2">
+              <div className="flex items-center justify-between px-1">
+                <h2 className="text-lg font-extrabold text-slate-900">Recent Transactions</h2>
+                <ClockIcon className="h-5 w-5 text-slate-400" />
+              </div>
+              <div className="mt-4 bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-100">
+                {filteredTransactions.length === 0 ? (
+                  <div className="p-8 text-center text-sm font-medium text-slate-500">No recent transactions.</div>
+                ) : (
+                  filteredTransactions.slice(0, 15).map(transaction => (
+                    <div key={transaction.id} className="p-4 flex items-center gap-3.5">
+                      <div className={`h-11 w-11 shrink-0 rounded-full flex items-center justify-center ${transaction.type === 'credit' ? 'bg-teal-50 text-teal-500 border border-teal-100' : 'bg-rose-50 text-rose-500 border border-rose-100'}`}>
+                        {transaction.type === 'credit' ? (
+                          <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                        ) : (
+                          <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-[13px] font-bold text-slate-900 truncate">{transaction.title}</h3>
+                        <p className="mt-0.5 text-[11px] font-medium text-slate-500 truncate">{formatDateTime(transaction.created_at)}</p>
+                      </div>
+                      <div className={`text-right shrink-0 font-bold text-[14px] ${transaction.type === 'credit' ? 'text-teal-500' : 'text-rose-500'}`}>
+                        {transaction.type === 'credit' ? '+' : '-'}₹{Math.abs(transaction.amount).toFixed(2)}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <section className="grid gap-4 sm:gap-6">
           <div className="relative overflow-hidden rounded-3xl sm:rounded-4xl sv-glass-panel p-5 sm:p-12 shadow-sm sv-animate-rise">
             <div className="absolute inset-0 sm:inset-auto sm:right-0 sm:top-0 sm:-mr-16 sm:-mt-16 h-full w-full sm:h-64 sm:w-64 rounded-none sm:rounded-full bg-gradient-to-br from-indigo-100 to-purple-50 opacity-60 sm:opacity-50 blur-3xl pointer-events-none"></div>
             <div className="relative z-[1]">
@@ -1232,19 +1295,7 @@ export default function Wallet() {
               </span>
             </div>
 
-            {isMobile ? (
-              <button
-                type="button"
-                onClick={() => setIsMobileHistoryDrawerOpen(true)}
-                className="sv-wallet-history-mobile-trigger mt-5"
-              >
-                <span className="sv-wallet-history-mobile-trigger-copy">
-                  <span>Search &amp; filter</span>
-                  <strong>{transactionSearch ? `Searching "${transactionSearch}"` : activeTransactionFilterLabel}</strong>
-                </span>
-                <SearchIcon className="h-4 w-4" />
-              </button>
-            ) : (
+
               <div className="sv-wallet-history-top mt-5">
                 <div className="sv-wallet-mini-chart">
                   <div className="flex items-center justify-between gap-3">
@@ -1294,7 +1345,6 @@ export default function Wallet() {
                   </div>
                 </div>
               </div>
-            )}
 
             <div className="mt-5 space-y-5">
               {groupedTransactions.length === 0 ? (
@@ -1372,6 +1422,8 @@ export default function Wallet() {
             </div>
           </section>
         </section>
+        </>
+        )}
       </div>
     </div>
   );
