@@ -442,10 +442,38 @@ export default function GroupChat() {
     }
   }, [messages, sendWebSocketMessage, webSocketStatus]);
 
+  const scrollToBottom = useCallback(() => {
+    if (threadEndRef.current) {
+      threadEndRef.current.scrollIntoView({ block: "end" });
+    }
+  }, []);
+
   const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
+  
   useEffect(() => {
-    threadEndRef.current?.scrollIntoView?.({ block: "end" });
-  }, [lastMessageId]);
+    scrollToBottom();
+  }, [lastMessageId, scrollToBottom]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.visualViewport) {
+      const handleResize = () => {
+        // Use a small timeout to let the keyboard finish animating
+        setTimeout(scrollToBottom, 50);
+      };
+      window.visualViewport.addEventListener("resize", handleResize);
+      return () => {
+        window.visualViewport.removeEventListener("resize", handleResize);
+      };
+    } else if (typeof window !== "undefined") {
+      const handleResize = () => {
+        setTimeout(scrollToBottom, 50);
+      };
+      window.addEventListener("resize", handleResize);
+      return () => {
+        window.removeEventListener("resize", handleResize);
+      };
+    }
+  }, [scrollToBottom]);
 
   if (loading) {
     return (
@@ -558,6 +586,9 @@ export default function GroupChat() {
                 ref={textareaRef}
                 value={message}
                 onChange={(event) => handleMessageChange(event.target.value)}
+                onFocus={() => {
+                  setTimeout(scrollToBottom, 50);
+                }}
                 onBlur={() => {
                   window.clearTimeout(typingTimerRef.current);
                   if (isTypingRef.current) {
