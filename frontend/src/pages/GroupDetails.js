@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 // useIsMobile hook removed since it was unused
 import SubscriptionLogo from "../components/SubscriptionLogo";
 import { useToast } from "../components/ToastProvider";
-import { CheckCircleIcon, ShieldIcon, LoadingSpinner } from "../components/UiIcons";
+import { ShieldIcon, LoadingSpinner } from "../components/UiIcons";
 import {
   getPlanMeta,
   formatCurrency,
