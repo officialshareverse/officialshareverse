@@ -737,6 +737,142 @@ export default function Groups() {
   );
 }
 
+function MobileJoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
+  const planName = group.subscription_name || group.subscription;
+  const planMeta = getPlanMeta(planName);
+
+  // Derive mode pill
+  const isSharing = group.mode === "sharing";
+  const modePillText = isSharing ? "SHARE EXISTING PLAN" : "BUY NEW PLAN";
+  const modePillClass = isSharing 
+    ? "bg-emerald-100 text-emerald-800 font-bold" 
+    : "bg-amber-100 text-amber-800 font-bold";
+
+  // Derive status pill
+  let statusText = String(group.status_label || "").toUpperCase();
+  let statusBg = "bg-blue-100";
+  let statusTextClass = "text-blue-800";
+  let statusDotClass = "bg-blue-600";
+  if (group.status === "active") {
+    statusBg = "bg-emerald-100";
+    statusTextClass = "text-emerald-800";
+    statusDotClass = "bg-emerald-600";
+  } else if (group.status === "closed" || group.status === "refunded") {
+    statusBg = "bg-slate-200";
+    statusTextClass = "text-slate-600";
+    statusDotClass = "bg-slate-500";
+  }
+
+  const payNowLabel = group.mode === "group_buy"
+    ? "CONTRIBUTE NOW"
+    : group.is_prorated
+      ? "PAY NOW FOR THE REMAINING CYCLE"
+      : "PAY NOW";
+
+  const isJoining = joiningId === group.id;
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/40 backdrop-blur-sm sm:hidden animate-in fade-in duration-300">
+      <div className="mt-auto bg-slate-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-full duration-300">
+        
+        {/* Topbar */}
+        <div className="flex items-center justify-between px-6 py-5 sticky top-0 bg-slate-50/90 backdrop-blur-md z-10 rounded-t-[32px]">
+          <span className="text-[11px] font-bold text-slate-500 tracking-wider uppercase">
+            Join Confirmation
+          </span>
+          <button 
+            onClick={onCancel}
+            className="px-4 py-1.5 rounded-full border border-slate-200 text-xs font-bold text-slate-600 bg-white shadow-sm hover:bg-slate-50 transition-colors"
+          >
+            CLOSE
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="px-5 pb-6 flex flex-col gap-4">
+          
+          {/* Main Info Card */}
+          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 flex flex-col items-start relative">
+            <div className="w-16 h-16 rounded-[18px] bg-white shadow-md border border-slate-50 flex items-center justify-center p-2 mb-6 mx-auto">
+              <SubscriptionLogo name={planName} size="100%" className="w-full h-full rounded-lg" />
+            </div>
+
+            <div className="flex flex-col gap-2.5 w-full">
+              <div className={`self-start px-3 py-1.5 rounded-full text-[10px] tracking-wider uppercase ${modePillClass}`}>
+                {modePillText}
+              </div>
+              <div className={`self-start flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] tracking-wider font-bold uppercase ${statusBg} ${statusTextClass}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${statusDotClass}`}></span>
+                {statusText}
+              </div>
+              <div className="self-start px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-800 font-bold text-[10px] tracking-wider uppercase">
+                {planMeta.category}
+              </div>
+            </div>
+
+            <div className="mt-6 w-full">
+              <h2 className="text-[22px] font-bold text-slate-900 leading-tight">Review before you join</h2>
+              <p className="text-[15px] font-medium text-slate-600 mt-1">{planName}</p>
+            </div>
+          </div>
+
+          {/* Pricing Card */}
+          <div className="bg-gradient-to-br from-teal-700 to-emerald-600 rounded-[24px] p-6 text-white shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-10 -mt-10 blur-xl"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-900 opacity-20 rounded-full -ml-8 -mb-8 blur-lg"></div>
+            
+            <p className="text-[10px] font-bold tracking-widest uppercase opacity-80 mb-2 relative z-10">
+              {payNowLabel}
+            </p>
+            <p className="text-[32px] font-bold leading-none tracking-tight mb-4 relative z-10">
+              {formatCurrency(summary.amount)}
+            </p>
+            <p className="text-[13px] text-teal-50 leading-relaxed font-medium opacity-90 relative z-10">
+              {group.mode === "sharing" 
+                ? "This amount is charged from your wallet when you confirm this join."
+                : "This contribution is reserved until the buy-together flow completes."}
+            </p>
+          </div>
+
+          {/* Footer Area */}
+          <div className="mt-2 px-1 flex flex-col gap-4">
+            <p className="text-[13px] text-slate-500 leading-relaxed text-center">
+              You can still cancel here and go back to browsing without joining.
+            </p>
+            
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={onCancel}
+                disabled={isJoining}
+                className="w-full py-4 rounded-xl border border-slate-200 bg-white text-slate-900 font-bold text-[15px] shadow-sm disabled:opacity-50 transition-colors active:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={onConfirm}
+                disabled={isJoining || !group.is_joinable}
+                className="w-full py-4 rounded-xl bg-teal-800 text-white font-bold text-[15px] shadow-md flex items-center justify-center gap-2 disabled:opacity-50 transition-colors active:bg-teal-900"
+              >
+                {isJoining ? (
+                  <>
+                    <LoadingSpinner /> Processing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircleIcon className="w-5 h-5" />
+                    Confirm and join
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
   const tone = getCardTone(group.mode);
   const statusTone = getStatusTone(group.status);
@@ -754,6 +890,20 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
       : group.is_prorated
         ? "Pay now for the remaining cycle"
         : "Pay now";
+
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <MobileJoinConfirmModal 
+        group={group} 
+        summary={summary} 
+        joiningId={joiningId} 
+        onCancel={onCancel} 
+        onConfirm={onConfirm} 
+      />
+    );
+  }
 
   return (
     <div className="sv-modal-backdrop">
