@@ -559,7 +559,7 @@ export default function Home() {
             </div>
 
             {marketplaceGroups.length > 0 ? (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 mx-auto max-w-md sm:max-w-none w-full">
                 {marketplaceGroups.map((group) => (
                   <RecentSplitCard
                     key={group.id}
@@ -675,7 +675,10 @@ function RecentSplitCard({ group, onClick }) {
   );
 
   return (
-    <article className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+    <article 
+      onClick={onClick}
+      className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md cursor-pointer"
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="inline-flex items-center gap-2">
