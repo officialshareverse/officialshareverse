@@ -6,11 +6,6 @@ import { getAuthToken } from "./auth/session";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/Navbar";
 import BrandMark from "./components/BrandMark";
-import {
-  SkeletonBlock,
-  SkeletonCard,
-  SkeletonTextGroup,
-} from "./components/SkeletonFactory";
 import SpotlightSearch from "./components/SpotlightSearch";
 import { ToastProvider } from "./components/ToastProvider";
 import { DownloadIcon } from "./components/UiIcons";
