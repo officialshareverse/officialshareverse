@@ -1550,7 +1550,7 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
-      padding: 0.75rem 0.75rem 86px;
+      padding: 0.75rem 0.75rem 1rem;
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
@@ -1578,11 +1578,7 @@
 
     /* ── Fixed bottom composer ── */
     .sv-mobile-chat-composer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 50;
+      flex-shrink: 0;
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);

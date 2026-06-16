@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+
 import useIsMobile from "../hooks/useIsMobile";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -548,41 +548,38 @@ export default function GroupChat() {
             <div ref={threadEndRef} />
           </div>
 
-          {/* ── Fixed bottom composer (portalled to body) ── */}
-          {createPortal(
-            <div className="sv-mobile-chat-composer">
-              {error ? (
-                <p className="mb-2 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</p>
-              ) : null}
-              <div className="sv-mobile-chat-input-row">
-                <textarea
-                  ref={textareaRef}
-                  value={message}
-                  onChange={(event) => handleMessageChange(event.target.value)}
-                  onBlur={() => {
-                    window.clearTimeout(typingTimerRef.current);
-                    if (isTypingRef.current) {
-                      void syncPresence(false);
-                    }
-                  }}
-                  rows={1}
-                  className="sv-mobile-chat-input"
-                  placeholder="Message..."
-                  style={{ overflowY: "auto" }}
-                />
-                <button
-                  type="button"
-                  onClick={sendMessage}
-                  disabled={sending || !message.trim()}
-                  className="sv-mobile-chat-send"
-                  aria-label="Send message"
-                >
-                  <SendIcon className="h-5 w-5" />
-                </button>
-              </div>
-            </div>,
-            document.body
-          )}
+          {/* ── Bottom composer ── */}
+          <div className="sv-mobile-chat-composer">
+            {error ? (
+              <p className="mb-2 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</p>
+            ) : null}
+            <div className="sv-mobile-chat-input-row">
+              <textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(event) => handleMessageChange(event.target.value)}
+                onBlur={() => {
+                  window.clearTimeout(typingTimerRef.current);
+                  if (isTypingRef.current) {
+                    void syncPresence(false);
+                  }
+                }}
+                rows={1}
+                className="sv-mobile-chat-input"
+                placeholder="Message..."
+                style={{ overflowY: "auto" }}
+              />
+              <button
+                type="button"
+                onClick={sendMessage}
+                disabled={sending || !message.trim()}
+                className="sv-mobile-chat-send"
+                aria-label="Send message"
+              >
+                <SendIcon className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
         </div>
       ) : (
         /* ═══════════════════════════════════════
