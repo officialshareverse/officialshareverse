@@ -21,6 +21,7 @@ import CreateGroup from "./pages/CreateGroup";
 import FaqPage from "./pages/FaqPage";
 import GroupChat from "./pages/GroupChat";
 import Groups from "./pages/Groups";
+import GroupDetails from "./pages/GroupDetails";
 import Home from "./pages/Home";
 import InviteLanding from "./pages/InviteLanding";
 import Landing from "./pages/Landing";
@@ -330,6 +331,17 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
               <ErrorBoundary>
                 <PrivateRoute>
                   <Groups />
+                </PrivateRoute>
+              </ErrorBoundary>
+            }
+          />
+
+          <Route
+            path="/groups/:groupId"
+            element={
+              <ErrorBoundary>
+                <PrivateRoute>
+                  <GroupDetails />
                 </PrivateRoute>
               </ErrorBoundary>
             }

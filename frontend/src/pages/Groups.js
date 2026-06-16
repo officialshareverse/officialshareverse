@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import useIsMobile from "../hooks/useIsMobile";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
@@ -272,6 +272,7 @@ function compareGroups(sortBy, left, right) {
 }
 
 export default function Groups() {
+  const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -659,7 +660,8 @@ export default function Groups() {
               return (
                 <article
                   key={group.id}
-                  className={`relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-row sm:flex-col h-[104px] sm:h-auto ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
+                  onClick={() => navigate(`/groups/${group.id}`, { state: { group } })}
+                  className={`relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-row sm:flex-col h-[104px] sm:h-auto cursor-pointer ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
                 >
                   <div className={`w-28 sm:w-full shrink-0 h-full sm:h-28 relative flex items-center justify-center sm:block ${getCoverGradient(group.subscription_name || group.subscription)}`}>
                     <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-white/20 backdrop-blur-md rounded-full px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[8px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
@@ -704,7 +706,10 @@ export default function Groups() {
                         {remainingSlots} left
                       </span>
                       <button
-                        onClick={() => setPendingJoinGroup(group)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPendingJoinGroup(group);
+                        }}
                         disabled={isFull || joiningId === group.id}
                         className={`rounded-full px-3 py-1 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-bold text-white transition-colors whitespace-nowrap ${isFull ? "bg-slate-300" : "bg-brand hover:bg-brand-dark"}`}
                       >
