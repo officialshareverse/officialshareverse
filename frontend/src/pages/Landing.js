@@ -5,6 +5,7 @@ import BrandMark from "../components/BrandMark";
 import PublicFooter from "../components/PublicFooter";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 import useIsMobile from "../hooks/useIsMobile";
+import { setAuthToken } from "../auth/session";
 
 const featureNotes = [
   { label: "Subscriptions", icon: "TV", targetId: "modes" },
@@ -13,13 +14,24 @@ const featureNotes = [
   { label: "Memberships", icon: "VIP", targetId: "cta" },
 ];
 
-function MobileWelcome() {
+function MobileWelcome({ setIsAuth }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
 
   const handleEmailContinue = () => {
     if (email.trim()) {
       navigate(`/signup?email=${encodeURIComponent(email)}`);
+    } else {
+      navigate('/login');
+    }
+  };
+
+  const handleGoogleSuccess = (payload) => {
+    const accessToken = payload?.access || "";
+    if (accessToken) {
+      setAuthToken(accessToken);
+      if (setIsAuth) setIsAuth(true);
+      navigate("/home", { replace: true });
     } else {
       navigate('/login');
     }
@@ -34,7 +46,7 @@ function MobileWelcome() {
       <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-[28px] p-6 shadow-xl border border-slate-200 dark:border-slate-800">
         <GoogleAuthButton 
            mode="continue" 
-           onSuccess={(data) => { navigate('/login'); }}
+           onSuccess={handleGoogleSuccess}
            onError={(err) => { navigate('/login'); }}
         />
         
@@ -218,7 +230,7 @@ const joinTickerItems = [
   "Withdrawals are usually processed within 24 hours",
 ];
 
-export default function Landing() {
+export default function Landing({ setIsAuth }) {
   const isMobile = useIsMobile();
   const [activeMode, setActiveMode] = useState(modes[0].id);
 
@@ -232,7 +244,7 @@ export default function Landing() {
   };
 
   if (isMobile) {
-    return <MobileWelcome />;
+    return <MobileWelcome setIsAuth={setIsAuth} />;
   }
 
   return (

@@ -264,7 +264,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
             element={
               <ErrorBoundary>
                 <PublicRoute>
-                  <Landing />
+                  <Landing setIsAuth={setIsAuth} />
                 </PublicRoute>
               </ErrorBoundary>
             }
