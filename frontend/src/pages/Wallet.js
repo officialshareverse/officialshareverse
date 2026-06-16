@@ -985,19 +985,13 @@ export default function Wallet() {
                     <div className="h-11 w-11 flex items-center justify-center rounded-2xl border border-teal-100 text-teal-600 bg-teal-50/50">
                       <BankIcon className="h-5 w-5" />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-700">Withdrawal</span>
+                    <span className="text-[10px] font-bold text-slate-700">Withdraw</span>
                   </button>
-                  <button onClick={() => toast.info("Coming soon!")} className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform">
+                  <button onClick={() => focusActionTab("payout")} className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform">
                     <div className="h-11 w-11 flex items-center justify-center rounded-2xl border border-teal-100 text-teal-600 bg-teal-50/50">
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                      <WalletGlyph className="h-5 w-5" />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-700">Send</span>
-                  </button>
-                  <button onClick={() => toast.info("Coming soon!")} className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform">
-                    <div className="h-11 w-11 flex items-center justify-center rounded-2xl border border-teal-100 text-teal-600 bg-teal-50/50">
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-700">Earn</span>
+                    <span className="text-[10px] font-bold text-slate-700">Method</span>
                   </button>
                 </div>
               </div>
