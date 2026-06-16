@@ -7,7 +7,7 @@ export default function PublicPageShell({ eyebrow, title, intro, children, isPre
   return (
     <div className={isPremiumMobile ? "min-h-screen bg-slate-50 text-slate-900" : "sv-page text-slate-900"}>
       <div className={isPremiumMobile ? "" : "mx-auto max-w-6xl"}>
-        <header className="sv-brand-shell sv-reveal flex flex-col items-stretch gap-3 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <header className={isPremiumMobile ? "hidden" : "sv-brand-shell sv-reveal flex flex-col items-stretch gap-3 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5"}>
           <Link
             to="/"
             className="inline-flex w-full items-center justify-center gap-3 rounded-[length:var(--sv-radius-card)] border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 sm:w-auto sm:justify-start sm:rounded-full"
