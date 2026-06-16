@@ -5,6 +5,7 @@ import PublicBusinessIdentity, {
   SUPPORT_PHONE,
 } from "../components/PublicBusinessIdentity";
 import PublicPageShell from "../components/PublicPageShell";
+import useIsMobile from "../hooks/useIsMobile";
 
 const contactCards = [
   {
@@ -105,78 +106,96 @@ const faqItems = [
 ];
 
 export default function SupportPage() {
+  const isMobile = useIsMobile();
+
   return (
     <PublicPageShell
       eyebrow="Support"
       title="How members can reach ShareVerse and get issues resolved."
       intro="This page gives members, providers, partners, and verification teams one clear place to find help for accounts, wallet payments, group access, disputes, policy questions, takedown requests, and formal complaints."
+      isPremiumMobile={isMobile}
     >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {contactCards.map((card) => (
-          <article
-            key={card.title}
-            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-              {card.title}
+      {isMobile && (
+        <section className="bg-teal-600 px-4 pt-8 pb-[88px] relative overflow-hidden text-white mb-[-64px]">
+          <div className="relative z-10">
+            <p className="text-teal-200 text-[10px] font-extrabold uppercase tracking-widest mb-4">Support & Guidelines</p>
+            <h1 className="text-[28px] font-black leading-[1.1] mb-3 text-white">How can we help?</h1>
+            <p className="text-teal-50 text-[13px] leading-relaxed opacity-90 mb-5">
+              Get help for accounts, wallet payments, group access, disputes, policy questions, takedown requests, and formal complaints.
             </p>
-            <h2 className="mt-3 text-xl font-semibold text-slate-950">{card.detail}</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">{card.helper}</p>
-          </article>
-        ))}
-      </div>
+          </div>
+        </section>
+      )}
 
-      <div className="mt-6 rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-slate-50 p-5 md:p-6">
-        <h2 className="text-2xl font-semibold text-slate-950">Before contacting support</h2>
-        <ul className="mt-4 grid gap-3 text-sm leading-7 text-slate-600">
-          <li>Check your wallet page for payment and balance history.</li>
-          <li>Use the group chat for normal coordination with hosts and members.</li>
-          <li>Use the in-product access issue action for buy-together problems so payout pauses automatically.</li>
-          <li>Include screenshots, payment reference, usernames, and timing details when something fails.</li>
-          <li>For provider or IP complaints, include the listing name and a short explanation of the rule or rights issue.</li>
-        </ul>
-      </div>
+      <div className={isMobile ? "px-3 relative z-20 pb-12 space-y-6" : ""}>
+        <div className={isMobile ? "grid gap-3" : "grid gap-4 md:grid-cols-2 xl:grid-cols-3"}>
+          {contactCards.map((card) => (
+            <article
+              key={card.title}
+              className={isMobile ? "rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm" : "rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm"}
+            >
+              <p className={isMobile ? "text-[10px] font-extrabold uppercase tracking-widest text-teal-600 mb-1" : "text-xs font-semibold uppercase tracking-[0.22em] text-slate-500"}>
+                {card.title}
+              </p>
+              <h2 className={isMobile ? "text-lg font-black text-slate-900 mb-2" : "mt-3 text-xl font-semibold text-slate-950"}>{card.detail}</h2>
+              <p className={isMobile ? "text-slate-500 text-[13px] leading-relaxed" : "mt-3 text-sm leading-7 text-slate-600"}>{card.helper}</p>
+            </article>
+          ))}
+        </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
-        {serviceLevels.map((item) => (
-          <article
-            key={item.title}
-            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 md:p-6"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{item.title}</p>
-            <h2 className="mt-3 text-xl font-semibold text-slate-950">{item.detail}</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">{item.helper}</p>
-          </article>
-        ))}
-      </div>
+        <div className={isMobile ? "rounded-[24px] border border-slate-100 bg-slate-50 p-5" : "mt-6 rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-slate-50 p-5 md:p-6"}>
+          <h2 className={isMobile ? "text-[18px] font-black text-slate-900 mb-3" : "text-2xl font-semibold text-slate-950"}>Before contacting support</h2>
+          <ul className={isMobile ? "grid gap-3 text-[13px] leading-relaxed text-slate-600 pl-4 list-disc" : "mt-4 grid gap-3 text-sm leading-7 text-slate-600"}>
+            <li>Check your wallet page for payment and balance history.</li>
+            <li>Use the group chat for normal coordination with hosts and members.</li>
+            <li>Use the in-product access issue action for buy-together problems so payout pauses automatically.</li>
+            <li>Include screenshots, payment reference, usernames, and timing details when something fails.</li>
+            <li>For provider or IP complaints, include the listing name and a short explanation of the rule or rights issue.</li>
+          </ul>
+        </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
-        {workflowSteps.map((step) => (
-          <article
-            key={step.title}
-            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
-          >
-            <h2 className="text-xl font-semibold text-slate-950">{step.title}</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">{step.body}</p>
-          </article>
-        ))}
-      </div>
+        <div className={isMobile ? "grid gap-3" : "mt-6 grid gap-4 md:grid-cols-2"}>
+          {serviceLevels.map((item) => (
+            <article
+              key={item.title}
+              className={isMobile ? "rounded-[24px] border border-slate-100 bg-slate-50 p-5" : "rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 md:p-6"}
+            >
+              <p className={isMobile ? "text-[10px] font-extrabold uppercase tracking-widest text-teal-600 mb-1" : "text-xs font-semibold uppercase tracking-[0.22em] text-slate-500"}>{item.title}</p>
+              <h2 className={isMobile ? "text-lg font-black text-slate-900 mb-2 leading-tight" : "mt-3 text-xl font-semibold text-slate-950"}>{item.detail}</h2>
+              <p className={isMobile ? "text-[13px] leading-relaxed text-slate-500" : "mt-3 text-sm leading-7 text-slate-600"}>{item.helper}</p>
+            </article>
+          ))}
+        </div>
 
-      <PublicBusinessIdentity
-        title="Public contact summary"
-        intro="Use the same operator, address, and contact details for support, provider review, compliance notices, and payment verification."
-      />
+        <div className={isMobile ? "grid gap-3" : "mt-6 grid gap-4 md:grid-cols-2"}>
+          {workflowSteps.map((step) => (
+            <article
+              key={step.title}
+              className={isMobile ? "rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm" : "rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"}
+            >
+              <h2 className={isMobile ? "text-[16px] font-black text-slate-900 mb-2" : "text-xl font-semibold text-slate-950"}>{step.title}</h2>
+              <p className={isMobile ? "text-[13px] leading-relaxed text-slate-500" : "mt-3 text-sm leading-7 text-slate-600 md:text-base"}>{step.body}</p>
+            </article>
+          ))}
+        </div>
 
-      <div className="mt-6 grid gap-4">
-        {faqItems.map((item) => (
-          <article
-            key={item.question}
-            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
-          >
-            <h3 className="text-lg font-semibold text-slate-950">{item.question}</h3>
-            <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">{item.answer}</p>
-          </article>
-        ))}
+        <PublicBusinessIdentity
+          title="Public contact summary"
+          intro="Use the same operator, address, and contact details for support, provider review, compliance notices, and payment verification."
+          isMobile={isMobile}
+        />
+
+        <div className={isMobile ? "grid gap-3" : "mt-6 grid gap-4"}>
+          {faqItems.map((item) => (
+            <article
+              key={item.question}
+              className={isMobile ? "rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm" : "rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"}
+            >
+              <h3 className={isMobile ? "text-[15px] font-black text-slate-900 mb-2 leading-tight" : "text-lg font-semibold text-slate-950"}>{item.question}</h3>
+              <p className={isMobile ? "text-[13px] leading-relaxed text-slate-500" : "mt-3 text-sm leading-7 text-slate-600 md:text-base"}>{item.answer}</p>
+            </article>
+          ))}
+        </div>
       </div>
     </PublicPageShell>
   );

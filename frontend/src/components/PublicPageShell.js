@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import BrandMark from "./BrandMark";
 import PublicFooter from "./PublicFooter";
 
-export default function PublicPageShell({ eyebrow, title, intro, children }) {
+export default function PublicPageShell({ eyebrow, title, intro, children, isPremiumMobile }) {
   return (
-    <div className="sv-page text-slate-900">
-      <div className="mx-auto max-w-6xl">
+    <div className={isPremiumMobile ? "min-h-screen bg-slate-50 text-slate-900" : "sv-page text-slate-900"}>
+      <div className={isPremiumMobile ? "" : "mx-auto max-w-6xl"}>
         <header className="sv-brand-shell sv-reveal flex flex-col items-stretch gap-3 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <Link
             to="/"
@@ -31,31 +31,35 @@ export default function PublicPageShell({ eyebrow, title, intro, children }) {
           </div>
         </header>
 
-        <section className="sv-light-hero sv-light-hero-grid sv-reveal mt-4 px-3.5 py-4 sm:mt-5 sm:px-4 sm:py-5 md:mt-8 md:px-8 md:py-10">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
-            <div>
-              <p className="sv-eyebrow">{eyebrow}</p>
-              <h1 className="sv-display mt-3 max-w-4xl sm:mt-4">{title}</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 md:mt-5 md:text-lg md:leading-8">
-                {intro}
-              </p>
+        {isPremiumMobile ? (
+          <main className="flex-1 w-full">{children}</main>
+        ) : (
+          <section className="sv-light-hero sv-light-hero-grid sv-reveal mt-4 px-3.5 py-4 sm:mt-5 sm:px-4 sm:py-5 md:mt-8 md:px-8 md:py-10">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
+              <div>
+                <p className="sv-eyebrow">{eyebrow}</p>
+                <h1 className="sv-display mt-3 max-w-4xl sm:mt-4">{title}</h1>
+                <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 md:mt-5 md:text-lg md:leading-8">
+                  {intro}
+                </p>
 
-              <div className="mt-6 sm:mt-8 sv-stagger">{children}</div>
-            </div>
+                <div className="mt-6 sm:mt-8 sv-stagger">{children}</div>
+              </div>
 
-            <div className="hidden lg:block">
-              <div className="sv-soft-card sv-animate-float-soft">
-                <div className="flex items-center gap-3">
-                  <BrandMark glow sizeClass="h-14 w-14" roundedClass="rounded-[length:var(--sv-radius-card)]" />
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">ShareVerse</p>
-                    <p className="mt-2 text-lg font-semibold text-slate-950">Built for cleaner group coordination</p>
+              <div className="hidden lg:block">
+                <div className="sv-soft-card sv-animate-float-soft">
+                  <div className="flex items-center gap-3">
+                    <BrandMark glow sizeClass="h-14 w-14" roundedClass="rounded-[length:var(--sv-radius-card)]" />
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">ShareVerse</p>
+                      <p className="mt-2 text-lg font-semibold text-slate-950">Built for cleaner group coordination</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         <PublicFooter />
       </div>
