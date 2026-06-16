@@ -6,7 +6,7 @@ export function SummaryCard({ label, value, highlight = false, compact = false }
         style={{
           ...summaryValue,
           ...(compact ? summaryValueMobile : {}),
-          color: highlight ? "color-mix(in srgb, var(--sv-accent) 80%, #10b981 20%)" : svInk,
+          color: compact ? "#fff" : (highlight ? "color-mix(in srgb, var(--sv-accent) 80%, #10b981 20%)" : svInk),
         }}
       >
         {value}
@@ -124,7 +124,7 @@ export const pageShell = {
 };
 
 export const containerMobile = {
-  padding: "16px 8px 34px",
+  padding: "0 0 34px",
 };
 
 export const pageShellMobile = {
@@ -141,9 +141,10 @@ export const hero = {
 };
 
 export const heroMobile = {
-  borderRadius: "20px",
-  padding: "16px 12px",
-  marginBottom: "16px",
+  borderRadius: "0 0 24px 24px",
+  padding: "32px 20px 24px",
+  marginBottom: "24px",
+  background: "linear-gradient(145deg, #0f172a 0%, #162033 40%, #0d9488 100%)",
 };
 
 export const eyebrow = {
@@ -167,8 +168,10 @@ export const heroTitle = {
 };
 
 export const heroTitleMobile = {
-  fontSize: "28px",
-  lineHeight: 1.05,
+  fontSize: "32px",
+  lineHeight: 1.1,
+  fontWeight: 900,
+  letterSpacing: "-0.02em",
 };
 
 export const statsGrid = {
@@ -181,7 +184,7 @@ export const statsGrid = {
 export const statsGridMobile = {
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "10px",
-  marginBottom: "18px",
+  marginBottom: "20px",
 };
 
 const summaryCard = {
@@ -194,8 +197,12 @@ const summaryCard = {
 };
 
 const summaryCardMobile = {
-  borderRadius: "18px",
-  padding: "12px 12px 11px",
+  borderRadius: "20px",
+  padding: "16px",
+  background: "rgba(255, 255, 255, 0.08)",
+  border: "1px solid rgba(255, 255, 255, 0.12)",
+  backdropFilter: "blur(16px)",
+  boxShadow: "none",
 };
 
 const summaryLabel = {
@@ -205,8 +212,12 @@ const summaryLabel = {
 };
 
 const summaryLabelMobile = {
-  fontSize: "10px",
+  fontSize: "11px",
   lineHeight: 1.4,
+  color: "rgba(255, 255, 255, 0.7)",
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
 };
 
 const summaryValue = {
@@ -216,8 +227,8 @@ const summaryValue = {
 };
 
 const summaryValueMobile = {
-  marginTop: "6px",
-  fontSize: "18px",
+  marginTop: "8px",
+  fontSize: "20px",
 };
 
 export const filterRow = {
@@ -228,8 +239,9 @@ export const filterRow = {
 };
 
 export const filterRowMobile = {
-  gap: "8px",
-  marginBottom: "18px",
+  gap: "10px",
+  marginBottom: "24px",
+  padding: "0 16px",
 };
 
 export const sectionHeader = {
@@ -242,7 +254,8 @@ export const sectionHeader = {
 };
 
 export const sectionHeaderMobile = {
-  marginBottom: "12px",
+  marginBottom: "16px",
+  padding: "0 16px",
 };
 
 export const joinedSectionHeader = {
@@ -267,7 +280,7 @@ export const sectionTitle = {
 };
 
 export const sectionTitleMobile = {
-  fontSize: "22px",
+  fontSize: "24px",
 };
 
 export const sectionText = {
@@ -286,8 +299,8 @@ const filterButton = {
 };
 
 const filterButtonCompact = {
-  padding: "9px 12px",
-  fontSize: "12px",
+  padding: "12px 18px",
+  fontSize: "13px",
 };
 
 export const card = {
@@ -301,11 +314,12 @@ export const card = {
 };
 
 export const cardMobile = {
-  padding: "12px",
-  marginBottom: "10px",
-  borderRadius: "18px",
+  padding: "16px",
+  margin: "0 16px 16px",
+  borderRadius: "24px",
   border: "none",
-  boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
+  boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
+  background: "#fff",
 };
 
 export const cardHeader = {
@@ -457,8 +471,8 @@ export const actionRow = {
 
 export const actionRowMobile = {
   display: "flex",
-  flexWrap: "wrap",
-  gap: "8px",
+  flexDirection: "column",
+  gap: "10px",
 };
 
 export const actionButtonMobile = {
@@ -592,9 +606,9 @@ export const detailPanel = {
 };
 
 export const detailPanelMobile = {
-  marginTop: "8px",
-  borderTop: "none",
-  paddingTop: "4px",
+  marginTop: "16px",
+  borderTop: "1px solid #f1f5f9",
+  paddingTop: "16px",
 };
 
 export const joinedGrid = {
@@ -617,10 +631,12 @@ export const joinedCard = {
 };
 
 export const joinedCardMobile = {
-  padding: "12px",
-  borderRadius: "18px",
+  padding: "16px",
+  margin: "0 16px 16px",
+  borderRadius: "24px",
   border: "none",
-  boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
+  boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
+  background: "#fff",
 };
 
 export const ownerCredentialCard = {
@@ -748,11 +764,12 @@ export const detailSectionCard = {
 };
 
 export const detailSectionCardMobile = {
-  borderRadius: 0,
-  border: "none",
-  background: "transparent",
-  padding: "12px 0",
+  borderRadius: "20px",
+  border: "1px solid #f1f5f9",
+  background: "#f8fafc",
+  padding: "16px",
   backdropFilter: "none",
+  marginTop: "12px",
 };
 
 export const detailSectionHeader = {
