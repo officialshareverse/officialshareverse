@@ -193,7 +193,6 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
   const isChatPage = Boolean(location.pathname.match(/^\/groups\/[^/]+\/chat\/?$/));
   const [isRouteLoading, setIsRouteLoading] = useState(true);
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
-  const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
   const openSpotlight = useCallback(() => setIsSpotlightOpen(true), []);
   const closeSpotlight = useCallback(() => setIsSpotlightOpen(false), []);
 
@@ -218,7 +217,6 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
 
     const syncScrollUi = () => {
       const scrollY = window.scrollY || window.pageYOffset || 0;
-      setIsScrollTopVisible(scrollY > 360);
       document.documentElement.style.setProperty(
         "--sv-parallax-offset",
         `${Math.min(scrollY * 0.08, 42)}px`
@@ -556,20 +554,6 @@ function PwaInstallPrompt() {
         Dismiss
       </button>
     </div>
-  );
-}
-
-function ScrollTopButton({ isVisible, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`sv-scroll-top ${isVisible ? "is-visible" : ""}`}
-      aria-label="Scroll back to top"
-    >
-      <span className="sv-scroll-top-icon" aria-hidden="true">^</span>
-      <span>Top</span>
-    </button>
   );
 }
 
