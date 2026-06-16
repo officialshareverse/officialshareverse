@@ -740,6 +740,8 @@ export default function Groups() {
 function MobileJoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
   const planName = group.subscription_name || group.subscription;
   const planMeta = getPlanMeta(planName);
+  const ownerName = formatHostDisplayName(group.owner_name);
+  const hostReputation = getMockReputation(group.owner_name);
 
   // Derive mode pill
   const isSharing = group.mode === "sharing";
@@ -789,7 +791,7 @@ function MobileJoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm
         </div>
 
         {/* Content */}
-        <div className="px-5 pb-6 flex flex-col gap-4">
+        <div className="px-5 pb-32 flex flex-col gap-4">
           
           {/* Main Info Card */}
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 flex flex-col items-start relative">
@@ -813,6 +815,19 @@ function MobileJoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm
             <div className="mt-6 w-full">
               <h2 className="text-[22px] font-bold text-slate-900 leading-tight">Review before you join</h2>
               <p className="text-[15px] font-medium text-slate-600 mt-1">{planName}</p>
+
+              {/* Host Reputation */}
+              <div className="mt-4 flex items-center gap-3 pt-4 border-t border-slate-100">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[12px] font-bold text-slate-500 uppercase tracking-wider">
+                  {getInitials(ownerName)}
+                </span>
+                <div className="flex flex-col justify-center">
+                  <p className="text-[13px] font-bold text-slate-800">Hosted by {ownerName}</p>
+                  <p className="text-[11px] font-semibold text-amber-500 mt-0.5">
+                    ★ {hostReputation.rating} • {hostReputation.hostedCount} groups hosted
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
