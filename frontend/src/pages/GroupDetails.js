@@ -143,9 +143,10 @@ export default function GroupDetails() {
       : "PAY NOW";
 
   return (
-    <div className="min-h-screen bg-white sm:bg-slate-50 pb-40">
-      {/* Top Navigation */}
-      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 flex items-center justify-between">
+  return (
+    <div className="min-h-screen bg-white pb-32">
+      {/* Top Navigation - hidden on mobile, visible on desktop */}
+      <div className="hidden sm:flex sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 items-center justify-between">
         <button 
           onClick={() => navigate("/groups")}
           className="text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors"
@@ -155,23 +156,23 @@ export default function GroupDetails() {
         <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">Group Details</span>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10 flex flex-col gap-6">
+      <div className="max-w-2xl mx-auto flex flex-col">
         
-        {/* Hero Info Card */}
-        <div className="bg-white sm:rounded-3xl sm:p-8 sm:shadow-sm sm:border sm:border-slate-100 relative overflow-hidden mb-2">
-          <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center p-1.5 sm:p-2 mb-4">
-            <SubscriptionLogo name={planName} size="100%" className="w-full h-full rounded-xl" />
+        {/* Hero Section (No boxes on mobile) */}
+        <div className="px-4 sm:px-6 pt-6 sm:pt-10 pb-6 sm:bg-white sm:rounded-3xl sm:p-8 sm:shadow-sm sm:border sm:border-slate-100 sm:mb-6">
+          <div className="w-14 h-14 sm:w-20 sm:h-20 mb-4 overflow-hidden rounded-xl">
+            <SubscriptionLogo name={planName} size="100%" className="w-full h-full object-cover" />
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
-            <div className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${modePillClass}`}>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase ${modePillClass}`}>
               {modePillText}
             </div>
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] tracking-wider font-bold uppercase ${statusBg} ${statusTextClass}`}>
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] tracking-wider font-bold uppercase ${statusBg} ${statusTextClass}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${statusDotClass}`}></span>
               {statusText}
             </div>
-            <div className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-800 font-bold text-[10px] tracking-wider uppercase">
+            <div className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px] tracking-wider uppercase">
               {planMeta.category}
             </div>
           </div>
@@ -179,119 +180,117 @@ export default function GroupDetails() {
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
             {planName} Split Group
           </h1>
-          <p className="mt-2 text-[15px] leading-relaxed text-slate-600">
+          <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600">
             {group.mode === "sharing"
               ? "Join this existing plan and get access immediately after the host confirms."
               : "Contribute to this new plan. Purchase happens once all slots are filled."}
           </p>
 
-          {/* Host Mini Profile inside Hero */}
-          <div className="mt-6 sm:mt-8 flex items-center gap-3 sm:gap-4 pt-5 sm:pt-6 border-t border-slate-100/60 sm:border-slate-100">
-            <span className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[13px] sm:text-[14px] font-bold text-slate-500 uppercase tracking-wider">
+          {/* Host Profile */}
+          <div className="mt-6 flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
               {getInitials(ownerName)}
             </span>
             <div className="flex flex-col justify-center">
-              <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Hosted by</p>
-              <p className="text-[15px] font-bold text-slate-900">{ownerName}</p>
-              <p className="text-[13px] font-semibold text-amber-500 mt-0.5">
-                ★ {hostReputation.rating} • {hostReputation.hostedCount} groups hosted
-              </p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Hosted by</p>
+              <div className="flex items-center gap-2">
+                <p className="text-[14px] font-bold text-slate-900">{ownerName}</p>
+                <span className="text-[12px] font-semibold text-amber-500">
+                  ★ {hostReputation.rating}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Pricing Card (Gradient) */}
-        <div className="bg-gradient-to-br from-teal-700 to-emerald-600 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white shadow-lg relative overflow-hidden">
+        {/* Pricing Card (Edge-to-edge on mobile) */}
+        <div className="bg-gradient-to-br from-teal-700 to-emerald-600 sm:rounded-3xl px-5 py-6 sm:p-8 text-white relative overflow-hidden sm:mx-6 sm:mb-6">
           <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-teal-900 opacity-20 rounded-full -ml-12 -mb-12 blur-xl"></div>
           
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+          <div className="relative z-10">
+            <p className="text-[11px] font-bold tracking-widest uppercase opacity-80 mb-1">
+              {payNowLabel}
+            </p>
+            <p className="text-4xl sm:text-5xl font-bold leading-none tracking-tight">
+              {formatCurrency(joinPrice)}
+            </p>
+            <p className="text-[13px] text-teal-50 font-medium opacity-90 mt-3 max-w-[280px]">
+              {group.mode === "sharing" 
+                ? "Charged from your wallet instantly when you join."
+                : "Reserved safely until the buy-together flow completes."}
+            </p>
+          </div>
+        </div>
+
+        {/* Breakdown Details (Clean list, no boxes) */}
+        <div className="px-4 sm:px-6 py-2">
+          <div className="flex flex-row justify-between items-center py-4 border-b border-slate-100">
             <div>
-              <p className="text-[11px] font-bold tracking-widest uppercase opacity-80 mb-2">
-                {payNowLabel}
+              <p className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Plan Contribution</p>
+              <p className="text-[13px] text-slate-400 mt-0.5">Platform Fee: {formatCurrency(platformFee)}</p>
+            </div>
+            <p className="text-lg font-bold text-slate-900">{formatCurrency(subtotal)}</p>
+          </div>
+
+          <div className="flex flex-row justify-between items-center py-4 border-b border-slate-100">
+            <div>
+              <p className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">
+                {group.mode === "group_buy" ? "Members needed" : "Slots left"}
               </p>
-              <p className="text-3xl sm:text-5xl font-bold leading-none tracking-tight">
-                {formatCurrency(joinPrice)}
+              <p className="text-[13px] text-slate-400 mt-0.5">{filledSlots}/{totalSlots} filled</p>
+            </div>
+            <p className="text-lg font-bold text-slate-900">{remainingSlots}</p>
+          </div>
+
+          <div className="flex flex-row justify-between items-center py-4 border-b border-slate-100">
+            <div>
+              <p className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Current Cycle</p>
+              <p className="text-[13px] text-slate-400 mt-0.5 max-w-[200px]">
+                {group.pricing_note ? "Proration applied." : "Matches current cycle."}
               </p>
             </div>
-            <div className="sm:text-right">
-              <p className="text-[13px] text-teal-50 font-medium opacity-90 max-w-[200px] sm:ml-auto">
-                {group.mode === "sharing" 
-                  ? "Charged from your wallet instantly when you join."
-                  : "Reserved safely until the buy-together flow completes."}
-              </p>
-            </div>
+            <p className="text-[15px] font-bold text-slate-900 text-right">{cycleLabel || "Dates shared later"}</p>
           </div>
         </div>
 
-        {/* Breakdown & Cycle Details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-2">
-          <div className="bg-slate-50 sm:bg-white rounded-2xl p-4 sm:p-5 shadow-sm sm:shadow-sm border border-slate-100 flex flex-col justify-between">
-            <p className="text-[11px] sm:text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-1">Plan Contribution</p>
-            <p className="text-base sm:text-lg font-bold text-slate-900">{formatCurrency(subtotal)}</p>
-            <p className="text-[12px] text-slate-400 mt-3 border-t border-slate-50 pt-3 flex justify-between">
-              <span>Platform Fee</span>
-              <span className="font-semibold text-slate-600">{formatCurrency(platformFee)}</span>
-            </p>
-          </div>
-
-          <div className="bg-slate-50 sm:bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 flex flex-col justify-between">
-            <p className="text-[11px] sm:text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-              {group.mode === "group_buy" ? "Members needed" : "Slots left"}
-            </p>
-            <p className="text-base sm:text-lg font-bold text-slate-900">{remainingSlots} slot{remainingSlots !== 1 ? "s" : ""}</p>
-            <p className="text-[12px] text-slate-400 mt-3 border-t border-slate-50 pt-3 flex justify-between">
-              <span>Total capacity</span>
-              <span className="font-semibold text-slate-600">{filledSlots}/{totalSlots} filled</span>
-            </p>
-          </div>
-
-          <div className="bg-slate-50 sm:bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 sm:col-span-2">
-            <p className="text-[11px] sm:text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-1">Current Cycle</p>
-            <p className="text-[15px] font-bold text-slate-900 mt-1">{cycleLabel || "Dates shared after join"}</p>
-            <p className="text-[13px] text-slate-500 mt-1.5">
-              {group.pricing_note ? "Proration is already applied to this price." : "Matches the current plan cycle."}
-            </p>
-          </div>
-        </div>
-
-        {/* Buyer Protection */}
-        <div className="bg-slate-50 sm:bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-100 mt-2">
-          <div className="flex items-center gap-2 mb-5 sm:mb-6">
+        {/* Buyer Protection (Clean section, no boxes) */}
+        <div className="px-4 sm:px-6 py-6 sm:bg-white sm:rounded-3xl sm:p-6 sm:shadow-sm sm:border sm:border-slate-100 sm:mx-6 sm:mt-6">
+          <div className="flex items-center gap-2 mb-6">
             <ShieldIcon className="w-5 h-5 text-emerald-500" />
-            <h3 className="text-[14px] sm:text-[15px] font-bold text-slate-900">How your money is protected</h3>
+            <h3 className="text-[15px] font-bold text-slate-900">How your money is protected</h3>
           </div>
           
-          <div className="flex flex-col gap-4 relative">
-            <div className="absolute left-[15px] top-[24px] bottom-[24px] w-[2px] bg-slate-100"></div>
+          <div className="flex flex-col gap-5 relative">
+            <div className="absolute left-[11px] top-[24px] bottom-[24px] w-[2px] bg-slate-100"></div>
             
             <div className="flex items-start gap-4 relative z-10">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 border-4 border-white text-[12px] font-bold text-slate-500 shadow-sm">1</span>
-              <div className="pt-1.5">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 border-[3px] border-white text-[10px] font-bold text-slate-500">1</span>
+              <div className="pt-0.5">
                 <p className="text-[14px] font-bold text-slate-900">{formatCurrency(joinPrice)} held safely</p>
                 <p className="text-[13px] text-slate-500 mt-0.5">Your funds are kept secure in ShareVerse escrow.</p>
               </div>
             </div>
             
             <div className="flex items-start gap-4 relative z-10">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 border-4 border-white text-[12px] font-bold text-slate-500 shadow-sm">2</span>
-              <div className="pt-1.5">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 border-[3px] border-white text-[10px] font-bold text-slate-500">2</span>
+              <div className="pt-0.5">
                 <p className="text-[14px] font-bold text-slate-900">{group.mode === "sharing" ? "Host shares access" : "Host completes purchase"}</p>
                 <p className="text-[13px] text-slate-500 mt-0.5">The host provides the necessary credentials or invites.</p>
               </div>
             </div>
 
             <div className="flex items-start gap-4 relative z-10">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 border-4 border-white text-[12px] font-bold text-emerald-700 shadow-sm">3</span>
-              <div className="pt-1.5">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 border-[3px] border-white text-[10px] font-bold text-emerald-700">3</span>
+              <div className="pt-0.5">
                 <p className="text-[14px] font-bold text-emerald-800">You confirm & funds release</p>
                 <p className="text-[13px] text-emerald-700/80 mt-0.5">Only after you confirm working access does the host get paid.</p>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 rounded-2xl bg-amber-50 p-4 border border-amber-100">
-            <p className="text-[13px] font-semibold text-amber-800 leading-relaxed">
+          <div className="mt-6 rounded-xl bg-amber-50 p-4 border border-amber-100">
+            <p className="text-[12px] font-medium text-amber-800 leading-relaxed">
               If the host doesn't deliver or credentials don't work, you can report an issue and your funds will be fully refunded to your wallet.
             </p>
           </div>
@@ -300,26 +299,25 @@ export default function GroupDetails() {
       </div>
 
       {/* Sticky Bottom Action Bar */}
-      <div className="fixed bottom-[64px] sm:bottom-0 left-0 right-0 p-3 sm:p-4 bg-white/90 backdrop-blur-xl border-t border-slate-200 z-30 flex items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+      <div className="fixed bottom-[64px] sm:bottom-0 left-0 right-0 px-4 py-3 bg-white/95 backdrop-blur-xl border-t border-slate-200 z-30 flex items-center justify-center">
         <div className="w-full max-w-2xl flex gap-3">
           <button 
             onClick={() => navigate("/groups")}
-            className="hidden sm:block flex-1 py-4 rounded-2xl border border-slate-200 bg-white text-slate-700 font-bold text-[15px] hover:bg-slate-50 transition-colors"
+            className="hidden sm:block flex-1 py-3.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-[15px] hover:bg-slate-50 transition-colors"
           >
             Cancel
           </button>
           <button 
             onClick={handleJoin}
             disabled={joining || !group.is_joinable}
-            className="flex-1 py-4 rounded-2xl bg-teal-800 text-white font-bold text-[16px] shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-teal-900 transition-colors active:scale-[0.98]"
+            className="flex-1 py-3.5 rounded-xl bg-teal-800 text-white font-bold text-[15px] shadow-md flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-teal-900 transition-colors active:scale-[0.98]"
           >
             {joining ? (
               <>
-                <LoadingSpinner className="w-5 h-5" /> Processing...
+                <LoadingSpinner className="w-4 h-4" /> Processing...
               </>
             ) : (
               <>
-                <CheckCircleIcon className="w-5 h-5" />
                 Confirm and Join • {formatCurrency(joinPrice)}
               </>
             )}
