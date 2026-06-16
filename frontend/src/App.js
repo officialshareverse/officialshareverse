@@ -5,6 +5,7 @@ import { refreshAccessToken } from "./api/axios";
 import { getAuthToken } from "./auth/session";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/Navbar";
+import BrandMark from "./components/BrandMark";
 import {
   SkeletonBlock,
   SkeletonCard,
@@ -465,18 +466,16 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
 
 function AuthBootstrapScreen() {
   return (
-    <div className="sv-page">
-      <div className="sv-auth-bootstrap">
-        <div className="sv-auth-bootstrap-shell">
-          <SkeletonBlock className="h-10 w-40 rounded-full" />
-          <SkeletonCard>
-            <SkeletonTextGroup eyebrowWidth="w-24" titleWidth="w-3/4" />
-          </SkeletonCard>
-          <SkeletonCard className="space-y-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <SkeletonBlock key={index} className="h-12 w-full rounded-[18px]" />
-            ))}
-          </SkeletonCard>
+    <div className="sv-page flex items-center justify-center min-h-[100dvh] bg-slate-50 dark:bg-slate-900">
+      <div className="flex flex-col items-center justify-center sv-animate-rise">
+        <div className="animate-pulse flex flex-col items-center">
+          <BrandMark glow sizeClass="h-24 w-24 sm:h-32 sm:w-32" />
+          <h1 className="mt-8 text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+            ShareVerse
+          </h1>
+          <p className="mt-3 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-teal-400">
+            Split More. Pay Less.
+          </p>
         </div>
       </div>
     </div>
