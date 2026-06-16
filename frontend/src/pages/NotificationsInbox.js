@@ -3,7 +3,6 @@ import useIsMobile from "../hooks/useIsMobile";
 
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
-import Drawer from "../components/Drawer";
 import EmptyState from "../components/EmptyState";
 import PullToRefreshIndicator from "../components/PullToRefreshIndicator";
 import {
@@ -28,7 +27,6 @@ import useRevealOnScroll from "../hooks/useRevealOnScroll";
 import useWebSocket from "../hooks/useWebSocket";
 
 const SOUND_TOGGLE_STORAGE_KEY = "sv-notification-sound-enabled";
-const HAPTICS_TOGGLE_STORAGE_KEY = "sv-notification-haptics-enabled";
 
 
 
@@ -216,7 +214,7 @@ export default function NotificationsInbox() {
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [workingId, setWorkingId] = useState(null);
   const [markingAll, setMarkingAll] = useState(false);
-  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === "undefined") {
       return true;
@@ -224,17 +222,10 @@ export default function NotificationsInbox() {
     const storedValue = window.localStorage.getItem(SOUND_TOGGLE_STORAGE_KEY);
     return storedValue !== "0";
   });
-  const [hapticsEnabled, setHapticsEnabled] = useState(() => {
-    if (typeof window === "undefined") {
-      return true;
-    }
-    const storedValue = window.localStorage.getItem(HAPTICS_TOGGLE_STORAGE_KEY);
-    return storedValue !== "0";
-  });
   const previousUnreadCountRef = useRef(null);
   const isMountedRef = useRef(true);
   const soundEnabledRef = useRef(soundEnabled);
-  const hapticsEnabledRef = useRef(hapticsEnabled);
+  const hapticsEnabledRef = useRef(true);
   const notificationsRef = useRef([]);
 
   useRevealOnScroll();
@@ -252,10 +243,7 @@ export default function NotificationsInbox() {
     window.localStorage.setItem(SOUND_TOGGLE_STORAGE_KEY, soundEnabled ? "1" : "0");
   }, [soundEnabled]);
 
-  useEffect(() => {
-    hapticsEnabledRef.current = hapticsEnabled;
-    window.localStorage.setItem(HAPTICS_TOGGLE_STORAGE_KEY, hapticsEnabled ? "1" : "0");
-  }, [hapticsEnabled]);
+
 
   useEffect(() => {
     notificationsRef.current = notifications;
@@ -417,8 +405,6 @@ export default function NotificationsInbox() {
     { value: "wallet", label: "Wallet", count: counts.wallet },
     { value: "system", label: "System", count: counts.system },
   ];
-  const activeFilterLabel =
-    filter === "all" ? "All updates" : filter.charAt(0).toUpperCase() + filter.slice(1);
 
   const markAsRead = async (notificationId) => {
     try {
@@ -566,7 +552,7 @@ export default function NotificationsInbox() {
 
 
 
-        <section className="sv-card sv-reveal">
+        <section className={isMobile ? "space-y-4 px-2 pb-8" : "sv-card sv-reveal"}>
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
@@ -574,27 +560,20 @@ export default function NotificationsInbox() {
                 <h2 className="mt-2 text-2xl font-bold text-slate-900">{isMobile ? "Your updates" : "Categorized updates"}</h2>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsMobileDrawerOpen(true)}
-                className="sv-notification-mobile-trigger sm:hidden"
-              >
-                <span className="sv-notification-mobile-trigger-copy">
-                  <span>Filters &amp; actions</span>
-                  <strong>{showUnreadOnly ? `${activeFilterLabel} - Unread` : activeFilterLabel}</strong>
-                </span>
-                <BellIcon className="h-4 w-4" />
-              </button>
+              {isMobile ? (
+                <div className="flex gap-2">
+                  <button onClick={() => setShowUnreadOnly(!showUnreadOnly)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors ${showUnreadOnly ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-600'}`}>
+                    <ClockIcon className="h-3.5 w-3.5" />
+                    Unread
+                  </button>
+                  <button onClick={markAllRead} disabled={markingAll || counts.unread === 0} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 active:scale-95 transition-transform disabled:opacity-50">
+                    <CheckCircleIcon className="h-3.5 w-3.5" />
+                    Read all
+                  </button>
+                </div>
+              ) : null}
 
               <div className="hidden sm:flex sv-inbox-toolbar">
-                <button
-                  type="button"
-                  onClick={() => setIsMobileDrawerOpen(true)}
-                  className="sv-notification-toggle"
-                >
-                  <BellIcon className="h-4 w-4" />
-                  Preferences
-                </button>
                 <button
                   type="button"
                   onClick={() => setShowUnreadOnly((current) => !current)}
@@ -614,9 +593,23 @@ export default function NotificationsInbox() {
               </div>
             </div>
 
-            <div className="hidden sm:block">
-              <Tabs tabs={categoryTabs} value={filter} onChange={setFilter} />
-            </div>
+            {isMobile ? (
+              <div className="flex gap-2 overflow-x-auto pb-2 sv-no-scrollbar">
+                {categoryTabs.map(tab => (
+                  <button 
+                    key={tab.value}
+                    onClick={() => setFilter(tab.value)}
+                    className={`shrink-0 px-4 py-2 rounded-2xl border text-[13px] font-bold transition-all ${filter === tab.value ? "border-teal-500 bg-teal-50 text-teal-700" : "border-slate-200 bg-white text-slate-600"}`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="hidden sm:block">
+                <Tabs tabs={categoryTabs} value={filter} onChange={setFilter} />
+              </div>
+            )}
           </div>
 
           {error ? (
@@ -677,71 +670,37 @@ export default function NotificationsInbox() {
         </section>
       </div>
 
-      <Drawer
-        open={isMobileDrawerOpen}
-        onClose={() => setIsMobileDrawerOpen(false)}
-        eyebrow="Inbox controls"
-        title="Tune this notification view"
-        description="Switch categories, focus on unread updates, and manage your inbox without leaving the page."
-        footer={(
-          <div className="space-y-3">
-            <p className="sv-drawer-footnote">Desktop shortcut: <strong>Alt + Shift + R</strong> marks everything read.</p>
-            <button
-              type="button"
-              onClick={() => setIsMobileDrawerOpen(false)}
-              className="sv-btn-secondary w-full justify-center"
-            >
-              Done
-            </button>
-          </div>
-        )}
-      >
-        <Tabs tabs={categoryTabs} value={filter} onChange={setFilter} className="sv-drawer-tabs" />
 
-        <div className="sv-drawer-stack">
-          <MobileDrawerAction
-            icon={ClockIcon}
-            label={showUnreadOnly ? "Showing unread only" : "Show unread only"}
-            description="Focus on the items that still need your attention."
-            meta={showUnreadOnly ? "Active" : "Off"}
-            active={showUnreadOnly}
-            onClick={() => setShowUnreadOnly((current) => !current)}
-          />
-
-          <MobileDrawerAction
-            icon={BellIcon}
-            label={soundEnabled ? "Notification sound is on" : "Notification sound is off"}
-            description="Play a quick chime when fresh unread updates arrive."
-            meta={soundEnabled ? "Enabled" : "Muted"}
-            active={soundEnabled}
-            onClick={() => setSoundEnabled((current) => !current)}
-          />
-
-          <MobileDrawerAction
-            icon={StarIcon}
-            label={hapticsEnabled ? "Haptics are on" : "Haptics are off"}
-            description="Use a subtle device vibration for new unread alerts on supported devices."
-            meta={hapticsEnabled ? "Enabled" : "Muted"}
-            active={hapticsEnabled}
-            onClick={() => setHapticsEnabled((current) => !current)}
-          />
-
-          <MobileDrawerAction
-            icon={CheckCircleIcon}
-            label="Mark all as read"
-            description="Clear the unread queue once you are caught up."
-            meta={counts.unread > 0 ? `${counts.unread} unread` : "All caught up"}
-            disabled={markingAll || counts.unread === 0}
-            onClick={markAllRead}
-          />
-        </div>
-      </Drawer>
     </div>
   );
 }
 
 function NotificationCard({ notification, working, onMarkRead, compact = false }) {
   const Icon = getNotificationIcon(notification.icon);
+
+  if (compact) {
+    return (
+      <article className={`bg-white rounded-[24px] border ${notification.is_read ? 'border-slate-100 shadow-sm opacity-75' : 'border-teal-100 shadow-sm bg-teal-50/30'} p-4 flex gap-3.5 relative transition-all`}>
+        <div className={`h-11 w-11 shrink-0 rounded-full flex items-center justify-center border ${notification.is_read ? 'bg-slate-50 text-slate-400 border-slate-100' : 'bg-teal-50 text-teal-600 border-teal-100'}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">{notification.category_label}</span>
+            <span className="text-[10px] font-semibold text-slate-400">{formatRelativeTime(notification.created_at)}</span>
+          </div>
+          <p className={`text-[13px] leading-snug ${notification.is_read ? 'text-slate-600 font-medium' : 'text-slate-900 font-bold'}`}>
+            {notification.message}
+          </p>
+        </div>
+        {!notification.is_read && (
+          <button onClick={onMarkRead} disabled={working} className="shrink-0 h-8 w-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 active:scale-95 transition-transform">
+            {working ? <LoadingSpinner className="h-3 w-3" /> : <CheckCircleIcon className="h-4 w-4" />}
+          </button>
+        )}
+      </article>
+    );
+  }
 
   return (
     <article className={`sv-notification-card ${notification.is_read ? "is-read" : "is-unread"} ${notification.tone || ""}`}>
@@ -755,12 +714,12 @@ function NotificationCard({ notification, working, onMarkRead, compact = false }
           {!compact && notification.context_title ? <span className="sv-notification-pill is-context">{notification.context_title}</span> : null}
           <span className="sv-notification-time">{formatRelativeTime(notification.created_at)}</span>
         </div>
-        <p className={`mt-3 text-sm leading-7 text-slate-700 ${compact ? "sv-notification-message-compact" : ""}`}>{notification.message}</p>
+        <p className={`mt-3 text-sm leading-7 text-slate-700`}>{notification.message}</p>
       </div>
 
       {!notification.is_read ? (
         <button type="button" onClick={onMarkRead} disabled={working} className="sv-btn-secondary">
-          {working ? <><LoadingSpinner />Saving...</> : <><CheckCircleIcon className="h-4 w-4" />{compact ? "Read" : "Mark read"}</>}
+          {working ? <><LoadingSpinner />Saving...</> : <><CheckCircleIcon className="h-4 w-4" />Mark read</>}
         </button>
       ) : (
         <span className="sv-notification-read-pill">
@@ -773,6 +732,35 @@ function NotificationCard({ notification, working, onMarkRead, compact = false }
 }
 
 function NotificationBundleCard({ item, working, onMarkRead, compact = false }) {
+  if (compact) {
+    return (
+      <article className={`bg-white rounded-[24px] border border-teal-100 shadow-sm bg-teal-50/30 p-4 flex gap-3.5 relative transition-all`}>
+        <div className={`h-11 w-11 shrink-0 rounded-full flex items-center justify-center border bg-teal-50 text-teal-600 border-teal-100`}>
+          <ChatIcon className="h-5 w-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">{item.category_label}</span>
+            <span className="text-[10px] font-semibold text-slate-400">{formatRelativeTime(item.latestCreatedAt)}</span>
+          </div>
+          <p className="text-[13px] leading-snug text-slate-900 font-bold mb-2">
+            {item.count} unread chat update{item.count === 1 ? "" : "s"}
+          </p>
+          <div className="space-y-1">
+            {item.messages.slice(0, 2).map((message) => (
+              <p key={`${item.id}-${message}`} className="text-[12px] leading-tight text-slate-600 truncate">
+                • {message}
+              </p>
+            ))}
+          </div>
+        </div>
+        <button onClick={onMarkRead} disabled={working} className="shrink-0 h-8 w-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 active:scale-95 transition-transform">
+          {working ? <LoadingSpinner className="h-3 w-3" /> : <CheckCircleIcon className="h-4 w-4" />}
+        </button>
+      </article>
+    );
+  }
+
   return (
     <article className="sv-notification-card is-unread chat-bundle">
       <div className="sv-notification-icon chat">
@@ -782,12 +770,12 @@ function NotificationBundleCard({ item, working, onMarkRead, compact = false }) 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="sv-notification-pill">{item.category_label}</span>
-          {!compact ? <span className="sv-notification-pill is-context">{item.context_title}</span> : null}
+          <span className="sv-notification-pill is-context">{item.context_title}</span>
           <span className="sv-notification-time">{formatRelativeTime(item.latestCreatedAt)}</span>
         </div>
         <p className="mt-3 text-sm font-semibold text-slate-900">{item.count} unread chat update{item.count === 1 ? "" : "s"} bundled together</p>
         <div className="sv-notification-bundle-list mt-3">
-          {(compact ? item.messages.slice(0, 2) : item.messages).map((message) => (
+          {item.messages.map((message) => (
             <p key={`${item.id}-${message}`} className="text-sm leading-7 text-slate-600">
               {message}
             </p>
@@ -796,38 +784,10 @@ function NotificationBundleCard({ item, working, onMarkRead, compact = false }) 
       </div>
 
       <button type="button" onClick={onMarkRead} disabled={working} className="sv-btn-secondary">
-        {working ? <><LoadingSpinner />Saving...</> : <><CheckCircleIcon className="h-4 w-4" />{compact ? "Read" : "Mark bundle read"}</>}
+        {working ? <><LoadingSpinner />Saving...</> : <><CheckCircleIcon className="h-4 w-4" />Mark bundle read</>}
       </button>
     </article>
   );
 }
 
-function MobileDrawerAction({
-  icon: Icon,
-  label,
-  description,
-  meta,
-  onClick,
-  disabled = false,
-  active = false,
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`sv-drawer-action ${active ? "is-active" : ""}`.trim()}
-    >
-      <span className="sv-drawer-action-icon">
-        <Icon className="h-4.5 w-4.5" />
-      </span>
 
-      <span className="sv-drawer-action-copy">
-        <strong>{label}</strong>
-        {description ? <span>{description}</span> : null}
-      </span>
-
-      {meta ? <span className="sv-drawer-action-meta">{meta}</span> : null}
-    </button>
-  );
-}
