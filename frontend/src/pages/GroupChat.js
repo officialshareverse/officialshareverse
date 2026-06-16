@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import useIsMobile from "../hooks/useIsMobile";
 import { useNavigate, useParams } from "react-router-dom";
@@ -538,7 +539,7 @@ export default function GroupChat() {
       {/* ═══════════════════════════════════════
           MOBILE LAYOUT — WhatsApp-style
          ═══════════════════════════════════════ */}
-      {isMobile ? (
+      {isMobile ? createPortal(
         <div className="sv-mobile-chat-shell">
           {/* ── Fixed top header bar ── */}
           <div className="sv-mobile-chat-header">
@@ -611,7 +612,8 @@ export default function GroupChat() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       ) : (
         /* ═══════════════════════════════════════
            DESKTOP LAYOUT — unchanged
