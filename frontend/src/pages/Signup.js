@@ -245,9 +245,14 @@ function getReferralStatusCopy(status, referralCode) {
   };
 }
 
-export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
-  const location = useLocation();
+export default function Signup({
+  setIsAuth,
+  themeMode,
+  toggleTheme,
+}) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isMobile = useIsMobile();
   const toast = useToast();
   const redirectTarget = useMemo(() => getSafeRedirectTarget(location.search), [location.search]);
   const prefilledReferralCode = useMemo(
@@ -673,8 +678,6 @@ export default function Signup({ setIsAuth, themeMode, toggleTheme }) {
     );
     navigate(redirectTarget, { replace: true });
   };
-
-  const isMobile = useIsMobile();
 
   if (isMobile) {
     return (
