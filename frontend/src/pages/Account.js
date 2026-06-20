@@ -47,7 +47,7 @@ export default function Account() {
   const balance = profile?.wallet_balance ? Number(profile.wallet_balance).toFixed(0) : "0";
 
   return (
-    <div className="sv-page bg-slate-50 dark:bg-slate-900 min-h-screen">
+    <div className="sv-page pb-6 sm:pb-8">
       <div className="mx-auto max-w-md p-4 space-y-6">
         
         {/* Profile Header */}
