@@ -45,8 +45,6 @@ import {
   buyTogetherNotice,
   buyTogetherNoticeTitle,
   card,
-  cardHeader,
-  cardHeaderMobile,
   cardMobile,
   cardSubheading,
   container,
