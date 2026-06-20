@@ -478,8 +478,8 @@ export default function Profile() {
         <section className="pb-2 sm:pb-4 sv-reveal">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.12fr)_minmax(290px,0.88fr)]">
             <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-[0.18em] font-bold text-slate-500">Profile</p>
-              <div className="mt-4 flex flex-col gap-5 md:flex-row md:items-center">
+              <p className="text-[11px] uppercase tracking-[0.18em] font-bold text-slate-500 text-center md:text-left">Profile</p>
+              <div className="mt-4 flex flex-col items-center text-center gap-5 md:flex-row md:items-center md:text-left">
                 <div className="sv-profile-avatar-shell">
                   <ProfileAvatar imageUrl={liveProfilePicture} initials={initials} size="large" />
                   <button
@@ -498,8 +498,8 @@ export default function Profile() {
                   </button>
                 </div>
 
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2.5">
+                <div className="min-w-0 flex flex-col items-center md:items-start">
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{isEditing ? draftDisplayName : displayName}</h1>
                     <span className={`sv-profile-verify-chip ${profile.is_verified ? "is-verified" : "is-pending"}`}>
                       <ShieldIcon className="h-3.5 w-3.5" />
@@ -507,12 +507,12 @@ export default function Profile() {
                     </span>
                   </div>
 
-                  <p className="mt-3 text-sm text-slate-600 md:text-base">{isMobile ? `@${profile.username}` : `@${profile.username}`}</p>
+                  <p className="mt-3 text-sm text-slate-600 md:text-base">@{profile.username}</p>
                   <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base md:leading-8">
                     {profileTagline}
                   </p>
 
-                  <div className="mt-5 flex flex-wrap gap-2">
+                  <div className="mt-5 flex flex-wrap justify-center md:justify-start gap-2">
                     <span className="sv-chip">Joined {formatDate(profile.date_joined)}</span>
                     <span className="sv-chip">{profile.has_profile_picture ? "Photo added" : "Photo missing"}</span>
                     <span className="sv-chip">{profile.profile_completion}% complete</span>
@@ -521,43 +521,47 @@ export default function Profile() {
               </div>
             </div>
 
-            {!isMobile ? (
-              <div className="sv-profile-hero-metrics grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="sv-profile-hero-metrics flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 lg:grid lg:grid-cols-1 lg:overflow-visible lg:pb-0">
+              <div className="min-w-[260px] snap-center lg:min-w-0 shrink-0">
                 <HeroMetricCard
                   label="Wallet balance"
                   value={formatCurrency(profile.wallet_balance)}
                   note="Keep funds ready for paid joins and faster checkouts."
                 />
+              </div>
+              <div className="min-w-[260px] snap-center lg:min-w-0 shrink-0">
                 <HeroMetricCard
                   label="Profile strength"
                   value={`${profileStrength}%`}
                   note="A stronger profile shortens trust checks for new members."
                 />
+              </div>
+              <div className="min-w-[260px] snap-center lg:min-w-0 shrink-0">
                 <HeroMetricCard
                   label="Active now"
                   value={`${Number(profile.active_memberships || 0) + Number(profile.active_hosting || 0)}`}
                   note="Total active memberships and hosted groups right now."
                 />
               </div>
-            ) : null}
+            </div>
           </div>
         </section>
 
-        <section className="grid grid-cols-2 gap-2.5 sv-reveal sm:flex sm:flex-wrap sm:gap-3">
-          <button type="button" className="sv-btn-primary" onClick={() => navigate("/wallet")}>
+        <section className="flex flex-col gap-2.5 sv-reveal sm:flex-row sm:flex-wrap sm:gap-3">
+          <button type="button" className="sv-btn-primary flex-1 justify-center" onClick={() => navigate("/wallet")}>
             <WalletIcon className="h-4 w-4" />
             Open wallet
           </button>
-          <button type="button" className="sv-btn-secondary" onClick={() => navigate("/my-shared")}>
-            <LayersIcon className="h-4 w-4" />
-            My splits
-          </button>
-          {!isMobile ? (
-            <button type="button" className="sv-btn-secondary" onClick={() => navigate("/create")}>
+          <div className="flex gap-2.5 flex-1 sm:flex-none">
+            <button type="button" className="sv-btn-secondary flex-1 justify-center" onClick={() => navigate("/my-shared")}>
+              <LayersIcon className="h-4 w-4" />
+              My splits
+            </button>
+            <button type="button" className="sv-btn-secondary flex-1 justify-center" onClick={() => navigate("/create")}>
               <SparkIcon className="h-4 w-4" />
               Create split
             </button>
-          ) : null}
+          </div>
         </section>
 
         {saveMessage ? (
@@ -571,11 +575,11 @@ export default function Profile() {
           </div>
         ) : null}
 
-        <section className="sv-profile-stat-grid grid gap-4 md:grid-cols-2 xl:grid-cols-4 sv-reveal">
+        <section className="sv-profile-stat-grid grid gap-4 grid-cols-2 xl:grid-cols-4 sv-reveal">
           <StatCard label="Groups joined" value={profile.groups_joined} icon={LayersIcon} tone="is-teal" note="Member history" />
           <StatCard label="Groups created" value={profile.groups_created} icon={SparkIcon} tone="is-violet" note="Host activity" />
-          {!isMobile ? <StatCard label="Total spent" value={profile.total_spent} icon={CreditIcon} tone="is-rose" note="Across joined groups" format="currency" /> : null}
-          {!isMobile ? <StatCard label="Total earned" value={profile.total_earned} icon={WalletIcon} tone="is-emerald" note="From sharing activity" format="currency" /> : null}
+          <StatCard label="Total spent" value={profile.total_spent} icon={CreditIcon} tone="is-rose" note="Across joined groups" format="currency" />
+          <StatCard label="Total earned" value={profile.total_earned} icon={WalletIcon} tone="is-emerald" note="From sharing activity" format="currency" />
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
