@@ -1137,15 +1137,18 @@ export default function MyShared() {
 
           return (
             <div key={group.id} style={{ ...card, ...(isMobile ? cardMobile : {}) }}>
-              <div style={{ ...cardHeader, ...(isMobile ? cardHeaderMobile : {}) }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <SubscriptionLogo name={group.subscription_name} size={40} />
-                  <div>
-                    <h3 style={{ margin: 0 }}>{group.subscription_name}</h3>
-                    <p style={cardSubheading}>{group.mode_label}</p>
+              <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: "12px", marginBottom: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
+                  <SubscriptionLogo name={group.subscription_name} size={isMobile ? 36 : 40} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap", marginBottom: "2px" }}>
+                      <h3 style={{ margin: 0, fontSize: isMobile ? "16px" : "18px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{group.subscription_name}</h3>
+                      {isMobile ? <span style={{ ...badge, padding: "2px 8px", fontSize: "10px", fontWeight: 700 }}>{group.status_label}</span> : null}
+                    </div>
+                    <p style={{ ...cardSubheading, margin: 0, fontSize: isMobile ? "13px" : "14px" }}>{group.mode_label}</p>
                   </div>
                 </div>
-                <span style={badge}>{group.status_label}</span>
+                {!isMobile ? <span style={badge}>{group.status_label}</span> : null}
               </div>
 
               <div style={{ ...factsRow, ...(isMobile ? factsRowMobile : {}) }}>
@@ -1756,15 +1759,18 @@ export default function MyShared() {
 
             return (
               <div key={group.id} style={{ ...joinedCard, ...(isMobile ? joinedCardMobile : {}) }}>
-                <div style={{ ...cardHeader, ...(isMobile ? cardHeaderMobile : {}) }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <SubscriptionLogo name={group.subscription_name} size={40} />
-                    <div>
-                      <h3 style={{ margin: 0 }}>{group.subscription_name}</h3>
-                      <p style={cardSubheading}>{group.mode_label}</p>
+                <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: "12px", marginBottom: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
+                    <SubscriptionLogo name={group.subscription_name} size={isMobile ? 36 : 40} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap", marginBottom: "2px" }}>
+                        <h3 style={{ margin: 0, fontSize: isMobile ? "16px" : "18px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{group.subscription_name}</h3>
+                        {isMobile ? <span style={{ ...badge, padding: "2px 8px", fontSize: "10px", fontWeight: 700 }}>{group.status_label}</span> : null}
+                      </div>
+                      <p style={{ ...cardSubheading, margin: 0, fontSize: isMobile ? "13px" : "14px" }}>{group.mode_label}</p>
                     </div>
                   </div>
-                  <span style={badge}>{group.status_label}</span>
+                  {!isMobile ? <span style={badge}>{group.status_label}</span> : null}
                 </div>
 
                 <div style={{ ...factsRow, ...(isMobile ? factsRowMobile : {}) }}>

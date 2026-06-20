@@ -239,9 +239,13 @@ export const filterRow = {
 };
 
 export const filterRowMobile = {
-  gap: "10px",
-  marginBottom: "24px",
+  gap: "8px",
+  marginBottom: "20px",
   padding: "0 16px",
+  overflowX: "auto",
+  whiteSpace: "nowrap",
+  msOverflowStyle: "none",
+  scrollbarWidth: "none",
 };
 
 export const sectionHeader = {
@@ -299,7 +303,7 @@ const filterButton = {
 };
 
 const filterButtonCompact = {
-  padding: "12px 18px",
+  padding: "8px 16px",
   fontSize: "13px",
 };
 
@@ -315,10 +319,10 @@ export const card = {
 
 export const cardMobile = {
   padding: "16px",
-  margin: "0 16px 16px",
-  borderRadius: "24px",
-  border: "none",
-  boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
+  margin: "0 16px 14px",
+  borderRadius: "20px",
+  border: "1px solid var(--sv-border)",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
   background: "#fff",
 };
 
@@ -390,9 +394,9 @@ export const factsRowMobile = {
 const factPill = {
   display: "inline-flex",
   alignItems: "center",
-  gap: "8px",
-  padding: "8px 12px",
-  borderRadius: "999px",
+  gap: "6px",
+  padding: "6px 10px",
+  borderRadius: "8px",
   background: svPaperSoft,
   border: `1px solid ${svBorder}`,
 };
@@ -471,12 +475,14 @@ export const actionRow = {
 
 export const actionRowMobile = {
   display: "flex",
-  flexDirection: "column",
-  gap: "10px",
+  flexDirection: "row",
+  gap: "8px",
 };
 
 export const actionButtonMobile = {
-  flex: "1 1 auto",
+  flex: 1,
+  padding: "12px 10px",
+  fontSize: "13px",
 };
 
 export const secondaryButton = {
@@ -632,10 +638,10 @@ export const joinedCard = {
 
 export const joinedCardMobile = {
   padding: "16px",
-  margin: "0 16px 16px",
-  borderRadius: "24px",
-  border: "none",
-  boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
+  margin: "0 16px 14px",
+  borderRadius: "20px",
+  border: "1px solid var(--sv-border)",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
   background: "#fff",
 };
 
