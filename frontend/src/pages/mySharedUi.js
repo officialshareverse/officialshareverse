@@ -214,7 +214,7 @@ const summaryLabel = {
 const summaryLabelMobile = {
   fontSize: "11px",
   lineHeight: 1.4,
-  color: "rgba(255, 255, 255, 0.7)",
+  color: svMuted,
   fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.05em",
@@ -353,8 +353,8 @@ export const subtleText = {
 };
 
 export const subtleTextCompact = {
-  fontSize: "13px",
-  lineHeight: 1.55,
+  fontSize: "12px",
+  lineHeight: 1.4,
 };
 
 export const cardSubheading = {
@@ -450,7 +450,8 @@ const metricValue = {
 };
 
 export const metricValueMobile = {
-  fontSize: "18px",
+  fontSize: "15px",
+  marginTop: "2px",
 };
 
 export const progressBar = {
@@ -747,7 +748,7 @@ export const detailStats = {
 
 export const detailStatsMobile = {
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "10px",
+  gap: "10px 8px",
 };
 
 export const detailGridLayout = {
@@ -770,12 +771,12 @@ export const detailSectionCard = {
 };
 
 export const detailSectionCardMobile = {
-  borderRadius: "20px",
+  borderRadius: "16px",
   border: "1px solid #f1f5f9",
   background: "#f8fafc",
-  padding: "16px",
+  padding: "14px",
   backdropFilter: "none",
-  marginTop: "12px",
+  marginTop: "8px",
 };
 
 export const detailSectionHeader = {
