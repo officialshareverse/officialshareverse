@@ -141,7 +141,7 @@ export default function Account() {
           </button>
         </div>
 
-        <div className="text-center pb-24 pt-4">
+        <div className="text-center pb-6 pt-4">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-400">ShareVerse v1.0.0</p>
         </div>
 
