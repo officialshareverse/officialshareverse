@@ -16,6 +16,7 @@ import {
   PlusIcon,
   WalletIcon,
 } from "../components/UiIcons";
+import ThemeToggle from "../components/ThemeToggle";
 
 function formatCurrency(value) {
   const numeric = Number(value || 0);
@@ -85,7 +86,7 @@ function getRecentSplitStatusMeta(status) {
   return { label: formatGroupType(status), dotTone: "bg-slate-300" };
 }
 
-export default function Home() {
+export default function Home({ themeMode, toggleTheme }) {
   const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
   const [dashboard, setDashboard] = useState(null);
@@ -499,7 +500,14 @@ export default function Home() {
             <div className="absolute inset-0 sm:inset-auto sm:right-0 sm:top-0 sm:-mr-16 sm:-mt-16 h-full w-full sm:h-64 sm:w-64 rounded-none sm:rounded-full bg-gradient-to-br from-emerald-100 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 opacity-60 sm:opacity-50 blur-3xl pointer-events-none"></div>
             
             <div className="relative z-10 flex flex-col gap-5 sm:gap-6">
-              <BrandMark sizeClass="h-10 w-10 sm:h-14 sm:w-14" roundedClass="rounded-xl sm:rounded-2xl shadow-sm" />
+              <div className="flex items-center justify-between">
+                <BrandMark sizeClass="h-10 w-10 sm:h-14 sm:w-14" roundedClass="rounded-xl sm:rounded-2xl shadow-sm" />
+                <div className="sm:hidden">
+                  {typeof toggleTheme === "function" && (
+                    <ThemeToggle themeMode={themeMode} onToggle={toggleTheme} compact />
+                  )}
+                </div>
+              </div>
               
               <div>
                 <p className="text-[11px] sm:text-sm font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">

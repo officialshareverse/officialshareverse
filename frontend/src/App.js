@@ -302,7 +302,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
             element={
               <ErrorBoundary>
                 <PrivateRoute>
-                  <Home />
+                  <Home themeMode={themeMode} toggleTheme={toggleTheme} />
                 </PrivateRoute>
               </ErrorBoundary>
             }
