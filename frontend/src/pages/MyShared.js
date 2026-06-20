@@ -1590,77 +1590,95 @@ export default function MyShared() {
 
                             return (
                               <div key={member.id} style={{ ...memberRow, ...(isMobile ? memberRowMobile : {}) }}>
-                                <div style={{ flex: 1 }}>
-                                  <p style={memberName}>{member.username}</p>
-                                  {!isMobile ? (
-                                    <p style={memberMeta}>Joined {new Date(member.joined_at).toLocaleDateString()}</p>
-                                  ) : null}
-                                  <p style={memberMeta}>Charged Rs {member.charged_amount || group.price_per_slot}</p>
-                                  {!isMobile ? (
-                                    <p style={memberMeta}>
-                                      {member.rating?.average_rating
-                                        ? `${member.rating.average_rating.toFixed(1)} / 5 from ${member.rating.review_count} review${member.rating.review_count === 1 ? "" : "s"}`
-                                        : "No ratings yet"}
-                                    </p>
-                                  ) : null}
+                                <div style={{ flex: 1, width: "100%" }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: isMobile ? "8px" : "0" }}>
+                                    <div>
+                                      <p style={memberName}>{member.username}</p>
+                                      {!isMobile ? (
+                                        <p style={memberMeta}>Joined {new Date(member.joined_at).toLocaleDateString()}</p>
+                                      ) : null}
+                                      <p style={memberMeta}>Charged Rs {member.charged_amount || group.price_per_slot}</p>
+                                      {!isMobile ? (
+                                        <p style={memberMeta}>
+                                          {member.rating?.average_rating
+                                            ? `${member.rating.average_rating.toFixed(1)} / 5 from ${member.rating.review_count} review${member.rating.review_count === 1 ? "" : "s"}`
+                                            : "No ratings yet"}
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                    {isMobile ? (
+                                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                                        <span style={memberStatus(memberLabel)}>
+                                          {memberLabel}
+                                        </span>
+                                      </div>
+                                    ) : null}
+                                  </div>
+
                                   {member.access_issue_reported && member.access_issue_notes ? (
                                     <p style={memberIssueText}>Reported issue: {member.access_issue_notes}</p>
                                   ) : null}
                                   {detail.can_rate_members ? (
-                                    <div style={reviewCard}>
-                                      <p style={reviewTitle}>Rate this member</p>
-                                      <StarPicker
-                                        value={Number(reviewForm.rating)}
-                                        onChange={(value) =>
-                                          handleReviewChange(
-                                            detail.id,
-                                            member.user_id,
-                                            "rating",
-                                            value,
-                                            member.rating?.my_review
-                                          )
-                                        }
-                                      />
-                                      <textarea
-                                        style={reviewTextarea}
-                                        value={reviewForm.comment}
-                                        onChange={(event) =>
-                                          handleReviewChange(
-                                            detail.id,
-                                            member.user_id,
-                                            "comment",
-                                            event.target.value,
-                                            member.rating?.my_review
-                                          )
-                                        }
-                                        placeholder="How was this member to coordinate with?"
-                                      />
-                                      <button
-                                        style={secondaryButton}
-                                        onClick={() =>
-                                          submitReview({
-                                            groupId: detail.id,
-                                            reviewedUserId: member.user_id,
-                                            existingReview: member.rating?.my_review,
-                                            refreshDetail: true,
-                                          })
-                                        }
-                                        disabled={submittingReviewKey === reviewKey}
-                                      >
-                                        {submittingReviewKey === reviewKey
-                                          ? "Saving..."
-                                          : member.rating?.my_review
-                                            ? "Update rating"
-                                            : "Save rating"}
-                                      </button>
+                                    <div style={{ ...reviewCard, ...(isMobile ? reviewCardMobile : {}) }}>
+                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isMobile ? "8px" : "10px", flexWrap: "wrap", gap: "8px" }}>
+                                        <p style={{ ...reviewTitle, margin: 0 }}>Rate member</p>
+                                        <StarPicker
+                                          value={Number(reviewForm.rating)}
+                                          onChange={(value) =>
+                                            handleReviewChange(
+                                              detail.id,
+                                              member.user_id,
+                                              "rating",
+                                              value,
+                                              member.rating?.my_review
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                      <div style={{ display: "flex", gap: "8px", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "flex-start" }}>
+                                        <textarea
+                                          style={{ ...reviewTextarea, flex: 1, minHeight: isMobile ? "44px" : "60px", marginTop: 0, marginBottom: 0 }}
+                                          value={reviewForm.comment}
+                                          onChange={(event) =>
+                                            handleReviewChange(
+                                              detail.id,
+                                              member.user_id,
+                                              "comment",
+                                              event.target.value,
+                                              member.rating?.my_review
+                                            )
+                                          }
+                                          placeholder="How was this member?"
+                                        />
+                                        <button
+                                          style={{ ...secondaryButton, whiteSpace: "nowrap", alignSelf: isMobile ? "flex-end" : "auto" }}
+                                          onClick={() =>
+                                            submitReview({
+                                              groupId: detail.id,
+                                              reviewedUserId: member.user_id,
+                                              existingReview: member.rating?.my_review,
+                                              refreshDetail: true,
+                                            })
+                                          }
+                                          disabled={submittingReviewKey === reviewKey}
+                                        >
+                                          {submittingReviewKey === reviewKey
+                                            ? "..."
+                                            : member.rating?.my_review
+                                              ? "Update"
+                                              : "Save"}
+                                        </button>
+                                      </div>
                                     </div>
                                   ) : null}
                                 </div>
-                                <div style={{ textAlign: isMobile ? "left" : "right", width: isMobile ? "100%" : "auto" }}>
-                                  <span style={memberStatus(memberLabel)}>
-                                    {memberLabel}
-                                  </span>
-                                </div>
+                                {!isMobile ? (
+                                  <div style={{ textAlign: "right", width: "auto", flexShrink: 0 }}>
+                                    <span style={memberStatus(memberLabel)}>
+                                      {memberLabel}
+                                    </span>
+                                  </div>
+                                ) : null}
                               </div>
                             );
                           })}
