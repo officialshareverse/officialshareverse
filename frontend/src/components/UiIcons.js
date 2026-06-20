@@ -264,8 +264,8 @@ export function ProgressRing({
   const center = size / 2;
 
   return (
-    <span className="sv-ring-wrap" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+    <div className="relative inline-flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true" className="absolute inset-0">
         <defs>
           <linearGradient id="sv-ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#0f766e" />
@@ -286,8 +286,8 @@ export function ProgressRing({
           transform={`rotate(-90 ${center} ${center})`}
         />
       </svg>
-      {label ? <span className="sv-ring-label">{label}</span> : null}
-    </span>
+      {label ? <span className="absolute font-bold text-slate-900" style={{ fontSize: size * 0.25 }}>{label}</span> : null}
+    </div>
   );
 }
 

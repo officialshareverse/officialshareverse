@@ -494,7 +494,7 @@ export default function Profile() {
                       }
                     }}
                   >
-                    {isEditing ? "Change photo" : "Edit profile"}
+                    {isEditing ? "Change" : "Edit"}
                   </button>
                 </div>
 
@@ -521,47 +521,41 @@ export default function Profile() {
               </div>
             </div>
 
-            <div className="sv-profile-hero-metrics flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 lg:grid lg:grid-cols-1 lg:overflow-visible lg:pb-0">
-              <div className="min-w-[260px] snap-center lg:min-w-0 shrink-0">
+            <div className="sv-profile-hero-metrics grid grid-cols-2 gap-3 lg:grid-cols-1">
+              <div className="col-span-2 lg:col-span-1">
                 <HeroMetricCard
                   label="Wallet balance"
                   value={formatCurrency(profile.wallet_balance)}
                   note="Keep funds ready for paid joins and faster checkouts."
                 />
               </div>
-              <div className="min-w-[260px] snap-center lg:min-w-0 shrink-0">
-                <HeroMetricCard
-                  label="Profile strength"
-                  value={`${profileStrength}%`}
-                  note="A stronger profile shortens trust checks for new members."
-                />
-              </div>
-              <div className="min-w-[260px] snap-center lg:min-w-0 shrink-0">
-                <HeroMetricCard
-                  label="Active now"
-                  value={`${Number(profile.active_memberships || 0) + Number(profile.active_hosting || 0)}`}
-                  note="Total active memberships and hosted groups right now."
-                />
-              </div>
+              <HeroMetricCard
+                label="Profile strength"
+                value={`${profileStrength}%`}
+                note="A stronger profile speeds up trust checks."
+              />
+              <HeroMetricCard
+                label="Active now"
+                value={`${Number(profile.active_memberships || 0) + Number(profile.active_hosting || 0)}`}
+                note="Total active splits."
+              />
             </div>
           </div>
         </section>
 
-        <section className="flex flex-col gap-2.5 sv-reveal sm:flex-row sm:flex-wrap sm:gap-3">
-          <button type="button" className="sv-btn-primary flex-1 justify-center" onClick={() => navigate("/wallet")}>
+        <section className="grid grid-cols-2 gap-2.5 sv-reveal sm:flex sm:flex-wrap sm:gap-3">
+          <button type="button" className="sv-btn-primary col-span-2 justify-center sm:col-span-1 sm:flex-none" onClick={() => navigate("/wallet")}>
             <WalletIcon className="h-4 w-4" />
             Open wallet
           </button>
-          <div className="flex gap-2.5 flex-1 sm:flex-none">
-            <button type="button" className="sv-btn-secondary flex-1 justify-center" onClick={() => navigate("/my-shared")}>
-              <LayersIcon className="h-4 w-4" />
-              My splits
-            </button>
-            <button type="button" className="sv-btn-secondary flex-1 justify-center" onClick={() => navigate("/create")}>
-              <SparkIcon className="h-4 w-4" />
-              Create split
-            </button>
-          </div>
+          <button type="button" className="sv-btn-secondary justify-center sm:flex-none" onClick={() => navigate("/my-shared")}>
+            <LayersIcon className="h-4 w-4" />
+            My splits
+          </button>
+          <button type="button" className="sv-btn-secondary justify-center sm:flex-none" onClick={() => navigate("/create")}>
+            <SparkIcon className="h-4 w-4" />
+            Create split
+          </button>
         </section>
 
         {saveMessage ? (
@@ -906,11 +900,13 @@ function ProfileAvatar({ imageUrl, initials, size = "default" }) {
       ? "h-28 w-28 rounded-[32px] text-4xl md:h-32 md:w-32 md:text-[2.75rem]"
       : "h-20 w-20 rounded-[length:var(--sv-radius-card)] text-2xl";
 
-  return imageUrl ? (
+  const isValidUrl = imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== "" && imageUrl !== "null" && imageUrl !== "undefined";
+
+  return isValidUrl ? (
     <img
       src={imageUrl}
       alt="Profile"
-      className={`${sizeClasses} border border-white/20 object-cover shadow-[0_20px_50px_rgba(15,23,42,0.24)]`}
+      className={`${sizeClasses} border border-white/20 object-cover shadow-[0_20px_50px_rgba(15,23,42,0.24)] block`}
     />
   ) : (
     <div
