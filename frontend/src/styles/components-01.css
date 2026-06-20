@@ -713,7 +713,7 @@
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: min-content minmax(0, 1fr) min-content;
     width: min(100%, 34rem);
     max-height: min(84vh, 46rem);
     overflow: hidden;
