@@ -1,7 +1,7 @@
-  /* â”€â”€â”€ Pages â”€â”€â”€ */
+/* --- Pages --- */
   .sv-page {
-    min-height: 100vh;
-    min-height: 100dvh;
+    flex: 1 1 auto;
+    width: 100%;
     padding: var(--sv-page-py) var(--sv-page-px);
     background:
       radial-gradient(circle at top left, var(--sv-page-radial-a), transparent 28%),
@@ -11,6 +11,8 @@
   }
 
   .sv-route-stage {
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
     min-height: 100dvh;
     padding-top: 4.5rem; /* offset for fixed navbar */
