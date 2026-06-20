@@ -150,6 +150,7 @@ export default function MyShared() {
 
   const [reviewForms, setReviewForms] = useState({});
   const [submittingReviewKey, setSubmittingReviewKey] = useState("");
+  const [visibleRatingForms, setVisibleRatingForms] = useState({});
   const [mobileOwnerActionGroupId, setMobileOwnerActionGroupId] = useState(null);
   const [mobileJoinedActionGroupId, setMobileJoinedActionGroupId] = useState(null);
   const [inviteModalGroup, setInviteModalGroup] = useState(null);
@@ -1619,57 +1620,77 @@ export default function MyShared() {
                                     <p style={memberIssueText}>Reported issue: {member.access_issue_notes}</p>
                                   ) : null}
                                   {detail.can_rate_members ? (
-                                    <div style={{ ...reviewCard, ...(isMobile ? reviewCardMobile : {}) }}>
-                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isMobile ? "8px" : "10px", flexWrap: "wrap", gap: "8px" }}>
-                                        <p style={{ ...reviewTitle, margin: 0 }}>Rate member</p>
-                                        <StarPicker
-                                          value={Number(reviewForm.rating)}
-                                          onChange={(value) =>
-                                            handleReviewChange(
-                                              detail.id,
-                                              member.user_id,
-                                              "rating",
-                                              value,
-                                              member.rating?.my_review
-                                            )
-                                          }
-                                        />
+                                    visibleRatingForms[reviewKey] ? (
+                                      <div style={{ ...reviewCard, ...(isMobile ? reviewCardMobile : {}) }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isMobile ? "8px" : "10px", flexWrap: "wrap", gap: "8px" }}>
+                                          <p style={{ ...reviewTitle, margin: 0 }}>Rate member</p>
+                                          <button
+                                            style={{ background: "none", border: "none", color: "var(--sv-muted)", cursor: "pointer", fontSize: "12px", padding: 0 }}
+                                            onClick={() => setVisibleRatingForms(curr => ({ ...curr, [reviewKey]: false }))}
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                        <div style={{ marginBottom: isMobile ? "8px" : "10px" }}>
+                                          <StarPicker
+                                            value={Number(reviewForm.rating)}
+                                            onChange={(value) =>
+                                              handleReviewChange(
+                                                detail.id,
+                                                member.user_id,
+                                                "rating",
+                                                value,
+                                                member.rating?.my_review
+                                              )
+                                            }
+                                          />
+                                        </div>
+                                        <div style={{ display: "flex", gap: "8px", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "flex-start" }}>
+                                          <textarea
+                                            style={{ ...reviewTextarea, flex: 1, minHeight: isMobile ? "44px" : "60px", marginTop: 0, marginBottom: 0 }}
+                                            value={reviewForm.comment}
+                                            onChange={(event) =>
+                                              handleReviewChange(
+                                                detail.id,
+                                                member.user_id,
+                                                "comment",
+                                                event.target.value,
+                                                member.rating?.my_review
+                                              )
+                                            }
+                                            placeholder="How was this member?"
+                                          />
+                                          <button
+                                            style={{ ...secondaryButton, whiteSpace: "nowrap", alignSelf: isMobile ? "flex-end" : "auto" }}
+                                            onClick={() => {
+                                              submitReview({
+                                                groupId: detail.id,
+                                                reviewedUserId: member.user_id,
+                                                existingReview: member.rating?.my_review,
+                                                refreshDetail: true,
+                                              });
+                                              setVisibleRatingForms(curr => ({ ...curr, [reviewKey]: false }));
+                                            }}
+                                            disabled={submittingReviewKey === reviewKey}
+                                          >
+                                            {submittingReviewKey === reviewKey
+                                              ? "..."
+                                              : member.rating?.my_review
+                                                ? "Update"
+                                                : "Save"}
+                                          </button>
+                                        </div>
                                       </div>
-                                      <div style={{ display: "flex", gap: "8px", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "flex-start" }}>
-                                        <textarea
-                                          style={{ ...reviewTextarea, flex: 1, minHeight: isMobile ? "44px" : "60px", marginTop: 0, marginBottom: 0 }}
-                                          value={reviewForm.comment}
-                                          onChange={(event) =>
-                                            handleReviewChange(
-                                              detail.id,
-                                              member.user_id,
-                                              "comment",
-                                              event.target.value,
-                                              member.rating?.my_review
-                                            )
-                                          }
-                                          placeholder="How was this member?"
-                                        />
+                                    ) : (
+                                      <div style={{ marginTop: "4px" }}>
                                         <button
-                                          style={{ ...secondaryButton, whiteSpace: "nowrap", alignSelf: isMobile ? "flex-end" : "auto" }}
-                                          onClick={() =>
-                                            submitReview({
-                                              groupId: detail.id,
-                                              reviewedUserId: member.user_id,
-                                              existingReview: member.rating?.my_review,
-                                              refreshDetail: true,
-                                            })
-                                          }
-                                          disabled={submittingReviewKey === reviewKey}
+                                          style={{ background: "none", border: "none", color: "var(--sv-accent)", cursor: "pointer", fontSize: "13px", fontWeight: 600, padding: 0 }}
+                                          onClick={() => setVisibleRatingForms(curr => ({ ...curr, [reviewKey]: true }))}
                                         >
-                                          {submittingReviewKey === reviewKey
-                                            ? "..."
-                                            : member.rating?.my_review
-                                              ? "Update"
-                                              : "Save"}
+                                          {member.rating?.my_review ? "Edit rating" : "Rate this member"}
                                         </button>
                                       </div>
-                                    </div>
+                                    )
                                   ) : null}
                                 </div>
                                 {!isMobile ? (
