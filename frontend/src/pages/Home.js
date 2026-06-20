@@ -532,11 +532,11 @@ export default function Home({ themeMode, toggleTheme }) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate("/splits")}
+                  onClick={() => navigate("/my-shared")}
                   className="inline-flex justify-center items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 px-4 sm:px-6 py-3 sm:py-3.5 text-[13px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200 backdrop-blur-md transition-all hover:scale-105 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm active:scale-95"
                 >
                   <LayersIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                  Splits
+                  My Splits
                 </button>
                 <button
                   type="button"
