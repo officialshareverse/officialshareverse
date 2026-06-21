@@ -4,6 +4,7 @@ import useIsMobile from "../hooks/useIsMobile";
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
 import EmptyState from "../components/EmptyState";
+import IosInstallBanner from "../components/IosInstallBanner";
 import PullToRefreshIndicator from "../components/PullToRefreshIndicator";
 import {
   SkeletonCard,
@@ -570,6 +571,11 @@ export default function NotificationsInbox() {
                 <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Inbox</p>
                 <h2 className="mt-2 text-2xl font-bold text-slate-900">{isMobile ? "Your updates" : "Categorized updates"}</h2>
               </div>
+            </div>
+
+            <IosInstallBanner />
+
+            <div className="flex flex-wrap items-end justify-between gap-4">
 
               {isMobile ? (
                 <div className="flex gap-2">
