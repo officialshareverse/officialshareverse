@@ -629,6 +629,26 @@ class MobilePushDevice(models.Model):
         return f"{self.user.username} push device ({self.platform})"
 
 
+class WebPushSubscription(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="web_push_subscriptions")
+    endpoint = models.URLField(max_length=500, unique=True, db_index=True)
+    p256dh_key = models.CharField(max_length=255)
+    auth_key = models.CharField(max_length=255)
+    browser = models.CharField(max_length=50, blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        indexes = [
+            models.Index(fields=["user", "is_active"], name="core_webpush_user_active_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} web push ({self.browser})"
+
+
 class AccountDeletionRequest(models.Model):
     STATUS_CHOICES = (
         ("pending", "Pending"),

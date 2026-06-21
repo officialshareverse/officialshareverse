@@ -61,6 +61,9 @@ from .views import (
     WithdrawMoneyView,
     UserBlockDetailView,
     UserBlockListCreateView,
+    WebPushSubscribeView,
+    WebPushUnsubscribeView,
+    WebPushVapidKeyView,
 )
 
 urlpatterns = [
@@ -110,6 +113,9 @@ urlpatterns = [
     path('notifications/', NotificationView.as_view()),
     path('mobile/push/register/', MobilePushRegistrationView.as_view()),
     path('mobile/push/unregister/', MobilePushUnregisterView.as_view()),
+    path('web-push/vapid-key/', WebPushVapidKeyView.as_view()),
+    path('web-push/subscribe/', WebPushSubscribeView.as_view()),
+    path('web-push/unsubscribe/', WebPushUnsubscribeView.as_view()),
     path('notifications/mark-all-read/', MarkAllNotificationsReadView.as_view()),
     path('notifications/<int:notification_id>/read/', MarkNotificationReadView.as_view()),
     path('profile/', ProfileView.as_view()),

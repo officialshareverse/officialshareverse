@@ -8,6 +8,7 @@ from django.db.models import F, OuterRef, Q, Subquery
 
 from .models import Group, GroupChatMessage, GroupChatReadState, GroupMember, Notification, User, UserBlock
 from .push import send_push_notification_to_user
+from .web_push import send_web_push_to_user
 
 WS_CLOSE_TOKEN_EXPIRED = 4001
 WS_CLOSE_FORBIDDEN = 4003
@@ -225,6 +226,7 @@ def create_notification(*, user=None, user_id=None, message):
         push_notification_to_user(notification.user_id, payload)
         push_badge_update_to_user(notification.user_id, reason="notification")
         send_push_notification_to_user(notification.user_id, payload)
+        send_web_push_to_user(notification.user_id, payload)
 
     transaction.on_commit(dispatch_notification)
     return notification

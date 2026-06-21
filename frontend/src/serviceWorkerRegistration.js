@@ -25,8 +25,18 @@ function registerValidServiceWorker(serviceWorkerUrl, config) {
             if (config && config.onUpdate) {
               config.onUpdate(registration);
             }
-          } else if (config && config.onSuccess) {
-            config.onSuccess(registration);
+          } else {
+            if (config && config.onSuccess) {
+              config.onSuccess(registration);
+            }
+            // Import and attempt push subscription silently
+            import("./pushSubscription").then((module) => {
+              // Wait for user to trigger permission first somewhere in UI
+              // But we can subscribe if permission is already granted
+              if (Notification.permission === "granted") {
+                module.subscribeToPush(registration);
+              }
+            });
           }
         };
       };

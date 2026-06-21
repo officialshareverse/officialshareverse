@@ -1,4 +1,4 @@
-﻿from .common import *
+from .common import *
 
 class WalletTopupVerifySerializer(serializers.Serializer):
     razorpay_order_id = serializers.CharField(max_length=100)
@@ -11,6 +11,17 @@ class WalletTopupVerifySerializer(serializers.Serializer):
             "razorpay_payment_id": (attrs.get("razorpay_payment_id") or "").strip(),
             "razorpay_signature": (attrs.get("razorpay_signature") or "").strip(),
         }
+
+
+class WebPushSubscribeSerializer(serializers.Serializer):
+    endpoint = serializers.URLField(max_length=500)
+    p256dh = serializers.CharField(max_length=255)
+    auth = serializers.CharField(max_length=255)
+    browser = serializers.CharField(required=False, allow_blank=True, max_length=50, default="")
+
+
+class WebPushUnsubscribeSerializer(serializers.Serializer):
+    endpoint = serializers.URLField(max_length=500)
 
 
 class MobilePushRegistrationSerializer(serializers.Serializer):

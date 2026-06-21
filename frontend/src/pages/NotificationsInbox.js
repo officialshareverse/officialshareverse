@@ -322,6 +322,17 @@ export default function NotificationsInbox() {
         if (hapticsEnabledRef.current) {
           pulseDevice();
         }
+        
+        // Contextually prompt for web push on first real-time notification
+        if ("Notification" in window && Notification.permission === "default") {
+          import("../pushSubscription").then((module) => {
+            if ("serviceWorker" in navigator) {
+              navigator.serviceWorker.ready.then((reg) => {
+                module.subscribeToPush(reg);
+              });
+            }
+          });
+        }
       }
 
       notificationsRef.current = nextNotifications;

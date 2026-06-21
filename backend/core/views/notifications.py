@@ -1,4 +1,7 @@
-﻿from .common import *
+from .common import *
+
+from ..models import WebPushSubscription
+from ..serializers.app_misc import WebPushSubscribeSerializer, WebPushUnsubscribeSerializer
 
 class NotificationView(ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -105,6 +108,65 @@ class MarkNotificationReadView(APIView):
         return Response({"message": "Notification marked as read", "notification": build_notification_payload(notification)})
 
 
+class MarkAllNotificationsReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        updated = Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        if updated > 0:
+            push_notifications_cleared_to_user(request.user.id)
+            push_badge_update_to_user(request.user.id, reason="notifications_cleared")
+
+        return Response({"message": "Notifications marked as read."})
+
+
+class WebPushVapidKeyView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        public_key = getattr(settings, "VAPID_PUBLIC_KEY", "")
+        return Response({"public_key": public_key})
+
+
+class WebPushSubscribeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = WebPushSubscribeSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        validated = serializer.validated_data
+        sub, created = WebPushSubscription.objects.update_or_create(
+            endpoint=validated["endpoint"],
+            defaults={
+                "user": request.user,
+                "p256dh_key": validated["p256dh"],
+                "auth_key": validated["auth"],
+                "browser": validated.get("browser", ""),
+                "is_active": True,
+            },
+        )
+        return Response(
+            {"message": "Web push subscription saved.", "created": created},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+
+class WebPushUnsubscribeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = WebPushUnsubscribeSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        updated = WebPushSubscription.objects.filter(
+            user=request.user,
+            endpoint=serializer.validated_data["endpoint"],
+        ).update(is_active=False)
+
+        return Response({"message": "Web push unsubscribed.", "updated_count": updated})
 class MarkAllNotificationsReadView(APIView):
     permission_classes = [IsAuthenticated]
 
