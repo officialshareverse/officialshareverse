@@ -869,7 +869,7 @@ function MobileJoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm
                 Cancel
               </button>
               <button 
-                onClick={onConfirm}
+                onClick={() => onConfirm(group)}
                 disabled={isJoining || group.is_joinable === false}
                 className="w-full py-4 rounded-xl bg-teal-800 text-white font-bold text-[15px] shadow-md flex items-center justify-center gap-2 disabled:opacity-50 transition-colors active:bg-teal-900"
               >
