@@ -486,6 +486,11 @@ export const actionButtonMobile = {
   fontSize: "13px",
 };
 
+export const smallActionButtonMobile = {
+  padding: "8px 12px",
+  fontSize: "12px",
+};
+
 export const secondaryButton = {
   border: `1px solid ${svBorder}`,
   background: svPaperStrong,
@@ -771,10 +776,10 @@ export const detailSectionCard = {
 };
 
 export const detailSectionCardMobile = {
-  borderRadius: "16px",
+  borderRadius: "12px",
   border: "1px solid #f1f5f9",
   background: "#f8fafc",
-  padding: "14px",
+  padding: "10px",
   backdropFilter: "none",
   marginTop: "8px",
 };
@@ -900,7 +905,8 @@ export const memberRow = {
 export const memberRowMobile = {
   flexDirection: "column",
   alignItems: "flex-start",
-  gap: "10px",
+  gap: "6px",
+  padding: "10px 0",
 };
 
 export const membersList = {
