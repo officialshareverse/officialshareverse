@@ -778,9 +778,11 @@
 
   .sv-drawer-body {
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 0 1rem 1rem;
     display: grid;
     gap: 1rem;
+    min-width: 0;
   }
 
   .sv-drawer-footer {

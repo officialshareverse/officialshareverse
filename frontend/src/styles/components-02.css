@@ -548,6 +548,8 @@
   .sv-group-chat-drawer-stack {
     display: grid;
     gap: 1rem;
+    min-width: 0;
+    overflow: hidden;
   }
 
 .sv-group-chat-composer {
@@ -626,6 +628,8 @@
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper) 92%, transparent);
     padding: var(--sv-space-sm) 0.9rem;
+    overflow: hidden;
+    min-width: 0;
   }
 
   .sv-group-chat-participant-avatar {
