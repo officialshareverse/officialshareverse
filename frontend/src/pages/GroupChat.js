@@ -134,7 +134,7 @@ function ParticipantsSection({ participants }) {
 
           return (
             <div key={`${participant.role}-${participant.username}`} className="sv-group-chat-participant">
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex flex-1 items-center gap-3 min-w-0">
                 <span className={`sv-group-chat-participant-avatar ${presenceMeta.className} shrink-0`}>
                   {participant.initials || getAvatarToken(participant.username)}
                   <span className={`sv-chat-avatar-chip-dot ${presenceMeta.className}`} />
