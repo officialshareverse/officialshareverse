@@ -371,7 +371,7 @@ export default function Groups() {
       }
 
       setPendingJoinGroup(null);
-      fetchGroups();
+      navigate(`/groups/${group.id}/chat`);
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.error || "Join failed.", { title: "Couldn't join group" });

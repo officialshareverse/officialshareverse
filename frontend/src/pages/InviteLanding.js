@@ -71,9 +71,14 @@ export default function InviteLanding() {
     try {
       setJoining(true);
       setError("");
-      await API.post("invite/accept/", { token });
+      const res = await API.post("invite/accept/", { token });
       toast.success("You joined the group successfully.", { title: "Welcome in" });
-      navigate("/groups", { replace: true });
+      const groupId = res.data?.group_id;
+      if (groupId) {
+        navigate(`/groups/${groupId}/chat`, { replace: true });
+      } else {
+        navigate("/groups", { replace: true });
+      }
     } catch (joinError) {
       console.error(joinError);
       const nextError = joinError.response?.data?.error || "We could not join that group right now.";
