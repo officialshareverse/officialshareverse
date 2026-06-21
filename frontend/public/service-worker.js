@@ -139,7 +139,16 @@ self.addEventListener("push", (event) => {
       data: data.data || {},
     };
 
-    event.waitUntil(self.registration.showNotification(title, options));
+    event.waitUntil(
+      self.registration.showNotification(title, options).then(() => {
+        // Increment the app icon badge count
+        if ("setAppBadge" in navigator) {
+          return self.registration.getNotifications().then((notifications) => {
+            navigator.setAppBadge(notifications.length).catch(() => {});
+          });
+        }
+      })
+    );
   } catch (e) {
     console.error("Error parsing push data", e);
   }
@@ -152,16 +161,29 @@ self.addEventListener("notificationclick", (event) => {
   const urlToOpen = new URL(event.notification.data?.url || "/", self.location.origin).href;
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
-      for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i];
-        if (client.url === urlToOpen && "focus" in client) {
-          return client.focus();
+    Promise.all([
+      // Update badge count after closing notification
+      self.registration.getNotifications().then((notifications) => {
+        if ("setAppBadge" in navigator) {
+          if (notifications.length > 0) {
+            navigator.setAppBadge(notifications.length).catch(() => {});
+          } else {
+            navigator.clearAppBadge().catch(() => {});
+          }
         }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(urlToOpen);
-      }
-    })
+      }),
+      // Focus or open the app
+      self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+        for (let i = 0; i < windowClients.length; i++) {
+          const client = windowClients[i];
+          if (client.url === urlToOpen && "focus" in client) {
+            return client.focus();
+          }
+        }
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(urlToOpen);
+        }
+      }),
+    ])
   );
 });
