@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import useIsMobile from "../hooks/useIsMobile";
 
 import API from "../api/axios";
@@ -202,8 +203,20 @@ function markNotificationsRead(current, notificationIds) {
   );
 }
 
+function getNotificationRoute(notification) {
+  if (!notification) return null;
+  const kind = notification.kind;
+  const category = notification.category;
+
+  if (kind === "chat") return "/chats";
+  if (kind === "wallet") return "/wallet";
+  if (category === "groups") return "/my-shared";
+  return null;
+}
+
 export default function NotificationsInbox() {
   const toast = useToast();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -690,6 +703,10 @@ export default function NotificationsInbox() {
                           working={workingId === item.id}
                           onMarkRead={() => markBundleRead(item.notificationIds, item.id)}
                           compact={isMobile}
+                          onNavigate={(route) => {
+                            markBundleRead(item.notificationIds, item.id);
+                            navigate(route);
+                          }}
                         />
                       ) : (
                         <NotificationCard
@@ -698,6 +715,10 @@ export default function NotificationsInbox() {
                           working={workingId === `single-${item.notification.id}`}
                           onMarkRead={() => markAsRead(item.notification.id)}
                           compact={isMobile}
+                          onNavigate={(route) => {
+                            if (!item.notification.is_read) markAsRead(item.notification.id);
+                            navigate(route);
+                          }}
                         />
                       )
                     )}
@@ -727,12 +748,21 @@ export default function NotificationsInbox() {
   );
 }
 
-function NotificationCard({ notification, working, onMarkRead, compact = false }) {
+function NotificationCard({ notification, working, onMarkRead, compact = false, onNavigate }) {
   const Icon = getNotificationIcon(notification.icon);
+  const route = getNotificationRoute(notification);
+
+  const handleClick = (e) => {
+    if (e.target.closest("button")) return;
+    if (route && onNavigate) onNavigate(route);
+  };
 
   if (compact) {
     return (
-      <article className={`bg-white rounded-[24px] border ${notification.is_read ? 'border-slate-100 shadow-sm opacity-75' : 'border-teal-100 shadow-sm bg-teal-50/30'} p-4 flex gap-3.5 relative transition-all`}>
+      <article
+        onClick={handleClick}
+        className={`bg-white rounded-[24px] border ${notification.is_read ? 'border-slate-100 shadow-sm opacity-75' : 'border-teal-100 shadow-sm bg-teal-50/30'} p-4 flex gap-3.5 relative transition-all ${route ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+      >
         <div className={`h-11 w-11 shrink-0 rounded-full flex items-center justify-center border ${notification.is_read ? 'bg-slate-50 text-slate-400 border-slate-100' : 'bg-teal-50 text-teal-600 border-teal-100'}`}>
           <Icon className="h-5 w-5" />
         </div>
@@ -755,7 +785,10 @@ function NotificationCard({ notification, working, onMarkRead, compact = false }
   }
 
   return (
-    <article className={`sv-notification-card ${notification.is_read ? "is-read" : "is-unread"} ${notification.tone || ""}`}>
+    <article 
+      onClick={handleClick}
+      className={`sv-notification-card ${notification.is_read ? "is-read" : "is-unread"} ${notification.tone || ""} ${route ? 'cursor-pointer' : ''}`}
+    >
       <div className={`sv-notification-icon ${notification.tone || ""}`}>
         <Icon className="h-4.5 w-4.5" />
       </div>
@@ -783,10 +816,20 @@ function NotificationCard({ notification, working, onMarkRead, compact = false }
   );
 }
 
-function NotificationBundleCard({ item, working, onMarkRead, compact = false }) {
+function NotificationBundleCard({ item, working, onMarkRead, compact = false, onNavigate }) {
+  const route = "/chats";
+
+  const handleClick = (e) => {
+    if (e.target.closest("button")) return;
+    if (onNavigate) onNavigate(route);
+  };
+
   if (compact) {
     return (
-      <article className={`bg-white rounded-[24px] border border-teal-100 shadow-sm bg-teal-50/30 p-4 flex gap-3.5 relative transition-all`}>
+      <article
+        onClick={handleClick}
+        className={`bg-white rounded-[24px] border border-teal-100 shadow-sm bg-teal-50/30 p-4 flex gap-3.5 relative transition-all cursor-pointer active:scale-[0.98]`}
+      >
         <div className={`h-11 w-11 shrink-0 rounded-full flex items-center justify-center border bg-teal-50 text-teal-600 border-teal-100`}>
           <ChatIcon className="h-5 w-5" />
         </div>
@@ -814,7 +857,10 @@ function NotificationBundleCard({ item, working, onMarkRead, compact = false }) 
   }
 
   return (
-    <article className="sv-notification-card is-unread chat-bundle">
+    <article 
+      onClick={handleClick}
+      className="sv-notification-card is-unread chat-bundle cursor-pointer"
+    >
       <div className="sv-notification-icon chat">
         <ChatIcon className="h-4.5 w-4.5" />
       </div>
