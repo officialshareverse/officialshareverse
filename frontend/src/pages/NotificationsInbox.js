@@ -600,6 +600,16 @@ export default function NotificationsInbox() {
 
             <IosInstallBanner />
 
+            {isMobile && "Notification" in window && Notification.permission !== "granted" && (
+              <button 
+                onClick={handleEnablePush} 
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-slate-900 text-white rounded-xl font-bold active:scale-95 transition-transform"
+              >
+                <BellIcon className="h-5 w-5 text-teal-400" />
+                Tap here to Enable Push Notifications
+              </button>
+            )}
+
             <div className="flex flex-wrap items-end justify-between gap-4">
 
               {isMobile ? (
