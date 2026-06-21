@@ -1,3 +1,4 @@
+import API from "./api/axios";
 import { getAuthToken } from "./auth/session";
 
 export async function subscribeToPush(registration) {
@@ -9,14 +10,16 @@ export async function subscribeToPush(registration) {
     }
 
     const token = getAuthToken();
-    if (!token) return false;
+    if (!token) {
+      console.error("No auth token available for push subscription.");
+      return false;
+    }
 
-    const response = await fetch("/api/web-push/vapid-key/");
-    if (!response.ok) throw new Error("Failed to fetch VAPID key");
-    const { public_key } = await response.json();
+    const response = await API.get("web-push/vapid-key/");
+    const public_key = response.data?.public_key;
 
     if (!public_key) {
-      console.error("No VAPID public key received");
+      console.error("No VAPID public key received from server.");
       return false;
     }
 
@@ -31,21 +34,14 @@ export async function subscribeToPush(registration) {
     const p256dh = subJSON.keys.p256dh;
     const auth = subJSON.keys.auth;
 
-    const subscribeResponse = await fetch("/api/web-push/subscribe/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        endpoint,
-        p256dh,
-        auth,
-        browser: getBrowserName(),
-      }),
+    const subscribeResponse = await API.post("web-push/subscribe/", {
+      endpoint,
+      p256dh,
+      auth,
+      browser: getBrowserName(),
     });
 
-    if (subscribeResponse.ok) {
+    if (subscribeResponse.status >= 200 && subscribeResponse.status < 300) {
       console.log("Successfully subscribed to web push");
       return true;
     } else {
@@ -66,16 +62,10 @@ export async function unsubscribeFromPush() {
       const endpoint = subscription.endpoint;
       await subscription.unsubscribe();
 
-      const token = getAuthToken();
-      if (token) {
-        await fetch("/api/web-push/unsubscribe/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ endpoint }),
-        });
+      try {
+        await API.post("web-push/unsubscribe/", { endpoint });
+      } catch (e) {
+        console.error("Failed to unsubscribe on server:", e);
       }
       console.log("Successfully unsubscribed from web push");
       return true;
