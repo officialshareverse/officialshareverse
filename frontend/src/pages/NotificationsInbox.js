@@ -250,6 +250,27 @@ export default function NotificationsInbox() {
     notificationsRef.current = notifications;
   }, [notifications]);
 
+  const handleEnablePush = async () => {
+    if ("Notification" in window) {
+      import("../pushSubscription").then(async (module) => {
+        if ("serviceWorker" in navigator) {
+          try {
+            const reg = await navigator.serviceWorker.ready;
+            const success = await module.subscribeToPush(reg);
+            if (success) {
+              toast.success("Push notifications enabled!");
+            } else {
+              toast.error("Could not enable push notifications.");
+            }
+          } catch (e) {
+            console.error(e);
+            toast.error("Failed to enable push.");
+          }
+        }
+      });
+    }
+  };
+
   const fetchNotifications = useCallback(async (showLoader = false, pageToFetch = 1) => {
     try {
       if (showLoader && isMountedRef.current) {
@@ -553,6 +574,10 @@ export default function NotificationsInbox() {
             Notifications
           </h1>
           <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={handleEnablePush} className="sv-btn-secondary">
+              <BellIcon className="h-4 w-4" />
+              Enable Push
+            </button>
             {!isMobile ? (
               <button type="button" onClick={() => setSoundEnabled((current) => !current)} className="sv-btn-secondary">
                 <BellIcon className="h-4 w-4" />
