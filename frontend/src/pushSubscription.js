@@ -1,4 +1,4 @@
-import { getAuthToken } from "./hooks/useWebSocket";
+import { getAuthToken } from "./auth/session";
 
 export async function subscribeToPush(registration) {
   try {
