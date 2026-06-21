@@ -308,7 +308,7 @@ export default function GroupDetails() {
           </button>
           <button 
             onClick={handleJoin}
-            disabled={joining || !group.is_joinable}
+            disabled={joining || group.is_joinable === false}
             className="flex-1 py-3.5 rounded-xl bg-teal-800 text-white font-bold text-[15px] shadow-md flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-teal-900 transition-colors active:scale-[0.98]"
           >
             {joining ? (
