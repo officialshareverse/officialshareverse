@@ -549,7 +549,6 @@
     display: grid;
     gap: 1rem;
     min-width: 0;
-    overflow: hidden;
   }
 
 .sv-group-chat-composer {
@@ -623,11 +622,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 0.5rem;
     border-radius: 22px;
     border: 1px solid var(--sv-border);
     background: color-mix(in srgb, var(--sv-paper) 92%, transparent);
-    padding: var(--sv-space-sm) 0.9rem;
+    padding: var(--sv-space-sm) 0.75rem;
     overflow: hidden;
     min-width: 0;
   }

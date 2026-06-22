@@ -154,7 +154,7 @@ function ParticipantsSection({ participants }) {
               </div>
 
               <div className="flex flex-col items-end gap-2 shrink-0 pl-2">
-                <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                <span className="rounded-full bg-slate-900 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                   {participant.role}
                 </span>
                 {participant.presence?.is_typing ? (
