@@ -663,18 +663,18 @@ export default function Groups() {
                   onClick={() => navigate(`/groups/${group.id}`, { state: { group } })}
                   className={`relative overflow-hidden rounded-[20px] sm:rounded-3xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-col cursor-pointer ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
                 >
-                  <div className={`w-full h-20 sm:h-28 relative block shrink-0 ${getCoverGradient(group.subscription_name || group.subscription)}`}>
+                  <div className={`w-full h-16 sm:h-28 relative block shrink-0 ${getCoverGradient(group.subscription_name || group.subscription)}`}>
                     <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-white/20 backdrop-blur-md rounded-full px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[8px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
                       {isHot ? "Hot" : "Pop"}
                     </div>
                     
-                    <div className="absolute -bottom-6 left-3 sm:-bottom-7 sm:left-5 h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-white p-1 shadow-sm border-2 border-white z-10 flex items-center justify-center overflow-hidden">
-                      <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full rounded-lg sm:rounded-xl" />
+                    <div className="absolute -bottom-5 left-3 sm:-bottom-7 sm:left-5 h-10 w-10 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-white p-1 shadow-sm border-2 border-white z-10 flex items-center justify-center overflow-hidden">
+                      <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full rounded-[8px] sm:rounded-xl" />
                     </div>
                   </div>
 
-                  <div className="flex-1 pt-8 px-3 pb-3 sm:pt-10 sm:px-5 sm:pb-5 flex flex-col justify-between min-w-0">
-                    <div className="flex flex-col gap-1">
+                  <div className="flex-1 pt-6 px-2.5 pb-2.5 sm:pt-10 sm:px-5 sm:pb-5 flex flex-col justify-between min-w-0">
+                    <div className="flex flex-col gap-0.5">
                       <div className="flex items-start justify-between gap-1">
                         <div className="min-w-0 flex items-center gap-1">
                           <h3 className="text-[13px] sm:text-base font-bold text-slate-900 truncate">{group.subscription_name || group.subscription}</h3>
@@ -689,7 +689,7 @@ export default function Groups() {
                       </div>
                     </div>
                     
-                    <div className="mt-2 sm:mt-4 flex items-center gap-1.5 border-t border-slate-100 pt-2 sm:pt-4">
+                    <div className="mt-1.5 sm:mt-4 flex items-center gap-1.5 border-t border-slate-100 pt-1.5 sm:pt-4">
                       <UserIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-400 shrink-0" />
                       <p className="text-[10px] sm:text-xs text-slate-600 truncate">{hostDisplayName}</p>
                       <span className="ml-auto text-[10px] sm:text-xs font-semibold text-amber-500 flex items-center gap-0.5 shrink-0">
@@ -697,7 +697,7 @@ export default function Groups() {
                       </span>
                     </div>
                     
-                    <div className="mt-2 sm:mt-4 pt-2 sm:pt-0 border-t border-slate-100 sm:border-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="mt-1.5 sm:mt-4 pt-1.5 sm:pt-0 border-t border-slate-100 sm:border-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
                       <span className="rounded-md bg-emerald-50 px-2 py-1 text-[10px] sm:text-[11px] font-bold text-emerald-700 text-center w-full sm:w-auto whitespace-nowrap">
                         {remainingSlots} left
                       </span>
