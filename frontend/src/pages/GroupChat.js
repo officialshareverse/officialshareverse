@@ -8,6 +8,7 @@ import API from "../api/axios";
 import Drawer from "../components/Drawer";
 import { CheckCircleIcon, ClockIcon, SendIcon } from "../components/UiIcons";
 import useWebSocket from "../hooks/useWebSocket";
+import { useToast } from "../components/ToastProvider";
 
 function formatRelativeTime(value) {
   if (!value) {
@@ -212,6 +213,7 @@ export default function GroupChat() {
   const isMobile = useIsMobile();
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [hasReceivedAccess, setHasReceivedAccess] = useState(false);
+  const toast = useToast();
 
   const handleWebSocketMessage = useCallback((event) => {
     if (!event?.type) {
@@ -566,7 +568,13 @@ export default function GroupChat() {
             <div className="bg-emerald-50 px-4 py-3 flex items-center justify-between shadow-sm z-10 border-b border-emerald-100 shrink-0">
               <span className="text-[13px] font-semibold text-emerald-800">Got your login details?</span>
               <button 
-                onClick={() => setHasReceivedAccess(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setHasReceivedAccess(true);
+                  toast.success("Access confirmed! The host has been notified.", {
+                    title: "Access Received"
+                  });
+                }}
                 className="bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider transition-colors hover:bg-emerald-700 active:scale-95 shadow-sm"
               >
                 Received Access
