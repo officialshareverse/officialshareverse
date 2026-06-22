@@ -1,5 +1,8 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import PublicPageShell from "../components/PublicPageShell";
 import PublicBusinessIdentity from "../components/PublicBusinessIdentity";
+import useIsMobile from "../hooks/useIsMobile";
 
 const sections = [
   {
@@ -61,6 +64,102 @@ const sections = [
 ];
 
 export default function PrivacyPage() {
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col pb-20 selection:bg-brand/20">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-40 bg-slate-50/85 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center shadow-sm">
+          <button 
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-200 text-slate-600 active:bg-slate-50 transition-colors"
+            aria-label="Go back"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className="flex-1 flex justify-center pr-10">
+            <span className="text-[15px] font-bold text-slate-900 tracking-wide">Legal</span>
+          </div>
+        </div>
+
+        {/* Hero Section */}
+        <div className="px-6 pt-8 pb-6 flex flex-col animate-in slide-in-from-bottom-4 duration-500 fade-in">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100/60 text-[10px] font-bold uppercase tracking-widest text-emerald-700 mb-4 w-fit border border-emerald-200/50">
+            <svg className="w-3.5 h-3.5 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            Privacy Policy
+          </div>
+          <h1 className="text-[32px] font-extrabold text-slate-900 tracking-tight leading-[1.15]">
+            How we protect your data
+          </h1>
+          <p className="mt-3 text-[15px] text-slate-600 leading-relaxed font-medium">
+            Learn how ShareVerse handles your account, payment, and support information safely and securely.
+          </p>
+        </div>
+
+        {/* Terms Sections */}
+        <div className="px-4 flex flex-col gap-5 mt-2">
+          {sections.map((section, sIdx) => (
+            <article 
+              key={section.title} 
+              className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 animate-in slide-in-from-bottom-4 duration-500 fade-in fill-mode-both"
+              style={{ animationDelay: `${Math.min(sIdx * 100, 800)}ms` }}
+            >
+              <h2 className="text-[18px] font-bold text-slate-900 tracking-tight leading-snug">
+                {section.title}
+              </h2>
+              <p className="mt-3 text-[14px] text-slate-600 leading-relaxed font-medium">
+                {section.body}
+              </p>
+              
+              {section.points && section.points.length > 0 && (
+                <div className="mt-4 flex flex-col gap-2.5">
+                  {section.points.map((point, pIdx) => (
+                    <div key={pIdx} className="flex items-start gap-3 bg-slate-50/80 rounded-2xl p-4 border border-slate-100">
+                      <div className="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
+                      <p className="text-[13px] text-slate-600 font-medium leading-relaxed">
+                        {point}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+
+        {/* Privacy Important Note */}
+        <div className="px-4 mt-6 animate-in slide-in-from-bottom-4 duration-500 fade-in fill-mode-both" style={{ animationDelay: "900ms" }}>
+          <div className="rounded-3xl border border-emerald-200/60 bg-emerald-50/80 p-5 shadow-sm flex items-start gap-3">
+            <svg className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-[13px] leading-relaxed text-emerald-900 font-medium">
+              Privacy and data-rights questions should be sent through the published support or compliance email. Include your username, the email linked to the account, and the specific request so the team can verify identity.
+            </p>
+          </div>
+        </div>
+
+        {/* Contact/Operator Details */}
+        <div className="px-4 mt-8 animate-in slide-in-from-bottom-4 duration-500 fade-in fill-mode-both" style={{ animationDelay: "1000ms" }}>
+          <PublicBusinessIdentity 
+            title="Who to contact about privacy"
+            intro=""
+            customContainerClass="bg-slate-900 rounded-[28px] p-6 shadow-xl relative overflow-hidden"
+            customTextClass="text-slate-300"
+            hideTitle={false}
+          />
+        </div>
+
+      </div>
+    );
+  }
+
   return (
     <PublicPageShell
       eyebrow="Privacy policy"
