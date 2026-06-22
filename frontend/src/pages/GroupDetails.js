@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 // useIsMobile hook removed since it was unused
 import SubscriptionLogo from "../components/SubscriptionLogo";
-import { useToast } from "../components/ToastProvider";
+import { toast } from "react-hot-toast";
 import { ShieldIcon, LoadingSpinner } from "../components/UiIcons";
 import {
   getPlanMeta,
@@ -27,7 +27,6 @@ export default function GroupDetails() {
   const { groupId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { addToast } = useToast();
 
   const [group, setGroup] = useState(location.state?.group || null);
   const [loading, setLoading] = useState(!group);
@@ -44,11 +43,11 @@ export default function GroupDetails() {
           if (found) {
             setGroup(found);
           } else {
-            addToast("Group not found or no longer available.", "error");
+            toast.error("Group not found or no longer available.");
             navigate("/groups");
           }
         } catch (err) {
-          addToast("Failed to load group details.", "error");
+          toast.error("Failed to load group details.");
           navigate("/groups");
         } finally {
           setLoading(false);
@@ -56,7 +55,7 @@ export default function GroupDetails() {
       };
       fetchGroup();
     }
-  }, [group, groupId, navigate, addToast]);
+  }, [group, groupId, navigate]);
 
   const handleJoin = async () => {
     if (!group) return;
@@ -69,24 +68,22 @@ export default function GroupDetails() {
           Number(res.data?.platform_fee_amount || 0) > 0
             ? ` This included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
-        addToast(
-          `Rs ${res.data?.charged_amount || group.join_price || group.price_per_slot} charged → Status: Held → Waiting for access confirmation.${successFeeNote}${successNote}`.trim(),
-          { tone: "success" }
+        toast.success(
+          `Rs ${res.data?.charged_amount || group.join_price || group.price_per_slot} charged → Status: Held → Waiting for access confirmation.${successFeeNote}${successNote}`.trim()
         );
       } else {
         const successFeeNote =
           Number(res.data?.platform_fee_amount || 0) > 0
             ? ` This included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
-        addToast(
-          `Contribution reserved → Status: Held → Waiting for group completion.${successFeeNote}`.trim(),
-          { tone: "success" }
+        toast.success(
+          `Contribution reserved → Status: Held → Waiting for group completion.${successFeeNote}`.trim()
         );
       }
       window.location.href = `/groups/${group.id}/chat`;
     } catch (err) {
       const msg = err.response?.data?.error || "Failed to join group.";
-      addToast(msg, { tone: "error" });
+      toast.error(msg);
     } finally {
       setJoining(false);
     }
