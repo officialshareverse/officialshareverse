@@ -71,7 +71,7 @@ export default function GroupDetails() {
             : "";
         addToast(
           `Rs ${res.data?.charged_amount || group.join_price || group.price_per_slot} charged → Status: Held → Waiting for access confirmation.${successFeeNote}${successNote}`.trim(),
-          "success"
+          { tone: "success" }
         );
       } else {
         const successFeeNote =
@@ -80,13 +80,13 @@ export default function GroupDetails() {
             : "";
         addToast(
           `Contribution reserved → Status: Held → Waiting for group completion.${successFeeNote}`.trim(),
-          "success"
+          { tone: "success" }
         );
       }
       window.location.href = `/groups/${group.id}/chat`;
     } catch (err) {
       const msg = err.response?.data?.error || "Failed to join group.";
-      addToast(msg, "error");
+      addToast(msg, { tone: "error" });
     } finally {
       setJoining(false);
     }
@@ -306,21 +306,30 @@ export default function GroupDetails() {
           >
             Cancel
           </button>
-          <button 
-            onClick={handleJoin}
-            disabled={joining || group.is_joinable === false}
-            className="flex-1 py-3.5 rounded-xl bg-teal-800 text-white font-bold text-[15px] shadow-md flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-teal-900 transition-colors active:scale-[0.98]"
-          >
-            {joining ? (
-              <>
-                <LoadingSpinner className="w-4 h-4" /> Processing...
-              </>
-            ) : (
-              <>
-                Confirm and Join • {formatCurrency(joinPrice)}
-              </>
-            )}
-          </button>
+          {group.is_joined ? (
+            <button 
+              onClick={() => { window.location.href = `/groups/${group.id}/chat`; }}
+              className="flex-1 py-3.5 rounded-xl bg-teal-800 text-white font-bold text-[15px] shadow-md flex items-center justify-center gap-2 hover:bg-teal-900 transition-colors active:scale-[0.98]"
+            >
+              Open Chat
+            </button>
+          ) : (
+            <button 
+              onClick={handleJoin}
+              disabled={joining || group.is_joinable === false}
+              className="flex-1 py-3.5 rounded-xl bg-teal-800 text-white font-bold text-[15px] shadow-md flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-teal-900 transition-colors active:scale-[0.98]"
+            >
+              {joining ? (
+                <>
+                  <LoadingSpinner className="w-4 h-4" /> Processing...
+                </>
+              ) : (
+                <>
+                  Confirm and Join • {formatCurrency(joinPrice)}
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

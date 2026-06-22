@@ -705,16 +705,28 @@ export default function Groups() {
                       <span className="rounded-md bg-emerald-50 px-2 py-1 sm:px-2.5 sm:py-1.5 text-[10px] sm:text-[11px] font-bold text-emerald-700 whitespace-nowrap">
                         {remainingSlots} left
                       </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPendingJoinGroup(group);
-                        }}
-                        disabled={isFull || joiningId === group.id}
-                        className={`rounded-full px-3 py-1 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-bold text-white transition-colors whitespace-nowrap ${isFull ? "bg-slate-300" : "bg-brand hover:bg-brand-dark"}`}
-                      >
-                        {joiningId === group.id ? "Wait" : isFull ? "Full" : "Join"}
-                      </button>
+                      {group.is_joined ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.location.href = `/groups/${group.id}/chat`;
+                          }}
+                          className="rounded-full px-3 py-1 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-bold text-white transition-colors whitespace-nowrap bg-brand hover:bg-brand-dark"
+                        >
+                          Open Chat
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPendingJoinGroup(group);
+                          }}
+                          disabled={isFull || joiningId === group.id}
+                          className={`rounded-full px-3 py-1 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-bold text-white transition-colors whitespace-nowrap ${isFull ? "bg-slate-300" : "bg-brand hover:bg-brand-dark"}`}
+                        >
+                          {joiningId === group.id ? "Wait" : isFull ? "Full" : "Join"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </article>
