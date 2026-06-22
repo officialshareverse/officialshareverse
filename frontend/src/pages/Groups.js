@@ -647,7 +647,7 @@ export default function Groups() {
             </div>
           </div>
         ) : (
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+          <section className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {filteredGroups.map((group, index) => {
               const filledSlots = Number(group.filled_slots || 0);
               const totalSlots = Math.max(Number(group.total_slots || 1), 1);
@@ -661,48 +661,44 @@ export default function Groups() {
                 <article
                   key={group.id}
                   onClick={() => navigate(`/groups/${group.id}`, { state: { group } })}
-                  className={`relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-row sm:flex-col h-[104px] sm:h-auto cursor-pointer ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
+                  className={`relative overflow-hidden rounded-[20px] sm:rounded-3xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-col cursor-pointer ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
                 >
-                  <div className={`w-28 sm:w-full shrink-0 h-full sm:h-28 relative flex items-center justify-center sm:block ${getCoverGradient(group.subscription_name || group.subscription)}`}>
-                    <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-white/20 backdrop-blur-md rounded-full px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[8px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
+                  <div className={`w-full h-20 sm:h-28 relative block shrink-0 ${getCoverGradient(group.subscription_name || group.subscription)}`}>
+                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-white/20 backdrop-blur-md rounded-full px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[8px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
                       {isHot ? "Hot" : "Pop"}
                     </div>
                     
-                    <div className="sm:absolute sm:top-20 sm:left-5 h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-white p-1 shadow-sm border sm:border-2 border-white z-10 flex items-center justify-center overflow-hidden">
+                    <div className="absolute -bottom-6 left-3 sm:-bottom-7 sm:left-5 h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-white p-1 shadow-sm border-2 border-white z-10 flex items-center justify-center overflow-hidden">
                       <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full rounded-lg sm:rounded-xl" />
                     </div>
                   </div>
 
-                  <div className="flex-1 p-3 sm:pt-10 sm:px-5 sm:pb-5 flex flex-col justify-between min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1">
-                          <h3 className="text-[14px] sm:text-base font-bold text-slate-900 truncate">{group.subscription_name || group.subscription}</h3>
-                          <CheckCircleIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500 shrink-0" />
+                  <div className="flex-1 pt-8 px-3 pb-3 sm:pt-10 sm:px-5 sm:pb-5 flex flex-col justify-between min-w-0">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-start justify-between gap-1">
+                        <div className="min-w-0 flex items-center gap-1">
+                          <h3 className="text-[13px] sm:text-base font-bold text-slate-900 truncate">{group.subscription_name || group.subscription}</h3>
+                          <CheckCircleIcon className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500 shrink-0" />
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <p className="text-[10px] sm:text-xs font-medium text-slate-500 truncate">{planMeta.category} • Host: {hostDisplayName}</p>
-                          <span className="text-[10px] sm:hidden font-semibold text-amber-500 shrink-0">
-                            ★ {getMockReputation(group.owner_name).rating}
-                          </span>
-                        </div>
+                        <p className="text-[12px] sm:text-sm font-bold text-slate-900 shrink-0">
+                          ₹{Number(group.join_price).toFixed(0)}
+                        </p>
                       </div>
-                      <p className="text-[13px] sm:text-sm font-bold text-slate-900 shrink-0">
-                        ₹{Number(group.join_price).toFixed(0)}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-[10px] sm:text-xs font-medium text-slate-500 truncate">{planMeta.category}</p>
+                      </div>
                     </div>
                     
-                    <div className="hidden sm:flex mt-3 sm:mt-4 items-center gap-1.5 border-t border-slate-100 pt-3 sm:pt-4">
-                      <UserIcon className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                      <p className="text-[11px] sm:text-xs text-slate-600 truncate">Host: {hostDisplayName}</p>
-                      <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                      <span className="ml-auto text-[11px] sm:text-xs font-semibold text-amber-500 flex items-center gap-0.5">
+                    <div className="mt-2 sm:mt-4 flex items-center gap-1.5 border-t border-slate-100 pt-2 sm:pt-4">
+                      <UserIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-400 shrink-0" />
+                      <p className="text-[10px] sm:text-xs text-slate-600 truncate">{hostDisplayName}</p>
+                      <span className="ml-auto text-[10px] sm:text-xs font-semibold text-amber-500 flex items-center gap-0.5 shrink-0">
                         ★ {getMockReputation(group.owner_name).rating}
                       </span>
                     </div>
                     
-                    <div className="mt-2 sm:mt-auto pt-2 sm:pt-5 border-t border-slate-100 sm:border-none flex items-center justify-between gap-2">
-                      <span className="rounded-md bg-emerald-50 px-2 py-1 sm:px-2.5 sm:py-1.5 text-[10px] sm:text-[11px] font-bold text-emerald-700 whitespace-nowrap">
+                    <div className="mt-2 sm:mt-4 pt-2 sm:pt-0 border-t border-slate-100 sm:border-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <span className="rounded-md bg-emerald-50 px-2 py-1 text-[10px] sm:text-[11px] font-bold text-emerald-700 text-center w-full sm:w-auto whitespace-nowrap">
                         {remainingSlots} left
                       </span>
                       {group.is_joined ? (
@@ -711,7 +707,7 @@ export default function Groups() {
                             e.stopPropagation();
                             window.location.href = `/groups/${group.id}/chat`;
                           }}
-                          className="rounded-full px-3 py-1 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-bold text-white transition-colors whitespace-nowrap bg-brand hover:bg-brand-dark"
+                          className="rounded-lg sm:rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-xs font-bold text-white transition-colors w-full sm:w-auto text-center whitespace-nowrap bg-brand hover:bg-brand-dark"
                         >
                           Open Chat
                         </button>
@@ -722,7 +718,7 @@ export default function Groups() {
                             setPendingJoinGroup(group);
                           }}
                           disabled={isFull || joiningId === group.id}
-                          className={`rounded-full px-3 py-1 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-bold text-white transition-colors whitespace-nowrap ${isFull ? "bg-slate-300" : "bg-brand hover:bg-brand-dark"}`}
+                          className={`rounded-lg sm:rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-xs font-bold text-white transition-colors w-full sm:w-auto text-center whitespace-nowrap ${isFull ? "bg-slate-300" : "bg-brand hover:bg-brand-dark"}`}
                         >
                           {joiningId === group.id ? "Wait" : isFull ? "Full" : "Join"}
                         </button>
