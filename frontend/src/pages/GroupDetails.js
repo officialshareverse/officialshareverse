@@ -27,7 +27,7 @@ export default function GroupDetails() {
   const { groupId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { addToast } = useToast();
+  const toast = useToast();
 
   const [group, setGroup] = useState(location.state?.group || null);
   const [loading, setLoading] = useState(!group);
@@ -44,11 +44,11 @@ export default function GroupDetails() {
           if (found) {
             setGroup(found);
           } else {
-            addToast("Group not found or no longer available.", { tone: "error" });
+            toast.error("Group not found or no longer available.");
             navigate("/groups");
           }
         } catch (err) {
-          addToast("Failed to load group details.", { tone: "error" });
+          toast.error("Failed to load group details.");
           navigate("/groups");
         } finally {
           setLoading(false);
@@ -56,7 +56,7 @@ export default function GroupDetails() {
       };
       fetchGroup();
     }
-  }, [group, groupId, navigate, addToast]);
+  }, [group, groupId, navigate, toast]);
 
   const handleJoin = async () => {
     if (!group) return;
@@ -69,24 +69,24 @@ export default function GroupDetails() {
           Number(res.data?.platform_fee_amount || 0) > 0
             ? ` This included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
-        addToast(
+        toast.success(
           `Rs ${res.data?.charged_amount || group.join_price || group.price_per_slot} charged → Status: Held → Waiting for access confirmation.${successFeeNote}${successNote}`.trim(),
-          { tone: "success", title: "Joined split" }
+          { title: "Joined split" }
         );
       } else {
         const successFeeNote =
           Number(res.data?.platform_fee_amount || 0) > 0
             ? ` This included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
-        addToast(
+        toast.success(
           `Contribution reserved → Status: Held → Waiting for group completion.${successFeeNote}`.trim(),
-          { tone: "success", title: "Joined group" }
+          { title: "Joined group" }
         );
       }
       window.location.href = `/groups/${group.id}/chat`;
     } catch (err) {
       const msg = err.response?.data?.error || "Failed to join group.";
-      addToast(msg, { tone: "error", title: "Couldn't join group" });
+      toast.error(msg, { title: "Couldn't join group" });
     } finally {
       setJoining(false);
     }
