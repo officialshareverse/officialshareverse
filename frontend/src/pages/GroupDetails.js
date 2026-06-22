@@ -83,7 +83,7 @@ export default function GroupDetails() {
           "success"
         );
       }
-      navigate(`/groups/${group.id}/chat`);
+      window.location.href = `/groups/${group.id}/chat`;
     } catch (err) {
       const msg = err.response?.data?.error || "Failed to join group.";
       addToast(msg, "error");

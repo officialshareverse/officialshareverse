@@ -75,9 +75,9 @@ export default function InviteLanding() {
       toast.success("You joined the group successfully.", { title: "Welcome in" });
       const groupId = res.data?.group_id;
       if (groupId) {
-        navigate(`/groups/${groupId}/chat`, { replace: true });
+        window.location.href = `/groups/${groupId}/chat`;
       } else {
-        navigate("/groups", { replace: true });
+        window.location.href = "/groups";
       }
     } catch (joinError) {
       console.error(joinError);
