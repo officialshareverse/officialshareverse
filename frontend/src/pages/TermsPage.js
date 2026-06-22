@@ -1,5 +1,8 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import PublicPageShell from "../components/PublicPageShell";
 import PublicBusinessIdentity from "../components/PublicBusinessIdentity";
+import useIsMobile from "../hooks/useIsMobile";
 
 const sections = [
   {
@@ -95,6 +98,90 @@ const sections = [
 ];
 
 export default function TermsPage() {
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col pb-20 selection:bg-brand/20">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-40 bg-slate-50/85 backdrop-blur-xl border-b border-slate-200/60 px-4 py-3 flex items-center shadow-sm">
+          <button 
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-200 text-slate-600 active:bg-slate-50 transition-colors"
+            aria-label="Go back"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className="flex-1 flex justify-center pr-10">
+            <span className="text-[15px] font-bold text-slate-900 tracking-wide">Legal</span>
+          </div>
+        </div>
+
+        {/* Hero Section */}
+        <div className="px-6 pt-8 pb-6 flex flex-col animate-in slide-in-from-bottom-4 duration-500 fade-in">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-200/60 text-[10px] font-bold uppercase tracking-widest text-slate-600 mb-4 w-fit border border-slate-300/50">
+            <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Terms of Service
+          </div>
+          <h1 className="text-[32px] font-extrabold text-slate-900 tracking-tight leading-[1.15]">
+            Rules for using ShareVerse
+          </h1>
+          <p className="mt-3 text-[15px] text-slate-600 leading-relaxed font-medium">
+            These terms describe how members, hosts, and purchasers should use ShareVerse safely and responsibly.
+          </p>
+        </div>
+
+        {/* Terms Sections */}
+        <div className="px-4 flex flex-col gap-5 mt-2">
+          {sections.map((section, sIdx) => (
+            <article 
+              key={section.title} 
+              className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 animate-in slide-in-from-bottom-4 duration-500 fade-in fill-mode-both"
+              style={{ animationDelay: `${Math.min(sIdx * 100, 800)}ms` }}
+            >
+              <h2 className="text-[18px] font-bold text-slate-900 tracking-tight leading-snug">
+                {section.title}
+              </h2>
+              <p className="mt-3 text-[14px] text-slate-600 leading-relaxed font-medium">
+                {section.body}
+              </p>
+              
+              {section.points && section.points.length > 0 && (
+                <div className="mt-4 flex flex-col gap-2.5">
+                  {section.points.map((point, pIdx) => (
+                    <div key={pIdx} className="flex items-start gap-3 bg-slate-50/80 rounded-2xl p-4 border border-slate-100">
+                      <div className="mt-0.5 w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></div>
+                      <p className="text-[13px] text-slate-600 font-medium leading-relaxed">
+                        {point}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+
+        {/* Contact/Operator Details */}
+        <div className="px-4 mt-8 animate-in slide-in-from-bottom-4 duration-500 fade-in fill-mode-both" style={{ animationDelay: "900ms" }}>
+          <PublicBusinessIdentity 
+            title="Operator details for these terms"
+            intro=""
+            customContainerClass="bg-slate-900 rounded-[28px] p-6 shadow-xl relative overflow-hidden"
+            customTextClass="text-slate-300"
+            hideTitle={false}
+          />
+        </div>
+
+      </div>
+    );
+  }
+
   return (
     <PublicPageShell
       eyebrow="Terms of service"
