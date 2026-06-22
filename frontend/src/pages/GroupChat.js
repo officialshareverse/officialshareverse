@@ -211,6 +211,7 @@ export default function GroupChat() {
   const [error, setError] = useState("");
   const isMobile = useIsMobile();
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [hasReceivedAccess, setHasReceivedAccess] = useState(false);
 
   const handleWebSocketMessage = useCallback((event) => {
     if (!event?.type) {
@@ -559,6 +560,19 @@ export default function GroupChat() {
             </div>
             <span className={`sv-mobile-chat-status-dot ${connectionMeta.dot}`} title={connectionMeta.label} />
           </div>
+
+          {/* ── Action Banner ── */}
+          {!hasReceivedAccess && (
+            <div className="bg-emerald-50 px-4 py-3 flex items-center justify-between shadow-sm z-10 border-b border-emerald-100 shrink-0">
+              <span className="text-[13px] font-semibold text-emerald-800">Got your login details?</span>
+              <button 
+                onClick={() => setHasReceivedAccess(true)}
+                className="bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider transition-colors hover:bg-emerald-700 active:scale-95 shadow-sm"
+              >
+                Received Access
+              </button>
+            </div>
+          )}
 
           {/* ── Scrollable messages area ── */}
           <div className="sv-mobile-chat-messages">
