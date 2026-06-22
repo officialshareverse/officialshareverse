@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 // useIsMobile hook removed since it was unused
 import SubscriptionLogo from "../components/SubscriptionLogo";
-import { toast } from "react-hot-toast";
+import { useToast } from "../components/ToastProvider";
 import { ShieldIcon, LoadingSpinner } from "../components/UiIcons";
 import {
   getPlanMeta,
@@ -27,6 +27,7 @@ export default function GroupDetails() {
   const { groupId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { addToast } = useToast();
 
   const [group, setGroup] = useState(location.state?.group || null);
   const [loading, setLoading] = useState(!group);
@@ -43,11 +44,11 @@ export default function GroupDetails() {
           if (found) {
             setGroup(found);
           } else {
-            toast.error("Group not found or no longer available.");
+            addToast("Group not found or no longer available.", { tone: "error" });
             navigate("/groups");
           }
         } catch (err) {
-          toast.error("Failed to load group details.");
+          addToast("Failed to load group details.", { tone: "error" });
           navigate("/groups");
         } finally {
           setLoading(false);
@@ -55,7 +56,7 @@ export default function GroupDetails() {
       };
       fetchGroup();
     }
-  }, [group, groupId, navigate]);
+  }, [group, groupId, navigate, addToast]);
 
   const handleJoin = async () => {
     if (!group) return;
@@ -68,22 +69,24 @@ export default function GroupDetails() {
           Number(res.data?.platform_fee_amount || 0) > 0
             ? ` This included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
-        toast.success(
-          `Rs ${res.data?.charged_amount || group.join_price || group.price_per_slot} charged → Status: Held → Waiting for access confirmation.${successFeeNote}${successNote}`.trim()
+        addToast(
+          `Rs ${res.data?.charged_amount || group.join_price || group.price_per_slot} charged → Status: Held → Waiting for access confirmation.${successFeeNote}${successNote}`.trim(),
+          { tone: "success", title: "Joined split" }
         );
       } else {
         const successFeeNote =
           Number(res.data?.platform_fee_amount || 0) > 0
             ? ` This included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
-        toast.success(
-          `Contribution reserved → Status: Held → Waiting for group completion.${successFeeNote}`.trim()
+        addToast(
+          `Contribution reserved → Status: Held → Waiting for group completion.${successFeeNote}`.trim(),
+          { tone: "success", title: "Joined group" }
         );
       }
       window.location.href = `/groups/${group.id}/chat`;
     } catch (err) {
       const msg = err.response?.data?.error || "Failed to join group.";
-      toast.error(msg);
+      addToast(msg, { tone: "error", title: "Couldn't join group" });
     } finally {
       setJoining(false);
     }
