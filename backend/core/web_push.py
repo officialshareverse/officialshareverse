@@ -38,11 +38,20 @@ def send_web_push_to_user(user_id, notification_payload):
 
     message = (notification_payload or {}).get("message") or "You have a new ShareVerse update."
     title = build_push_title(notification_payload)
+
+    frontend_origin = "https://shareverse.in"
+    cors_origins = getattr(settings, "CORS_ALLOWED_ORIGINS", [])
+    if cors_origins:
+        for origin in cors_origins:
+            if "shareverse.in" in origin and "api." not in origin:
+                frontend_origin = origin.rstrip("/")
+                break
+
     push_data = json.dumps({
         "title": title,
         "body": message,
-        "icon": "/shareverse-logo-192.png",
-        "badge": "/shareverse-favicon.png",
+        "icon": f"{frontend_origin}/shareverse-logo-192.png",
+        "badge": f"{frontend_origin}/shareverse-favicon.png",
         "data": {
             "notification_id": notification_payload.get("id"),
             "category": notification_payload.get("category"),
