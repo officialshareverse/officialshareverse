@@ -110,14 +110,20 @@ class GroupChatView(APIView):
                 )
 
             member_access_confirmed = False
+            can_confirm_access = False
             is_owner = group.owner_id == request.user.id
             if not is_owner:
                 try:
-                    current_member = GroupMember.objects.filter(
+                    member_row = GroupMember.objects.filter(
                         group=group, user=request.user
-                    ).values_list("access_confirmed", flat=True).first()
-                    if current_member is not None:
-                        member_access_confirmed = current_member
+                    ).values("access_confirmed", "has_paid", "escrow_status").first()
+                    if member_row is not None:
+                        member_access_confirmed = bool(member_row["access_confirmed"])
+                        can_confirm_access = (
+                            bool(member_row["has_paid"])
+                            and member_row["escrow_status"] == "held"
+                            and not member_row["access_confirmed"]
+                        )
                 except Exception:
                     pass
 
@@ -130,6 +136,7 @@ class GroupChatView(APIView):
                 "active_typing_users": activity_snapshot["active_typing_users"],
                 "has_someone_typing": activity_snapshot["has_someone_typing"],
                 "member_access_confirmed": member_access_confirmed,
+                "can_confirm_access": can_confirm_access,
                 "is_owner": is_owner,
             })
         except Exception as exc:

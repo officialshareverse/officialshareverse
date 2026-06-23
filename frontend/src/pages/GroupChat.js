@@ -409,9 +409,8 @@ export default function GroupChat() {
   const messages = useMemo(() => chat?.messages || [], [chat?.messages]);
   const participants = useMemo(() => chat?.participants || [], [chat?.participants]);
   const group = chat?.group || {};
-  const isOwner = chat?.is_owner ?? false;
-  const memberAccessConfirmed = chat?.member_access_confirmed ?? false;
-  const showAccessBanner = !isOwner && !memberAccessConfirmed && !accessJustConfirmed;
+  const canConfirmAccess = chat?.can_confirm_access ?? false;
+  const showAccessBanner = canConfirmAccess && !accessJustConfirmed;
 
   const otherTypingUsers = useMemo(
     () => participants
