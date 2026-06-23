@@ -568,12 +568,17 @@ export default function GroupChat() {
             <div className="bg-emerald-50 px-4 py-3 flex items-center justify-between shadow-sm z-10 border-b border-emerald-100 shrink-0">
               <span className="text-[13px] font-semibold text-emerald-800">Got your login details?</span>
               <button 
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
-                  setHasReceivedAccess(true);
-                  toast.success("Access confirmed! The host has been notified.", {
-                    title: "Access Received"
-                  });
+                  try {
+                    await API.post(`groups/${group.id}/confirm-access/`);
+                    setHasReceivedAccess(true);
+                    toast.success("Access confirmed! The host has been notified.", {
+                      title: "Access Received"
+                    });
+                  } catch (error) {
+                    toast.error(error?.response?.data?.error || "Failed to confirm access");
+                  }
                 }}
                 className="bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider transition-colors hover:bg-emerald-700 active:scale-95 shadow-sm"
               >
