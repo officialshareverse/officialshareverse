@@ -1,4 +1,4 @@
-﻿from .common import *
+from .common import *
 
 def _view_exports():
     import core.views as views
@@ -109,6 +109,18 @@ class GroupChatView(APIView):
                     current_user=request.user,
                 )
 
+            member_access_confirmed = False
+            is_owner = group.owner_id == request.user.id
+            if not is_owner:
+                try:
+                    current_member = GroupMember.objects.filter(
+                        group=group, user=request.user
+                    ).values_list("access_confirmed", flat=True).first()
+                    if current_member is not None:
+                        member_access_confirmed = current_member
+                except Exception:
+                    pass
+
             return Response({
                 "group": _view_exports().build_safe_group_chat_group_payload(group),
                 "participants": activity_snapshot["participants"],
@@ -117,6 +129,8 @@ class GroupChatView(APIView):
                 "online_participant_count": activity_snapshot["online_participant_count"],
                 "active_typing_users": activity_snapshot["active_typing_users"],
                 "has_someone_typing": activity_snapshot["has_someone_typing"],
+                "member_access_confirmed": member_access_confirmed,
+                "is_owner": is_owner,
             })
         except Exception as exc:
             _log_group_chat_failure(

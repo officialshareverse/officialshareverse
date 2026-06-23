@@ -212,7 +212,7 @@ export default function GroupChat() {
   const [error, setError] = useState("");
   const isMobile = useIsMobile();
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
-  const [hasReceivedAccess, setHasReceivedAccess] = useState(false);
+  const [accessJustConfirmed, setAccessJustConfirmed] = useState(false);
   const toast = useToast();
 
   const handleWebSocketMessage = useCallback((event) => {
@@ -409,6 +409,9 @@ export default function GroupChat() {
   const messages = useMemo(() => chat?.messages || [], [chat?.messages]);
   const participants = useMemo(() => chat?.participants || [], [chat?.participants]);
   const group = chat?.group || {};
+  const isOwner = chat?.is_owner ?? false;
+  const memberAccessConfirmed = chat?.member_access_confirmed ?? false;
+  const showAccessBanner = !isOwner && !memberAccessConfirmed && !accessJustConfirmed;
 
   const otherTypingUsers = useMemo(
     () => participants
@@ -564,7 +567,7 @@ export default function GroupChat() {
           </div>
 
           {/* ── Action Banner ── */}
-          {!hasReceivedAccess && (
+          {showAccessBanner && (
             <div className="bg-emerald-50 px-4 py-3 flex items-center justify-between shadow-sm z-10 border-b border-emerald-100 shrink-0">
               <span className="text-[13px] font-semibold text-emerald-800">Got your login details?</span>
               <button 
@@ -572,7 +575,7 @@ export default function GroupChat() {
                   e.stopPropagation();
                   try {
                     await API.post(`groups/${group.id}/confirm-access/`);
-                    setHasReceivedAccess(true);
+                    setAccessJustConfirmed(true);
                     toast.success("Access confirmed! The host has been notified.", {
                       title: "Access Received"
                     });
