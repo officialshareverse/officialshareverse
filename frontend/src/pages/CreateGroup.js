@@ -171,8 +171,10 @@ function ModeCard({ active, title, description, badgeTone, badge, onClick, steps
     <button
       type="button"
       onClick={onClick}
-      className={`sv-create-mode-card ${active ? "is-active" : ""} ${badgeTone === "amber" ? "is-amber" : "is-teal"}`}
+      className={`sv-create-mode-card relative overflow-hidden transition-all duration-300 ${active ? "is-active ring-2 ring-offset-2 ring-offset-white shadow-lg scale-[1.02]" : "hover:shadow-md"} ${active && badgeTone === "amber" ? "ring-amber-500" : active ? "ring-teal-500" : ""} ${badgeTone === "amber" ? "is-amber" : "is-teal"}`}
     >
+      {active && <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${badgeTone === "amber" ? "from-amber-400 to-orange-500" : "from-teal-400 to-emerald-500"}`} />}
+
       <div className="flex items-start justify-between gap-3">
         <div className={`sv-create-mode-graphic ${badgeTone === "amber" ? "is-amber" : "is-teal"}`}>
           {badgeTone === "amber" ? <WalletIcon className="h-6 w-6" /> : <LayersIcon className="h-6 w-6" />}
@@ -190,15 +192,6 @@ function ModeCard({ active, title, description, badgeTone, badge, onClick, steps
         ))}
       </div>
     </button>
-  );
-}
-
-function SummaryMetric({ label, value, muted = false }) {
-  return (
-    <div className="sv-create-summary-metric">
-      <span className="text-[11px] uppercase tracking-[0.14em] text-slate-500">{label}</span>
-      <span className={`mt-2 text-sm font-semibold ${muted ? "text-slate-500" : "text-slate-950"}`}>{value}</span>
-    </div>
   );
 }
 
@@ -512,24 +505,22 @@ export default function CreateGroup() {
                     </div>
 
                     <div className="mt-5 grid gap-5">
-                      <div>
-                        <label className="text-sm font-semibold text-slate-700">Plan, course, or tool name</label>
-                          <input
-                            type="text"
-                            name="subscription_name"
-                            value={form.subscription_name}
-                            onChange={handleChange}
-                            placeholder="Household plan, team software, course cohort"
-                            className="sv-input mt-2"
-                          />
-                          <InputError message={errors.subscription_name} />
-                        </div>
-
-
+                      <div className="relative bg-slate-50 border border-slate-200 rounded-[length:var(--sv-radius-card)] p-4 focus-within:ring-2 focus-within:ring-teal-500 focus-within:border-teal-500 transition-all">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Plan, course, or tool name</label>
+                        <input
+                          type="text"
+                          name="subscription_name"
+                          value={form.subscription_name}
+                          onChange={handleChange}
+                          placeholder="e.g. Household plan"
+                          className="w-full mt-2 bg-transparent text-xl font-semibold text-slate-900 placeholder:text-slate-300 focus:outline-none"
+                        />
+                        <InputError message={errors.subscription_name} />
+                      </div>
 
                       <div className="grid gap-5 md:grid-cols-2">
-                        <div>
-                          <label className="text-sm font-semibold text-slate-700">Total members</label>
+                        <div className="relative bg-slate-50 border border-slate-200 rounded-[length:var(--sv-radius-card)] p-4 focus-within:ring-2 focus-within:ring-teal-500 focus-within:border-teal-500 transition-all">
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Total members</label>
                           <input
                             type="number"
                             name="total_slots"
@@ -537,16 +528,16 @@ export default function CreateGroup() {
                             step="1"
                             value={form.total_slots}
                             onChange={handleChange}
-                            className="sv-input mt-2"
+                            className="w-full mt-2 bg-transparent text-2xl font-black text-slate-900 placeholder:text-slate-300 focus:outline-none"
                           />
-                          <p className="mt-2 text-xs text-slate-500">Enter how many members can join this split.</p>
+                          <p className="mt-2 text-xs text-slate-500 font-medium">How many members can join.</p>
                           <InputError message={errors.total_slots} />
                         </div>
 
-                        <div>
-                          <label className="text-sm font-semibold text-slate-700">{modeConfig.amountLabel}</label>
-                          <div className="sv-create-currency-input mt-2">
-                            <span className="sv-create-currency-prefix">Rs</span>
+                        <div className="relative bg-teal-50/50 border border-teal-200 rounded-[length:var(--sv-radius-card)] p-4 focus-within:ring-2 focus-within:ring-teal-500 focus-within:border-teal-500 transition-all shadow-sm">
+                          <label className="text-xs font-bold uppercase tracking-wider text-teal-700">{modeConfig.amountLabel}</label>
+                          <div className="flex items-center mt-2">
+                            <span className="text-2xl font-black text-slate-900 mr-2">Rs</span>
                             <input
                               type="number"
                               name="price_per_slot"
@@ -555,13 +546,13 @@ export default function CreateGroup() {
                               value={form.price_per_slot}
                               onChange={handleChange}
                               placeholder={isSharing ? "150" : "200"}
-                              className="sv-input border-0 bg-transparent shadow-none"
+                              className="w-full bg-transparent text-4xl font-black text-slate-900 placeholder:text-slate-300 focus:outline-none"
                             />
                           </div>
-                          <p className="mt-2 text-xs text-slate-500">
+                          <p className="mt-2 text-[11px] leading-relaxed text-teal-700/80 font-medium">
                             {isSharing
-                              ? "Late joiners are charged only for the remaining days automatically."
-                              : "This is the amount each member commits when joining the group."}
+                              ? "Late joiners pay only for remaining days."
+                              : "Amount members commit to join."}
                           </p>
                           <InputError message={errors.price_per_slot} />
                         </div>
@@ -662,61 +653,67 @@ export default function CreateGroup() {
                       </div>
                       </div>
 
-                    <div className="sv-create-review-grid mt-3">
-                      <SummaryMetric
-                        label="Split name"
-                        value={form.subscription_name.trim() || "Name not set yet"}
-                        muted={!form.subscription_name.trim()}
-                      />
-                      <SummaryMetric label="Mode" value={modeConfig.eyebrow} />
-                      <SummaryMetric
-                        label={modeConfig.amountLabel}
-                        value={amountPerMember > 0 ? `Rs ${amountPerMember.toFixed(2)}` : "Add pricing"}
-                        muted={amountPerMember <= 0}
-                      />
-                      <SummaryMetric
-                        label="Members"
-                        value={memberCount > 0 ? `${memberCount}` : "Add member count"}
-                        muted={memberCount <= 0}
-                      />
-                      <SummaryMetric
-                        label={modeConfig.targetLabel}
-                        value={estimatedTotal > 0 ? `Rs ${estimatedTotal.toFixed(2)}` : "Waiting for inputs"}
-                        muted={estimatedTotal <= 0}
-                      />
-                      <SummaryMetric
-                        label={modeConfig.scheduleLabel}
-                        value={
-                          form.start_date && form.end_date
-                            ? `${formatLongDate(form.start_date)} to ${formatLongDate(form.end_date)}`
-                            : "Choose dates"
-                        }
-                        muted={!form.start_date || !form.end_date}
-                      />
+                    <div className="mt-5 relative bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                      {/* Receipt top jag */}
+                      <div className="absolute top-0 inset-x-0 h-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMicgaGVpZ2h0PScxMicgdmlld0JveD0nMCAwIDEyIDEyJz48cGF0aCBkPSdNMCAwaDEydjEwTDYgNGwtNiA2VjB6JyBmaWxsPScjZWFlOGU0JyAvPjwvc3ZnPg==')] opacity-30 rotate-180 bg-repeat-x" />
+                      
+                      <div className="px-5 pt-8 pb-6">
+                        <div className="text-center pb-6 border-b border-dashed border-slate-300">
+                          <p className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-1">Receipt</p>
+                          <h4 className="text-2xl font-black text-slate-900">{form.subscription_name.trim() || "Draft Split"}</h4>
+                          <span className={`inline-block mt-2 px-2.5 py-1 text-xs font-bold rounded-full ${isSharing ? "bg-teal-100 text-teal-800" : "bg-amber-100 text-amber-800"}`}>{modeConfig.eyebrow}</span>
+                        </div>
+                        
+                        <div className="py-5 space-y-4">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-500 font-medium">{modeConfig.amountLabel}</span>
+                            <span className="text-sm font-bold text-slate-900">{amountPerMember > 0 ? `Rs ${amountPerMember.toFixed(2)}` : "—"}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-500 font-medium">Members</span>
+                            <span className="text-sm font-bold text-slate-900">x {memberCount > 0 ? memberCount : "—"}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-500 font-medium">{modeConfig.scheduleLabel}</span>
+                            <span className="text-sm font-bold text-slate-900 text-right max-w-[150px]">
+                              {form.start_date && form.end_date ? `${formatLongDate(form.start_date)} to ${formatLongDate(form.end_date)}` : "—"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="pt-5 border-t border-dashed border-slate-300 flex justify-between items-end">
+                          <span className="text-base font-bold text-slate-800">{modeConfig.targetLabel}</span>
+                          <span className="text-3xl font-black text-slate-900">{estimatedTotal > 0 ? `Rs ${estimatedTotal.toFixed(2)}` : "—"}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Receipt bottom jag */}
+                      <div className="absolute bottom-0 inset-x-0 h-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMicgaGVpZ2h0PScxMicgdmlld0JveD0nMCAwIDEyIDEyJz48cGF0aCBkPSdNMCAwaDEydjEwTDYgNGwtNiA2VjB6JyBmaWxsPScjZWFlOGU0JyAvPjwvc3ZnPg==')] opacity-30 bg-repeat-x" />
                     </div>
                   </section>
 
-                  <div className="mt-3 rounded-xl bg-amber-50 p-3 border border-amber-200">
-                    <p className="text-sm font-semibold text-amber-800">Trust Guarantee: Members' money is held safely until they confirm they got access.</p>
+                  <div className="mt-4 flex items-start gap-3 rounded-xl bg-slate-50 p-4 border border-slate-200">
+                    <div className="mt-0.5 rounded-full bg-emerald-100 p-1 text-emerald-600">
+                       <SparkIcon className="h-4 w-4" />
+                    </div>
+                    <p className="text-sm font-medium leading-relaxed text-slate-700"><strong>Trust Guarantee:</strong> Members' money is held safely until they confirm they got access.</p>
                   </div>
                 </div>
               ) : null}
             </div>
 
-            <div className="sv-create-nav sticky sm:relative bottom-0 z-50 bg-white sm:bg-transparent -mx-4 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:m-0 sm:p-0 sm:mt-0 sm:pt-3 border-t border-slate-100 shadow-[0_-4px_24px_rgba(0,0,0,0.04)] sm:shadow-none flex items-center justify-between">
-              {currentStep > 0 ? (
-                <button type="button" onClick={moveToPreviousStep} className="sv-btn-secondary">
+            <div className="sv-create-nav sticky sm:relative bottom-0 z-50 bg-white/80 backdrop-blur-xl sm:bg-transparent -mx-4 px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:m-0 sm:p-0 sm:mt-0 sm:pt-3 border-t border-slate-200/50 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] sm:shadow-none flex items-center justify-between transition-all">
+              {currentStep > 0 && (
+                <button type="button" onClick={moveToPreviousStep} className="sv-btn-secondary active:scale-95 transition-transform">
                   Back
                 </button>
-              ) : (
-                <div />
               )}
               <div className="text-center hidden sm:block">
                 <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
                   Step {currentStep + 1} of {WIZARD_STEPS.length}
                 </p>
               </div>
-              <button type="submit" disabled={loading} className="sv-btn-primary">
+              <button type="submit" disabled={loading} className={`sv-btn-primary transition-transform active:scale-95 ${currentStep === 0 ? 'w-full justify-center text-lg py-3.5' : ''}`}>
                 {loading ? (
                   <>
                     <LoadingSpinner />
