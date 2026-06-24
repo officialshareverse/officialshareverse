@@ -300,13 +300,7 @@ export default function Profile() {
     return nextReviews;
   }, [recentReviews, reviewFilter, reviewSort]);
 
-  const mobileReviews = useMemo(
-    () =>
-      [...recentReviews]
-        .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime())
-        .slice(0, 2),
-    [recentReviews]
-  );
+
 
   const startEditing = () => {
     if (!profile) {
@@ -543,16 +537,16 @@ export default function Profile() {
           </div>
         </section>
 
-        <section className="grid grid-cols-2 gap-2.5 sv-reveal sm:flex sm:flex-wrap sm:gap-3">
-          <button type="button" className="sv-btn-primary col-span-2 justify-center sm:col-span-1 sm:flex-none" onClick={() => navigate("/wallet")}>
+        <section className="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-2.5 pb-2 sv-reveal sm:flex-wrap sm:gap-3">
+          <button type="button" className="sv-btn-primary shrink-0 snap-center min-w-[200px] justify-center sm:min-w-0 sm:flex-none" onClick={() => navigate("/wallet")}>
             <WalletIcon className="h-4 w-4" />
             Open wallet
           </button>
-          <button type="button" className="sv-btn-secondary justify-center sm:flex-none" onClick={() => navigate("/my-shared")}>
+          <button type="button" className="sv-btn-secondary shrink-0 snap-center min-w-[160px] justify-center sm:min-w-0 sm:flex-none" onClick={() => navigate("/my-shared")}>
             <LayersIcon className="h-4 w-4" />
             My splits
           </button>
-          <button type="button" className="sv-btn-secondary justify-center sm:flex-none" onClick={() => navigate("/create")}>
+          <button type="button" className="sv-btn-secondary shrink-0 snap-center min-w-[160px] justify-center sm:min-w-0 sm:flex-none" onClick={() => navigate("/create")}>
             <SparkIcon className="h-4 w-4" />
             Create split
           </button>
@@ -569,11 +563,11 @@ export default function Profile() {
           </div>
         ) : null}
 
-        <section className="sv-profile-stat-grid grid gap-4 grid-cols-2 xl:grid-cols-4 sv-reveal">
-          <StatCard label="Groups joined" value={profile.groups_joined} icon={LayersIcon} tone="is-teal" note="Member history" />
-          <StatCard label="Groups created" value={profile.groups_created} icon={SparkIcon} tone="is-violet" note="Host activity" />
-          <StatCard label="Total spent" value={profile.total_spent} icon={CreditIcon} tone="is-rose" note="Across joined groups" format="currency" />
-          <StatCard label="Total earned" value={profile.total_earned} icon={WalletIcon} tone="is-emerald" note="From sharing activity" format="currency" />
+        <section className="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-4 pb-2 md:grid md:grid-cols-2 xl:grid-cols-4 sv-reveal">
+          <div className="snap-center min-w-[240px] md:min-w-0 w-full"><StatCard label="Groups joined" value={profile.groups_joined} icon={LayersIcon} tone="is-teal" note="Member history" /></div>
+          <div className="snap-center min-w-[240px] md:min-w-0 w-full"><StatCard label="Groups created" value={profile.groups_created} icon={SparkIcon} tone="is-violet" note="Host activity" /></div>
+          <div className="snap-center min-w-[240px] md:min-w-0 w-full"><StatCard label="Total spent" value={profile.total_spent} icon={CreditIcon} tone="is-rose" note="Across joined groups" format="currency" /></div>
+          <div className="snap-center min-w-[240px] md:min-w-0 w-full"><StatCard label="Total earned" value={profile.total_earned} icon={WalletIcon} tone="is-emerald" note="From sharing activity" format="currency" /></div>
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
@@ -758,36 +752,30 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {!isMobile ? (
-                  <>
-                    <div className="space-y-3">
-                      {trustBreakdown.map((item) => (
-                        <div key={item.label} className="sv-profile-breakdown-row">
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-sm font-semibold text-slate-950">{item.label}</span>
-                            <span className="text-sm font-semibold text-slate-500">{item.value}%</span>
-                          </div>
-                          <div className="sv-profile-breakdown-track">
-                            <span className="sv-profile-breakdown-fill" style={{ width: `${Math.max(8, item.value)}%` }} />
-                          </div>
-                          <p className="text-xs leading-6 text-slate-500">{item.note}</p>
+                <>
+                  <div className="space-y-3">
+                    {trustBreakdown.map((item) => (
+                      <div key={item.label} className="sv-profile-breakdown-row">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-semibold text-slate-950">{item.label}</span>
+                          <span className="text-sm font-semibold text-slate-500">{item.value}%</span>
                         </div>
-                      ))}
-                    </div>
-
-                    <details className="sv-profile-details-card">
-                      <summary>How to improve this</summary>
-                      <div className="mt-3 grid gap-3 text-sm leading-7 text-slate-600">
-                        <p>Add a clear photo, complete your contact fields, and keep your wallet funded before joining new paid groups.</p>
-                        <p>Hosting more successfully and collecting a few positive reviews will strengthen your group-history signal over time.</p>
+                        <div className="sv-profile-breakdown-track">
+                          <span className="sv-profile-breakdown-fill" style={{ width: `${Math.max(8, item.value)}%` }} />
+                        </div>
+                        <p className="text-xs leading-6 text-slate-500">{item.note}</p>
                       </div>
-                    </details>
-                  </>
-                ) : (
-                  <div className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50/90 px-4 py-4 text-sm leading-7 text-slate-600">
-                    Add a clear photo, complete your contact details, and keep wallet plus group activity healthy to improve trust faster.
+                    ))}
                   </div>
-                )}
+
+                  <details className="sv-profile-details-card cursor-pointer">
+                    <summary className="font-semibold select-none outline-none">How to improve this</summary>
+                    <div className="mt-3 grid gap-3 text-sm leading-7 text-slate-600 bg-white/50 p-4 rounded-[length:var(--sv-radius-card)]">
+                      <p>Add a clear photo, complete your contact fields, and keep your wallet funded before joining new paid groups.</p>
+                      <p>Hosting more successfully and collecting a few positive reviews will strengthen your group-history signal over time.</p>
+                    </div>
+                  </details>
+                </>
               </div>
             </section>
 
@@ -825,56 +813,54 @@ export default function Profile() {
                 </div>
               </div>
 
-              {!isMobile ? (
-                <>
-                  <div className="mt-6 rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-slate-50/90 p-5">
-                    <p className="text-sm font-semibold text-slate-950">Rating distribution</p>
-                    <div className="mt-4 space-y-3">
-                      {reviewDistribution.map((item) => <ReviewDistributionRow key={item.rating} {...item} />)}
-                    </div>
+              <>
+                <div className="mt-6 rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-slate-50/90 p-5 hidden md:block">
+                  <p className="text-sm font-semibold text-slate-950">Rating distribution</p>
+                  <div className="mt-4 space-y-3">
+                    {reviewDistribution.map((item) => <ReviewDistributionRow key={item.rating} {...item} />)}
+                  </div>
+                </div>
+
+                <div className="mt-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex overflow-x-auto hide-scrollbar gap-2 pb-1 flex-nowrap">
+                    {[
+                      { value: "all", label: "All" },
+                      { value: "5", label: "5 stars" },
+                      { value: "4", label: "4 stars" },
+                      { value: "3", label: "3 stars" },
+                    ].map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        className={`sv-profile-filter-chip whitespace-nowrap shrink-0 ${reviewFilter === item.value ? "is-active" : ""}`}
+                        onClick={() => setReviewFilter(item.value)}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
                   </div>
 
-                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { value: "all", label: "All" },
-                        { value: "5", label: "5 stars" },
-                        { value: "4", label: "4 stars" },
-                        { value: "3", label: "3 stars" },
-                      ].map((item) => (
-                        <button
-                          key={item.value}
-                          type="button"
-                          className={`sv-profile-filter-chip ${reviewFilter === item.value ? "is-active" : ""}`}
-                          onClick={() => setReviewFilter(item.value)}
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { value: "newest", label: "Newest" },
-                        { value: "highest", label: "Highest rating" },
-                      ].map((item) => (
-                        <button
-                          key={item.value}
-                          type="button"
-                          className={`sv-profile-filter-chip ${reviewSort === item.value ? "is-active" : ""}`}
-                          onClick={() => setReviewSort(item.value)}
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
+                  <div className="flex overflow-x-auto hide-scrollbar gap-2 pb-1 flex-nowrap">
+                    {[
+                      { value: "newest", label: "Newest" },
+                      { value: "highest", label: "Highest rating" },
+                    ].map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        className={`sv-profile-filter-chip whitespace-nowrap shrink-0 ${reviewSort === item.value ? "is-active" : ""}`}
+                        onClick={() => setReviewSort(item.value)}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
                   </div>
-                </>
-              ) : null}
+                </div>
+              </>
 
               <div className="sv-profile-review-list mt-5 space-y-4">
-                {(isMobile ? mobileReviews : filteredReviews).length ? (
-                  (isMobile ? mobileReviews : filteredReviews).map((review) => <ReviewCard key={review.id} review={review} />)
+                {filteredReviews.length ? (
+                  filteredReviews.map((review) => <ReviewCard key={review.id} review={review} />)
                 ) : (
                   <div className="sv-empty-state">
                     <div className="sv-empty-icon">
