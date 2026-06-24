@@ -50,8 +50,8 @@ def send_web_push_to_user(user_id, notification_payload):
     push_data = json.dumps({
         "title": title,
         "body": message,
-        "icon": f"{frontend_origin}/shareverse-logo-192.png",
-        "badge": f"{frontend_origin}/shareverse-favicon.png",
+        "icon": f"{frontend_origin}/shareverse-notification-icon.png",
+        "badge": f"{frontend_origin}/shareverse-notification-badge.png",
         "data": {
             "notification_id": notification_payload.get("id"),
             "category": notification_payload.get("category"),

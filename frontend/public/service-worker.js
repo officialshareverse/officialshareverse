@@ -1,4 +1,4 @@
-const CACHE_VERSION = "shareverse-pwa-1782099834000";
+const CACHE_VERSION = "shareverse-pwa-1782184000000";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-app-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -9,6 +9,8 @@ const APP_SHELL_URLS = [
   "/shareverse-favicon.png",
   "/shareverse-logo-192.png",
   "/shareverse-logo-512.png",
+  "/shareverse-notification-icon.png",
+  "/shareverse-notification-badge.png",
   "/shareverse-tab.svg",
 ];
 
@@ -135,8 +137,8 @@ self.addEventListener("push", (event) => {
     const origin = self.location.origin;
     const options = {
       body: data.body,
-      icon: data.icon || `${origin}/shareverse-logo-192.png`,
-      badge: data.badge || `${origin}/shareverse-favicon.png`,
+      icon: data.icon || `${origin}/shareverse-notification-icon.png`,
+      badge: data.badge || `${origin}/shareverse-notification-badge.png`,
       data: data.data || {},
     };
 
