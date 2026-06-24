@@ -131,6 +131,7 @@ export default function MyShared() {
   const [page, setPage] = useState(1);
   const [joinedPage, setJoinedPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [primaryTab, setPrimaryTab] = useState("host");
   const [filter, setFilter] = useState("all");
   const [details, setDetails] = useState({});
   const [loadingDetailId, setLoadingDetailId] = useState(null);
@@ -1087,12 +1088,19 @@ export default function MyShared() {
         />
       </div>
 
-      <div style={{ ...sectionHeader, ...(isMobile ? sectionHeaderMobile : {}) }}>
-        <div>
-          <p style={sectionEyebrow}>Created splits</p>
-          <h3 style={{ ...sectionTitle, ...(isMobile ? sectionTitleMobile : {}) }}>Splits you host</h3>
-        </div>
+      
+      <div style={{ ...filterRow, ...(isMobile ? filterRowMobile : {}), marginBottom: "24px" }}>
+        <FilterButton active={primaryTab === "host"} onClick={() => setPrimaryTab("host")} compact={isMobile}>Splits you host</FilterButton>
+        <FilterButton active={primaryTab === "joined"} onClick={() => setPrimaryTab("joined")} compact={isMobile}>Splits you joined</FilterButton>
       </div>
+
+      <div style={{ display: primaryTab === "host" ? "block" : "none" }}>
+        <div style={{ ...sectionHeader, ...(isMobile ? sectionHeaderMobile : {}) }}>
+          <div>
+            <p style={sectionEyebrow}>Created splits</p>
+            <h3 style={{ ...sectionTitle, ...(isMobile ? sectionTitleMobile : {}) }}>Manage your splits</h3>
+          </div>
+        </div>
 
       <div style={{ ...filterRow, ...(isMobile ? filterRowMobile : {}) }}>
         <FilterButton active={filter === "all"} onClick={() => setFilter("all")} compact={isMobile}>All</FilterButton>
@@ -1727,7 +1735,10 @@ export default function MyShared() {
         </div>
       )}
 
-      <div style={{ ...joinedSectionHeader, ...(isMobile ? sectionHeaderMobile : {}) }}>
+            </div>
+
+      <div style={{ display: primaryTab === "joined" ? "block" : "none" }}>
+        <div style={{ ...joinedSectionHeader, ...(isMobile ? sectionHeaderMobile : {}) }}>
         <div>
           <p style={sectionEyebrow}>Joined groups</p>
           <h3 style={{ ...sectionTitle, ...(isMobile ? sectionTitleMobile : {}) }}>Subscriptions you are part of</h3>
@@ -1975,6 +1986,7 @@ export default function MyShared() {
           )}
         </div>
       )}
+      </div>
       </div>
     </div>
     </>
