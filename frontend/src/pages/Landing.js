@@ -203,7 +203,7 @@ export default function Landing({ setIsAuth }) {
         </header>
 
         <section className={`${isMobile ? "pt-8 pb-10 sm:pt-0 sm:pb-0 relative overflow-hidden" : "sv-marketing-hero sv-landing-hero relative overflow-hidden"}`}>
-          <div className="grid gap-6 lg:items-center">
+          <div className="grid gap-6 lg:items-center px-5 sm:px-0">
             <div className="relative z-[1] flex flex-col items-center text-center sm:items-start sm:text-left">
               <span className="sv-live-badge sv-animate-glow">Popular apps, one shared wallet</span>
               <p className={isMobile ? "text-[10px] uppercase tracking-widest font-bold text-teal-600 mt-5" : "sv-eyebrow-on-dark mt-5"}>Split more. Pay less.</p>
@@ -217,7 +217,7 @@ export default function Landing({ setIsAuth }) {
                 understands the split before joining.
               </p>
 
-              <div className="mt-6 sm:mt-8 grid w-full gap-3 sm:w-auto sm:inline-flex sm:flex-wrap sm:gap-4 px-4 sm:px-0">
+              <div className="mt-6 sm:mt-8 grid w-full gap-3 sm:w-auto sm:inline-flex sm:flex-wrap sm:gap-4">
                 <Link to="/signup" className="sv-btn-primary justify-center py-3.5 sm:py-3 text-[15px] sm:text-sm w-full sm:w-auto shadow-[0_0_20px_rgba(16,185,129,0.3)]">
                   Start saving
                 </Link>
@@ -226,7 +226,7 @@ export default function Landing({ setIsAuth }) {
                 </Link>
               </div>
 
-              <div className={isMobile ? "mt-8 flex overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-4 -mx-4 px-4 gap-3 w-[100vw]" : "sv-counter-grid mt-8 sm:mt-6 w-full max-w-sm sm:max-w-none"}>
+              <div className={isMobile ? "mt-8 flex overflow-x-auto sv-hide-scrollbar snap-x snap-mandatory pb-4 -mx-5 px-5 gap-3" : "sv-counter-grid mt-8 sm:mt-6 w-full max-w-sm sm:max-w-none"}>
                 {heroStats.map((item) => (
                   <div key={item.label} className={isMobile ? "shrink-0 w-[240px] snap-center" : ""}>
                     <CountUpMetric
