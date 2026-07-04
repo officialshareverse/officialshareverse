@@ -3,10 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import BrandMark from "../components/BrandMark";
 import PublicFooter from "../components/PublicFooter";
-import GoogleAuthButton from "../components/GoogleAuthButton";
 import useIsMobile from "../hooks/useIsMobile";
-import { setAuthToken } from "../auth/session";
-import API from "../api/axios";
 import { LoadingSpinner } from "../components/UiIcons";
 
 const featureNotes = [
@@ -15,173 +12,6 @@ const featureNotes = [
   { label: "Software", icon: "APP", targetId: "social-proof" },
   { label: "Memberships", icon: "VIP", targetId: "cta" },
 ];
-
-function MobileWelcome({ setIsAuth }) {
-  const navigate = useNavigate();
-  const [step, setStep] = useState(1);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleEmailContinue = () => {
-    setError("");
-    if (email.trim()) {
-      setStep(2);
-    } else {
-      setError("Please enter your email address.");
-    }
-  };
-
-  const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      setError("Please enter both email and password.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError("");
-
-      const response = await API.post("login/", {
-        username: email.trim(),
-        password: password,
-      });
-
-      const accessToken = response.data?.access || "";
-      if (accessToken) {
-        setAuthToken(accessToken);
-        if (setIsAuth) setIsAuth(true);
-        
-        // save last login meta like Login.js does
-        try {
-          window.localStorage.setItem("sv-login-last-meta", JSON.stringify({
-            username: email.trim(),
-            time: new Date().toISOString(),
-          }));
-        } catch {}
-
-        navigate("/home", { replace: true });
-      } else {
-        setError("We could not sign you in. Please try again.");
-      }
-    } catch (err) {
-      console.error(err);
-      if (err.response?.status === 401) {
-        setError("Incorrect email or password.");
-      } else {
-        setError(err.response?.data?.error || "We could not sign you in right now. Please try again.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSuccess = (payload) => {
-    const accessToken = payload?.access || "";
-    if (accessToken) {
-      setAuthToken(accessToken);
-      if (setIsAuth) setIsAuth(true);
-      navigate("/home", { replace: true });
-    } else {
-      navigate('/login');
-    }
-  };
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 bg-slate-50 dark:bg-slate-950">
-      <BrandMark glow sizeClass="h-12 w-12 mb-6" />
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Welcome to ShareVerse</h1>
-      <p className="text-sm text-slate-500 mb-8 text-center">Your subscription management platform</p>
-
-      <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-[28px] p-6 shadow-xl border border-slate-200 dark:border-slate-800 transition-all duration-300">
-        
-        {step === 1 && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <GoogleAuthButton 
-               mode="continue" 
-               onSuccess={handleGoogleSuccess}
-               onError={(err) => { navigate('/login'); }}
-            />
-            
-            <div className="flex items-center my-6">
-              <div className="flex-1 border-t border-slate-200 dark:border-slate-800"></div>
-              <span className="px-4 text-[11px] font-bold tracking-wider text-slate-400 uppercase">OR</span>
-              <div className="flex-1 border-t border-slate-200 dark:border-slate-800"></div>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-slate-900 dark:text-slate-200 mb-2">Email Address</label>
-            <input 
-              type="email" 
-              placeholder="Enter your email address"
-              className={`w-full px-4 py-3.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-colors ${step === 2 ? 'opacity-60 bg-slate-50 dark:bg-slate-800' : ''}`}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={step === 2 || loading}
-            />
-          </div>
-
-          {step === 2 && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-              <label className="block text-sm font-semibold text-slate-900 dark:text-slate-200 mb-2">Password</label>
-              <input 
-                type="password" 
-                placeholder="Enter your password"
-                className="w-full px-4 py-3.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-colors"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-          )}
-
-          {error && (
-            <p className="text-xs text-red-500 font-medium animate-in fade-in">{error}</p>
-          )}
-
-          {step === 1 ? (
-            <button 
-              onClick={handleEmailContinue}
-              className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold text-sm py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2 mt-2"
-            >
-              Continue <span aria-hidden="true">&rarr;</span>
-            </button>
-          ) : (
-            <div className="flex gap-3 pt-2">
-              <button 
-                onClick={() => { setStep(1); setError(""); }}
-                disabled={loading}
-                className="px-4 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
-              >
-                Back
-              </button>
-              <button 
-                onClick={handleLogin}
-                disabled={loading}
-                className="flex-1 bg-teal-500 hover:bg-teal-600 text-white font-semibold text-sm py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
-              >
-                {loading ? <LoadingSpinner className="h-5 w-5 text-white" /> : "Sign In"}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-8 text-center animate-in fade-in">
-        <p className="text-[13px] text-slate-500">
-          New to ShareVerse?{" "}
-          <Link to={`/signup${email.trim() ? `?email=${encodeURIComponent(email)}` : ''}`} className="font-semibold text-teal-600 hover:text-teal-700 transition-colors">
-            Create an account
-          </Link>
-        </p>
-      </div>
-    </div>
-  );
-}
 
 const heroStats = [
   { value: 500, prefix: "Rs ", suffix: "/mo", label: "example saving", note: "when one plan is split with trusted members" },
@@ -346,10 +176,6 @@ export default function Landing({ setIsAuth }) {
     }
   };
 
-  if (isMobile) {
-    return <MobileWelcome setIsAuth={setIsAuth} />;
-  }
-
   return (
     <div className="sv-page">
       <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6 md:space-y-8">
@@ -377,41 +203,43 @@ export default function Landing({ setIsAuth }) {
           </div>
         </header>
 
-        <section className="sv-marketing-hero sv-landing-hero relative overflow-hidden">
+        <section className={`${isMobile ? "pt-8 pb-10 sm:pt-0 sm:pb-0 relative overflow-hidden" : "sv-marketing-hero sv-landing-hero relative overflow-hidden"}`}>
           <div className="grid gap-6 lg:items-center">
             <div className="relative z-[1] flex flex-col items-center text-center sm:items-start sm:text-left">
               <span className="sv-live-badge sv-animate-glow">Popular apps, one shared wallet</span>
-              <p className="sv-eyebrow-on-dark mt-5">Split more. Pay less.</p>
-              <h1 className="sv-display-on-dark mt-4 max-w-4xl mx-auto sm:mx-0">
+              <p className={isMobile ? "text-[10px] uppercase tracking-widest font-bold text-teal-600 mt-5" : "sv-eyebrow-on-dark mt-5"}>Split more. Pay less.</p>
+              <h1 className={isMobile ? "mt-4 text-3xl sm:text-4xl font-black text-slate-900 dark:text-white leading-tight max-w-4xl mx-auto" : "sv-display-on-dark mt-4 max-w-4xl mx-auto sm:mx-0"}>
                 Save Rs 500/month on Netflix, Spotify, and everyday apps
-                <span className="sv-gradient-text"> by splitting costs safely.</span>
+                <span className={isMobile ? "text-teal-500" : "sv-gradient-text"}> by splitting costs safely.</span>
               </h1>
-              <p className="sv-landing-hero-body mt-4 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-sm sm:leading-7 md:text-base md:leading-8 mx-auto sm:mx-0">
+              <p className={isMobile ? "mt-4 max-w-2xl text-[14px] leading-6 text-slate-600 dark:text-slate-400 mx-auto" : "sv-landing-hero-body mt-4 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-sm sm:leading-7 md:text-base md:leading-8 mx-auto sm:mx-0"}>
                 Browse live groups or list a plan you already pay for. ShareVerse keeps slots,
                 pricing, wallet payments, chat, and withdrawal requests in one place so everyone
                 understands the split before joining.
               </p>
 
-              <div className="mt-6 sm:mt-8 grid w-full gap-3 sm:w-auto sm:inline-flex sm:flex-wrap sm:gap-4">
+              <div className="mt-6 sm:mt-8 grid w-full gap-3 sm:w-auto sm:inline-flex sm:flex-wrap sm:gap-4 px-4 sm:px-0">
                 <Link to="/signup" className="sv-btn-primary justify-center py-3.5 sm:py-3 text-[15px] sm:text-sm w-full sm:w-auto shadow-[0_0_20px_rgba(16,185,129,0.3)]">
                   Start saving
                 </Link>
-                <Link to="/login" className="sv-btn-secondary justify-center bg-white/90 text-slate-950 sm:bg-white/90 py-3.5 sm:py-3 text-[15px] sm:text-sm w-full sm:w-auto shadow-sm">
+                <Link to="/login" className={isMobile ? "sv-btn-secondary justify-center py-3.5 sm:py-3 text-[15px] sm:text-sm w-full sm:w-auto" : "sv-btn-secondary justify-center bg-white/90 text-slate-950 sm:bg-white/90 py-3.5 sm:py-3 text-[15px] sm:text-sm w-full sm:w-auto shadow-sm"}>
                   Browse live groups
                 </Link>
               </div>
 
-              <div className="sv-counter-grid mt-8 sm:mt-6 w-full max-w-sm sm:max-w-none">
+              <div className={isMobile ? "mt-8 flex overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-4 -mx-4 px-4 gap-3 w-[100vw]" : "sv-counter-grid mt-8 sm:mt-6 w-full max-w-sm sm:max-w-none"}>
                 {heroStats.map((item) => (
-                  <CountUpMetric
-                    key={item.label}
-                    value={item.value}
-                    prefix={item.prefix}
-                    suffix={item.suffix}
-                    decimals={item.decimals}
-                    label={item.label}
-                    note={item.note}
-                  />
+                  <div key={item.label} className={isMobile ? "shrink-0 w-[240px] snap-center" : ""}>
+                    <CountUpMetric
+                      isMobile={isMobile}
+                      value={item.value}
+                      prefix={item.prefix}
+                      suffix={item.suffix}
+                      decimals={item.decimals}
+                      label={item.label}
+                      note={item.note}
+                    />
+                  </div>
                 ))}
               </div>
 
@@ -657,7 +485,7 @@ export default function Landing({ setIsAuth }) {
   );
 }
 
-function CountUpMetric({ value, prefix = "", suffix = "", decimals = 0, label, note }) {
+function CountUpMetric({ isMobile, value, prefix = "", suffix = "", decimals = 0, label, note }) {
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
@@ -692,14 +520,14 @@ function CountUpMetric({ value, prefix = "", suffix = "", decimals = 0, label, n
       : Math.round(displayValue).toLocaleString("en-IN");
 
   return (
-    <div className="sv-counter-card">
-      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-400 sm:text-[11px]">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-white sm:text-3xl">
+    <div className={isMobile ? "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[20px] p-5 shadow-sm text-left h-full" : "sv-counter-card"}>
+      <p className={isMobile ? "text-[10px] uppercase tracking-[0.16em] font-bold text-slate-500" : "text-[10px] uppercase tracking-[0.16em] text-slate-400 sm:text-[11px]"}>{label}</p>
+      <p className={isMobile ? "mt-2 text-3xl font-black text-slate-900 dark:text-white" : "mt-2 text-2xl font-bold text-white sm:text-3xl"}>
         {prefix}
         {formattedValue}
         {suffix}
       </p>
-      <p className="mt-2 text-[12px] leading-5 text-slate-300 sm:text-[13px] sm:leading-6">{note}</p>
+      <p className={isMobile ? "mt-2 text-[13px] leading-5 text-slate-600 dark:text-slate-400" : "mt-2 text-[12px] leading-5 text-slate-300 sm:text-[13px] sm:leading-6"}>{note}</p>
     </div>
   );
 }
