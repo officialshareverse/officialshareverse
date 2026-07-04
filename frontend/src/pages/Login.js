@@ -52,13 +52,6 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
-
-  useEffect(() => {
-    if (isMobile) {
-      const redirectValue = new URLSearchParams(location.search || "").get("redirect") || "";
-      navigate(redirectValue ? `/?redirect=${encodeURIComponent(redirectValue)}` : "/", { replace: true });
-    }
-  }, [isMobile, navigate, location.search]);
   const rememberedUsername = readStoredString(REMEMBER_KEY);
   const [form, setForm] = useState({
     username: rememberedUsername,
