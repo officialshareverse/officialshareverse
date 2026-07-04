@@ -177,7 +177,7 @@ export default function Landing({ setIsAuth }) {
 
   return (
     <div className="sv-page">
-      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6 md:space-y-8">
+      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6 md:space-y-8 w-full max-w-[100vw] overflow-x-hidden sm:overflow-x-visible">
         <header className="sv-brand-shell flex items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-3">
           <Link
             to="/"
@@ -202,9 +202,9 @@ export default function Landing({ setIsAuth }) {
           </div>
         </header>
 
-        <section className={`${isMobile ? "pt-8 pb-10 sm:pt-0 sm:pb-0 relative overflow-hidden" : "sv-marketing-hero sv-landing-hero relative overflow-hidden"}`}>
+        <section className={`${isMobile ? "pt-8 pb-10 sm:pt-0 sm:pb-0 relative w-full max-w-[100vw] overflow-hidden" : "sv-marketing-hero sv-landing-hero relative overflow-hidden"}`}>
           <div className="grid gap-6 lg:items-center px-5 sm:px-0">
-            <div className="relative z-[1] flex flex-col items-center text-center sm:items-start sm:text-left">
+            <div className="relative z-[1] flex flex-col items-center text-center sm:items-start sm:text-left w-full min-w-0">
               <span className="sv-live-badge sv-animate-glow">Popular apps, one shared wallet</span>
               <p className={isMobile ? "text-[10px] uppercase tracking-widest font-bold text-teal-600 mt-5" : "sv-eyebrow-on-dark mt-5"}>Split more. Pay less.</p>
               <h1 className={isMobile ? "mt-4 text-3xl sm:text-4xl font-black text-slate-900 dark:text-white leading-tight max-w-4xl mx-auto" : "sv-display-on-dark mt-4 max-w-4xl mx-auto sm:mx-0"}>
@@ -226,7 +226,7 @@ export default function Landing({ setIsAuth }) {
                 </Link>
               </div>
 
-              <div className={isMobile ? "mt-8 flex overflow-x-auto sv-hide-scrollbar snap-x snap-mandatory pb-4 -mx-5 px-5 gap-3" : "sv-counter-grid mt-8 sm:mt-6 w-full max-w-sm sm:max-w-none"}>
+              <div className={isMobile ? "mt-8 flex w-full overflow-x-auto sv-hide-scrollbar snap-x snap-mandatory pb-4 -mx-5 px-5 gap-3" : "sv-counter-grid mt-8 sm:mt-6 w-full max-w-sm sm:max-w-none"}>
                 {heroStats.map((item) => (
                   <div key={item.label} className={isMobile ? "shrink-0 w-[240px] snap-center" : ""}>
                     <CountUpMetric
@@ -277,7 +277,7 @@ export default function Landing({ setIsAuth }) {
 
           </div>
 
-          <div className="sv-landing-highlight-grid mt-8 sm:mt-6 flex overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:gap-3 md:grid-cols-3 sv-hide-scrollbar">
+          <div className="sv-landing-highlight-grid mt-8 sm:mt-6 flex w-full overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:gap-3 md:grid-cols-3 sv-hide-scrollbar">
             {heroHighlights.map((item, index) => (
               <button
                 key={item.label}
