@@ -12,7 +12,6 @@ import {
   createResetForm,
   extractApiError,
 } from "./loginUtils";
-import useIsMobile from "../hooks/useIsMobile";
 
 const REMEMBER_KEY = "sv-login-remembered-username";
 const REMEMBER_PREF_KEY = "sv-login-remember-pref";
@@ -51,7 +50,6 @@ function getOtpChannelLabel(channel) {
 export default function Login({ setIsAuth, themeMode, toggleTheme }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const isMobile = useIsMobile();
   const rememberedUsername = readStoredString(REMEMBER_KEY);
   const [form, setForm] = useState({
     username: rememberedUsername,
