@@ -164,8 +164,221 @@ const joinTickerItems = [
 
 export default function Landing({ setIsAuth }) {
   const isMobile = useIsMobile();
-  const [activeMode, setActiveMode] = useState(modes[0].id);
 
+  if (isMobile) {
+    return <MobileLanding />;
+  }
+
+  return <DesktopLanding />;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MOBILE LANDING — built mobile-first with zero negative margins or viewport
+   width hacks. Every section is a simple stacked block with safe padding.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+function MobileLanding() {
+  const [activeMode, setActiveMode] = useState(modes[0].id);
+  const activeModeContent = modes.find((m) => m.id === activeMode) || modes[0];
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-x-hidden">
+
+      {/* ── Sticky Header ── */}
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 px-5 py-3 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2.5">
+          <BrandMark glow sizeClass="h-8 w-8" />
+          <span className="text-[15px] font-bold text-slate-900 dark:text-white">ShareVerse</span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link to="/login" className="px-3.5 py-2 text-[13px] font-semibold text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            Login
+          </Link>
+          <Link to="/signup" className="px-3.5 py-2 text-[13px] font-semibold text-white bg-teal-500 rounded-xl shadow-sm hover:bg-teal-600 transition-colors">
+            Sign up
+          </Link>
+        </div>
+      </header>
+
+      {/* ── Hero ── */}
+      <section className="px-6 pt-10 pb-8 text-center">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-950 border border-teal-200 dark:border-teal-800 mb-5">
+          <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+          <span className="text-[11px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400">Split more · Pay less</span>
+        </div>
+
+        <h1 className="text-[28px] leading-[1.2] font-black text-slate-900 dark:text-white">
+          Save on Netflix, Spotify & everyday apps
+          <span className="text-teal-500"> by splitting costs.</span>
+        </h1>
+
+        <p className="mt-4 text-[14px] leading-relaxed text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+          Browse live groups or list a plan you already pay for. Slots, pricing, and payments — all in one place.
+        </p>
+
+        <div className="mt-7 grid gap-3">
+          <Link to="/signup" className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-teal-500 text-white text-[15px] font-semibold shadow-lg shadow-teal-500/20 hover:bg-teal-600 active:scale-[0.98] transition-all">
+            Start saving →
+          </Link>
+          <Link to="/login" className="flex items-center justify-center w-full py-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[15px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.98] transition-all">
+            Browse live groups
+          </Link>
+        </div>
+      </section>
+
+      {/* ── Stats ── */}
+      <section className="px-5 pb-8">
+        <div className="flex gap-3 overflow-x-auto pb-2 sv-hide-scrollbar snap-x snap-mandatory">
+          {heroStats.map((item) => (
+            <div key={item.label} className="shrink-0 w-[72%] snap-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+              <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">{item.label}</p>
+              <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
+                <CountUpMetric isMobile value={item.value} prefix={item.prefix} suffix={item.suffix} decimals={item.decimals} label={item.label} note={item.note} inline />
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Popular Plans Marquee ── */}
+      <section className="pb-8 overflow-hidden">
+        <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 text-center mb-3">Popular plans</p>
+        <div className="sv-plan-logo-strip w-full overflow-hidden">
+          <div className="sv-marquee-container flex items-center gap-2 w-[200%]">
+            {popularPlanLogos.map((item) => (
+              <span key={item.name} className={`sv-plan-logo ${item.className}`}>{item.name}</span>
+            ))}
+            {popularPlanLogos.map((item) => (
+              <span key={`${item.name}-dup`} className={`sv-plan-logo ${item.className}`}>{item.name}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── How It Works ── */}
+      <section className="px-5 pb-8">
+        <p className="text-[10px] uppercase tracking-widest font-bold text-teal-600 dark:text-teal-400 mb-2">How it works</p>
+        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-5">Three simple steps</h2>
+        <div className="space-y-3">
+          {howItWorks.map((item) => (
+            <div key={item.step} className="flex gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+              <span className="shrink-0 w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950 flex items-center justify-center text-sm font-black text-teal-600 dark:text-teal-400">{item.step}</span>
+              <div className="min-w-0">
+                <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">{item.title}</h3>
+                <p className="mt-1 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">{item.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Highlights ── */}
+      <section className="px-5 pb-8">
+        <div className="space-y-3">
+          {heroHighlights.map((item) => (
+            <div key={item.label} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+              <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">{item.label}</p>
+              <p className="text-[15px] font-bold text-slate-900 dark:text-white">{item.value}</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">{item.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Modes ── */}
+      <section className="px-5 pb-8">
+        <p className="text-[10px] uppercase tracking-widest font-bold text-teal-600 dark:text-teal-400 mb-2">Ways to save</p>
+        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-5">Share or buy together</h2>
+
+        <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl mb-5">
+          {modes.map((mode) => (
+            <button
+              key={mode.id}
+              type="button"
+              onClick={() => setActiveMode(mode.id)}
+              className={`flex-1 py-2.5 text-[13px] font-semibold rounded-xl text-center transition-all ${activeMode === mode.id ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}
+            >
+              {mode.tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+          <p className="text-[10px] uppercase tracking-widest font-bold text-teal-600 dark:text-teal-400 mb-1">{activeModeContent.eyebrow}</p>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">{activeModeContent.title}</h3>
+          <p className="mt-2 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">{activeModeContent.body}</p>
+
+          <div className="mt-4 space-y-2">
+            {activeModeContent.bullets.map((item) => (
+              <div key={item} className="flex items-start gap-2.5">
+                <span className="mt-1.5 w-1.5 h-1.5 shrink-0 rounded-full bg-teal-500" />
+                <span className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-400">{item}</span>
+              </div>
+            ))}
+          </div>
+
+          <Link to={activeModeContent.ctaTo} className="mt-5 flex items-center justify-center w-full py-3 rounded-xl bg-teal-500 text-white text-[14px] font-semibold shadow-sm hover:bg-teal-600 active:scale-[0.98] transition-all">
+            {activeModeContent.cta}
+          </Link>
+        </div>
+      </section>
+
+      {/* ── Trust ── */}
+      <section className="px-5 pb-8">
+        <p className="text-[10px] uppercase tracking-widest font-bold text-teal-600 dark:text-teal-400 mb-2">Why ShareVerse</p>
+        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-5">Built for transparency</h2>
+        <div className="space-y-3">
+          {trustPoints.map((point, index) => (
+            <div key={point.title} className="flex gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+              <span className="shrink-0 w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-black text-slate-500">0{index + 1}</span>
+              <div className="min-w-0">
+                <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">{point.title}</h3>
+                <p className="mt-1 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">{point.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Safety ── */}
+      <section className="px-5 pb-8">
+        <p className="text-[10px] uppercase tracking-widest font-bold text-teal-600 dark:text-teal-400 mb-2">Safety basics</p>
+        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-5">Your data stays safe</h2>
+        <div className="space-y-3">
+          {safetyChecklist.map((item) => (
+            <div key={item.title} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+              <p className="text-[14px] font-bold text-slate-900 dark:text-white">{item.title}</p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">{item.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Final CTA ── */}
+      <section className="mx-5 mb-8 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900 rounded-3xl p-6 text-center">
+        <h2 className="text-xl font-black text-white leading-tight">Ready to start saving?</h2>
+        <p className="mt-2 text-[13px] leading-relaxed text-slate-300">Join ShareVerse and split the cost of your favourite apps.</p>
+        <div className="mt-5 grid gap-2.5">
+          <Link to="/signup" className="flex items-center justify-center py-3 rounded-xl bg-teal-500 text-white text-[14px] font-semibold shadow-lg shadow-teal-500/30 hover:bg-teal-600 active:scale-[0.98] transition-all">
+            Create account
+          </Link>
+          <Link to="/login" className="flex items-center justify-center py-3 rounded-xl bg-white/10 border border-white/20 text-white text-[14px] font-semibold hover:bg-white/20 active:scale-[0.98] transition-all">
+            Login
+          </Link>
+        </div>
+      </section>
+
+      <PublicFooter />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DESKTOP LANDING — the original desktop layout, unchanged.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+function DesktopLanding() {
+  const [activeMode, setActiveMode] = useState(modes[0].id);
   const activeModeContent = modes.find((mode) => mode.id === activeMode) || modes[0];
 
   const jumpToSection = (targetId) => {
@@ -177,120 +390,85 @@ export default function Landing({ setIsAuth }) {
 
   return (
     <div className="sv-page">
-      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6 md:space-y-8 w-full max-w-[100vw] overflow-x-hidden sm:overflow-x-visible">
-        <header className="sv-brand-shell flex items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-3">
+      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6 md:space-y-8">
+        <header className="sv-brand-shell flex items-center justify-between gap-3 px-5 py-3">
           <Link
             to="/"
-            className="inline-flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 sm:flex-none sm:gap-3 sm:rounded-full sm:px-4 sm:py-2.5"
+            className="inline-flex items-center gap-3 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900"
           >
-            <BrandMark glow sizeClass="h-8 w-8 sm:h-10 sm:w-10" />
+            <BrandMark glow sizeClass="h-10 w-10" />
             <div className="min-w-0">
-              <span className="block truncate text-sm font-bold leading-none sm:text-xl">ShareVerse</span>
-              <span className="mt-0.5 hidden text-[9px] uppercase tracking-[0.14em] text-slate-500 sm:block sm:text-[10px] sm:tracking-[0.18em]">
+              <span className="block truncate text-xl font-bold leading-none">ShareVerse</span>
+              <span className="mt-0.5 block text-[10px] uppercase tracking-[0.18em] text-slate-500">
                 Split more. Pay less.
               </span>
             </div>
           </Link>
 
           <div className="flex items-center gap-2">
-            <Link to="/login" className="sv-btn-secondary px-3 py-2 text-[13px] sm:px-4 sm:py-2.5 sm:text-sm">
-              Login
-            </Link>
-            <Link to="/signup" className="sv-btn-primary px-3 py-2 text-[13px] sm:px-4 sm:py-2.5 sm:text-sm">
-              Sign up
-            </Link>
+            <Link to="/login" className="sv-btn-secondary px-4 py-2.5 text-sm">Login</Link>
+            <Link to="/signup" className="sv-btn-primary px-4 py-2.5 text-sm">Sign up</Link>
           </div>
         </header>
 
-        <section className={`${isMobile ? "pt-8 pb-10 sm:pt-0 sm:pb-0 relative w-full max-w-[100vw] overflow-hidden" : "sv-marketing-hero sv-landing-hero relative overflow-hidden"}`}>
-          <div className="grid gap-6 lg:items-center px-5 sm:px-0">
-            <div className="relative z-[1] flex flex-col items-center text-center sm:items-start sm:text-left w-full min-w-0">
+        <section className="sv-marketing-hero sv-landing-hero relative overflow-hidden">
+          <div className="grid gap-6 lg:items-center">
+            <div className="relative z-[1] flex flex-col items-start text-left">
               <span className="sv-live-badge sv-animate-glow">Popular apps, one shared wallet</span>
-              <p className={isMobile ? "text-[10px] uppercase tracking-widest font-bold text-teal-600 mt-5" : "sv-eyebrow-on-dark mt-5"}>Split more. Pay less.</p>
-              <h1 className={isMobile ? "mt-4 text-3xl sm:text-4xl font-black text-slate-900 dark:text-white leading-tight max-w-4xl mx-auto" : "sv-display-on-dark mt-4 max-w-4xl mx-auto sm:mx-0"}>
+              <p className="sv-eyebrow-on-dark mt-5">Split more. Pay less.</p>
+              <h1 className="sv-display-on-dark mt-4 max-w-4xl">
                 Save Rs 500/month on Netflix, Spotify, and everyday apps
-                <span className={isMobile ? "text-teal-500" : "sv-gradient-text"}> by splitting costs safely.</span>
+                <span className="sv-gradient-text"> by splitting costs safely.</span>
               </h1>
-              <p className={isMobile ? "mt-4 max-w-2xl text-[14px] leading-6 text-slate-600 dark:text-slate-400 mx-auto" : "sv-landing-hero-body mt-4 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-sm sm:leading-7 md:text-base md:leading-8 mx-auto sm:mx-0"}>
+              <p className="sv-landing-hero-body mt-4 max-w-2xl text-sm leading-7 text-slate-200 md:text-base md:leading-8">
                 Browse live groups or list a plan you already pay for. ShareVerse keeps slots,
                 pricing, wallet payments, chat, and withdrawal requests in one place so everyone
                 understands the split before joining.
               </p>
 
-              <div className="mt-6 sm:mt-8 grid w-full gap-3 sm:w-auto sm:inline-flex sm:flex-wrap sm:gap-4">
-                <Link to="/signup" className="sv-btn-primary justify-center py-3.5 sm:py-3 text-[15px] sm:text-sm w-full sm:w-auto shadow-[0_0_20px_rgba(16,185,129,0.3)]">
-                  Start saving
-                </Link>
-                <Link to="/login" className={isMobile ? "sv-btn-secondary justify-center py-3.5 sm:py-3 text-[15px] sm:text-sm w-full sm:w-auto" : "sv-btn-secondary justify-center bg-white/90 text-slate-950 sm:bg-white/90 py-3.5 sm:py-3 text-[15px] sm:text-sm w-full sm:w-auto shadow-sm"}>
-                  Browse live groups
-                </Link>
+              <div className="mt-8 inline-flex flex-wrap gap-4">
+                <Link to="/signup" className="sv-btn-primary py-3 text-sm shadow-[0_0_20px_rgba(16,185,129,0.3)]">Start saving</Link>
+                <Link to="/login" className="sv-btn-secondary bg-white/90 text-slate-950 py-3 text-sm shadow-sm">Browse live groups</Link>
               </div>
 
-              <div className={isMobile ? "mt-8 flex w-full overflow-x-auto sv-hide-scrollbar snap-x snap-mandatory pb-4 -mx-5 px-5 gap-3" : "sv-counter-grid mt-8 sm:mt-6 w-full max-w-sm sm:max-w-none"}>
+              <div className="sv-counter-grid mt-6 w-full max-w-none">
                 {heroStats.map((item) => (
-                  <div key={item.label} className={isMobile ? "shrink-0 w-[240px] snap-center" : ""}>
-                    <CountUpMetric
-                      isMobile={isMobile}
-                      value={item.value}
-                      prefix={item.prefix}
-                      suffix={item.suffix}
-                      decimals={item.decimals}
-                      label={item.label}
-                      note={item.note}
-                    />
-                  </div>
+                  <CountUpMetric key={item.label} value={item.value} prefix={item.prefix} suffix={item.suffix} decimals={item.decimals} label={item.label} note={item.note} />
                 ))}
               </div>
 
-              <div className="sv-landing-feature-notes mt-6 sm:mt-5 flex flex-wrap justify-center sm:justify-start gap-2">
+              <div className="sv-landing-feature-notes mt-5 flex flex-wrap gap-2">
                 {featureNotes.map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => jumpToSection(item.targetId)}
-                    className="sv-feature-note sv-glass-panel border-white/10"
-                  >
+                  <button key={item.label} type="button" onClick={() => jumpToSection(item.targetId)} className="sv-feature-note sv-glass-panel border-white/10">
                     <span aria-hidden="true">{item.icon}</span>
                     <span>{item.label}</span>
                   </button>
                 ))}
               </div>
 
-              <div className="sv-plan-logo-strip mt-8 sm:mt-5 w-full overflow-hidden" aria-label="Popular plans on ShareVerse">
-                <span className="sv-plan-logo-strip-label hidden sm:inline-block">Popular plans</span>
-                <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-3 sm:hidden text-center">Popular plans on ShareVerse</p>
-                <div className="sv-marquee-container flex sm:inline-flex items-center gap-2 sm:gap-3 w-[200%] sm:w-auto">
+              <div className="sv-plan-logo-strip mt-5 w-full overflow-hidden" aria-label="Popular plans on ShareVerse">
+                <span className="sv-plan-logo-strip-label">Popular plans</span>
+                <div className="sv-marquee-container inline-flex items-center gap-3">
                   {popularPlanLogos.map((item) => (
-                    <span key={item.name} className={`sv-plan-logo ${item.className}`}>
-                      {item.name}
-                    </span>
-                  ))}
-                  {/* Duplicate for infinite scroll on mobile */}
-                  {popularPlanLogos.map((item) => (
-                    <span key={`${item.name}-dup`} className={`sv-plan-logo sm:hidden ${item.className}`}>
-                      {item.name}
-                    </span>
+                    <span key={item.name} className={`sv-plan-logo ${item.className}`}>{item.name}</span>
                   ))}
                 </div>
               </div>
             </div>
-
           </div>
 
-          <div className="sv-landing-highlight-grid mt-8 sm:mt-6 flex w-full overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:gap-3 md:grid-cols-3 sv-hide-scrollbar">
+          <div className="sv-landing-highlight-grid mt-6 grid gap-3 md:grid-cols-3">
             {heroHighlights.map((item, index) => (
               <button
                 key={item.label}
                 type="button"
                 onClick={() => jumpToSection(item.targetId)}
-                className={`sv-highlight-card sv-hover-lift shrink-0 w-[85%] sm:w-auto snap-center mr-3 sm:mr-0 text-left ${index === 0 ? "sv-animate-rise" : index === 1 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
+                className={`sv-highlight-card sv-hover-lift text-left ${index === 0 ? "sv-animate-rise" : index === 1 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
               >
-                <span className="sv-highlight-card-icon" aria-hidden="true">
-                  {item.icon}
-                </span>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-[11px]">{item.label}</p>
-                <p className="mt-2 text-[15px] font-semibold leading-6 text-slate-950 sm:text-base">{item.value}</p>
-                <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">{item.body}</p>
+                <span className="sv-highlight-card-icon" aria-hidden="true">{item.icon}</span>
+                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
+                <p className="mt-2 text-base font-semibold leading-6 text-slate-950">{item.value}</p>
+                <p className="mt-2 text-sm leading-7 text-slate-600">{item.body}</p>
               </button>
             ))}
           </div>
@@ -300,22 +478,14 @@ export default function Landing({ setIsAuth }) {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
               <p className="sv-eyebrow">Ways to save</p>
-              <h2 className="sv-title mt-2 sm:mt-3">Share a plan you have or start a group purchase</h2>
-              <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
+              <h2 className="sv-title mt-3">Share a plan you have or start a group purchase</h2>
+              <p className="mt-2 text-sm leading-7 text-slate-600">
                 Use sharing when you already have the plan. Use buy together when the group should form before anyone commits to the full price.
               </p>
             </div>
-
-            <div className="sv-mode-toggle flex w-full sm:w-auto sm:inline-flex mt-4 sm:mt-0 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+            <div className="sv-mode-toggle inline-flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
               {modes.map((mode) => (
-                <button
-                  key={mode.id}
-                  type="button"
-                  onClick={() => setActiveMode(mode.id)}
-                  className={`sv-mode-toggle-button flex-1 sm:flex-none justify-center ${activeMode === mode.id ? "is-active" : ""}`}
-                >
-                  {mode.tab}
-                </button>
+                <button key={mode.id} type="button" onClick={() => setActiveMode(mode.id)} className={`sv-mode-toggle-button justify-center ${activeMode === mode.id ? "is-active" : ""}`}>{mode.tab}</button>
               ))}
             </div>
           </div>
@@ -324,30 +494,22 @@ export default function Landing({ setIsAuth }) {
             <article className="sv-mode-preview-card sv-animate-rise">
               <p className="sv-eyebrow">{activeModeContent.eyebrow}</p>
               <h3 className="sv-title mt-2">{activeModeContent.title}</h3>
-              <p className="mt-3 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">{activeModeContent.body}</p>
-
+              <p className="mt-3 text-sm leading-7 text-slate-600">{activeModeContent.body}</p>
               <div className="mt-4 space-y-2.5">
                 {activeModeContent.bullets.map((item) => (
-                  <div key={item} className="sv-mode-bullet">
-                    <span className="sv-mode-bullet-dot" aria-hidden="true" />
-                    <span>{item}</span>
-                  </div>
+                  <div key={item} className="sv-mode-bullet"><span className="sv-mode-bullet-dot" aria-hidden="true" /><span>{item}</span></div>
                 ))}
               </div>
-
               <div className="sv-mode-metrics mt-5 grid gap-2 sm:grid-cols-3">
                 {activeModeContent.metrics.map((item) => (
                   <div key={item.label} className="sv-mode-metric">
                     <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
-                    <p className="mt-2 text-[13px] font-semibold leading-6 text-slate-950 sm:text-sm">{item.value}</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-950">{item.value}</p>
                   </div>
                 ))}
               </div>
-
-              <div className="mt-6 sm:mt-5">
-                <Link to={activeModeContent.ctaTo} className="sv-btn-primary justify-center w-full sm:w-auto text-[15px] sm:text-sm py-3.5 sm:py-3 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-                  {activeModeContent.cta}
-                </Link>
+              <div className="mt-5">
+                <Link to={activeModeContent.ctaTo} className="sv-btn-primary justify-center w-auto text-sm py-3 shadow-[0_0_20px_rgba(16,185,129,0.2)]">{activeModeContent.cta}</Link>
               </div>
             </article>
 
@@ -361,18 +523,15 @@ export default function Landing({ setIsAuth }) {
                   </div>
                   <span className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Flow preview</span>
                 </div>
-
                 <div className="mt-4 space-y-3">
                   {activeModeContent.mockSteps.map((item, index) => (
                     <div key={item} className="sv-mode-step">
                       <span className="sv-mode-step-index">0{index + 1}</span>
                       <div>
                         <p className="text-sm font-semibold text-slate-950">{item}</p>
-                        <p className="mt-1 text-[12px] leading-5 text-slate-600 sm:text-[13px] sm:leading-6">
-                          {index === 0
-                            ? "Start with a clear intention so people understand what kind of group they are joining."
-                            : index === 1
-                              ? "Keep the financial and timing expectations easy to scan before anyone commits."
+                        <p className="mt-1 text-[13px] leading-6 text-slate-600">
+                          {index === 0 ? "Start with a clear intention so people understand what kind of group they are joining."
+                            : index === 1 ? "Keep the financial and timing expectations easy to scan before anyone commits."
                               : "Move forward with everyone looking at the same status instead of multiple disconnected updates."}
                         </p>
                       </div>
@@ -386,13 +545,10 @@ export default function Landing({ setIsAuth }) {
 
         <section id="how-it-works" className="grid gap-4 md:grid-cols-3 scroll-mt-24">
           {howItWorks.map((item, index) => (
-            <article
-              key={item.step}
-              className={`sv-card-solid sv-how-card ${index === 0 ? "sv-animate-rise" : index === 1 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
-            >
+            <article key={item.step} className={`sv-card-solid sv-how-card ${index === 0 ? "sv-animate-rise" : index === 1 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}>
               <span className="sv-how-step">{item.step}</span>
               <h3 className="sv-title mt-4">{item.title}</h3>
-              <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">{item.body}</p>
+              <p className="mt-2 text-sm leading-7 text-slate-600">{item.body}</p>
             </article>
           ))}
         </section>
@@ -400,41 +556,33 @@ export default function Landing({ setIsAuth }) {
         <section id="social-proof" className="grid gap-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] scroll-mt-24">
           <section className="sv-card-solid">
             <p className="sv-eyebrow">Why ShareVerse</p>
-            <h2 className="sv-title mt-2 sm:mt-3">Know the price, slots, and payout status before you join</h2>
-            <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
-              ShareVerse is for people who want to save on digital plans without losing track of who paid, what is open, and what happens next.
-            </p>
-
+            <h2 className="sv-title mt-3">Know the price, slots, and payout status before you join</h2>
+            <p className="mt-2 text-sm leading-7 text-slate-600">ShareVerse is for people who want to save on digital plans without losing track of who paid, what is open, and what happens next.</p>
             <div className="sv-trust-timeline mt-5">
               {trustPoints.map((point, index) => (
                 <div key={point.title} className="sv-trust-item">
                   <span className="sv-trust-index">0{index + 1}</span>
                   <div>
-                    <h3 className="text-base font-semibold text-slate-950 sm:text-lg">{point.title}</h3>
-                    <p className="mt-1.5 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">{point.body}</p>
+                    <h3 className="text-lg font-semibold text-slate-950">{point.title}</h3>
+                    <p className="mt-1.5 text-sm leading-7 text-slate-600">{point.body}</p>
                   </div>
                 </div>
               ))}
             </div>
           </section>
-
           <section className="sv-card-solid">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex flex-row items-end justify-between">
               <div>
                 <p className="sv-eyebrow">Safety basics</p>
                 <h2 className="sv-title mt-2">Trust signals that match the current product</h2>
               </div>
               <span className="sv-chip">No inflated user claims</span>
             </div>
-
-            <div className="sv-testimonial-list mt-5 grid gap-3 sm:gap-4">
+            <div className="sv-testimonial-list mt-5 grid gap-4">
               {safetyChecklist.map((item, index) => (
-                <article
-                  key={item.title}
-                  className={`sv-testimonial-card ${index === 0 ? "sv-animate-rise" : index === 1 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
-                >
-                  <p className="text-sm font-semibold text-slate-950 sm:text-base">{item.title}</p>
-                  <p className="mt-2 text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">{item.body}</p>
+                <article key={item.title} className={`sv-testimonial-card ${index === 0 ? "sv-animate-rise" : index === 1 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}>
+                  <p className="text-base font-semibold text-slate-950">{item.title}</p>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">{item.body}</p>
                 </article>
               ))}
             </div>
@@ -445,27 +593,15 @@ export default function Landing({ setIsAuth }) {
           <div className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-center">
             <div>
               <p className="sv-eyebrow-on-dark">Ready to start</p>
-              <h2 className="sv-display-on-dark mt-3 max-w-3xl">
-                Start saving on the subscriptions and tools you already use.
-              </h2>
-              <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-200 sm:text-sm sm:leading-7">
-                Create a group, let members join with clear pricing, and use wallet records so every payment and withdrawal has a trace.
-              </p>
+              <h2 className="sv-display-on-dark mt-3 max-w-3xl">Start saving on the subscriptions and tools you already use.</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-200">Create a group, let members join with clear pricing, and use wallet records so every payment and withdrawal has a trace.</p>
             </div>
-
-            <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
-              <Link to="/signup" className="sv-btn-primary justify-center text-[13px] sm:text-sm">
-                Create account
-              </Link>
-              <Link to="/login" className="sv-btn-secondary justify-center bg-white/90 text-[13px] text-slate-950 sm:text-sm">
-                Login
-              </Link>
-              <Link to="/support" className="sv-btn-secondary justify-center bg-white/10 text-[13px] text-white sm:text-sm">
-                Talk to support
-              </Link>
+            <div className="grid sm:grid-cols-3 gap-3">
+              <Link to="/signup" className="sv-btn-primary justify-center text-sm">Create account</Link>
+              <Link to="/login" className="sv-btn-secondary justify-center bg-white/90 text-slate-950 text-sm">Login</Link>
+              <Link to="/support" className="sv-btn-secondary justify-center bg-white/10 text-white text-sm">Talk to support</Link>
             </div>
           </div>
-
           <div className="sv-join-ticker mt-6" aria-hidden="true">
             <div className="sv-join-track">
               {[...joinTickerItems, ...joinTickerItems].map((item, index) => (
@@ -484,7 +620,7 @@ export default function Landing({ setIsAuth }) {
   );
 }
 
-function CountUpMetric({ isMobile, value, prefix = "", suffix = "", decimals = 0, label, note }) {
+function CountUpMetric({ isMobile, inline, value, prefix = "", suffix = "", decimals = 0, label, note }) {
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
@@ -518,15 +654,28 @@ function CountUpMetric({ isMobile, value, prefix = "", suffix = "", decimals = 0
       ? displayValue.toFixed(decimals)
       : Math.round(displayValue).toLocaleString("en-IN");
 
+  /* When inline=true, MobileLanding provides its own card wrapper, so we just
+     render the value + note fragments without a container div. */
+  if (inline) {
+    return (
+      <>
+        <span className="text-3xl font-black text-slate-900 dark:text-white">
+          {prefix}{formattedValue}{suffix}
+        </span>
+        <p className="mt-2 text-[13px] leading-5 text-slate-500 dark:text-slate-400">{note}</p>
+      </>
+    );
+  }
+
   return (
-    <div className={isMobile ? "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[20px] p-5 shadow-sm text-left h-full" : "sv-counter-card"}>
-      <p className={isMobile ? "text-[10px] uppercase tracking-[0.16em] font-bold text-slate-500" : "text-[10px] uppercase tracking-[0.16em] text-slate-400 sm:text-[11px]"}>{label}</p>
-      <p className={isMobile ? "mt-2 text-3xl font-black text-slate-900 dark:text-white" : "mt-2 text-2xl font-bold text-white sm:text-3xl"}>
+    <div className="sv-counter-card">
+      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-400 sm:text-[11px]">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-white sm:text-3xl">
         {prefix}
         {formattedValue}
         {suffix}
       </p>
-      <p className={isMobile ? "mt-2 text-[13px] leading-5 text-slate-600 dark:text-slate-400" : "mt-2 text-[12px] leading-5 text-slate-300 sm:text-[13px] sm:leading-6"}>{note}</p>
+      <p className="mt-2 text-[12px] leading-5 text-slate-300 sm:text-[13px] sm:leading-6">{note}</p>
     </div>
   );
 }
