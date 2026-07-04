@@ -191,10 +191,10 @@ function MobileLanding() {
           <span className="text-[15px] font-bold text-slate-900 dark:text-white">ShareVerse</span>
         </Link>
         <div className="flex items-center gap-2">
-          <Link to="/login" className="px-3.5 py-2 text-[13px] font-semibold text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <Link to="/login" className="inline-flex items-center justify-center px-3.5 py-2 text-[13px] font-semibold text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             Login
           </Link>
-          <Link to="/signup" className="px-3.5 py-2 text-[13px] font-semibold text-white bg-teal-500 rounded-xl shadow-sm hover:bg-teal-600 transition-colors">
+          <Link to="/signup" className="inline-flex items-center justify-center px-3.5 py-2 text-[13px] font-semibold text-white bg-teal-500 rounded-xl shadow-sm hover:bg-teal-600 transition-colors">
             Sign up
           </Link>
         </div>
