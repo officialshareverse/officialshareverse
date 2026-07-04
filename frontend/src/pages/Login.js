@@ -13,6 +13,9 @@ import {
   extractApiError,
 } from "./loginUtils";
 
+import MobileLogin from "./MobileLogin";
+import useIsMobile from "../hooks/useIsMobile";
+
 const REMEMBER_KEY = "sv-login-remembered-username";
 const REMEMBER_PREF_KEY = "sv-login-remember-pref";
 const LAST_LOGIN_KEY = "sv-login-last-meta";
@@ -50,6 +53,7 @@ function getOtpChannelLabel(channel) {
 export default function Login({ setIsAuth, themeMode, toggleTheme }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const rememberedUsername = readStoredString(REMEMBER_KEY);
   const [form, setForm] = useState({
     username: rememberedUsername,
@@ -290,6 +294,10 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
     setError("");
     completeSignIn(payload, payload?.user?.username || "");
   };
+
+  if (isMobile) {
+    return <MobileLogin setIsAuth={setIsAuth} />;
+  }
 
   return (
     <AuthShell
