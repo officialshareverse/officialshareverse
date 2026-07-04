@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import BrandMark from "../components/BrandMark";
 import PublicFooter from "../components/PublicFooter";
 import useIsMobile from "../hooks/useIsMobile";
-import { LoadingSpinner } from "../components/UiIcons";
 
 const featureNotes = [
   { label: "Subscriptions", icon: "TV", targetId: "modes" },
