@@ -1,10 +1,16 @@
 const DEFAULT_API_BASE_PATH = "/api/";
+const SHAREVERSE_API_BASE_URL = "https://api.shareverse.in/api/";
 export const DEFAULT_LOCAL_API_BASE_URL = "http://127.0.0.1:8000/api/";
 const LOCAL_BROWSER_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
 function isLocalBrowserHost(hostname) {
   const normalized = String(hostname || "").trim().toLowerCase();
   return LOCAL_BROWSER_HOSTS.has(normalized) || normalized.endsWith(".local");
+}
+
+function isShareVerseFrontendHost(hostname) {
+  const normalized = String(hostname || "").trim().toLowerCase();
+  return normalized === "shareverse.in" || normalized === "www.shareverse.in";
 }
 
 export function normalizeApiBaseUrl(value) {
@@ -19,6 +25,10 @@ export function resolveApiBaseUrl({ hostname, envValue } = {}) {
   const explicitApiBaseUrl = String(envValue || "").trim();
   if (explicitApiBaseUrl) {
     return normalizeApiBaseUrl(explicitApiBaseUrl);
+  }
+
+  if (isShareVerseFrontendHost(hostname)) {
+    return SHAREVERSE_API_BASE_URL;
   }
 
   if (hostname && !isLocalBrowserHost(hostname)) {

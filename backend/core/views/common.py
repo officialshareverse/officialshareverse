@@ -1,4 +1,4 @@
-﻿import secrets
+import secrets
 import os
 import json
 import hashlib
@@ -12,6 +12,7 @@ from django.db import DatabaseError, IntegrityError, connections, transaction
 from django.db.models import Avg, Count, ExpressionWrapper, F, IntegerField, Max, OuterRef, Prefetch, Q, Subquery, Sum, Value
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import AuthenticationFailed
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import ListAPIView
@@ -19,6 +20,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 from ..models import (
     AccountDeletionRequest,
@@ -126,6 +129,14 @@ from ..serializers import (
 from .chat_helpers import *
 from .notification_helpers import *
 from .webhook_helpers import *
+
+
+class OptionalJWTAuthentication(JWTAuthentication):
+    def authenticate(self, request):
+        try:
+            return super().authenticate(request)
+        except (AuthenticationFailed, InvalidToken, TokenError):
+            return None
 
 
 class ShareVersePageNumberPagination(PageNumberPagination):

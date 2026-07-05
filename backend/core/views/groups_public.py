@@ -268,6 +268,7 @@ class AcceptGroupInviteView(APIView):
 
 
 class GroupInviteInfoView(APIView):
+    authentication_classes = [OptionalJWTAuthentication]
     permission_classes = [AllowAny]
 
     def get(self, request):
@@ -362,6 +363,7 @@ class MyReferralCodeView(APIView):
 
 
 class ValidateReferralCodeView(APIView):
+    authentication_classes = [OptionalJWTAuthentication]
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -383,6 +385,7 @@ class ValidateReferralCodeView(APIView):
 
 
 class GroupListView(ListAPIView):
+    authentication_classes = [OptionalJWTAuthentication]
     serializer_class = GroupListSerializer
     permission_classes = [AllowAny]
     pagination_class = ShareVersePageNumberPagination

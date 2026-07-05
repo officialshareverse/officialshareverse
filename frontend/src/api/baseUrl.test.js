@@ -28,10 +28,26 @@ describe("baseUrl helpers", () => {
     ).toBe("https://api.shareverse.in/api/");
   });
 
-  test("resolveApiBaseUrl falls back to same-origin api path when no env exists on production hosts", () => {
+  test("resolveApiBaseUrl uses the API subdomain for ShareVerse frontend hosts", () => {
     expect(
       resolveApiBaseUrl({
         hostname: "shareverse.in",
+        envValue: "",
+      })
+    ).toBe("https://api.shareverse.in/api/");
+
+    expect(
+      resolveApiBaseUrl({
+        hostname: "www.shareverse.in",
+        envValue: "",
+      })
+    ).toBe("https://api.shareverse.in/api/");
+  });
+
+  test("resolveApiBaseUrl falls back to same-origin api path for unknown production hosts", () => {
+    expect(
+      resolveApiBaseUrl({
+        hostname: "app.example.com",
         envValue: "",
       })
     ).toBe("/api/");

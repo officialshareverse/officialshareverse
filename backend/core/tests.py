@@ -1607,6 +1607,24 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(len(response.data["results"]), 2)
         self.assertIsNotNone(response.data["next"])
 
+    def test_public_marketplace_views_ignore_invalid_authorization_header(self):
+        group = self.create_group(
+            mode="sharing",
+            total_slots=3,
+            status="forming",
+            end_date=date.today() + timedelta(days=30),
+        )
+        self.client.credentials(HTTP_AUTHORIZATION="Bearer stale-token")
+
+        groups_response = self.client.get("/api/groups/")
+        subscriptions_response = self.client.get("/api/subscriptions/")
+
+        self.assertEqual(groups_response.status_code, status.HTTP_200_OK)
+        self.assertTrue(
+            any(item["id"] == group.id for item in self.list_results(groups_response))
+        )
+        self.assertEqual(subscriptions_response.status_code, status.HTTP_200_OK)
+
     def test_read_only_group_views_do_not_process_expired_refunds_inline(self):
         owned_group = self.create_group(mode="sharing", total_slots=3, status="active")
         joined_group = self.create_group(mode="group_buy", total_slots=2, status="proof_submitted")

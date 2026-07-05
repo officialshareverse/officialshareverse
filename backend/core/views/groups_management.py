@@ -1,6 +1,7 @@
-﻿from .common import *
+from .common import *
 
 class SubscriptionListView(APIView):
+    authentication_classes = [OptionalJWTAuthentication]
     permission_classes = [AllowAny]
 
     def get(self, request):
