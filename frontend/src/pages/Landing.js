@@ -220,7 +220,7 @@ function MobileLanding() {
           <Link to="/signup" className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-teal-500 text-white text-[15px] font-semibold shadow-lg shadow-teal-500/20 hover:bg-teal-600 active:scale-[0.98] transition-all">
             Start saving →
           </Link>
-          <Link to="/login" className="flex items-center justify-center w-full py-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[15px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.98] transition-all">
+          <Link to="/groups" className="flex items-center justify-center w-full py-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[15px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.98] transition-all">
             Browse live groups
           </Link>
         </div>
@@ -428,7 +428,7 @@ function DesktopLanding() {
 
               <div className="mt-8 inline-flex flex-wrap gap-4">
                 <Link to="/signup" className="sv-btn-primary py-3 text-sm shadow-[0_0_20px_rgba(16,185,129,0.3)]">Start saving</Link>
-                <Link to="/login" className="sv-btn-secondary bg-white/90 text-slate-950 py-3 text-sm shadow-sm">Browse live groups</Link>
+                <Link to="/groups" className="sv-btn-secondary bg-white/90 text-slate-950 py-3 text-sm shadow-sm">Browse live groups</Link>
               </div>
 
               <div className="sv-counter-grid mt-6 w-full max-w-none">
