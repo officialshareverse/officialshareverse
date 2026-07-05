@@ -93,6 +93,26 @@ function isPublicReadRetryRequest(originalRequest) {
   return PUBLIC_READ_AUTH_RETRY_PATHS.has(getRequestPath(originalRequest?.url));
 }
 
+function stripAuthorizationHeader(originalRequest) {
+  const headers = originalRequest?.headers;
+  if (!headers) {
+    return;
+  }
+
+  if (typeof headers.delete === "function") {
+    headers.delete("Authorization");
+    headers.delete("authorization");
+  }
+
+  delete headers.Authorization;
+  delete headers.authorization;
+
+  if (headers.common) {
+    delete headers.common.Authorization;
+    delete headers.common.authorization;
+  }
+}
+
 function redirectToLoginAfterExpiredSession() {
   if (isRedirectingForUnauthorized || typeof window === "undefined") {
     return;
@@ -117,10 +137,13 @@ API.interceptors.response.use(
       if (isPublicReadEndpoint && !originalRequest._publicRetry) {
         originalRequest._publicRetry = true;
         clearAuthSession();
-        if (originalRequest.headers) {
-          delete originalRequest.headers.Authorization;
-        }
+        stripAuthorizationHeader(originalRequest);
         return API(originalRequest);
+      }
+
+      if (isPublicReadEndpoint) {
+        clearAuthSession();
+        return Promise.reject(error);
       }
 
       if (!isAuthEndpoint && !originalRequest._retry) {

@@ -104,12 +104,21 @@ describe("API auth refresh interceptor", () => {
     loadApiModule();
     window.sessionStorage.setItem("sv-access-token", "stale-token");
 
+    const headers = {
+      Authorization: "Bearer stale-token",
+      authorization: "Bearer stale-token",
+      common: { Authorization: "Bearer stale-token" },
+      delete: jest.fn(function deleteHeader(name) {
+        delete this[name];
+        delete this[String(name).toLowerCase()];
+      }),
+    };
     const staleGroupsFailure = {
       response: { status: 401 },
       config: {
         url: "groups/",
         method: "get",
-        headers: { Authorization: "Bearer stale-token" },
+        headers,
       },
     };
 
@@ -118,8 +127,25 @@ describe("API auth refresh interceptor", () => {
     expect(mockAxiosPost).not.toHaveBeenCalled();
     expect(window.sessionStorage.getItem("sv-access-token")).toBeNull();
     expect(mockApiInstance).toHaveBeenCalledTimes(1);
+    expect(headers.delete).toHaveBeenCalledWith("Authorization");
+    expect(headers.delete).toHaveBeenCalledWith("authorization");
     expect(mockApiInstance.mock.calls[0][0]._publicRetry).toBe(true);
     expect(mockApiInstance.mock.calls[0][0].headers.Authorization).toBeUndefined();
+    expect(mockApiInstance.mock.calls[0][0].headers.authorization).toBeUndefined();
+    expect(mockApiInstance.mock.calls[0][0].headers.common.Authorization).toBeUndefined();
+  });
+
+  test("does not redirect after a failed public group retry", async () => {
+    loadApiModule();
+    const retriedGroupsFailure = {
+      response: { status: 401 },
+      config: { url: "groups/", method: "get", headers: {}, _publicRetry: true },
+    };
+
+    await expect(mockResponseErrorInterceptor(retriedGroupsFailure)).rejects.toBe(retriedGroupsFailure);
+
+    expect(mockAxiosPost).not.toHaveBeenCalled();
+    expect(mockApiInstance).not.toHaveBeenCalled();
   });
 
   test("does not refresh auth endpoint failures", async () => {
