@@ -33,6 +33,11 @@ const AUTH_REDIRECT_EXEMPT_PATHS = [
   "forgot-password/confirm-otp/",
 ];
 
+const PUBLIC_READ_AUTH_RETRY_PATHS = new Set([
+  "groups/",
+  "subscriptions/",
+]);
+
 let isRedirectingForUnauthorized = false;
 let refreshSessionPromise = null;
 
@@ -62,8 +67,30 @@ export function refreshAccessToken() {
   return refreshSessionPromise;
 }
 
+function getRequestPath(requestUrl) {
+  let normalizedPath = String(requestUrl || "").split("?")[0].trim();
+  normalizedPath = normalizedPath.replace(/^https?:\/\/[^/]+/i, "");
+  normalizedPath = normalizedPath.replace(/^\/+/, "");
+
+  if (normalizedPath.startsWith("api/")) {
+    return normalizedPath.slice(4);
+  }
+
+  return normalizedPath;
+}
+
 function isAuthRedirectExemptRequest(requestUrl) {
-  return AUTH_REDIRECT_EXEMPT_PATHS.some((path) => requestUrl.includes(path));
+  const requestPath = getRequestPath(requestUrl);
+  return AUTH_REDIRECT_EXEMPT_PATHS.some((path) => requestPath.includes(path));
+}
+
+function isPublicReadRetryRequest(originalRequest) {
+  const method = String(originalRequest?.method || "get").toLowerCase();
+  if (method !== "get") {
+    return false;
+  }
+
+  return PUBLIC_READ_AUTH_RETRY_PATHS.has(getRequestPath(originalRequest?.url));
 }
 
 function redirectToLoginAfterExpiredSession() {
@@ -85,6 +112,16 @@ API.interceptors.response.use(
 
     if (status === 401) {
       const isAuthEndpoint = isAuthRedirectExemptRequest(requestUrl);
+      const isPublicReadEndpoint = isPublicReadRetryRequest(originalRequest);
+
+      if (isPublicReadEndpoint && !originalRequest._publicRetry) {
+        originalRequest._publicRetry = true;
+        clearAuthSession();
+        if (originalRequest.headers) {
+          delete originalRequest.headers.Authorization;
+        }
+        return API(originalRequest);
+      }
 
       if (!isAuthEndpoint && !originalRequest._retry) {
         originalRequest._retry = true;

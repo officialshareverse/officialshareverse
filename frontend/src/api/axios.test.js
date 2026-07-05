@@ -77,7 +77,8 @@ describe("API auth refresh interceptor", () => {
 
     expect(mockAxiosPost).toHaveBeenCalledTimes(1);
     expect(mockAxiosPost).toHaveBeenCalledWith("/api/auth/refresh/", {}, { withCredentials: true });
-    expect(window.sessionStorage.getItem("sv-access-token")).toBe("fresh-token");
+    expect(window.sessionStorage.getItem("sv-access-token")).toBeNull();
+    expect(mockRequestInterceptor({ headers: {} }).headers.Authorization).toBe("Bearer fresh-token");
     expect(mockApiInstance).toHaveBeenCalledTimes(2);
     expect(mockApiInstance.mock.calls[0][0].headers.Authorization).toBe("Bearer fresh-token");
     expect(mockApiInstance.mock.calls[1][0].headers.Authorization).toBe("Bearer fresh-token");
@@ -95,7 +96,30 @@ describe("API auth refresh interceptor", () => {
     expect(firstToken).toBe("socket-token");
     expect(secondToken).toBe("socket-token");
     expect(mockAxiosPost).toHaveBeenCalledTimes(1);
-    expect(window.sessionStorage.getItem("sv-access-token")).toBe("socket-token");
+    expect(window.sessionStorage.getItem("sv-access-token")).toBeNull();
+    expect(mockRequestInterceptor({ headers: {} }).headers.Authorization).toBe("Bearer socket-token");
+  });
+
+  test("retries public group listing without auth instead of refreshing or redirecting", async () => {
+    loadApiModule();
+    window.sessionStorage.setItem("sv-access-token", "stale-token");
+
+    const staleGroupsFailure = {
+      response: { status: 401 },
+      config: {
+        url: "groups/",
+        method: "get",
+        headers: { Authorization: "Bearer stale-token" },
+      },
+    };
+
+    await mockResponseErrorInterceptor(staleGroupsFailure);
+
+    expect(mockAxiosPost).not.toHaveBeenCalled();
+    expect(window.sessionStorage.getItem("sv-access-token")).toBeNull();
+    expect(mockApiInstance).toHaveBeenCalledTimes(1);
+    expect(mockApiInstance.mock.calls[0][0]._publicRetry).toBe(true);
+    expect(mockApiInstance.mock.calls[0][0].headers.Authorization).toBeUndefined();
   });
 
   test("does not refresh auth endpoint failures", async () => {

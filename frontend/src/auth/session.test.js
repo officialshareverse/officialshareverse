@@ -6,6 +6,16 @@ import {
   setAuthToken,
 } from "./session";
 
+function makeJwt(payload) {
+  const encodedPayload = window
+    .btoa(JSON.stringify(payload))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+
+  return `header.${encodedPayload}.signature`;
+}
+
 describe("auth session helpers", () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -47,5 +57,29 @@ describe("auth session helpers", () => {
     expect(window.sessionStorage.getItem(AUTH_NOTICE_KEY)).toBe("Please sign in again.");
     expect(consumeAuthNotice()).toBe("Please sign in again.");
     expect(window.sessionStorage.getItem(AUTH_NOTICE_KEY)).toBeNull();
+  });
+
+  test("drops expired JWTs from legacy session storage", () => {
+    const expiredToken = makeJwt({ exp: Math.floor(Date.now() / 1000) - 60 });
+    window.sessionStorage.setItem("sv-access-token", expiredToken);
+
+    expect(getAuthToken()).toBeNull();
+    expect(window.sessionStorage.getItem("sv-access-token")).toBeNull();
+  });
+
+  test("drops expired JWTs from memory", () => {
+    const expiredToken = makeJwt({ exp: Math.floor(Date.now() / 1000) - 60 });
+
+    setAuthToken(expiredToken);
+
+    expect(getAuthToken()).toBeNull();
+  });
+
+  test("keeps unexpired JWTs in memory", () => {
+    const freshToken = makeJwt({ exp: Math.floor(Date.now() / 1000) + 60 });
+
+    setAuthToken(freshToken);
+
+    expect(getAuthToken()).toBe(freshToken);
   });
 });
