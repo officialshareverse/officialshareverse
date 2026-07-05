@@ -323,9 +323,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
             path="/groups"
             element={
               <ErrorBoundary>
-                <PrivateRoute>
-                  <Groups />
-                </PrivateRoute>
+                <Groups isAuth={isAuth} />
               </ErrorBoundary>
             }
           />
@@ -334,9 +332,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
             path="/groups/:groupId"
             element={
               <ErrorBoundary>
-                <PrivateRoute>
-                  <GroupDetails />
-                </PrivateRoute>
+                <GroupDetails isAuth={isAuth} />
               </ErrorBoundary>
             }
           />

@@ -23,7 +23,7 @@ import {
 
 import API from "../api/axios";
 
-export default function GroupDetails() {
+export default function GroupDetails({ isAuth }) {
   const { groupId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -59,6 +59,10 @@ export default function GroupDetails() {
   }, [group, groupId, navigate, toast]);
 
   const handleJoin = async () => {
+    if (!isAuth) {
+      navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
+      return;
+    }
     if (!group) return;
     setJoining(true);
     try {

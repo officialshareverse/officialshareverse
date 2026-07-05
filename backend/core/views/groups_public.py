@@ -1,4 +1,4 @@
-﻿from .common import *
+from .common import *
 
 class CreateGroupView(APIView):
     permission_classes = [IsAuthenticated]
@@ -384,7 +384,7 @@ class ValidateReferralCodeView(APIView):
 
 class GroupListView(ListAPIView):
     serializer_class = GroupListSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     pagination_class = ShareVersePageNumberPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ["subscription__name"]
@@ -393,16 +393,18 @@ class GroupListView(ListAPIView):
     ordering = ["-created_at", "-id"]
 
     def get_queryset(self):
-        return (
+        qs = (
             Group.objects.select_related("subscription", "owner")
             .annotate(filled_slots=Count("groupmember"))
             .filter(
                 end_date__gte=timezone.localdate(),
                 filled_slots__lt=F("total_slots"),
             )
-            .exclude(owner=self.request.user)
             .exclude(status__in=["closed", "refunding", "refunded", "failed"])
         )
+        if self.request.user.is_authenticated:
+            qs = qs.exclude(owner=self.request.user)
+        return qs
 
     def get_serializer_context(self):
         return {"request": self.request}

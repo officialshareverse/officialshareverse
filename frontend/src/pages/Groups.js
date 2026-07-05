@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import useIsMobile from "../hooks/useIsMobile";
 import { createPortal } from "react-dom";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
@@ -271,8 +271,9 @@ function compareGroups(sortBy, left, right) {
   return popularityRight - popularityLeft;
 }
 
-export default function Groups() {
+export default function Groups({ isAuth }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [groups, setGroups] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -344,6 +345,14 @@ export default function Groups() {
       document.body.style.overflow = previousOverflow;
     };
   }, [pendingJoinGroup]);
+
+  const handleJoinInit = (group) => {
+    if (!isAuth) {
+      navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
+      return;
+    }
+    setPendingJoinGroup(group);
+  };
 
   const joinGroup = async (group) => {
     try {
@@ -715,7 +724,7 @@ export default function Groups() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setPendingJoinGroup(group);
+                            handleJoinInit(group);
                           }}
                           disabled={isFull || joiningId === group.id}
                           className={`rounded-lg sm:rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-xs font-bold text-white transition-colors w-full sm:w-auto text-center whitespace-nowrap ${isFull ? "bg-slate-300" : "bg-brand hover:bg-brand-dark"}`}
