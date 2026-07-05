@@ -25,8 +25,8 @@ function decodeJwtPayload(token) {
     const base64Payload = base64UrlPayload.replace(/-/g, "+").replace(/_/g, "/");
     const paddedPayload = `${base64Payload}${"=".repeat((4 - (base64Payload.length % 4)) % 4)}`;
     const decoder =
-      typeof globalThis !== "undefined" && typeof globalThis.atob === "function"
-        ? globalThis.atob.bind(globalThis)
+      typeof window !== "undefined" && typeof window.atob === "function"
+        ? window.atob.bind(window)
         : null;
 
     if (!decoder) {
