@@ -11,6 +11,7 @@ import {
   SparkIcon,
   WalletIcon,
 } from "../components/UiIcons";
+import { trackGroupCreated } from "../utils/analytics";
 import { getActivationPrefillFromState } from "./activationOptions";
 
 const WIZARD_STEPS = [
@@ -369,7 +370,8 @@ export default function CreateGroup() {
 
     try {
       setLoading(true);
-      await API.post("create-group/", payload);
+      const response = await API.post("create-group/", payload);
+      trackGroupCreated(payload, response.data || {});
       const createdIsSharing = form.mode === "sharing";
       toast.success(
         createdIsSharing

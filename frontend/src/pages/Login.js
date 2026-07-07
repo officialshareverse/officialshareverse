@@ -15,6 +15,7 @@ import {
 
 import MobileLogin from "./MobileLogin";
 import useIsMobile from "../hooks/useIsMobile";
+import { trackLogin } from "../utils/analytics";
 
 const REMEMBER_KEY = "sv-login-remembered-username";
 const REMEMBER_PREF_KEY = "sv-login-remember-pref";
@@ -243,7 +244,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
         password: form.password,
       });
 
-      completeSignIn(response.data, username);
+      completeSignIn(response.data, username, "email");
     } catch (err) {
       console.error(err);
       setError(
@@ -259,7 +260,7 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
     }
   };
 
-  const completeSignIn = (payload, fallbackUsername = "") => {
+  const completeSignIn = (payload, fallbackUsername = "", method = "email") => {
     const accessToken = payload?.access || "";
     const resolvedUsername = (payload?.user?.username || fallbackUsername || "").trim();
 
@@ -287,12 +288,13 @@ export default function Login({ setIsAuth, themeMode, toggleTheme }) {
 
     setLastLoginMeta(nextLastLogin);
     setIsAuth(true);
+    trackLogin(method);
     navigate(redirectTarget, { replace: true });
   };
 
   const handleGoogleSuccess = (payload) => {
     setError("");
-    completeSignIn(payload, payload?.user?.username || "");
+    completeSignIn(payload, payload?.user?.username || "", "google");
   };
 
   if (isMobile) {

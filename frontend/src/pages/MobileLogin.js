@@ -5,6 +5,7 @@ import { setAuthToken } from "../auth/session";
 import BrandMark from "../components/BrandMark";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 import { LoadingSpinner } from "../components/UiIcons";
+import { trackLogin } from "../utils/analytics";
 
 export default function MobileLogin({ setIsAuth }) {
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ export default function MobileLogin({ setIsAuth }) {
       if (accessToken) {
         setAuthToken(accessToken);
         if (setIsAuth) setIsAuth(true);
+        trackLogin("email");
         
         // save last login meta like Login.js does
         try {
@@ -72,6 +74,7 @@ export default function MobileLogin({ setIsAuth }) {
     if (accessToken) {
       setAuthToken(accessToken);
       if (setIsAuth) setIsAuth(true);
+      trackLogin("google");
       navigate("/home", { replace: true });
     } else {
       navigate('/login');

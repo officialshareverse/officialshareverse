@@ -22,6 +22,7 @@ import {
   UserIcon
 } from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
+import { trackGroupJoined, trackPurchase } from "../utils/analytics";
 
 const SORT_OPTIONS = [
   { value: "popular", label: "Most popular" },
@@ -358,6 +359,8 @@ export default function Groups({ isAuth }) {
     try {
       setJoiningId(group.id);
       const res = await API.post("join-group/", { group_id: group.id });
+      trackGroupJoined(group, res.data || {});
+      trackPurchase(group, res.data || {});
       if (group.mode === "sharing") {
         const successNote = res.data?.pricing_note ? ` ${res.data.pricing_note}` : "";
         const successFeeNote =

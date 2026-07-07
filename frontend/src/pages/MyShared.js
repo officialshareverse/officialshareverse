@@ -12,6 +12,7 @@ import Tooltip from "../components/Tooltip";
 import { SkeletonList } from "../components/SkeletonFactory";
 import { useToast } from "../components/ToastProvider";
 import useIsMobile from "../hooks/useIsMobile";
+import { trackSubscriptionActivated } from "../utils/analytics";
 import {
   ChatIcon,
   ClockIcon,
@@ -385,7 +386,13 @@ export default function MyShared() {
       setConfirmingId(groupId);
       const response = await API.post(`groups/${groupId}/confirm-access/`);
       const joinedRes = await API.get("dashboard/");
-      setJoinedGroups(joinedRes.data?.groups || []);
+      const updatedJoinedGroups = joinedRes.data?.groups || [];
+      setJoinedGroups(updatedJoinedGroups);
+      const activatedGroup =
+        updatedJoinedGroups.find((group) => String(group.id) === String(groupId)) ||
+        joinedGroups.find((group) => String(group.id) === String(groupId)) ||
+        { id: groupId };
+      trackSubscriptionActivated(activatedGroup);
       toast.success(response.data?.message || "Access confirmed successfully");
     } catch (err) {
       console.error(err);

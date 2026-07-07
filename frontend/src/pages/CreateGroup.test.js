@@ -30,6 +30,7 @@ jest.mock("../components/ToastProvider", () => ({
 }));
 
 beforeEach(() => {
+  window.dataLayer = [];
   mockApi.post.mockReset();
   __setMockLocation({
     pathname: "/create",
@@ -49,7 +50,7 @@ test("prefills create flow defaults from the home activation template", async ()
   ).toBeInTheDocument();
   expect(screen.getByText(/buy-together template/i)).toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole("button", { name: /next step/i }));
+  await userEvent.click(screen.getByRole("button", { name: /^next$/i }));
 
   expect(
     screen.getByDisplayValue("Learning membership circle")

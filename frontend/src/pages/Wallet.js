@@ -18,6 +18,7 @@ import {
   WalletIcon as WalletGlyph,
 } from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
+import { trackMoneyAdded } from "../utils/analytics";
 
 const RAZORPAY_CHECKOUT_URL = "https://checkout.razorpay.com/v1/checkout.js";
 const QUICK_AMOUNTS = ["100", "300", "500", "1000"];
@@ -843,6 +844,12 @@ export default function Wallet() {
           handler: async (paymentResponse) => {
             try {
               const verifyResponse = await API.post("payments/razorpay/verify/", paymentResponse);
+              trackMoneyAdded({
+                amount: topupAmount,
+                paymentResponse,
+                verifyResponse: verifyResponse.data || {},
+                orderResponse: orderResponse.data || {},
+              });
               toast.success(verifyResponse.data.message || "Wallet top-up credited successfully.", {
                 title: "Money added",
               });

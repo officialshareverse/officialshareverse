@@ -7,7 +7,7 @@ import AuthShell from "../components/AuthShell";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 import { useToast } from "../components/ToastProvider";
 import useIsMobile from "../hooks/useIsMobile";
-import { trackSignup } from "../utils/analytics";
+import { trackLogin, trackSignup } from "../utils/analytics";
 import MobileSignup from "./MobileSignup";
 import {
   CheckCircleIcon,
@@ -677,6 +677,7 @@ export default function Signup({
     if (payload?.created) {
       trackSignup("google");
     }
+    trackLogin("google");
     toast.success(
       payload?.created
         ? "Your ShareVerse account is ready and you are already signed in."

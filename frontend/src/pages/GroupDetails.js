@@ -22,6 +22,7 @@ import {
 // Let's make the "Join" button at the bottom of GroupDetails.js just call the join API directly.
 
 import API from "../api/axios";
+import { trackGroupJoined, trackPurchase } from "../utils/analytics";
 
 export default function GroupDetails({ isAuth }) {
   const { groupId } = useParams();
@@ -67,6 +68,8 @@ export default function GroupDetails({ isAuth }) {
     setJoining(true);
     try {
       const res = await API.post("join-group/", { group_id: group.id });
+      trackGroupJoined(group, res.data || {});
+      trackPurchase(group, res.data || {});
       if (group.mode === "sharing") {
         const successNote = res.data?.pricing_note ? ` ${res.data.pricing_note}` : "";
         const successFeeNote =

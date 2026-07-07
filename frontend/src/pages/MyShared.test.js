@@ -39,6 +39,10 @@ jest.mock("../hooks/useIsMobile", () => ({
   default: () => false,
 }));
 
+beforeEach(() => {
+  window.dataLayer = [];
+});
+
 function buildJoinedGroup(overrides = {}) {
   return {
     id: 42,
@@ -103,6 +107,7 @@ test("confirms member access and refreshes the joined-group state", async () => 
   render(<MyShared />);
 
   await screen.findByText("Spotify Family");
+  await userEvent.click(screen.getByRole("button", { name: /splits you joined/i }));
   await userEvent.click(screen.getByRole("button", { name: /i received access/i }));
 
   await waitFor(() => {
@@ -116,4 +121,10 @@ test("confirms member access and refreshes the joined-group state", async () => 
   });
 
   expect(mockToast.success).toHaveBeenCalledWith("Access confirmed successfully");
+  expect(window.dataLayer).toContainEqual({
+    event: "subscription_activated",
+    subscription_name: "Spotify Family",
+    group_id: 42,
+    group_mode: "sharing",
+  });
 });

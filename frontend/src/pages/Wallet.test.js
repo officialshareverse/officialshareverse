@@ -72,6 +72,10 @@ function installWalletDataMocks(dashboardOverrides = {}) {
   });
 }
 
+beforeEach(() => {
+  window.dataLayer = [];
+});
+
 afterEach(() => {
   delete window.Razorpay;
 });
@@ -146,6 +150,13 @@ test("starts a Razorpay wallet top-up and verifies the payment", async () => {
     "Wallet top-up credited successfully.",
     { title: "Money added" }
   );
+  expect(window.dataLayer).toContainEqual({
+    event: "add_money",
+    transaction_id: "pay_1",
+    value: 500,
+    currency: "INR",
+    payment_provider: "razorpay",
+  });
 });
 
 test("submits a manual withdrawal request from the wallet", async () => {
@@ -164,8 +175,8 @@ test("submits a manual withdrawal request from the wallet", async () => {
 
   render(<Wallet />);
 
-  await screen.findByRole("button", { name: /^Withdraw$/i });
-  await userEvent.click(screen.getByRole("button", { name: /^Withdraw$/i }));
+  const withdrawButtons = await screen.findAllByRole("button", { name: /^Withdraw$/i });
+  await userEvent.click(withdrawButtons[withdrawButtons.length - 1]);
   await userEvent.type(screen.getByLabelText(/^Amount$/i), "300");
   fireEvent.click(screen.getByRole("button", { name: /request manual withdrawal/i }));
 

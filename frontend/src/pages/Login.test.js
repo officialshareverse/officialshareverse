@@ -46,6 +46,7 @@ jest.mock("../components/GoogleAuthButton", () => ({
 
 beforeEach(() => {
   __setMockLocation({ pathname: "/login", state: null });
+  window.dataLayer = [];
 });
 
 test("signs in with email and remembers the resolved username", async () => {
@@ -74,6 +75,7 @@ test("signs in with email and remembers the resolved username", async () => {
 
   expect(mockSetAuthToken).toHaveBeenCalledWith("access-token-1");
   expect(setIsAuth).toHaveBeenCalledWith(true);
+  expect(window.dataLayer).toContainEqual({ event: "login", method: "email" });
   expect(window.localStorage.getItem("sv-login-remembered-username")).toBe("chetak");
   expect(JSON.parse(window.localStorage.getItem("sv-login-last-meta"))).toMatchObject({
     username: "chetak",
@@ -95,14 +97,11 @@ test("requests a forgot-password OTP and resets the password", async () => {
 
   await userEvent.click(screen.getByRole("button", { name: /forgot password/i }));
   await userEvent.type(screen.getByPlaceholderText(/^Username or email$/i), "chetak");
-  await userEvent.type(screen.getByPlaceholderText(/Phone number/i), "9876543210");
   await userEvent.click(screen.getByRole("button", { name: /^Send OTP$/i }));
 
   await waitFor(() => {
     expect(mockApi.post).toHaveBeenNthCalledWith(1, "forgot-password/request-otp/", {
       username: "chetak",
-      phone: "9876543210",
-      email: "",
     });
   });
 
