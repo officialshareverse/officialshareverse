@@ -7,6 +7,7 @@ import AuthShell from "../components/AuthShell";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 import { useToast } from "../components/ToastProvider";
 import useIsMobile from "../hooks/useIsMobile";
+import { trackSignup } from "../utils/analytics";
 import MobileSignup from "./MobileSignup";
 import {
   CheckCircleIcon,
@@ -556,6 +557,9 @@ export default function Signup({
         referral_code: normalizedReferralCode || undefined,
       });
 
+      trackSignup("email", {
+        has_referral: Boolean(normalizedReferralCode),
+      });
       toast.success("Account created and verified successfully.", { title: "Welcome to ShareVerse" });
       navigate(loginDestination, {
         replace: true,
@@ -670,6 +674,9 @@ export default function Signup({
 
     setError("");
     setIsAuth(true);
+    if (payload?.created) {
+      trackSignup("google");
+    }
     toast.success(
       payload?.created
         ? "Your ShareVerse account is ready and you are already signed in."

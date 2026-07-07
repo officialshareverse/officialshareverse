@@ -49,6 +49,7 @@ jest.mock("../components/ToastProvider", () => ({
 
 beforeEach(() => {
   __setMockLocation({ pathname: "/signup", state: null });
+  window.dataLayer = [];
 });
 
 test("checks username availability, requests OTP, and creates the account after OTP entry", async () => {
@@ -141,6 +142,11 @@ test("checks username availability, requests OTP, and creates the account after 
     "Account created and verified successfully.",
     { title: "Welcome to ShareVerse" }
   );
+  expect(window.dataLayer).toContainEqual({
+    event: "sign_up",
+    method: "email",
+    has_referral: false,
+  });
   expect(__navigateMock).toHaveBeenCalledWith(
     "/login",
     expect.objectContaining({
