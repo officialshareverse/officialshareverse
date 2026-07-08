@@ -469,6 +469,8 @@ function AuthBootstrapScreen() {
 }
 
 function PwaInstallPrompt() {
+  const pwaLocation = useLocation();
+  const isAuthPage = ["/", "/login", "/signup"].includes(pwaLocation.pathname);
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
   const [isInstalled, setIsInstalled] = useState(isRunningStandalone);
   const [showIosHint, setShowIosHint] = useState(() => isIosSafariLike() && !isRunningStandalone());
@@ -508,7 +510,7 @@ function PwaInstallPrompt() {
     return () => mediaQuery.removeListener(syncInstalledState);
   }, []);
 
-  if (isInstalled) {
+  if (isInstalled || isAuthPage) {
     return null;
   }
 

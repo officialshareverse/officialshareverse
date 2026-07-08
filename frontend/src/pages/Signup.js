@@ -76,7 +76,7 @@ function validateSecurityStep(form, acceptedTerms) {
   if (form.password.length < 8) {
     return "Use at least 8 characters for your password.";
   }
-  if (form.password !== form.confirmPassword) {
+  if (form.confirmPassword && form.password !== form.confirmPassword) {
     return "Password confirmation does not match.";
   }
   if (!acceptedTerms) {
@@ -560,11 +560,31 @@ export default function Signup({
       trackSignup("email", {
         has_referral: Boolean(normalizedReferralCode),
       });
-      toast.success("Account created and verified successfully.", { title: "Welcome to ShareVerse" });
+
+      // Auto-login after successful signup
+      try {
+        const loginResponse = await API.post("login/", {
+          username: form.email.trim(),
+          password: form.password,
+        });
+        const accessToken = loginResponse.data?.access || "";
+        if (accessToken) {
+          setAuthToken(accessToken);
+          setIsAuth(true);
+          trackLogin("email");
+          toast.success("Account created — you're all set!", { title: "Welcome to ShareVerse" });
+          navigate(redirectTarget, { replace: true });
+          return true;
+        }
+      } catch {
+        // Auto-login failed, fall through to login page redirect
+      }
+
+      toast.success("Account created successfully. Please sign in.", { title: "Welcome to ShareVerse" });
       navigate(loginDestination, {
         replace: true,
         state: {
-          message: "Account created and verified successfully. Sign in to start splitting costs or buying together.",
+          message: "Account created successfully. Sign in to get started.",
         },
       });
       return true;
@@ -717,6 +737,9 @@ export default function Signup({
         validateContactStep={validateContactStep}
         validateSecurityStep={validateSecurityStep}
         validateReferralStep={validateReferralStep}
+        remainingCooldownSeconds={remainingCooldownSeconds}
+        remainingExpirySeconds={remainingExpirySeconds}
+        formatDuration={formatDuration}
       />
     );
   }

@@ -122,7 +122,7 @@ export default function MobileLogin({ setIsAuth }) {
             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-semibold text-slate-900 dark:text-slate-200">Password</label>
-                {/* Add simple forgot password hook if they want later */}
+                <Link to="/forgot-password" className="text-[12px] font-medium text-teal-600 hover:text-teal-700 transition-colors">Forgot password?</Link>
               </div>
               <input 
                 type="password" 
