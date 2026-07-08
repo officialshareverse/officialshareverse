@@ -1,28 +1,94 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-// useIsMobile hook removed since it was unused
+
+import API from "../api/axios";
+import { getPaginatedItems } from "../api/pagination";
 import SubscriptionLogo from "../components/SubscriptionLogo";
 import { useToast } from "../components/ToastProvider";
-import { ShieldIcon, LoadingSpinner } from "../components/UiIcons";
+import {
+  CheckCircleIcon,
+  ClockIcon,
+  LoadingSpinner,
+  ShieldIcon,
+  StarIcon,
+  WalletIcon,
+} from "../components/UiIcons";
 import {
   getPlanMeta,
   formatCurrency,
   formatDate,
   getInitials,
   formatHostDisplayName,
-  getMockReputation
+  getMockReputation,
 } from "../utils/groupHelpers";
-
-// We'll reuse the sleek MobileJoinConfirmModal for the final payment step
-// Wait, if it's already a full page, do we need the modal?
-// The user approved the plan where the bottom bar triggers the exact same sleek Join Confirmation Modal.
-// However, the modal is defined in Groups.js. I should probably just implement the Join flow right here on the page to avoid importing a modal from a page component.
-// Actually, it's easier to just recreate the Join Confirmation Modal here if needed, OR just have the "Join" button on this page DO the joining directly! The user's exact wording: "redirect it to a dedicated page containing all the information of that split".
-// If the page contains ALL the info, then the page *is* the confirmation.
-// Let's make the "Join" button at the bottom of GroupDetails.js just call the join API directly.
-
-import API from "../api/axios";
 import { trackGroupJoined, trackPurchase } from "../utils/analytics";
+
+function toAmount(value, fallback = 0) {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : fallback;
+}
+
+function getStatusMeta(group) {
+  if (group.status === "active") {
+    return {
+      label: "Active",
+      badgeClass: "bg-emerald-50 text-emerald-800",
+      dotClass: "bg-emerald-500",
+    };
+  }
+
+  if (["closed", "refunded", "refunding", "failed"].includes(group.status)) {
+    return {
+      label: group.status_label || "Closed",
+      badgeClass: "bg-slate-100 text-slate-600",
+      dotClass: "bg-slate-400",
+    };
+  }
+
+  if (["awaiting_purchase", "proof_submitted", "purchasing"].includes(group.status)) {
+    return {
+      label: group.status_label || "In progress",
+      badgeClass: "bg-amber-50 text-amber-800",
+      dotClass: "bg-amber-500",
+    };
+  }
+
+  return {
+    label: group.status_label || "Open slots",
+    badgeClass: "bg-sky-50 text-sky-800",
+    dotClass: "bg-sky-500",
+  };
+}
+
+function DetailRow({ label, helper, value }) {
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-slate-100 py-4 last:border-b-0">
+      <div className="min-w-0">
+        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">{label}</p>
+        {helper ? <p className="mt-1 text-[13px] leading-5 text-slate-400">{helper}</p> : null}
+      </div>
+      <p className="max-w-[9.5rem] text-right text-[18px] font-black leading-6 text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function ProtectionStep({ number, title, body, active }) {
+  return (
+    <div className="relative grid grid-cols-[32px_1fr] gap-3">
+      <span
+        className={`relative z-[1] flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-black ${
+          active ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500"
+        }`}
+      >
+        {number}
+      </span>
+      <div className="pb-5">
+        <p className={`text-[16px] font-black leading-6 ${active ? "text-emerald-800" : "text-slate-950"}`}>{title}</p>
+        <p className={`mt-1 text-[14px] leading-6 ${active ? "text-emerald-700" : "text-slate-500"}`}>{body}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function GroupDetails({ isAuth }) {
   const { groupId } = useParams();
@@ -35,28 +101,29 @@ export default function GroupDetails({ isAuth }) {
   const [joining, setJoining] = useState(false);
 
   useEffect(() => {
-    if (!group) {
-      // Try to fetch it if we don't have it in state
-      const fetchGroup = async () => {
-        try {
-          // Attempt to fetch from available groups
-          const res = await API.get("groups/", { params: { page_size: 100 } });
-          const found = res.data.results.find((g) => String(g.id) === String(groupId));
-          if (found) {
-            setGroup(found);
-          } else {
-            toast.error("Group not found or no longer available.");
-            navigate("/groups");
-          }
-        } catch (err) {
-          toast.error("Failed to load group details.");
-          navigate("/groups");
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchGroup();
+    if (group) {
+      return;
     }
+
+    const fetchGroup = async () => {
+      try {
+        const res = await API.get("groups/", { params: { page_size: 100 } });
+        const found = getPaginatedItems(res.data).find((item) => String(item.id) === String(groupId));
+        if (found) {
+          setGroup(found);
+        } else {
+          toast.error("Group not found or no longer available.");
+          navigate("/groups");
+        }
+      } catch (err) {
+        toast.error("Failed to load group details.");
+        navigate("/groups");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchGroup();
   }, [group, groupId, navigate, toast]);
 
   const handleJoin = async () => {
@@ -77,7 +144,7 @@ export default function GroupDetails({ isAuth }) {
             ? ` This included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
         toast.success(
-          `Rs ${res.data?.charged_amount || group.join_price || group.price_per_slot} charged → Status: Held → Waiting for access confirmation.${successFeeNote}${successNote}`.trim(),
+          `Rs ${res.data?.charged_amount || group.join_price || group.price_per_slot} charged -> Status: Held -> Waiting for access confirmation.${successFeeNote}${successNote}`.trim(),
           { title: "Joined split" }
         );
       } else {
@@ -86,7 +153,7 @@ export default function GroupDetails({ isAuth }) {
             ? ` This included a 5% platform fee of Rs ${Number(res.data?.platform_fee_amount || 0).toFixed(2)}.`
             : "";
         toast.success(
-          `Contribution reserved → Status: Held → Waiting for group completion.${successFeeNote}`.trim(),
+          `Contribution reserved -> Status: Held -> Waiting for group completion.${successFeeNote}`.trim(),
           { title: "Joined group" }
         );
       }
@@ -101,239 +168,240 @@ export default function GroupDetails({ isAuth }) {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-screen bg-slate-50">
-        <LoadingSpinner className="w-8 h-8 text-slate-400" />
+      <div className="flex min-h-screen flex-1 items-center justify-center bg-slate-50">
+        <LoadingSpinner className="h-8 w-8 text-slate-400" />
       </div>
     );
   }
 
   if (!group) return null;
 
-  const planName = group.subscription_name || group.subscription;
+  const planName = group.subscription_name || group.subscription || "ShareVerse split";
   const planMeta = getPlanMeta(planName);
   const ownerName = formatHostDisplayName(group.owner_name);
   const hostReputation = getMockReputation(group.owner_name);
-  
-  const totalSlots = Number(group.total_slots || 0);
-  const filledSlots = Number(group.filled_slots || 0);
-  const remainingSlots = Math.max(Number(group.remaining_slots ?? (totalSlots - filledSlots)) || 0, 0);
+
+  const totalSlots = toAmount(group.total_slots);
+  const filledSlots = toAmount(group.filled_slots);
+  const remainingSlots = Math.max(toAmount(group.remaining_slots, totalSlots - filledSlots), 0);
+  const progressPercent = totalSlots > 0 ? Math.min(100, Math.round((filledSlots / totalSlots) * 100)) : 0;
   const cycleLabel = [formatDate(group.start_date), formatDate(group.end_date)].filter(Boolean).join(" - ");
 
+  const platformFee = toAmount(group.platform_fee_amount ?? group.platform_fee);
+  const joinPrice = toAmount(group.join_price, toAmount(group.price_per_slot) + platformFee);
+  const subtotal = toAmount(group.join_subtotal, Math.max(joinPrice - platformFee, 0));
+
   const isSharing = group.mode === "sharing";
-  const modePillText = isSharing ? "SHARE EXISTING PLAN" : "BUY NEW PLAN";
-  const modePillClass = isSharing 
-    ? "bg-emerald-100 text-emerald-800" 
-    : "bg-amber-100 text-amber-800";
-
-  let statusText = String(group.status_label || "").toUpperCase();
-  let statusBg = "bg-blue-100";
-  let statusTextClass = "text-blue-800";
-  let statusDotClass = "bg-blue-600";
-  if (group.status === "active") {
-    statusBg = "bg-emerald-100";
-    statusTextClass = "text-emerald-800";
-    statusDotClass = "bg-emerald-600";
-  } else if (group.status === "closed" || group.status === "refunded") {
-    statusBg = "bg-slate-200";
-    statusTextClass = "text-slate-600";
-    statusDotClass = "bg-slate-500";
-  }
-
-  const joinPrice = Number(group.join_price || 0);
-  const platformFee = Number(group.platform_fee || 0);
-  const subtotal = joinPrice - platformFee;
-
-  const payNowLabel = group.mode === "group_buy"
-    ? "CONTRIBUTE NOW"
+  const statusMeta = getStatusMeta(group);
+  const modeLabel = isSharing ? "Share existing plan" : "Buy together";
+  const titleSuffix = isSharing ? "Split Group" : "Group Purchase";
+  const paymentLabel = !isSharing
+    ? "Contribution reserved today"
     : group.is_prorated
-      ? "PAY NOW FOR THE REMAINING CYCLE"
-      : "PAY NOW";
+      ? "Pay for remaining cycle"
+      : "Pay to join this cycle";
+  const paymentBody = isSharing
+    ? "Charged from your wallet when you join. Funds stay held until access is confirmed."
+    : "Reserved in escrow while the group fills and the host completes the purchase.";
+  const cycleHelper = group.pricing_note || group.is_prorated ? "Proration applied." : "Matches the listed access window.";
+  const fullOrClosed = remainingSlots <= 0 || ["closed", "refunded", "refunding", "failed"].includes(group.status);
+  const joinDisabled = joining || group.is_joinable === false || fullOrClosed;
+  const joinLabel = isAuth ? "Confirm and Join" : "Login to Join";
 
   return (
-    <div className="min-h-screen bg-white pb-32">
-      {/* Top Navigation */}
-      <div className="flex sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 items-center justify-between">
-        <button 
-          onClick={() => navigate("/groups")}
-          className="text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors"
-        >
-          ← Back to Explore
-        </button>
-        <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">Group Details</span>
-      </div>
+    <div className="min-h-screen bg-slate-50 pb-[112px] text-slate-950">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => navigate("/groups")}
+            className="inline-flex min-h-10 items-center gap-2 text-[15px] font-black text-slate-700 active:text-slate-950"
+          >
+            <span aria-hidden="true">&larr;</span>
+            Back
+          </button>
+          <span className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Group details</span>
+        </div>
+      </header>
 
-      <div className="max-w-2xl mx-auto flex flex-col">
-        
-        {/* Hero Section (No boxes on mobile) */}
-        <div className="px-4 sm:px-6 pt-6 sm:pt-10 pb-6 sm:bg-white sm:rounded-3xl sm:p-8 sm:shadow-sm sm:border sm:border-slate-100 sm:mb-6">
-          <div className="w-14 h-14 sm:w-20 sm:h-20 mb-4 overflow-hidden rounded-xl">
-            <SubscriptionLogo name={planName} size="100%" className="w-full h-full object-cover" />
+      <main className="mx-auto max-w-2xl bg-white sm:mt-4 sm:rounded-lg sm:border sm:border-slate-200 sm:shadow-sm">
+        <section className="px-5 pb-6 pt-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                <SubscriptionLogo name={planName} size="100%" className="h-full w-full" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">{planMeta.category}</p>
+                <p className="mt-1 truncate text-[15px] font-black text-slate-950">{planName}</p>
+              </div>
+            </div>
+            <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-right">
+              <p className="text-[20px] font-black leading-none text-emerald-800">{remainingSlots}</p>
+              <p className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">left</p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-4">
-            <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase ${modePillClass}`}>
-              {modePillText}
-            </div>
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] tracking-wider font-bold uppercase ${statusBg} ${statusTextClass}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${statusDotClass}`}></span>
-              {statusText}
-            </div>
-            <div className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px] tracking-wider uppercase">
-              {planMeta.category}
-            </div>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-800">
+              {modeLabel}
+            </span>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] ${statusMeta.badgeClass}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClass}`} />
+              {statusMeta.label}
+            </span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
-            {planName} Split Group
+          <h1 className="mt-5 text-[31px] font-black leading-[1.08] text-slate-950 sm:text-[36px]">
+            {planName} {titleSuffix}
           </h1>
-          <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600">
-            {group.mode === "sharing"
-              ? "Join this existing plan and get access immediately after the host confirms."
-              : "Contribute to this new plan. Purchase happens once all slots are filled."}
+          <p className="mt-4 text-[17px] leading-7 text-slate-500">
+            {isSharing
+              ? "Join this existing plan and get access after the host confirms."
+              : "Join the pool now. The host buys once the group is ready."}
           </p>
 
-          {/* Host Profile */}
           <div className="mt-6 flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[15px] font-black uppercase text-slate-600">
               {getInitials(ownerName)}
             </span>
-            <div className="flex flex-col justify-center">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Hosted by</p>
-              <div className="flex items-center gap-2">
-                <p className="text-[14px] font-bold text-slate-900">{ownerName}</p>
-                <span className="text-[12px] font-semibold text-amber-500">
-                  ★ {hostReputation.rating}
+            <div className="min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Hosted by</p>
+              <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+                <p className="truncate text-[17px] font-black text-slate-950">{ownerName}</p>
+                <span className="inline-flex items-center gap-1 text-[13px] font-black text-amber-600">
+                  <StarIcon className="h-4 w-4" strokeWidth={2.1} />
+                  {hostReputation.rating}
                 </span>
+                <span className="text-[12px] font-bold text-slate-400">{hostReputation.hostedCount} hosted</span>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Pricing Card (Edge-to-edge on mobile) */}
-        <div className="bg-gradient-to-br from-teal-700 to-emerald-600 sm:rounded-3xl px-5 py-6 sm:p-8 text-white relative overflow-hidden sm:mx-6 sm:mb-6">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-teal-900 opacity-20 rounded-full -ml-12 -mb-12 blur-xl"></div>
-          
-          <div className="relative z-10">
-            <p className="text-[11px] font-bold tracking-widest uppercase opacity-80 mb-1">
-              {payNowLabel}
-            </p>
-            <p className="text-4xl sm:text-5xl font-bold leading-none tracking-tight">
-              {formatCurrency(joinPrice)}
-            </p>
-            <p className="text-[13px] text-teal-50 font-medium opacity-90 mt-3 max-w-[280px]">
-              {group.mode === "sharing" 
-                ? "Charged from your wallet instantly when you join."
-                : "Reserved safely until the buy-together flow completes."}
-            </p>
-          </div>
-        </div>
-
-        {/* Breakdown Details (Clean list, no boxes) */}
-        <div className="px-4 sm:px-6 py-2">
-          <div className="flex flex-row justify-between items-center py-4 border-b border-slate-100">
+        <section className="bg-teal-700 px-5 py-7 text-white">
+          <div className="flex items-start gap-3">
+            <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white">
+              <WalletIcon className="h-5 w-5" />
+            </span>
             <div>
-              <p className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Plan Contribution</p>
-              <p className="text-[13px] text-slate-400 mt-0.5">Platform Fee: {formatCurrency(platformFee)}</p>
-            </div>
-            <p className="text-lg font-bold text-slate-900">{formatCurrency(subtotal)}</p>
-          </div>
-
-          <div className="flex flex-row justify-between items-center py-4 border-b border-slate-100">
-            <div>
-              <p className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">
-                {group.mode === "group_buy" ? "Members needed" : "Slots left"}
-              </p>
-              <p className="text-[13px] text-slate-400 mt-0.5">{filledSlots}/{totalSlots} filled</p>
-            </div>
-            <p className="text-lg font-bold text-slate-900">{remainingSlots}</p>
-          </div>
-
-          <div className="flex flex-row justify-between items-center py-4 border-b border-slate-100">
-            <div>
-              <p className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Current Cycle</p>
-              <p className="text-[13px] text-slate-400 mt-0.5 max-w-[200px]">
-                {group.pricing_note ? "Proration applied." : "Matches current cycle."}
-              </p>
-            </div>
-            <p className="text-[15px] font-bold text-slate-900 text-right">{cycleLabel || "Dates shared later"}</p>
-          </div>
-        </div>
-
-        {/* Buyer Protection (Clean section, no boxes) */}
-        <div className="px-4 sm:px-6 py-6 sm:bg-white sm:rounded-3xl sm:p-6 sm:shadow-sm sm:border sm:border-slate-100 sm:mx-6 sm:mt-6">
-          <div className="flex items-center gap-2 mb-6">
-            <ShieldIcon className="w-5 h-5 text-emerald-500" />
-            <h3 className="text-[15px] font-bold text-slate-900">How your money is protected</h3>
-          </div>
-          
-          <div className="flex flex-col gap-5 relative">
-            <div className="absolute left-[11px] top-[24px] bottom-[24px] w-[2px] bg-slate-100"></div>
-            
-            <div className="flex items-start gap-4 relative z-10">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 border-[3px] border-white text-[10px] font-bold text-slate-500">1</span>
-              <div className="pt-0.5">
-                <p className="text-[14px] font-bold text-slate-900">{formatCurrency(joinPrice)} held safely</p>
-                <p className="text-[13px] text-slate-500 mt-0.5">Your funds are kept secure in ShareVerse escrow.</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-4 relative z-10">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 border-[3px] border-white text-[10px] font-bold text-slate-500">2</span>
-              <div className="pt-0.5">
-                <p className="text-[14px] font-bold text-slate-900">{group.mode === "sharing" ? "Host shares access" : "Host completes purchase"}</p>
-                <p className="text-[13px] text-slate-500 mt-0.5">The host provides the necessary credentials or invites.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4 relative z-10">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 border-[3px] border-white text-[10px] font-bold text-emerald-700">3</span>
-              <div className="pt-0.5">
-                <p className="text-[14px] font-bold text-emerald-800">You confirm & funds release</p>
-                <p className="text-[13px] text-emerald-700/80 mt-0.5">Only after you confirm working access does the host get paid.</p>
-              </div>
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-teal-100">{paymentLabel}</p>
+              <p className="mt-3 text-[44px] font-black leading-none text-white sm:text-[52px]">{formatCurrency(joinPrice)}</p>
+              <p className="mt-4 max-w-md text-[15px] leading-6 text-teal-50">{paymentBody}</p>
             </div>
           </div>
+        </section>
 
-          <div className="mt-6 rounded-xl bg-amber-50 p-4 border border-amber-100">
-            <p className="text-[12px] font-medium text-amber-800 leading-relaxed">
-              If the host doesn't deliver or credentials don't work, you can report an issue and your funds will be fully refunded to your wallet.
+        <section className="bg-white px-5 py-2">
+          <DetailRow
+            label="Plan contribution"
+            helper={`Platform fee: ${formatCurrency(platformFee)}`}
+            value={formatCurrency(subtotal)}
+          />
+          <DetailRow
+            label={isSharing ? "Seats left" : "Members needed"}
+            helper={`${filledSlots}/${totalSlots} filled`}
+            value={remainingSlots}
+          />
+          <DetailRow label="Current cycle" helper={cycleHelper} value={cycleLabel || "Dates pending"} />
+
+          <div className="py-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">Group fill</p>
+              <p className="text-[13px] font-black text-slate-700">{progressPercent}%</p>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+              <span className="block h-full rounded-full bg-teal-600" style={{ width: `${progressPercent}%` }} />
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-2 bg-white px-5 pb-8 pt-6">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+              <ShieldIcon className="h-5 w-5" />
+            </span>
+            <h2 className="text-[21px] font-black leading-7 text-slate-950">How your money is protected</h2>
+          </div>
+
+          <div className="relative mt-7">
+            <div className="absolute left-[13px] top-7 bottom-8 w-px bg-slate-200" aria-hidden="true" />
+            <ProtectionStep
+              number="1"
+              title={`${formatCurrency(joinPrice)} held safely`}
+              body="Your funds are kept secure in ShareVerse escrow."
+            />
+            <ProtectionStep
+              number="2"
+              title={isSharing ? "Host shares access" : "Host completes purchase"}
+              body={isSharing ? "The host shares the invite, credentials, or next access step." : "The host buys the plan and shares proof or access details."}
+            />
+            <ProtectionStep
+              number="3"
+              title="You confirm and funds release"
+              body="Only after you confirm working access does the host get paid."
+              active
+            />
+          </div>
+
+          <div className="rounded-lg border border-amber-100 bg-amber-50 px-4 py-4">
+            <p className="text-[14px] font-semibold leading-6 text-amber-900">
+              If the host does not deliver or credentials do not work, you can report an issue and your funds can be refunded to your wallet.
             </p>
           </div>
-        </div>
+        </section>
 
-      </div>
+        <section className="bg-slate-50 px-5 py-5 sm:rounded-b-lg">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <ClockIcon className="h-5 w-5 text-slate-500" />
+              <p className="mt-3 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Next step</p>
+              <p className="mt-1 text-[14px] font-black leading-5 text-slate-950">{group.next_action || "Host coordinates access"}</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <CheckCircleIcon className="h-5 w-5 text-emerald-600" />
+              <p className="mt-3 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Access flow</p>
+              <p className="mt-1 text-[14px] font-black leading-5 text-slate-950">Confirm before payout</p>
+            </div>
+          </div>
+        </section>
+      </main>
 
-      {/* Sticky Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] bg-white/95 backdrop-blur-xl border-t border-slate-200 z-30 flex items-center justify-center">
-        <div className="w-full max-w-2xl flex gap-3">
-          <button 
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur">
+        <div className="mx-auto flex max-w-2xl gap-3">
+          <button
+            type="button"
             onClick={() => navigate("/groups")}
-            className="hidden sm:block flex-1 py-3.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-[15px] hover:bg-slate-50 transition-colors"
+            className="hidden min-h-12 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-[15px] font-black text-slate-700 sm:flex"
           >
             Cancel
           </button>
           {group.is_joined ? (
-            <button 
-              onClick={() => { window.location.href = `/groups/${group.id}/chat`; }}
-              className="flex-1 py-3.5 rounded-xl bg-teal-800 text-white font-bold text-[15px] shadow-md flex items-center justify-center gap-2 hover:bg-teal-900 transition-colors active:scale-[0.98]"
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = `/groups/${group.id}/chat`;
+              }}
+              className="flex min-h-14 flex-1 items-center justify-center rounded-lg bg-teal-800 px-4 text-[16px] font-black text-white shadow-lg shadow-teal-900/20 active:scale-[0.99]"
             >
               Open Chat
             </button>
           ) : (
-            <button 
+            <button
+              type="button"
               onClick={handleJoin}
-              disabled={joining || group.is_joinable === false}
-              className="flex-1 py-3.5 rounded-xl bg-teal-800 text-white font-bold text-[15px] shadow-md flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-teal-900 transition-colors active:scale-[0.98]"
+              disabled={joinDisabled}
+              className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-lg bg-teal-800 px-4 text-[16px] font-black text-white shadow-lg shadow-teal-900/20 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
             >
               {joining ? (
                 <>
-                  <LoadingSpinner className="w-4 h-4" /> Processing...
+                  <LoadingSpinner className="h-4 w-4" />
+                  Processing...
                 </>
+              ) : fullOrClosed ? (
+                "No seats available"
               ) : (
-                <>
-                  Confirm and Join • {formatCurrency(joinPrice)}
-                </>
+                `${joinLabel} - ${formatCurrency(joinPrice)}`
               )}
             </button>
           )}
