@@ -261,14 +261,14 @@ export default function Signup({
     [location.search]
   );
   const loginHref = useMemo(() => {
-    const base = isMobile ? "/" : "/login";
+    const base = "/login";
     return redirectTarget !== "/home" ? `${base}?redirect=${encodeURIComponent(redirectTarget)}` : base;
-  }, [redirectTarget, isMobile]);
+  }, [redirectTarget]);
 
   const loginDestination = useMemo(() => {
-    const base = isMobile ? "/" : "/login";
+    const base = "/login";
     return redirectTarget !== "/home" ? `${base}?redirect=${encodeURIComponent(redirectTarget)}` : base;
-  }, [redirectTarget, isMobile]);
+  }, [redirectTarget]);
 
   const [form, setForm] = useState(() => ({
     first_name: "",

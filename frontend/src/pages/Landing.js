@@ -229,11 +229,6 @@ export default function Landing({ setIsAuth }) {
   return <DesktopLanding />;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   MOBILE LANDING — built mobile-first with zero negative margins or viewport
-   width hacks. Every section is a simple stacked block with safe padding.
-   ───────────────────────────────────────────────────────────────────────────── */
-
 function MobileLanding() {
   const [liveGroups, setLiveGroups] = useState([]);
   const [liveGroupsStatus, setLiveGroupsStatus] = useState("loading");
@@ -271,74 +266,103 @@ function MobileLanding() {
   const liveGroupsBadge = liveGroupsStatus === "loading" ? "Loading" : hasLiveGroups ? "Open" : "Browse";
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f6f8fb] text-slate-950 dark:bg-slate-950 dark:text-white">
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90">
-        <Link to="/" className="flex min-w-0 items-center gap-2.5">
-          <BrandMark glow sizeClass="h-9 w-9" roundedClass="rounded-lg" />
-          <span className="truncate text-[16px] font-black tracking-tight">ShareVerse</span>
+    <div className="min-h-screen overflow-x-hidden bg-[#fafafa] text-slate-950 dark:bg-slate-950 dark:text-white pb-20">
+      <header className="sticky top-0 z-50 flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur dark:bg-slate-950/90 border-b border-slate-100 dark:border-slate-800">
+        <Link to="/" className="flex min-w-0 items-center gap-3">
+          <BrandMark glow sizeClass="h-8 w-8" roundedClass="rounded-full" />
+          <span className="truncate text-[17px] font-bold tracking-tight">ShareVerse</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <Link to="/login" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] font-bold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+        <div className="flex items-center gap-2.5">
+          <Link to="/login" className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-[13px] font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 transition-colors active:bg-slate-50">
             Login
           </Link>
-          <Link to="/signup" className="rounded-lg bg-teal-500 px-3.5 py-2 text-[13px] font-black text-white shadow-sm shadow-teal-500/25">
+          <Link to="/signup" className="rounded-full bg-teal-500 px-4 py-1.5 text-[13px] font-semibold text-white shadow-sm transition-colors active:bg-teal-600">
             Sign up
           </Link>
         </div>
       </header>
 
-      <main className="pb-5">
-        <section className="px-4 pb-7 pt-6">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] text-amber-700 dark:border-amber-500/30 dark:bg-amber-400/10 dark:text-amber-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-            Stop paying alone
+      <main>
+        <section className="px-5 pt-10 pb-8 flex flex-col items-center text-center">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-teal-700 dark:border-teal-500/30 dark:bg-teal-400/10 dark:text-teal-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+            Split more · Pay less
           </div>
 
-          <h1 className="max-w-[22rem] text-[34px] font-black leading-[1.04] tracking-normal text-slate-950 dark:text-white">
-            Split Netflix, Spotify and tools with people ready to join.
+          <h1 className="max-w-[24rem] text-[34px] font-black leading-[1.08] tracking-tight text-slate-900 dark:text-white">
+            Save on Netflix, Spotify & everyday apps <span className="text-teal-500">by splitting costs.</span>
           </h1>
 
-          <p className="mt-4 max-w-[21rem] text-[15px] leading-6 text-slate-600 dark:text-slate-300">
-            Browse open seats before signing up, then create your account when you are ready to join or list a plan.
+          <p className="mt-5 max-w-[21rem] text-[15px] leading-6 text-slate-500 dark:text-slate-400">
+            Browse live groups or list a plan you already pay for. Slots, pricing, and payments — all in one place.
           </p>
 
-          <div className="mt-5 grid grid-cols-[1fr_auto] gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Example split</p>
-              <p className="mt-1 text-[23px] font-black text-slate-950 dark:text-white">Rs 500 plan</p>
-              <p className="mt-1 text-[13px] leading-5 text-slate-500 dark:text-slate-400">Split with 5 people: around Rs 100 each.</p>
-            </div>
-            <div className="flex h-full min-h-20 w-20 flex-col items-center justify-center rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-400/10 dark:text-teal-200">
-              <span className="text-[11px] font-bold uppercase tracking-[0.12em]">Save</span>
-              <span className="text-2xl font-black">80%</span>
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-3">
-            <Link to="/signup" className="flex min-h-12 items-center justify-center rounded-lg bg-teal-500 px-4 py-3 text-[15px] font-black text-white shadow-lg shadow-teal-500/25 active:scale-[0.99]">
-              Create free account
+          <div className="mt-8 w-full max-w-sm grid gap-3">
+            <Link to="/signup" className="flex items-center justify-center w-full rounded-full bg-teal-500 py-3.5 text-[15px] font-bold text-white shadow-md shadow-teal-500/20 active:scale-[0.99] transition-transform">
+              Start saving &rarr;
             </Link>
-            <Link to="/groups" className="flex min-h-12 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-3 text-[15px] font-black text-slate-800 shadow-sm active:scale-[0.99] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
-              Browse live groups first
+            <Link to="/groups" className="flex items-center justify-center w-full rounded-full border border-slate-200 bg-white py-3.5 text-[15px] font-bold text-slate-700 shadow-sm active:scale-[0.99] transition-transform dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+              Browse live groups
             </Link>
           </div>
         </section>
 
-        <section className="px-4 pb-7">
-          <div className="rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+        <section className="pl-5 pb-10 overflow-x-auto sv-hide-scrollbar flex gap-4 snap-x snap-mandatory">
+          <div className="snap-start shrink-0 w-[75vw] max-w-[280px] rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Example saving</p>
+            <p className="mt-3 text-[32px] font-black tracking-tight text-slate-900 dark:text-white leading-none">Rs 500/mo</p>
+            <p className="mt-3 text-[14px] font-medium leading-5 text-slate-500 dark:text-slate-400 pr-4">when one plan is split with trusted members</p>
+          </div>
+          <div className="snap-start shrink-0 w-[75vw] max-w-[280px] rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Less per person</p>
+            <p className="mt-3 text-[32px] font-black tracking-tight text-slate-900 dark:text-white leading-none">80%</p>
+            <p className="mt-3 text-[14px] font-medium leading-5 text-slate-500 dark:text-slate-400 pr-4">possible on multi-seat plans when more people join</p>
+          </div>
+          <div className="w-4 shrink-0" />
+        </section>
+
+        <section className="pb-10 pt-2 flex flex-col items-center text-center">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Popular plans</p>
+          <div className="w-full flex gap-3 overflow-x-auto px-5 pb-2 sv-hide-scrollbar snap-x">
+            {popularPlanLogos.slice(0, 5).map((item) => (
+              <span key={item.name} className={`snap-start shrink-0 rounded-full px-4 py-2 text-[13px] font-bold shadow-sm border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200`}>
+                {item.name}
+              </span>
+            ))}
+            <div className="w-2 shrink-0" />
+          </div>
+        </section>
+
+        <section className="px-5 pb-10">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-2">How it works</p>
+          <h2 className="text-[22px] font-black tracking-tight text-slate-900 dark:text-white mb-6">Three simple steps</h2>
+          
+          <div className="grid gap-4">
+            {howItWorks.map((item) => (
+              <article key={item.step} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-[14px] font-black text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 mb-4">{item.step}</span>
+                <h3 className="text-[16px] font-bold text-slate-900 dark:text-white">{item.title}</h3>
+                <p className="mt-1.5 text-[14px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">{item.body}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="px-5 pb-10">
+          <div className="rounded-[24px] border border-slate-200 bg-white overflow-hidden shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-teal-600 dark:text-teal-300">Live group preview</p>
-                <h2 className="mt-1 text-[18px] font-black">Open seats people understand fast</h2>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-1">Live group preview</p>
+                <h2 className="text-[16px] font-black text-slate-900 dark:text-white">Open seats people understand fast</h2>
               </div>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-200">{liveGroupsBadge}</span>
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 shrink-0 ml-2">{liveGroupsBadge}</span>
             </div>
 
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {liveGroupsStatus === "loading" ? (
                 [0, 1, 2].map((item) => (
-                  <div key={item} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3" aria-hidden="true">
-                    <span className="h-9 w-9 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
+                  <div key={item} className="grid grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-4" aria-hidden="true">
+                    <span className="h-10 w-10 animate-pulse rounded-[12px] bg-slate-200 dark:bg-slate-800" />
                     <div className="min-w-0 space-y-2">
                       <span className="block h-4 w-28 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
                       <span className="block h-3 w-20 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
@@ -357,96 +381,29 @@ function MobileLanding() {
                       key={group.id || `${groupName}-${index}`}
                       to={groupPath}
                       state={group.id ? { group } : undefined}
-                      className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition-colors active:bg-slate-50 dark:active:bg-slate-800/70"
+                      className="grid grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-4 transition-colors active:bg-slate-50 dark:active:bg-slate-800/50"
                     >
-                      <span className={`h-9 w-9 rounded-lg ${getPreviewAccentClass(group, index)}`} aria-hidden="true" />
+                      <span className={`h-10 w-10 rounded-[12px] ${getPreviewAccentClass(group, index)}`} aria-hidden="true" />
                       <div className="min-w-0">
-                        <p className="truncate text-[15px] font-black text-slate-950 dark:text-white">{groupName}</p>
-                        <p className="mt-0.5 text-[12px] font-semibold text-slate-500 dark:text-slate-400">{formatPreviewGroupDetail(group)}</p>
+                        <p className="truncate text-[15px] font-bold text-slate-900 dark:text-white">{groupName}</p>
+                        <p className="mt-0.5 text-[12px] font-medium text-slate-500 dark:text-slate-400">{formatPreviewGroupDetail(group)}</p>
                       </div>
-                      <p className="text-right text-[15px] font-black text-slate-950 dark:text-white">{price}<span className="text-[11px] font-bold text-slate-400">{getPreviewPriceSuffix(group)}</span></p>
+                      <p className="text-right text-[15px] font-black text-slate-900 dark:text-white">{price}<span className="text-[11px] font-bold text-slate-400 ml-0.5">{getPreviewPriceSuffix(group)}</span></p>
                     </Link>
                   );
                 })
               ) : (
-                <div className="px-4 py-4">
-                  <p className="text-[13px] font-semibold leading-5 text-slate-600 dark:text-slate-300">
+                <div className="px-5 py-6">
+                  <p className="text-[14px] font-medium leading-5 text-slate-500 dark:text-slate-400 text-center">
                     {liveGroupsStatus === "error" ? "Live groups could not be loaded right now." : "No open groups are listed right now."}
                   </p>
-                  <Link to="/groups" className="mt-3 inline-flex text-[13px] font-black text-teal-700 dark:text-teal-300">
-                    Browse all groups
-                  </Link>
+                  <div className="mt-4 text-center">
+                    <Link to="/groups" className="inline-flex text-[14px] font-bold text-teal-600 dark:text-teal-400">
+                      Browse all groups
+                    </Link>
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
-        </section>
-
-        <section className="pb-7">
-          <p className="px-4 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Popular searches</p>
-          <div className="mt-3 flex gap-2 overflow-x-auto px-4 pb-1 sv-hide-scrollbar" aria-label="Popular plans">
-            {popularPlanLogos.slice(0, 7).map((item) => (
-              <span key={item.name} className={`sv-plan-logo shrink-0 ${item.className}`}>{item.name}</span>
-            ))}
-          </div>
-        </section>
-
-        <section className="px-4 pb-7">
-          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-teal-600 dark:text-teal-300">How it works</p>
-          <h2 className="mt-2 text-[24px] font-black tracking-normal">From click to saving in three steps</h2>
-          <div className="mt-4 grid gap-3">
-            {howItWorks.map((item) => (
-              <article key={item.step} className="grid grid-cols-[42px_1fr] gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-50 text-[14px] font-black text-teal-700 dark:bg-teal-400/10 dark:text-teal-200">{item.step}</span>
-                <div>
-                  <h3 className="text-[16px] font-black text-slate-950 dark:text-white">{item.title}</h3>
-                  <p className="mt-1 text-[13px] leading-5 text-slate-600 dark:text-slate-400">{item.body}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="px-4 pb-7">
-          <div className="grid gap-3">
-            <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-rose-500">For joiners</p>
-              <h2 className="mt-2 text-[19px] font-black">See price, slots and host before joining.</h2>
-              <p className="mt-2 text-[13px] leading-5 text-slate-600 dark:text-slate-400">Open groups show what you pay and how many seats are left, so the signup decision is not blind.</p>
-            </article>
-            <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-sky-600">For hosts</p>
-              <h2 className="mt-2 text-[19px] font-black">List the plan you already pay for.</h2>
-              <p className="mt-2 text-[13px] leading-5 text-slate-600 dark:text-slate-400">Add slots, price and access timing in one place instead of explaining the same split in chats.</p>
-            </article>
-          </div>
-        </section>
-
-        <section className="px-4 pb-7">
-          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-teal-600 dark:text-teal-300">Trust basics</p>
-          <h2 className="mt-2 text-[24px] font-black tracking-normal">Built to reduce payment confusion</h2>
-          <div className="mt-4 grid gap-3">
-            {safetyChecklist.slice(0, 2).map((item) => (
-              <article key={item.title} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <h3 className="text-[15px] font-black text-slate-950 dark:text-white">{item.title}</h3>
-                <p className="mt-1.5 text-[13px] leading-5 text-slate-600 dark:text-slate-400">{item.body}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="px-4 pb-4">
-          <div className="rounded-lg bg-slate-950 p-5 text-white shadow-sm dark:bg-white dark:text-slate-950">
-            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-teal-300 dark:text-teal-700">Start here</p>
-            <h2 className="mt-2 text-[24px] font-black leading-tight tracking-normal">Turn ad clicks into accounts with a clearer first step.</h2>
-            <p className="mt-2 text-[13px] leading-5 text-slate-300 dark:text-slate-600">Create an account to join a split, or browse live groups first if you want to see what is available.</p>
-            <div className="mt-4 grid gap-2.5">
-              <Link to="/signup" className="flex min-h-12 items-center justify-center rounded-lg bg-teal-500 px-4 py-3 text-[15px] font-black text-white">
-                Sign up and start saving
-              </Link>
-              <Link to="/groups" className="flex min-h-12 items-center justify-center rounded-lg border border-white/15 bg-white/10 px-4 py-3 text-[15px] font-black text-white dark:border-slate-200 dark:bg-slate-100 dark:text-slate-950">
-                View live groups
-              </Link>
             </div>
           </div>
         </section>
