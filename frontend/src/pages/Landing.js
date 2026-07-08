@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import API from "../api/axios";
+import { getPaginatedItems } from "../api/pagination";
 import BrandMark from "../components/BrandMark";
 import PublicFooter from "../components/PublicFooter";
 import useIsMobile from "../hooks/useIsMobile";
@@ -161,11 +163,61 @@ const joinTickerItems = [
   "Wallet joins keep payments out of scattered DMs",
   "Withdrawals are usually processed within 24 hours",
 ];
-const mobilePlanExamples = [
-  { name: "Spotify", price: "Rs 59", detail: "1 seat open", accent: "bg-emerald-500" },
-  { name: "Prime Video", price: "Rs 99", detail: "2 seats open", accent: "bg-sky-500" },
-  { name: "Canva Pro", price: "Rs 149", detail: "team split", accent: "bg-violet-500" },
-];
+
+function getPreviewGroupName(group) {
+  const name = group.subscription_name || group.subscription || "ShareVerse split";
+  return String(name);
+}
+
+function getPreviewRemainingSlots(group) {
+  const totalSlots = Number(group.total_slots || 0);
+  const filledSlots = Number(group.filled_slots || 0);
+  return Math.max(Number(group.remaining_slots ?? totalSlots - filledSlots) || 0, 0);
+}
+
+function getPreviewAccentClass(group, index) {
+  const normalizedName = getPreviewGroupName(group).toLowerCase();
+
+  if (normalizedName.includes("spotify") || normalizedName.includes("music")) {
+    return "bg-emerald-500";
+  }
+  if (normalizedName.includes("netflix") || normalizedName.includes("youtube")) {
+    return "bg-rose-500";
+  }
+  if (normalizedName.includes("canva") || normalizedName.includes("figma") || normalizedName.includes("ai")) {
+    return "bg-violet-500";
+  }
+  if (normalizedName.includes("prime") || normalizedName.includes("hotstar") || normalizedName.includes("disney")) {
+    return "bg-sky-500";
+  }
+
+  return ["bg-teal-500", "bg-sky-500", "bg-violet-500"][index % 3];
+}
+
+function formatPreviewGroupDetail(group) {
+  const remainingSlots = getPreviewRemainingSlots(group);
+  const slotName = group.mode === "group_buy" ? "spot" : "seat";
+  const stateLabel = group.mode === "group_buy" ? "needed" : "open";
+
+  return `${remainingSlots} ${slotName}${remainingSlots === 1 ? "" : "s"} ${stateLabel}`;
+}
+
+function formatPreviewPrice(value) {
+  const amount = Number(value || 0);
+
+  if (!Number.isFinite(amount)) {
+    return "Rs 0";
+  }
+
+  return `Rs ${amount.toLocaleString("en-IN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+  })}`;
+}
+
+function getPreviewPriceSuffix(group) {
+  return group.mode === "group_buy" ? "/spot" : "/seat";
+}
 
 export default function Landing({ setIsAuth }) {
   const isMobile = useIsMobile();
@@ -183,6 +235,41 @@ export default function Landing({ setIsAuth }) {
    ───────────────────────────────────────────────────────────────────────────── */
 
 function MobileLanding() {
+  const [liveGroups, setLiveGroups] = useState([]);
+  const [liveGroupsStatus, setLiveGroupsStatus] = useState("loading");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchLiveGroups() {
+      try {
+        const response = await API.get("groups/", { params: { page_size: 3 } });
+        const groups = getPaginatedItems(response.data)
+          .filter((group) => getPreviewRemainingSlots(group) > 0)
+          .slice(0, 3);
+
+        if (isMounted) {
+          setLiveGroups(groups);
+          setLiveGroupsStatus("ready");
+        }
+      } catch (error) {
+        console.error("Failed to load landing live groups.", error);
+        if (isMounted) {
+          setLiveGroupsStatus("error");
+        }
+      }
+    }
+
+    void fetchLiveGroups();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const hasLiveGroups = liveGroups.length > 0;
+  const liveGroupsBadge = liveGroupsStatus === "loading" ? "Loading" : hasLiveGroups ? "Open" : "Browse";
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f6f8fb] text-slate-950 dark:bg-slate-950 dark:text-white">
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90">
@@ -244,20 +331,53 @@ function MobileLanding() {
                 <p className="text-[11px] font-black uppercase tracking-[0.14em] text-teal-600 dark:text-teal-300">Live group preview</p>
                 <h2 className="mt-1 text-[18px] font-black">Open seats people understand fast</h2>
               </div>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-200">Open</span>
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-200">{liveGroupsBadge}</span>
             </div>
 
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {mobilePlanExamples.map((plan) => (
-                <div key={plan.name} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3">
-                  <span className={`h-9 w-9 rounded-lg ${plan.accent}`} aria-hidden="true" />
-                  <div className="min-w-0">
-                    <p className="truncate text-[15px] font-black text-slate-950 dark:text-white">{plan.name}</p>
-                    <p className="mt-0.5 text-[12px] font-semibold text-slate-500 dark:text-slate-400">{plan.detail}</p>
+              {liveGroupsStatus === "loading" ? (
+                [0, 1, 2].map((item) => (
+                  <div key={item} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3" aria-hidden="true">
+                    <span className="h-9 w-9 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
+                    <div className="min-w-0 space-y-2">
+                      <span className="block h-4 w-28 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+                      <span className="block h-3 w-20 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
+                    </div>
+                    <span className="h-4 w-14 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
                   </div>
-                  <p className="text-right text-[15px] font-black text-slate-950 dark:text-white">{plan.price}<span className="text-[11px] font-bold text-slate-400">/mo</span></p>
+                ))
+              ) : hasLiveGroups ? (
+                liveGroups.map((group, index) => {
+                  const groupName = getPreviewGroupName(group);
+                  const price = formatPreviewPrice(group.join_price ?? group.price_per_slot);
+                  const groupPath = group.id ? `/groups/${group.id}` : "/groups";
+
+                  return (
+                    <Link
+                      key={group.id || `${groupName}-${index}`}
+                      to={groupPath}
+                      state={group.id ? { group } : undefined}
+                      className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition-colors active:bg-slate-50 dark:active:bg-slate-800/70"
+                    >
+                      <span className={`h-9 w-9 rounded-lg ${getPreviewAccentClass(group, index)}`} aria-hidden="true" />
+                      <div className="min-w-0">
+                        <p className="truncate text-[15px] font-black text-slate-950 dark:text-white">{groupName}</p>
+                        <p className="mt-0.5 text-[12px] font-semibold text-slate-500 dark:text-slate-400">{formatPreviewGroupDetail(group)}</p>
+                      </div>
+                      <p className="text-right text-[15px] font-black text-slate-950 dark:text-white">{price}<span className="text-[11px] font-bold text-slate-400">{getPreviewPriceSuffix(group)}</span></p>
+                    </Link>
+                  );
+                })
+              ) : (
+                <div className="px-4 py-4">
+                  <p className="text-[13px] font-semibold leading-5 text-slate-600 dark:text-slate-300">
+                    {liveGroupsStatus === "error" ? "Live groups could not be loaded right now." : "No open groups are listed right now."}
+                  </p>
+                  <Link to="/groups" className="mt-3 inline-flex text-[13px] font-black text-teal-700 dark:text-teal-300">
+                    Browse all groups
+                  </Link>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </section>
