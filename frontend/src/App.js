@@ -471,6 +471,8 @@ function AuthBootstrapScreen() {
 function PwaInstallPrompt() {
   const pwaLocation = useLocation();
   const isAuthPage = ["/", "/login", "/signup"].includes(pwaLocation.pathname);
+  const isCreateFlow = pwaLocation.pathname === "/create";
+  const installClassName = `sv-pwa-install${isCreateFlow ? " sv-pwa-install--create-flow" : ""}`;
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
   const [isInstalled, setIsInstalled] = useState(isRunningStandalone);
   const [showIosHint, setShowIosHint] = useState(() => isIosSafariLike() && !isRunningStandalone());
@@ -518,7 +520,7 @@ function PwaInstallPrompt() {
     return (
       <button
         type="button"
-        className="sv-pwa-install"
+        className={installClassName}
         onClick={async () => {
           await installPromptEvent.prompt();
           setInstallPromptEvent(null);
@@ -535,7 +537,7 @@ function PwaInstallPrompt() {
   }
 
   return (
-    <div className="sv-pwa-install sv-pwa-install-hint" role="status">
+    <div className={`${installClassName} sv-pwa-install-hint`} role="status">
       <DownloadIcon className="h-4 w-4" />
       <span>Add ShareVerse to Home Screen from Safari share.</span>
       <button type="button" onClick={() => setShowIosHint(false)} aria-label="Dismiss install hint">

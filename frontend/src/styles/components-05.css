@@ -2621,3 +2621,13 @@ body.sv-dark .sv-cg-progress-fill {
     transition: none !important;
   }
 }
+/* Keep Create's CTA clear of the fixed browser install prompt. */
+@media (max-width: 767px) {
+  body:has(.sv-pwa-install--create-flow) .sv-cg-bottom-nav {
+    bottom: calc(11.45rem + env(safe-area-inset-bottom));
+  }
+
+  body:has(.sv-pwa-install--create-flow) .sv-cg-shell.is-mobile {
+    padding-bottom: calc(16rem + env(safe-area-inset-bottom));
+  }
+}
