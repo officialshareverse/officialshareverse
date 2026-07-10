@@ -1357,6 +1357,7 @@
    CreateGroup has its own fixed CTA bar + padding-bottom on .sv-cg-shell.is-mobile,
    so the outer tabbar offset creates unwanted blank space at the bottom. */
 .sv-route-stage:has(.sv-cg-page) {
+  padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
 
@@ -1379,9 +1380,9 @@
 .sv-cg-shell.is-mobile {
   max-width: 100%;
   /* Reserve room for BOTH the floating CTA bar (~4.5rem) AND the app's fixed
-     mobile tabbar (~5.5rem + safe-area). Without this, the last field on the
+     mobile tabbar (~4.7rem + safe-area). Without this, the last field on the
      Review step scrolls under the tabbar and can't be reached. */
-  padding-bottom: calc(10rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(8.5rem + env(safe-area-inset-bottom));
 }
 
 .sv-cg-shell.is-desktop {
@@ -1463,7 +1464,7 @@
   gap: 0.6rem;
   padding: 0.85rem 1rem 0.5rem;
   position: sticky;
-  top: 4.5rem; /* sit just under the fixed navbar */
+  top: 0; /* stick to the top of the viewport */
   z-index: 20;
   background: color-mix(in srgb, var(--sv-bg) 88%, transparent);
   backdrop-filter: blur(14px);
@@ -2498,10 +2499,9 @@
   position: fixed;
   left: 0;
   right: 0;
-  /* Sit just above the fixed tabbar. The tabbar is ~5.5rem tall on phones
-     (58px tab + 0.5rem top pad + 0.65rem bottom pad + safe-area). We add
-     a small 0.5rem gap so the CTA bar doesn't visually touch the tabbar. */
-  bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  /* Sit just above the fixed tabbar. The tabbar is ~4.7rem tall on phones
+     (58px tab + 0.5rem top pad + 0.65rem bottom pad + safe-area). */
+  bottom: calc(4.7rem + env(safe-area-inset-bottom));
   z-index: 65; /* above .sv-mobile-tabbar (z-index: 60) */
   display: flex;
   align-items: center;
