@@ -1359,6 +1359,8 @@
 .sv-route-stage:has(.sv-cg-page) {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  animation: none !important;
+  transform: none !important;
 }
 
 /* On mobile, strip the generic .sv-page vertical padding so the wizard content
