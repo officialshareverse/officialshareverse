@@ -180,7 +180,7 @@ export default function AccountDeletionPage() {
       intro="ShareVerse lets users request account deletion from inside the mobile app or through this public web page. Requests are reviewed so payment, wallet, payout, dispute, and legal records are handled correctly."
     >
       <div className="grid gap-4">
-        <article className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <article className="rounded-[var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
           <h2 className="text-xl font-semibold text-slate-950">How to request deletion</h2>
           <ol className="mt-4 grid gap-2 text-sm leading-7 text-slate-600 md:text-base">
             {requestSteps.map((step, index) => (
@@ -202,7 +202,7 @@ export default function AccountDeletionPage() {
         </article>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <article className="rounded-[length:var(--sv-radius-card)] border border-emerald-200 bg-emerald-50 p-5 md:p-6">
+          <article className="rounded-[var(--sv-radius-card)] border border-emerald-200 bg-emerald-50 p-5 md:p-6">
             <h2 className="text-xl font-semibold text-emerald-950">Data deleted or anonymized</h2>
             <ul className="mt-4 grid gap-2 text-sm leading-7 text-emerald-950 md:text-base">
               {deletedData.map((item) => (
@@ -213,7 +213,7 @@ export default function AccountDeletionPage() {
             </ul>
           </article>
 
-          <article className="rounded-[length:var(--sv-radius-card)] border border-amber-200 bg-amber-50 p-5 md:p-6">
+          <article className="rounded-[var(--sv-radius-card)] border border-amber-200 bg-amber-50 p-5 md:p-6">
             <h2 className="text-xl font-semibold text-amber-950">Records that may be retained</h2>
             <ul className="mt-4 grid gap-2 text-sm leading-7 text-amber-950 md:text-base">
               {retainedData.map((item) => (
@@ -225,7 +225,7 @@ export default function AccountDeletionPage() {
           </article>
         </div>
 
-        <div className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 text-sm leading-7 text-slate-600 md:p-6 md:text-base">
+        <div className="rounded-[var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 text-sm leading-7 text-slate-600 md:p-6 md:text-base">
           ShareVerse normally acknowledges account deletion requests within 5 business days and aims to complete eligible deletion or anonymization within 30 days after ownership verification, subject to lawful retention needs.
         </div>
       </div>

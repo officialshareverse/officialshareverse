@@ -309,7 +309,7 @@ export default function ChatsInbox() {
             <SkeletonTextGroup eyebrowWidth="w-16" titleWidth="w-80" />
           </SkeletonCard>
           <SkeletonCard>
-            <SkeletonList count={4} itemClassName="h-32 rounded-[length:var(--sv-radius-card)]" />
+            <SkeletonList count={4} itemClassName="h-32 rounded-[var(--sv-radius-card)]" />
           </SkeletonCard>
         </div>
       </div>

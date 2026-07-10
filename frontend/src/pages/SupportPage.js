@@ -132,7 +132,7 @@ export default function SupportPage() {
           {contactCards.map((card) => (
             <article
               key={card.title}
-              className={isMobile ? "rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm" : "rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm"}
+              className={isMobile ? "rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm" : "rounded-[var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm"}
             >
               <p className={isMobile ? "text-[10px] font-extrabold uppercase tracking-widest text-teal-600 mb-1" : "text-xs font-semibold uppercase tracking-[0.22em] text-slate-500"}>
                 {card.title}
@@ -143,7 +143,7 @@ export default function SupportPage() {
           ))}
         </div>
 
-        <div className={isMobile ? "rounded-[24px] border border-slate-100 bg-slate-50 p-5" : "mt-6 rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-slate-50 p-5 md:p-6"}>
+        <div className={isMobile ? "rounded-[24px] border border-slate-100 bg-slate-50 p-5" : "mt-6 rounded-[var(--sv-radius-card-md)] border border-slate-200 bg-slate-50 p-5 md:p-6"}>
           <h2 className={isMobile ? "text-[18px] font-black text-slate-900 mb-3" : "text-2xl font-semibold text-slate-950"}>Before contacting support</h2>
           <ul className={isMobile ? "grid gap-3 text-[13px] leading-relaxed text-slate-600 pl-4 list-disc" : "mt-4 grid gap-3 text-sm leading-7 text-slate-600"}>
             <li>Check your wallet page for payment and balance history.</li>
@@ -158,7 +158,7 @@ export default function SupportPage() {
           {serviceLevels.map((item) => (
             <article
               key={item.title}
-              className={isMobile ? "rounded-[24px] border border-slate-100 bg-slate-50 p-5" : "rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 md:p-6"}
+              className={isMobile ? "rounded-[24px] border border-slate-100 bg-slate-50 p-5" : "rounded-[var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 md:p-6"}
             >
               <p className={isMobile ? "text-[10px] font-extrabold uppercase tracking-widest text-teal-600 mb-1" : "text-xs font-semibold uppercase tracking-[0.22em] text-slate-500"}>{item.title}</p>
               <h2 className={isMobile ? "text-lg font-black text-slate-900 mb-2 leading-tight" : "mt-3 text-xl font-semibold text-slate-950"}>{item.detail}</h2>
@@ -171,7 +171,7 @@ export default function SupportPage() {
           {workflowSteps.map((step) => (
             <article
               key={step.title}
-              className={isMobile ? "rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm" : "rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"}
+              className={isMobile ? "rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm" : "rounded-[var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"}
             >
               <h2 className={isMobile ? "text-[16px] font-black text-slate-900 mb-2" : "text-xl font-semibold text-slate-950"}>{step.title}</h2>
               <p className={isMobile ? "text-[13px] leading-relaxed text-slate-500" : "mt-3 text-sm leading-7 text-slate-600 md:text-base"}>{step.body}</p>
@@ -189,7 +189,7 @@ export default function SupportPage() {
           {faqItems.map((item) => (
             <article
               key={item.question}
-              className={isMobile ? "rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm" : "rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"}
+              className={isMobile ? "rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm" : "rounded-[var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"}
             >
               <h3 className={isMobile ? "text-[15px] font-black text-slate-900 mb-2 leading-tight" : "text-lg font-semibold text-slate-950"}>{item.question}</h3>
               <p className={isMobile ? "text-[13px] leading-relaxed text-slate-500" : "mt-3 text-sm leading-7 text-slate-600 md:text-base"}>{item.answer}</p>

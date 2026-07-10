@@ -17,7 +17,7 @@ export default function PublicBusinessIdentity({
   customContainerClass = "",
   customTextClass = "",
 }) {
-  const containerClass = customContainerClass || (isMobile ? "mt-6 rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm" : "mt-6 rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6");
+  const containerClass = customContainerClass || (isMobile ? "mt-6 rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm" : "mt-6 rounded-[var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6");
   const textColorClass = customTextClass || (isMobile ? "text-slate-600" : "text-slate-600");
   const valueColorClass = customTextClass ? customTextClass.replace("text-slate-200", "text-white").replace("text-slate-600", "text-slate-900") : "text-slate-900";
 

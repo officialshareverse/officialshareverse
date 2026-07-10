@@ -142,13 +142,13 @@ export default function AboutPage() {
         {aboutHighlights.map((item) => (
           <article
             key={item.title}
-            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
+            className="rounded-[var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
           >
             <h2 className="text-xl font-semibold text-slate-950">{item.title}</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">{item.body}</p>
           </article>
         ))}
-        <article className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <article className="rounded-[var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
           <h2 className="text-xl font-semibold text-slate-950">Operator details</h2>
           <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">
             ShareVerse is operated by {BUSINESS_OPERATOR_NAME} and is currently managed as an independent online business based in Maharashtra, India.
@@ -156,7 +156,7 @@ export default function AboutPage() {
         </article>
       </div>
 
-      <div className="mt-6 rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 md:p-6">
+      <div className="mt-6 rounded-[var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 md:p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
           Public contact details
         </p>

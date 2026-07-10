@@ -605,9 +605,9 @@ export default function Groups({ isAuth }) {
         {loading ? (
           <section className="grid gap-4 xl:gap-5">
             {Array.from({ length: 5 }).map((_, index) => (
-              <article key={index} className="sv-skeleton-card space-y-4 rounded-[length:var(--sv-radius-card-md)]">
+              <article key={index} className="sv-skeleton-card space-y-4 rounded-[var(--sv-radius-card-md)]">
                 <div className="flex items-start gap-4">
-                  <div className="sv-skeleton h-20 w-20 rounded-[length:var(--sv-radius-card)]" />
+                  <div className="sv-skeleton h-20 w-20 rounded-[var(--sv-radius-card)]" />
                   <div className="min-w-0 flex-1 space-y-3">
                     <div className="sv-skeleton h-3 w-24" />
                     <div className="sv-skeleton h-10 w-2/3 rounded-[16px]" />

@@ -205,14 +205,14 @@ export default function FaqPage() {
         {faqSections.map((section) => (
           <section
             key={section.title}
-            className="rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
+            className="rounded-[var(--sv-radius-card-md)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
           >
             <h2 className="text-2xl font-semibold text-slate-950">{section.title}</h2>
             <div className="mt-5 grid gap-4">
               {section.items.map((item) => (
                 <article
                   key={item.question}
-                  className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 px-4 py-4 md:px-5"
+                  className="rounded-[var(--sv-radius-card)] border border-slate-200 bg-slate-50 px-4 py-4 md:px-5"
                 >
                   <h3 className="text-lg font-semibold text-slate-950">{item.question}</h3>
                   <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">{item.answer}</p>

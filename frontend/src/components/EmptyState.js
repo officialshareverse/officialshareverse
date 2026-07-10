@@ -6,7 +6,7 @@ export default function EmptyState({
   className = "",
 }) {
   return (
-    <div className={`sv-empty-state relative overflow-hidden rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900 ${className}`.trim()}>
+    <div className={`sv-empty-state relative overflow-hidden rounded-[var(--sv-radius-card)] border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900 ${className}`.trim()}>
       <div className="absolute inset-0 pointer-events-none opacity-50 dark:opacity-20">
         <div className="absolute -top-10 -left-10 h-64 w-64 rounded-full bg-emerald-100/40 blur-3xl mix-blend-multiply dark:bg-emerald-500/20 dark:mix-blend-screen" />
         <div className="absolute -bottom-10 -right-10 h-64 w-64 rounded-full bg-slate-100/60 blur-3xl mix-blend-multiply dark:bg-slate-600/20 dark:mix-blend-screen" />

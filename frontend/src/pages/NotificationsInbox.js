@@ -566,7 +566,7 @@ export default function NotificationsInbox() {
             <SkeletonTextGroup eyebrowWidth="w-28" titleWidth="w-96" />
           </SkeletonCard>
           <SkeletonCard>
-            <SkeletonList count={4} itemClassName="h-24 rounded-[length:var(--sv-radius-card)]" />
+            <SkeletonList count={4} itemClassName="h-24 rounded-[var(--sv-radius-card)]" />
           </SkeletonCard>
         </div>
       </div>

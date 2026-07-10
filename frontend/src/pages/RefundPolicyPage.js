@@ -198,7 +198,7 @@ export default function RefundPolicyPage() {
         {cards.map((card) => (
           <article
             key={card.title}
-            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 md:p-6"
+            className="rounded-[var(--sv-radius-card)] border border-slate-200 bg-slate-50 p-5 md:p-6"
           >
             <h2 className="text-xl font-semibold text-slate-950">{card.title}</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">{card.body}</p>
@@ -217,7 +217,7 @@ export default function RefundPolicyPage() {
         {timelineItems.map((item, i) => (
           <article
             key={item.title}
-            className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
+            className="rounded-[var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm md:p-6"
           >
             <h2 className="text-xl font-semibold text-slate-950">{i + 1}. {item.title}</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">{item.body}</p>
@@ -225,7 +225,7 @@ export default function RefundPolicyPage() {
         ))}
       </div>
 
-      <div className="mt-6 rounded-[length:var(--sv-radius-card)] border border-amber-200 bg-amber-50 p-5 text-sm leading-7 text-amber-900 md:p-6">
+      <div className="mt-6 rounded-[var(--sv-radius-card)] border border-amber-200 bg-amber-50 p-5 text-sm leading-7 text-amber-900 md:p-6">
         Refund timing still depends on payment-provider settlement, wallet status, evidence quality, and whether fraud or provider-policy review is open. ShareVerse may pause refunds or payouts while a complaint is being investigated.
       </div>
 

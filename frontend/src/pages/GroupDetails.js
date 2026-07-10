@@ -292,11 +292,11 @@ export default function GroupDetails({ isAuth }) {
   const joinDisabled = joining || group.is_joinable === false || fullOrClosed;
   const joinLabel = isAuth ? "Confirm & Join" : "Login to Join";
 
-  const fillState = useMemo(() => {
+  const fillState = (() => {
     if (progressPercent >= 100) return { color: "bg-emerald-500", text: "Full" };
     if (progressPercent >= 60) return { color: "bg-teal-500", text: "Almost full" };
     return { color: "bg-sky-500", text: "Filling" };
-  }, [progressPercent]);
+  })();
 
   return (
     <div className="min-h-screen bg-slate-50 pb-[140px] text-slate-950">

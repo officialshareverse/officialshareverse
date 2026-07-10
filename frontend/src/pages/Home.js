@@ -280,17 +280,17 @@ export default function Home({ themeMode, toggleTheme }) {
           <SkeletonHero />
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
-              <SkeletonBlock key={index} className="h-32 rounded-[length:var(--sv-radius-card)]" />
+              <SkeletonBlock key={index} className="h-32 rounded-[var(--sv-radius-card)]" />
             ))}
           </div>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(260px,0.92fr)]">
-            <SkeletonBlock className="h-56 rounded-[length:var(--sv-radius-card)]" />
-            <SkeletonBlock className="h-56 rounded-[length:var(--sv-radius-card)]" />
+            <SkeletonBlock className="h-56 rounded-[var(--sv-radius-card)]" />
+            <SkeletonBlock className="h-56 rounded-[var(--sv-radius-card)]" />
           </div>
           <SkeletonList
             count={4}
             className="grid gap-4 lg:grid-cols-2"
-            itemClassName="h-48 rounded-[length:var(--sv-radius-card)]"
+            itemClassName="h-48 rounded-[var(--sv-radius-card)]"
           />
         </div>
       </div>
@@ -685,7 +685,7 @@ function RecentSplitCard({ group, onClick }) {
   return (
     <article 
       onClick={onClick}
-      className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md cursor-pointer"
+      className="rounded-[var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md cursor-pointer"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">

@@ -419,7 +419,7 @@ export default function Profile() {
   if (error) {
     return (
       <div className="sv-page">
-        <div className="mx-auto max-w-4xl rounded-[length:var(--sv-radius-card-md)] border border-rose-200 bg-rose-50 px-6 py-12 text-center text-rose-900 shadow-sm" aria-live="assertive">
+        <div className="mx-auto max-w-4xl rounded-[var(--sv-radius-card-md)] border border-rose-200 bg-rose-50 px-6 py-12 text-center text-rose-900 shadow-sm" aria-live="assertive">
           {error}
         </div>
       </div>
@@ -435,9 +435,9 @@ export default function Profile() {
               <div className="space-y-4">
                 <SkeletonBlock className="h-5 w-20" />
                 <div className="flex items-center gap-4">
-                  <SkeletonBlock className="h-24 w-24 rounded-[length:var(--sv-radius-card-md)]" />
+                  <SkeletonBlock className="h-24 w-24 rounded-[var(--sv-radius-card-md)]" />
                   <div className="space-y-3">
-                    <SkeletonBlock className="h-10 w-56 rounded-[length:var(--sv-radius-card)]" />
+                    <SkeletonBlock className="h-10 w-56 rounded-[var(--sv-radius-card)]" />
                     <SkeletonBlock className="h-4 w-32" />
                     <div className="flex gap-2">
                       <SkeletonBlock className="h-8 w-24 rounded-full" />
@@ -454,11 +454,11 @@ export default function Profile() {
           <section className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
             <SkeletonCard>
               <SkeletonTextGroup eyebrowWidth="w-24" titleWidth="w-52" bodyWidths={[]} />
-              <SkeletonList count={5} className="mt-4 space-y-4" itemClassName="h-16 rounded-[length:var(--sv-radius-card)]" />
+              <SkeletonList count={5} className="mt-4 space-y-4" itemClassName="h-16 rounded-[var(--sv-radius-card)]" />
             </SkeletonCard>
             <SkeletonCard>
               <SkeletonTextGroup eyebrowWidth="w-24" titleWidth="w-40" bodyWidths={[]} />
-              <SkeletonList count={4} className="mt-4 space-y-4" itemClassName="h-24 rounded-[length:var(--sv-radius-card)]" />
+              <SkeletonList count={4} className="mt-4 space-y-4" itemClassName="h-24 rounded-[var(--sv-radius-card)]" />
             </SkeletonCard>
           </section>
         </div>
@@ -770,7 +770,7 @@ export default function Profile() {
 
                   <details className="sv-profile-details-card cursor-pointer">
                     <summary className="font-semibold select-none outline-none">How to improve this</summary>
-                    <div className="mt-3 grid gap-3 text-sm leading-7 text-slate-600 bg-white/50 p-4 rounded-[length:var(--sv-radius-card)]">
+                    <div className="mt-3 grid gap-3 text-sm leading-7 text-slate-600 bg-white/50 p-4 rounded-[var(--sv-radius-card)]">
                       <p>Add a clear photo, complete your contact fields, and keep your wallet funded before joining new paid groups.</p>
                       <p>Hosting more successfully and collecting a few positive reviews will strengthen your group-history signal over time.</p>
                     </div>
@@ -783,7 +783,7 @@ export default function Profile() {
               <p className="sv-eyebrow">Activity snapshot</p>
               <h2 className="sv-title mt-2">What your account is doing</h2>
 
-              <div className="mt-5 space-y-3 rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white/80 p-5">
+              <div className="mt-5 space-y-3 rounded-[var(--sv-radius-card)] border border-slate-200 bg-white/80 p-5">
                 <SummaryRow label="Wallet balance" value={formatCurrency(profile.wallet_balance)} />
                 <SummaryRow label="Active memberships" value={profile.active_memberships} />
                 <SummaryRow label="Active hosting" value={profile.active_hosting} />
@@ -804,7 +804,7 @@ export default function Profile() {
                   </p>
                 </div>
 
-                <div className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-slate-50 px-4 py-4 text-right">
+                <div className="rounded-[var(--sv-radius-card)] border border-slate-200 bg-slate-50 px-4 py-4 text-right">
                   <p className="text-sm font-semibold text-slate-950">Average rating</p>
                   <p className="mt-2 text-3xl font-black text-slate-950">{averageRating ? averageRating.toFixed(1) : "0.0"}</p>
                   <div className="mt-2 flex justify-end">
@@ -814,7 +814,7 @@ export default function Profile() {
               </div>
 
               <>
-                <div className="mt-6 rounded-[length:var(--sv-radius-card-md)] border border-slate-200 bg-slate-50/90 p-5 hidden md:block">
+                <div className="mt-6 rounded-[var(--sv-radius-card-md)] border border-slate-200 bg-slate-50/90 p-5 hidden md:block">
                   <p className="text-sm font-semibold text-slate-950">Rating distribution</p>
                   <div className="mt-4 space-y-3">
                     {reviewDistribution.map((item) => <ReviewDistributionRow key={item.rating} {...item} />)}
@@ -884,7 +884,7 @@ function ProfileAvatar({ imageUrl, initials, size = "default" }) {
   const sizeClasses =
     size === "large"
       ? "h-28 w-28 rounded-[32px] text-4xl md:h-32 md:w-32 md:text-[2.75rem]"
-      : "h-20 w-20 rounded-[length:var(--sv-radius-card)] text-2xl";
+      : "h-20 w-20 rounded-[var(--sv-radius-card)] text-2xl";
 
   const isValidUrl = imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== "" && imageUrl !== "null" && imageUrl !== "undefined";
 
@@ -905,7 +905,7 @@ function ProfileAvatar({ imageUrl, initials, size = "default" }) {
 
 function HeroMetricCard({ label, value, note }) {
   return (
-    <article className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white p-5">
+    <article className="rounded-[var(--sv-radius-card)] border border-slate-200 bg-white p-5">
       <p className="text-xs uppercase tracking-[0.18em] font-semibold text-slate-500">{label}</p>
       <p className="mt-3 text-3xl font-black text-slate-900">{value}</p>
       <p className="mt-3 text-sm leading-7 text-slate-600">{note}</p>
@@ -915,7 +915,7 @@ function HeroMetricCard({ label, value, note }) {
 
 function InfoRow({ icon: Icon, label, value }) {
   return (
-    <div className="rounded-[length:var(--sv-radius-card)] border border-slate-200 bg-white/80 px-4 py-4">
+    <div className="rounded-[var(--sv-radius-card)] border border-slate-200 bg-white/80 px-4 py-4">
       <div className="flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-slate-500">
         {Icon ? (
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">

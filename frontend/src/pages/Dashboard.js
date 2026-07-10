@@ -30,13 +30,13 @@ export default function Dashboard() {
     return (
       <main className="sv-page pb-20">
         <div className="sv-container max-w-6xl mt-6 lg:mt-10">
-          <SkeletonHero className="h-48 rounded-[length:var(--sv-radius-card-md)] mb-8" />
+          <SkeletonHero className="h-48 rounded-[var(--sv-radius-card-md)] mb-8" />
           <SkeletonMetricGrid count={3} className="grid grid-cols-1 md:grid-cols-3 gap-6" />
           <div className="mt-8">
              <SkeletonMetricGrid count={4} className="grid grid-cols-1 md:grid-cols-4 gap-4" />
           </div>
           <div className="mt-8">
-             <SkeletonList count={2} itemClassName="h-32 rounded-[length:var(--sv-radius-card)]" />
+             <SkeletonList count={2} itemClassName="h-32 rounded-[var(--sv-radius-card)]" />
           </div>
         </div>
       </main>
