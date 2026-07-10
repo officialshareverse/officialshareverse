@@ -496,12 +496,14 @@ export default function Home({ themeMode, toggleTheme }) {
       ) : (
         <div className="mx-auto max-w-5xl space-y-8 sm:space-y-16 px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
           {/* HERO SECTION */}
-          <section className="relative overflow-hidden rounded-2xl sm:rounded-4xl sv-glass-panel p-5 sm:p-12 shadow-sm sv-animate-rise">
-            <div className="absolute inset-0 sm:inset-auto sm:right-0 sm:top-0 sm:-mr-16 sm:-mt-16 h-full w-full sm:h-64 sm:w-64 rounded-none sm:rounded-full bg-gradient-to-br from-emerald-100 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 opacity-60 sm:opacity-50 blur-3xl pointer-events-none"></div>
+          <section className="relative overflow-hidden rounded-2xl sm:rounded-4xl sv-premium-card p-6 sm:p-14 sv-animate-rise">
+            <div className="sv-blob sv-blob-1"></div>
+            <div className="sv-blob sv-blob-2"></div>
+            <div className="sv-blob sv-blob-3"></div>
             
-            <div className="relative z-10 flex flex-col gap-5 sm:gap-6">
-              <div className="flex items-center justify-between">
-                <BrandMark sizeClass="h-10 w-10 sm:h-14 sm:w-14" roundedClass="rounded-xl sm:rounded-2xl shadow-sm" />
+            <div className="relative z-10 flex flex-col gap-6 sm:gap-8">
+              <div className="flex items-center justify-between sv-stagger-1">
+                <BrandMark sizeClass="h-12 w-12 sm:h-16 sm:w-16" roundedClass="rounded-2xl sm:rounded-3xl shadow-lg" />
                 <div className="sm:hidden">
                   {typeof toggleTheme === "function" && (
                     <ThemeToggle themeMode={themeMode} onToggle={toggleTheme} compact />
@@ -509,41 +511,41 @@ export default function Home({ themeMode, toggleTheme }) {
                 </div>
               </div>
               
-              <div>
-                <p className="text-[11px] sm:text-sm font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+              <div className="sv-stagger-2">
+                <p className="text-[12px] sm:text-sm font-extrabold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
                   {greetingMeta.text}
                 </p>
-                <h1 className="mt-1.5 sm:mt-2 text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                <h1 className="mt-2 sm:mt-3 text-4xl sm:text-6xl font-black tracking-tight text-slate-900 dark:text-white drop-shadow-sm">
                   {currentUserFirstName}.
                 </h1>
-                <p className="mt-3 sm:mt-4 max-w-xl text-sm sm:text-lg leading-relaxed text-slate-600 dark:text-slate-300">
+                <p className="mt-4 sm:mt-5 max-w-xl text-base sm:text-xl font-medium leading-relaxed text-slate-700 dark:text-slate-200">
                   Manage your shared subscriptions, track wallet balances, and explore new groups—all from your command center.
                 </p>
               </div>
 
-              <div className="mt-4 sm:mt-6 grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4">
+              <div className="mt-2 sm:mt-4 grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-5 sv-stagger-3">
                 <button
                   type="button"
                   onClick={() => navigate("/create")}
-                  className="col-span-2 sm:col-span-1 inline-flex justify-center items-center gap-2 rounded-full bg-slate-900 dark:bg-white px-6 py-3.5 text-[13px] sm:text-sm font-semibold text-white dark:text-slate-900 shadow-md transition-all hover:scale-105 hover:bg-slate-800 dark:hover:bg-slate-100 hover:shadow-lg active:scale-95"
+                  className="col-span-2 sm:col-span-1 inline-flex justify-center items-center gap-2 rounded-full bg-slate-900 dark:bg-white px-7 py-4 text-[14px] sm:text-base font-bold text-white dark:text-slate-900 shadow-xl transition-all hover:-translate-y-1 hover:shadow-2xl hover:bg-slate-800 dark:hover:bg-slate-100 active:scale-95"
                 >
-                  <PlusIcon className="h-5 w-5 sm:h-5 sm:w-5" />
+                  <PlusIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                   Create Split
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate("/my-shared")}
-                  className="inline-flex justify-center items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 px-4 sm:px-6 py-3 sm:py-3.5 text-[13px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200 backdrop-blur-md transition-all hover:scale-105 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm active:scale-95"
+                  className="inline-flex justify-center items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 px-5 sm:px-7 py-3.5 sm:py-4 text-[14px] sm:text-base font-bold text-slate-800 dark:text-slate-100 backdrop-blur-xl transition-all hover:-translate-y-1 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg active:scale-95"
                 >
-                  <LayersIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <LayersIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                   My Splits
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate("/wallet")}
-                  className="inline-flex justify-center items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 px-4 sm:px-6 py-3 sm:py-3.5 text-[13px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200 backdrop-blur-md transition-all hover:scale-105 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm active:scale-95"
+                  className="inline-flex justify-center items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 px-5 sm:px-7 py-3.5 sm:py-4 text-[14px] sm:text-base font-bold text-slate-800 dark:text-slate-100 backdrop-blur-xl transition-all hover:-translate-y-1 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg active:scale-95"
                 >
-                  <WalletIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <WalletIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                   Wallet
                 </button>
               </div>
@@ -568,12 +570,13 @@ export default function Home({ themeMode, toggleTheme }) {
 
             {marketplaceGroups.length > 0 ? (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 mx-auto max-w-md sm:max-w-none w-full">
-                {marketplaceGroups.map((group) => (
-                  <RecentSplitCard
-                    key={group.id}
-                    group={group}
-                    onClick={() => navigate("/groups")}
-                  />
+                {marketplaceGroups.map((group, idx) => (
+                  <div key={group.id} className={`sv-stagger-${Math.min(idx + 1, 4)}`}>
+                    <RecentSplitCard
+                      group={group}
+                      onClick={() => navigate("/groups")}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -685,7 +688,7 @@ function RecentSplitCard({ group, onClick }) {
   return (
     <article 
       onClick={onClick}
-      className="rounded-[var(--sv-radius-card)] border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md cursor-pointer"
+      className="sv-premium-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 cursor-pointer group"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
@@ -710,46 +713,46 @@ function RecentSplitCard({ group, onClick }) {
         </span>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-3">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Join price</p>
-          <p className="mt-1 text-base font-semibold text-slate-950">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="sv-stat-block rounded-2xl px-4 py-3.5">
+          <p className="text-[11px] uppercase font-bold tracking-[0.15em] text-slate-500 dark:text-slate-400">Join price</p>
+          <p className="mt-1.5 text-lg font-black text-slate-900 dark:text-white">
             {formatCurrency(joinPrice)}
           </p>
         </div>
-        <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-3">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Updated</p>
-          <p className="mt-1 text-sm font-semibold text-slate-950">
+        <div className="sv-stat-block rounded-2xl px-4 py-3.5">
+          <p className="text-[11px] uppercase font-bold tracking-[0.15em] text-slate-500 dark:text-slate-400">Updated</p>
+          <p className="mt-1.5 text-base font-bold text-slate-900 dark:text-white">
             {formatRelativeTime(group.created_at)}
           </p>
         </div>
       </div>
 
-      <div className="mt-5">
-        <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
+      <div className="mt-6">
+        <div className="flex items-center justify-between gap-3 text-[13px] font-bold text-slate-600 dark:text-slate-300">
           <span>
             {group.filled_slots} of {group.total_slots} filled
           </span>
           <span>{progressPercent}%</span>
         </div>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+        <div className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700 shadow-inner">
           <span
             className={`block h-full rounded-full ${
-              group.mode === "group_buy" ? "bg-slate-500" : "bg-slate-900"
+              group.mode === "group_buy" ? "bg-slate-600 dark:bg-slate-400" : "sv-progress-glow"
             }`}
             style={{ width: `${progressPercent}%` }}
           />
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Host</p>
-          <p className="mt-1 text-base font-semibold text-slate-950">
+          <p className="text-[11px] uppercase font-bold tracking-[0.15em] text-slate-500 dark:text-slate-400">Host</p>
+          <p className="mt-1 text-base font-bold text-slate-900 dark:text-white">
             {group.owner_name || "ShareVerse host"}
           </p>
         </div>
-        <button type="button" onClick={onClick} className="sv-btn-secondary">
+        <button type="button" onClick={onClick} className="sv-btn-secondary group-hover:bg-slate-100 dark:group-hover:bg-slate-700 transition-colors">
           Explore
         </button>
       </div>
