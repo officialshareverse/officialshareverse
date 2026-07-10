@@ -48,9 +48,9 @@ test("prefills create flow defaults from the home activation template", async ()
   expect(
     screen.getByText(/starting from learning membership/i)
   ).toBeInTheDocument();
-  expect(screen.getByText(/buy-together template/i)).toBeInTheDocument();
+  expect(screen.getByText(/^Buy-together$/i)).toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole("button", { name: /^next$/i }));
+  await userEvent.click(screen.getByRole("button", { name: /^continue$/i }));
 
   expect(
     screen.getByDisplayValue("Learning membership circle")

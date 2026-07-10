@@ -32,7 +32,10 @@
 
 .sv-cg-shell.is-mobile {
   max-width: 100%;
-  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); /* room for sticky CTA */
+  /* Reserve room for BOTH the floating CTA bar (~4.5rem) AND the app's fixed
+     mobile tabbar (~5.5rem + safe-area). Without this, the last field on the
+     Review step scrolls under the tabbar and can't be reached. */
+  padding-bottom: calc(10rem + env(safe-area-inset-bottom));
 }
 
 .sv-cg-shell.is-desktop {
@@ -529,44 +532,64 @@
   }
 }
 
-/* ---------- Mode helper (Step 0 footer) ---------- */
+/* ---------- Mode helper (Step 0 footer) ----------
+   Deliberately styled as a slim NOTE strip, NOT a card — so it can't be
+   mistaken for a third mode tile. No border, no card shadow, just a soft
+   tinted background with an info icon and inline text. */
 .sv-cg-mode-helper {
   display: flex;
   align-items: flex-start;
-  gap: 0.7rem;
-  padding: 0.9rem;
-  border-radius: var(--sv-radius-card);
-  border: 1px solid var(--sv-border);
-  background: color-mix(in srgb, var(--sv-paper) 92%, transparent);
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--sv-radius-md);
+  border: 0;
+  background: color-mix(in srgb, var(--sv-accent-soft) 35%, transparent);
 }
 
-.sv-cg-mode-helper-pill {
+.sv-cg-mode-helper.is-amber {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.sv-cg-mode-helper-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 26px;
-  padding: 0.25rem 0.65rem;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  width: 1.5rem;
+  height: 1.5rem;
   flex: 0 0 auto;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sv-accent) 16%, transparent);
+  color: var(--sv-accent);
+  margin-top: 0.05rem;
 }
 
-.sv-cg-mode-helper-pill.is-teal {
-  background: rgba(15, 118, 110, 0.12);
-  color: #0f766e;
+.sv-cg-mode-helper.is-amber .sv-cg-mode-helper-icon {
+  background: rgba(245, 158, 11, 0.2);
+  color: #b45309;
 }
 
-.sv-cg-mode-helper-pill.is-amber {
-  background: rgba(245, 158, 11, 0.16);
+.sv-cg-mode-helper-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sv-cg-mode-helper-lead {
+  display: inline;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--sv-accent);
+}
+
+.sv-cg-mode-helper.is-amber .sv-cg-mode-helper-lead {
   color: #b45309;
 }
 
 .sv-cg-mode-helper-text {
-  font-size: 0.8rem;
-  line-height: 1.6;
+  display: inline;
+  margin-left: 0.35rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
   color: var(--sv-muted);
 }
 
@@ -1118,19 +1141,31 @@
 }
 
 /* ---------- Sticky bottom CTA (mobile) ---------- */
+/* The app shell has a FIXED mobile tabbar (`.sv-mobile-tabbar`,
+   position: fixed; bottom: 0; z-index: 60; height ~5.5rem + safe-area).
+   If we use `sticky; bottom: 0` here, our CTA bar sticks to the viewport
+   bottom and gets COVERED by that tabbar. So on mobile we float the CTA
+   bar ABOVE the tabbar using `position: fixed` + an offset, and give it a
+   higher z-index than the tabbar so it always stays visible. The form's
+   bottom padding (see .sv-cg-shell.is-mobile) reserves scroll room. */
 .sv-cg-bottom-nav {
-  position: sticky;
-  bottom: 0;
-  z-index: 30;
+  position: fixed;
+  left: 0;
+  right: 0;
+  /* Sit just above the fixed tabbar. The tabbar is ~5.5rem tall on phones
+     (58px tab + 0.5rem top pad + 0.65rem bottom pad + safe-area). We add
+     a small 0.5rem gap so the CTA bar doesn't visually touch the tabbar. */
+  bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  z-index: 65; /* above .sv-mobile-tabbar (z-index: 60) */
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--sv-elevated-surface) 92%, transparent);
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--sv-elevated-surface) 94%, transparent);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border-top: 1px solid var(--sv-border);
-  box-shadow: 0 -10px 32px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 -10px 32px rgba(15, 23, 42, 0.1);
 }
 
 .sv-cg-bottom-back {

@@ -56,6 +56,16 @@ function MinusIcon(props) {
   );
 }
 
+function InfoIcon(props) {
+  return (
+    <svg {...svgIconProps(props)}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 11v5" />
+      <path d="M12 8h.01" />
+    </svg>
+  );
+}
+
 /**
  * CreateGroup — mobile-first redesign.
  *
@@ -707,11 +717,14 @@ export default function CreateGroup() {
                 />
               </div>
 
-              <div className="sv-cg-mode-helper">
-                <span className={`sv-cg-mode-helper-pill ${isSharing ? "is-teal" : "is-amber"}`}>
-                  {modeConfig.eyebrow}
+              <div className={`sv-cg-mode-helper ${isSharing ? "" : "is-amber"}`}>
+                <span className="sv-cg-mode-helper-icon" aria-hidden="true">
+                  <InfoIcon className="h-3.5 w-3.5" />
                 </span>
-                <p className="sv-cg-mode-helper-text">{modeConfig.helper}</p>
+                <div className="sv-cg-mode-helper-body">
+                  <span className="sv-cg-mode-helper-lead">{modeConfig.eyebrow}.</span>
+                  <span className="sv-cg-mode-helper-text">{modeConfig.helper}</span>
+                </div>
               </div>
             </div>
           )}
