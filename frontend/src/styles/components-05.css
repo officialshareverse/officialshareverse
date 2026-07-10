@@ -1356,7 +1356,7 @@
 /* Kill the outer .sv-route-stage bottom padding (tabbar reservation) on mobile.
    CreateGroup has its own fixed CTA bar + padding-bottom on .sv-cg-shell.is-mobile,
    so the outer tabbar offset creates unwanted blank space at the bottom. */
-.sv-route-stage:has(.sv-cg-page) {
+.sv-route-stage-no-anim {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   animation: none !important;
