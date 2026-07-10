@@ -2500,7 +2500,7 @@
    higher z-index than the tabbar so it always stays visible. The form's
    bottom padding (see .sv-cg-shell.is-mobile) reserves scroll room. */
 .sv-cg-bottom-nav {
-  position: fixed;
+  position: sticky;
   left: 0;
   right: 0;
   /* Sit just above the fixed tabbar. The tabbar is ~4.7rem tall on phones
