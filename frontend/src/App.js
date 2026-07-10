@@ -252,7 +252,7 @@ function AppRoutes({ isAuth, setIsAuth, themeMode, toggleTheme }) {
         />
       ) : null}
 
-      <div key={location.pathname} className={`sv-route-stage ${isMobile && isChatPage ? 'sv-route-stage-chat-mobile' : ''} ${location.pathname.startsWith('/create-group') ? 'sv-route-stage-no-anim' : ''}`}>
+      <div key={location.pathname} className={`sv-route-stage ${isMobile && isChatPage ? 'sv-route-stage-chat-mobile' : ''} ${location.pathname === '/create' || location.pathname.startsWith('/create-group') ? 'sv-route-stage-no-anim' : ''}`}>
         <Routes location={location}>
           <Route
             path="/"
@@ -476,6 +476,7 @@ function PwaInstallPrompt() {
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
   const [isInstalled, setIsInstalled] = useState(isRunningStandalone);
   const [showIosHint, setShowIosHint] = useState(() => isIosSafariLike() && !isRunningStandalone());
+  const isInstallVisible = !isInstalled && !isAuthPage && Boolean(installPromptEvent || showIosHint);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event) => {
@@ -511,6 +512,11 @@ function PwaInstallPrompt() {
     mediaQuery.addListener(syncInstalledState);
     return () => mediaQuery.removeListener(syncInstalledState);
   }, []);
+  useEffect(() => {
+    const installVisibilityClass = "sv-create-install-visible";
+    document.body.classList.toggle(installVisibilityClass, isCreateFlow && isInstallVisible);
+    return () => document.body.classList.remove(installVisibilityClass);
+  }, [isCreateFlow, isInstallVisible]);
 
   if (isInstalled || isAuthPage) {
     return null;
