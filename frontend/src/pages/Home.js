@@ -494,116 +494,121 @@ export default function Home({ themeMode, toggleTheme }) {
           </div>
         </div>
       ) : (
-        <div className="mx-auto max-w-5xl space-y-8 sm:space-y-16 px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
-          {/* HERO SECTION */}
-          <section className="relative overflow-hidden rounded-2xl sm:rounded-4xl sv-premium-card p-6 sm:p-14 sv-animate-rise">
-            <div className="sv-blob sv-blob-1"></div>
-            <div className="sv-blob sv-blob-2"></div>
-            <div className="sv-blob sv-blob-3"></div>
-            
-            <div className="relative z-10 flex flex-col gap-6 sm:gap-8">
-              <div className="flex items-center justify-between sv-stagger-1">
-                <BrandMark sizeClass="h-12 w-12 sm:h-16 sm:w-16" roundedClass="rounded-2xl sm:rounded-3xl shadow-lg" />
+        <div className="sv-home-shell">
+          {/* ── HERO SECTION ── */}
+          <section className="sv-home-hero sv-animate-rise">
+            <div className="sv-home-hero-bg" aria-hidden="true">
+              <img
+                src="/shareverse-hero-characters.jpg"
+                alt=""
+                className="sv-home-hero-img"
+                draggable="false"
+              />
+              <div className="sv-home-hero-gradient" />
+            </div>
+
+            <div className="sv-home-hero-content">
+              <div className="sv-home-hero-top sv-stagger-1">
+                <BrandMark sizeClass="h-10 w-10 sm:h-14 sm:w-14" roundedClass="rounded-xl sm:rounded-2xl shadow-lg" />
                 <div className="sm:hidden">
                   {typeof toggleTheme === "function" && (
                     <ThemeToggle themeMode={themeMode} onToggle={toggleTheme} compact />
                   )}
                 </div>
               </div>
-              
-              <div className="sv-stagger-2">
-                <p className="text-[12px] sm:text-sm font-extrabold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
-                  {greetingMeta.text}
-                </p>
-                <h1 className="mt-2 sm:mt-3 text-4xl sm:text-6xl font-black tracking-tight text-slate-900 dark:text-white drop-shadow-sm">
-                  {currentUserFirstName}.
-                </h1>
-                <p className="mt-4 sm:mt-5 max-w-xl text-base sm:text-xl font-medium leading-relaxed text-slate-700 dark:text-slate-200">
-                  Manage your shared subscriptions, track wallet balances, and explore new groups—all from your command center.
-                </p>
-              </div>
 
-              <div className="mt-2 sm:mt-4 grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-5 sv-stagger-3">
-                <button
-                  type="button"
-                  onClick={() => navigate("/create")}
-                  className="col-span-2 sm:col-span-1 inline-flex justify-center items-center gap-2 rounded-full bg-slate-900 dark:bg-white px-7 py-4 text-[14px] sm:text-base font-bold text-white dark:text-slate-900 shadow-xl transition-all hover:-translate-y-1 hover:shadow-2xl hover:bg-slate-800 dark:hover:bg-slate-100 active:scale-95"
-                >
-                  <PlusIcon className="h-5 w-5 sm:h-6 sm:w-6" />
-                  Create Split
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate("/my-shared")}
-                  className="inline-flex justify-center items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 px-5 sm:px-7 py-3.5 sm:py-4 text-[14px] sm:text-base font-bold text-slate-800 dark:text-slate-100 backdrop-blur-xl transition-all hover:-translate-y-1 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg active:scale-95"
-                >
-                  <LayersIcon className="h-5 w-5 sm:h-6 sm:w-6" />
-                  My Splits
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate("/wallet")}
-                  className="inline-flex justify-center items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 px-5 sm:px-7 py-3.5 sm:py-4 text-[14px] sm:text-base font-bold text-slate-800 dark:text-slate-100 backdrop-blur-xl transition-all hover:-translate-y-1 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg active:scale-95"
-                >
-                  <WalletIcon className="h-5 w-5 sm:h-6 sm:w-6" />
-                  Wallet
-                </button>
+              <div className="sv-home-hero-text sv-stagger-2">
+                <p className="sv-home-greeting">{greetingMeta.text}</p>
+                <h1 className="sv-home-name">{currentUserFirstName}.</h1>
+                <p className="sv-home-tagline">
+                  Split subscriptions, save money, and manage it all together.
+                </p>
               </div>
             </div>
           </section>
 
-          {/* RECENT SPLITS */}
-          <section className="space-y-6 sv-animate-rise sv-delay-1">
-            <div className="flex items-center justify-between">
+          {/* ── QUICK ACTIONS ── */}
+          <section className="sv-home-actions sv-stagger-3">
+            <button
+              type="button"
+              onClick={() => navigate("/create")}
+              className="sv-home-action-primary"
+            >
+              <PlusIcon className="h-5 w-5" />
+              Create Split
+            </button>
+            <div className="sv-home-action-row">
+              <button
+                type="button"
+                onClick={() => navigate("/my-shared")}
+                className="sv-home-action-pill"
+              >
+                <LayersIcon className="h-4.5 w-4.5" />
+                My Splits
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/wallet")}
+                className="sv-home-action-pill"
+              >
+                <WalletIcon className="h-4.5 w-4.5" />
+                Wallet
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/groups")}
+                className="sv-home-action-pill"
+              >
+                <CompassIcon className="h-4.5 w-4.5" />
+                Explore
+              </button>
+            </div>
+          </section>
+
+          {/* ── FRESH ACTIVITY ── */}
+          <section className="sv-home-activity sv-stagger-4">
+            <div className="sv-home-section-header">
               <div>
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900">Fresh Activity</h2>
-                <p className="mt-1 text-sm text-slate-500">Discover new splits just added to ShareVerse.</p>
+                <h2 className="sv-home-section-title">Fresh Activity</h2>
+                <p className="sv-home-section-sub">New splits on ShareVerse</p>
               </div>
               <button
                 type="button"
                 onClick={() => navigate("/groups")}
-                className="hidden items-center gap-2 text-sm font-semibold text-emerald-600 transition-colors hover:text-emerald-700 sm:inline-flex"
+                className="sv-home-see-all"
               >
-                Explore all &rarr;
+                See all &rarr;
               </button>
             </div>
 
             {marketplaceGroups.length > 0 ? (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 mx-auto max-w-md sm:max-w-none w-full">
-                {marketplaceGroups.map((group, idx) => (
-                  <div key={group.id} className={`sv-stagger-${Math.min(idx + 1, 4)}`}>
-                    <RecentSplitCard
-                      group={group}
-                      onClick={() => navigate("/groups")}
-                    />
-                  </div>
+              <div className="sv-home-cards-scroll">
+                {marketplaceGroups.map((group) => (
+                  <RecentSplitCard
+                    key={group.id}
+                    group={group}
+                    onClick={() => navigate("/groups")}
+                  />
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center rounded-4xl border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center">
-                <CompassIcon className="h-12 w-12 text-slate-400" />
-                <h3 className="mt-4 text-lg font-bold text-slate-900">No splits are visible yet</h3>
-                <p className="mt-2 max-w-sm text-sm text-slate-500">
+              <div className="sv-home-empty">
+                <CompassIcon className="h-11 w-11 text-slate-400 dark:text-slate-500" />
+                <h3 className="mt-3 text-base font-bold text-slate-900 dark:text-white">No splits yet</h3>
+                <p className="mt-1.5 max-w-xs text-sm text-slate-500 dark:text-slate-400">
                   Create the first one or check back after more groups go live.
                 </p>
                 <button
                   type="button"
                   onClick={() => navigate("/create")}
-                  className="mt-6 inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition-all hover:scale-105 hover:bg-slate-800 active:scale-95"
+                  className="sv-home-action-primary mt-5"
+                  style={{ maxWidth: 220 }}
                 >
                   <PlusIcon className="h-4.5 w-4.5" />
                   Create Split
                 </button>
               </div>
             )}
-            
-            <button
-              type="button"
-              onClick={() => navigate("/groups")}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-6 py-3.5 text-sm font-semibold text-slate-900 transition-all hover:bg-slate-200 active:scale-95 sm:hidden"
-            >
-              Explore all &rarr;
-            </button>
           </section>
         </div>
       )}
