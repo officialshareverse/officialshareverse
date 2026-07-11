@@ -4415,3 +4415,17 @@ body.sv-dark .sv-cg-progress-fill {
     padding: 1.25rem;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Keyboard Accessibility Hacks */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  /* Hide fixed bottom navigation elements when a form field is focused on mobile.
+     This prevents the virtual keyboard from pushing the navbar and CTA buttons
+     into the middle of the screen. */
+  body:has(input:focus, textarea:focus) .sv-mobile-tabbar,
+  body:has(input:focus, textarea:focus) .sv-cg-bottom-nav {
+    display: none !important;
+  }
+}
