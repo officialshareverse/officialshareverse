@@ -4318,3 +4318,100 @@ body.sv-dark .sv-cg-progress-fill {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Profile Redesign Styles */
+/* -------------------------------------------------------------------------- */
+
+.sv-profile-glass-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--sv-radius-xl);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.6);
+  padding: 1.5rem;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.04);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sv-dark .sv-profile-glass-card {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2);
+}
+
+.sv-profile-input-modern {
+  border: none;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: var(--sv-radius-lg);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.sv-profile-input-modern:focus {
+  background: #ffffff;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02), 0 0 0 2px var(--sv-teal-500);
+}
+
+.sv-dark .sv-profile-input-modern {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.sv-dark .sv-profile-input-modern:focus {
+  background: rgba(15, 23, 42, 0.9);
+}
+
+/* Compact pill action buttons */
+.sv-profile-action-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.sv-profile-action-pill.is-primary {
+  background: linear-gradient(135deg, var(--sv-teal-500), var(--sv-teal-600));
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+}
+
+.sv-profile-action-pill.is-secondary {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--sv-text);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.sv-dark .sv-profile-action-pill.is-secondary {
+  background: rgba(30, 41, 59, 0.8);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Add some floaty orb background magic */
+.sv-profile-glass-card::before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(20,184,166,0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .sv-profile-glass-card {
+    border-radius: 20px;
+    padding: 1.25rem;
+  }
+}

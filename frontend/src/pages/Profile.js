@@ -499,15 +499,15 @@ export default function Profile() {
         </section>
 
         <section className="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-2.5 pb-2 sv-reveal sm:flex-wrap sm:gap-3">
-          <button type="button" className="sv-btn-primary shrink-0 snap-center min-w-[200px] justify-center sm:min-w-0 sm:flex-none" onClick={() => navigate("/wallet")}>
+          <button type="button" className="sv-profile-action-pill is-primary shrink-0 snap-center min-w-[200px] justify-center sm:min-w-0 sm:flex-none" onClick={() => navigate("/wallet")}>
             <WalletIcon className="h-4 w-4" />
             Open wallet
           </button>
-          <button type="button" className="sv-btn-secondary shrink-0 snap-center min-w-[160px] justify-center sm:min-w-0 sm:flex-none" onClick={() => navigate("/my-shared")}>
+          <button type="button" className="sv-profile-action-pill is-secondary shrink-0 snap-center min-w-[160px] justify-center sm:min-w-0 sm:flex-none" onClick={() => navigate("/my-shared")}>
             <LayersIcon className="h-4 w-4" />
             My splits
           </button>
-          <button type="button" className="sv-btn-secondary shrink-0 snap-center min-w-[160px] justify-center sm:min-w-0 sm:flex-none" onClick={() => navigate("/create")}>
+          <button type="button" className="sv-profile-action-pill is-secondary shrink-0 snap-center min-w-[160px] justify-center sm:min-w-0 sm:flex-none" onClick={() => navigate("/create")}>
             <SparkIcon className="h-4 w-4" />
             Create split
           </button>
@@ -532,7 +532,7 @@ export default function Profile() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
-          <section className="sv-card sv-reveal">
+          <section className="sv-profile-glass-card sv-reveal">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="sv-eyebrow">Identity</p>
@@ -700,7 +700,7 @@ export default function Profile() {
           <section className="space-y-6">
 
 
-            <section className="sv-card sv-reveal sv-profile-activity-card">
+            <section className="sv-profile-glass-card sv-reveal sv-profile-activity-card">
               <p className="sv-eyebrow">Activity snapshot</p>
               <h2 className="sv-title mt-2">What your account is doing</h2>
 
@@ -713,7 +713,7 @@ export default function Profile() {
               </div>
             </section>
 
-            <section className="sv-card sv-reveal">
+            <section className="sv-profile-glass-card sv-reveal">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="sv-eyebrow">Reviews</p>
@@ -852,7 +852,7 @@ function InfoRow({ icon: Icon, label, value }) {
 
 function StatCard({ label, value, icon: Icon, tone = "", note = "", format = "number" }) {
   return (
-    <article className={`sv-stat-card sv-profile-stat-card ${tone}`.trim()}>
+    <article className={`sv-stat-card sv-profile-stat-card sv-profile-glass-card ${tone}`.trim()}>
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
         {Icon ? (
@@ -907,10 +907,10 @@ function ProfileField({ label, name, type = "text", value, onChange, placeholder
   const Icon = validation.tone === "valid" ? CheckCircleIcon : validation.tone === "invalid" ? ClockIcon : SparkIcon;
 
   return (
-    <label className="sv-profile-field">
-      <span className="sv-profile-field-label">{label}</span>
+    <label className="sv-profile-field flex flex-col gap-2">
+      <span className="sv-profile-field-label text-sm font-semibold">{label}</span>
       <input
-        className={`sv-input ${validation.tone === "invalid" ? "border-rose-300" : ""}`}
+        className={`sv-input sv-profile-input-modern px-4 py-3 ${validation.tone === "invalid" ? "border-rose-300" : ""}`}
         name={name}
         type={type}
         value={value}
