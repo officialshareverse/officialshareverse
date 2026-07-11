@@ -658,6 +658,8 @@ export default function Groups({ isAuth }) {
               const filledSlots = Number(group.filled_slots || 0);
               const totalSlots = Math.max(Number(group.total_slots || 1), 1);
               const remainingSlots = Math.max(Number(group.remaining_slots ?? totalSlots - filledSlots) || 0, 0);
+              const hostDisplayName = formatHostDisplayName(group.owner_name);
+              const hostRating = getMockReputation(group.owner_name).rating;
 
               return (
                 <article
@@ -676,7 +678,7 @@ export default function Groups({ isAuth }) {
                     
                     <div className="sv-explore-card-meta">
                       <span className="flex items-center gap-1">
-                        <UserIcon className="h-3 w-3" /> {filledSlots} sharing
+                        <UserIcon className="h-3 w-3" /> <span className="truncate max-w-[80px]">{hostDisplayName}</span> • ★ {hostRating}
                       </span>
                       <span className="flex items-center gap-1">
                         <ClockIcon className="h-3 w-3" /> 1 months
