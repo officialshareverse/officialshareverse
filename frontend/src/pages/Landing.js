@@ -311,10 +311,6 @@ function MobileLanding() {
             </div>
           </div>
 
-          <p className="mt-5 max-w-[21rem] text-[15px] leading-6 text-slate-500 dark:text-slate-400">
-            Browse live groups or list a plan you already pay for. Slots, pricing, and payments — all in one place.
-          </p>
-
           <div className="sv-mobile-landing-actions mt-8 w-full max-w-sm grid gap-3">
             <Link to="/signup" className="flex items-center justify-center w-full rounded-full bg-teal-500 py-3.5 text-[15px] font-bold text-white shadow-md shadow-teal-500/20 active:scale-[0.99] transition-transform">
               Start saving &rarr;
@@ -323,6 +319,10 @@ function MobileLanding() {
               Browse live groups
             </Link>
           </div>
+
+          <p className="mt-5 max-w-[21rem] text-[15px] leading-6 text-slate-500 dark:text-slate-400">
+            Browse live groups or list a plan you already pay for. Slots, pricing, and payments — all in one place.
+          </p>
         </section>
 
         <section className="sv-mobile-landing-stats pl-5 pb-10 overflow-x-auto sv-hide-scrollbar flex gap-4 snap-x snap-mandatory">
