@@ -737,47 +737,7 @@ export default function Profile() {
           </section>
 
           <section className="space-y-6">
-            <section className="sv-card sv-reveal">
-              <p className="sv-eyebrow">Trust score</p>
-              <div className="mt-4 flex flex-col gap-5">
-                <div className="flex flex-wrap items-center gap-4">
-                  <ProgressRing value={trustGaugeValue} size={112} stroke={9} label={Number(profile.trust_score || 0).toFixed(1)} />
-                  <div>
-                    <h2 className="text-[1.8rem] font-black text-slate-950">{Number(profile.trust_score || 0).toFixed(1)} / 5.0</h2>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">
-                      {isMobile
-                        ? "Your trust score summarizes how ready your profile feels for members and hosts."
-                        : "One place to understand how trusted your account feels before someone joins, pays, or hosts with you."}
-                    </p>
-                  </div>
-                </div>
 
-                <>
-                  <div className="space-y-3">
-                    {trustBreakdown.map((item) => (
-                      <div key={item.label} className="sv-profile-breakdown-row">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm font-semibold text-slate-950">{item.label}</span>
-                          <span className="text-sm font-semibold text-slate-500">{item.value}%</span>
-                        </div>
-                        <div className="sv-profile-breakdown-track">
-                          <span className="sv-profile-breakdown-fill" style={{ width: `${Math.max(8, item.value)}%` }} />
-                        </div>
-                        <p className="text-xs leading-6 text-slate-500">{item.note}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <details className="sv-profile-details-card cursor-pointer">
-                    <summary className="font-semibold select-none outline-none">How to improve this</summary>
-                    <div className="mt-3 grid gap-3 text-sm leading-7 text-slate-600 bg-white/50 p-4 rounded-[var(--sv-radius-card)]">
-                      <p>Add a clear photo, complete your contact fields, and keep your wallet funded before joining new paid groups.</p>
-                      <p>Hosting more successfully and collecting a few positive reviews will strengthen your group-history signal over time.</p>
-                    </div>
-                  </details>
-                </>
-              </div>
-            </section>
 
             <section className="sv-card sv-reveal sv-profile-activity-card">
               <p className="sv-eyebrow">Activity snapshot</p>
