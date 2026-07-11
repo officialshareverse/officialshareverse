@@ -266,8 +266,8 @@ function MobileLanding() {
   const liveGroupsBadge = liveGroupsStatus === "loading" ? "Loading" : hasLiveGroups ? "Open" : "Browse";
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#fafafa] text-slate-950 dark:bg-slate-950 dark:text-white pb-20">
-      <header className="sticky top-0 z-50 flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur dark:bg-slate-950/90 border-b border-slate-100 dark:border-slate-800">
+    <div className="sv-mobile-landing min-h-screen overflow-x-hidden bg-[#fafafa] text-slate-950 dark:bg-slate-950 dark:text-white pb-20">
+      <header className="sv-mobile-landing-header sticky top-0 z-50 flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur dark:bg-slate-950/90 border-b border-slate-100 dark:border-slate-800">
         <Link to="/" className="flex min-w-0 items-center gap-3">
           <BrandMark glow sizeClass="h-8 w-8" roundedClass="rounded-full" />
           <span className="truncate text-[17px] font-bold tracking-tight">ShareVerse</span>
@@ -283,7 +283,7 @@ function MobileLanding() {
       </header>
 
       <main>
-        <section className="px-5 pt-10 pb-8 flex flex-col items-center text-center">
+        <section className="sv-mobile-landing-hero px-5 pt-10 pb-8 flex flex-col items-center text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-teal-700 dark:border-teal-500/30 dark:bg-teal-400/10 dark:text-teal-200">
             <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
             Split more · Pay less
@@ -297,7 +297,7 @@ function MobileLanding() {
             Browse live groups or list a plan you already pay for. Slots, pricing, and payments — all in one place.
           </p>
 
-          <div className="mt-8 w-full max-w-sm grid gap-3">
+          <div className="sv-mobile-landing-actions mt-8 w-full max-w-sm grid gap-3">
             <Link to="/signup" className="flex items-center justify-center w-full rounded-full bg-teal-500 py-3.5 text-[15px] font-bold text-white shadow-md shadow-teal-500/20 active:scale-[0.99] transition-transform">
               Start saving &rarr;
             </Link>
@@ -305,9 +305,26 @@ function MobileLanding() {
               Browse live groups
             </Link>
           </div>
+          <div className="sv-mobile-landing-art">
+            <img
+              src="/shareverse-mobile-hero.png"
+              width="1644"
+              height="960"
+              alt="Friends sharing popular entertainment subscriptions"
+              fetchPriority="high"
+            />
+            <div className="sv-mobile-landing-art-overlay" aria-hidden="true" />
+            <div className="sv-mobile-landing-art-copy">
+              <div>
+                <p>Popular plans</p>
+                <strong>Your next subscription can cost less.</strong>
+              </div>
+              <span>Live</span>
+            </div>
+          </div>
         </section>
 
-        <section className="pl-5 pb-10 overflow-x-auto sv-hide-scrollbar flex gap-4 snap-x snap-mandatory">
+        <section className="sv-mobile-landing-stats pl-5 pb-10 overflow-x-auto sv-hide-scrollbar flex gap-4 snap-x snap-mandatory">
           <div className="snap-start shrink-0 w-[75vw] max-w-[280px] rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Example saving</p>
             <p className="mt-3 text-[32px] font-black tracking-tight text-slate-900 dark:text-white leading-none">Rs 500/mo</p>
@@ -321,9 +338,9 @@ function MobileLanding() {
           <div className="w-4 shrink-0" />
         </section>
 
-        <section className="pb-10 pt-2 flex flex-col items-center text-center">
+        <section className="sv-mobile-landing-plans pb-10 pt-2 flex flex-col items-center text-center">
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Popular plans</p>
-          <div className="w-full flex gap-3 overflow-x-auto px-5 pb-2 sv-hide-scrollbar snap-x">
+          <div className="sv-mobile-landing-plan-list w-full flex gap-3 overflow-x-auto px-5 pb-2 sv-hide-scrollbar snap-x">
             {popularPlanLogos.slice(0, 5).map((item) => (
               <span key={item.name} className={`snap-start shrink-0 rounded-full px-4 py-2 text-[13px] font-bold shadow-sm border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200`}>
                 {item.name}
@@ -333,11 +350,11 @@ function MobileLanding() {
           </div>
         </section>
 
-        <section className="px-5 pb-10">
+        <section className="sv-mobile-landing-steps px-5 pb-10">
           <p className="text-[10px] font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-2">How it works</p>
           <h2 className="text-[22px] font-black tracking-tight text-slate-900 dark:text-white mb-6">Three simple steps</h2>
           
-          <div className="grid gap-4">
+          <div className="sv-mobile-landing-step-list grid gap-4">
             {howItWorks.map((item) => (
               <article key={item.step} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-[14px] font-black text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 mb-4">{item.step}</span>
@@ -348,8 +365,8 @@ function MobileLanding() {
           </div>
         </section>
 
-        <section className="px-5 pb-10">
-          <div className="rounded-[24px] border border-slate-200 bg-white overflow-hidden shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <section className="sv-mobile-landing-live px-5 pb-10">
+          <div className="sv-mobile-landing-live-card rounded-[24px] border border-slate-200 bg-white overflow-hidden shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-teal-600 dark:text-teal-400 mb-1">Live group preview</p>
@@ -410,7 +427,7 @@ function MobileLanding() {
       </main>
 
 
-      <PublicFooter />
+      <PublicFooter compact />
     </div>
   );
 }
