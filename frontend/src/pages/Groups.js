@@ -488,23 +488,21 @@ export default function Groups({ isAuth }) {
           )
         : null}
 
-      <div className="sv-container space-y-4 sm:space-y-6">
-        {/* HERO BANNER */}
-        <section className="relative rounded-2xl sm:rounded-4xl mb-6 sm:mb-8 mt-4 -mx-4 sm:mx-0 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-6 lg:gap-8 px-5 py-5 sm:px-10 lg:py-8 shadow-sm sv-glass-panel sv-animate-rise z-30 overflow-hidden">
-          <div className="absolute inset-0 sm:inset-auto sm:right-0 sm:top-0 sm:-mr-16 sm:-mt-16 h-full w-full sm:h-64 sm:w-64 rounded-none sm:rounded-full bg-gradient-to-br from-emerald-100 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 opacity-60 sm:opacity-50 blur-3xl pointer-events-none"></div>
-          
-          <div className="relative z-10 shrink-0 text-left w-full lg:w-auto xl:pl-2">
-            <h1 className="text-[26px] leading-[1.2] sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-[2.2rem] sm:leading-[1.15]">
-              Find your next <br className="hidden lg:block" />
-              <span className="text-emerald-600 dark:text-emerald-400 ml-1 lg:ml-0">subscription.</span>
+      <div className="sv-explore-shell">
+        {/* ── HERO ── */}
+        <section className="sv-explore-hero sv-animate-rise">
+          <div className="sv-explore-hero-text">
+            <h1 className="sv-explore-title">
+              Find your next{" "}
+              <span className="sv-explore-title-accent">subscription.</span>
             </h1>
-            <p className="mt-2 text-[13px] sm:text-sm font-medium text-slate-600 dark:text-slate-300">
+            <p className="sv-explore-subtitle">
               Join premium services at a fraction of the cost.
             </p>
           </div>
 
-          <div className="relative z-20 w-full max-w-[28rem] xl:max-w-[32rem] flex-1 lg:mx-6 xl:mx-10 mt-1 sm:mt-2 lg:mt-0">
-            <div className="flex w-full items-center gap-3 rounded-full bg-white px-4 sm:px-5 py-3 sm:py-3.5 shadow-md focus-within:ring-2 focus-within:ring-brand-light transition-all">
+          <div className="sv-explore-search-wrap">
+            <div className="sv-explore-search">
               <SearchIcon className="h-5 w-5 text-slate-400 shrink-0" />
               <input
                 type="text"
@@ -514,11 +512,11 @@ export default function Groups({ isAuth }) {
                 onBlur={() => {
                   window.setTimeout(() => setSearchFocused(false), 120);
                 }}
-                placeholder="Search Netflix, Spotify, Canva, host name..."
-                className="w-full bg-transparent text-slate-900 placeholder-slate-400 outline-none sm:text-[15px]"
+                placeholder="Search Netflix, Spotify, Canva..."
+                className="sv-explore-search-input"
               />
               {searchTerm && (
-                <button type="button" onClick={() => setSearchTerm("")} className="text-slate-400 hover:text-slate-600">
+                <button type="button" onClick={() => setSearchTerm("")} className="sv-explore-search-clear">
                   <span className="sr-only">Clear</span>
                   &times;
                 </button>
@@ -526,7 +524,7 @@ export default function Groups({ isAuth }) {
             </div>
 
             {searchFocused && searchSuggestions.length > 0 ? (
-              <div className="absolute mt-2 w-full rounded-2xl border border-slate-100 bg-white p-2 shadow-xl z-50">
+              <div className="sv-explore-suggestions">
                 {searchSuggestions.map((item) => (
                   <button
                     key={`${item.helper}-${item.label}`}
@@ -536,10 +534,10 @@ export default function Groups({ isAuth }) {
                       setSearchTerm(item.label);
                       setSearchFocused(false);
                     }}
-                    className="flex w-full flex-col rounded-xl px-4 py-2.5 text-left transition-colors hover:bg-slate-50 focus:bg-slate-50 outline-none"
+                    className="sv-explore-suggestion-item"
                   >
-                    <span className="font-semibold text-slate-900">{item.label}</span>
-                    <span className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                    <span className="font-semibold text-slate-900 dark:text-white">{item.label}</span>
+                    <span className="text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
                       {item.helper}
                     </span>
                   </button>
@@ -549,49 +547,42 @@ export default function Groups({ isAuth }) {
           </div>
         </section>
 
-        {/* CATEGORY & SORT ROW */}
-        <section className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sticky z-20" style={{ top: '4.5rem' }}>
-          <div className="w-full flex-1 overflow-x-auto overflow-y-hidden touch-pan-x pb-4 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 sv-hide-scrollbar" style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-            <div className="flex items-center gap-2 sm:gap-3 w-max pr-8 sm:pr-0">
+        {/* ── CATEGORY PILLS ── */}
+        <section className="sv-explore-filters">
+          <div className="sv-explore-cats">
+            <button
+              type="button"
+              onClick={() => setCategoryFilter("all")}
+              className={`sv-explore-cat-pill ${categoryFilter === "all" ? "is-active" : ""}`}
+            >
+              {categoryFilter === "all" ? <SparkIcon className="h-3.5 w-3.5" /> : null}
+              All
+            </button>
+            {[
+              { id: "Streaming", icon: PlayIcon },
+              { id: "Education", icon: AcademicCapIcon },
+              { id: "AI Tools", icon: SparkIcon },
+              { id: "Productivity", icon: GridIcon },
+              { id: "Music", icon: MusicIcon },
+              { id: "Gaming", icon: ControllerIcon }
+            ].map((cat) => (
               <button
+                key={cat.id}
                 type="button"
-                onClick={() => setCategoryFilter("all")}
-                className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
-                  categoryFilter === "all" ? "bg-brand text-white shadow-md" : "bg-white text-slate-700 shadow-sm hover:bg-slate-50 border border-slate-200/60"
-                }`}
+                onClick={() => setCategoryFilter(cat.id)}
+                className={`sv-explore-cat-pill ${categoryFilter === cat.id ? "is-active" : ""}`}
               >
-                {categoryFilter === "all" ? <SparkIcon className="h-4 w-4" /> : null} All
+                <cat.icon className="h-3.5 w-3.5" />
+                {cat.id}
               </button>
-              
-              {[
-                { id: "Streaming", icon: PlayIcon },
-                { id: "Education", icon: AcademicCapIcon },
-                { id: "AI Tools", icon: SparkIcon },
-                { id: "Productivity", icon: GridIcon },
-                { id: "Music", icon: MusicIcon },
-                { id: "Gaming", icon: ControllerIcon }
-              ].map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setCategoryFilter(cat.id)}
-                  className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all ${
-                    categoryFilter === cat.id ? "bg-brand text-white shadow-md" : "bg-white text-slate-700 shadow-sm hover:bg-slate-50 border border-slate-200/60"
-                  }`}
-                >
-                  <cat.icon className="h-4 w-4" />
-                  {cat.id}
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
 
-          <div className="w-full sm:w-auto shrink-0 flex items-center bg-white rounded-full border border-slate-200/60 shadow-sm px-4 py-2.5">
+          <div className="sv-explore-sort">
             <select
               value={sortBy}
               onChange={(event) => setSortBy(event.target.value)}
-              className="bg-transparent text-sm font-medium text-slate-700 outline-none border-none pr-6 cursor-pointer appearance-none w-full sm:w-36"
-              style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748b\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundPosition: 'right center', backgroundRepeat: 'no-repeat', backgroundSize: '1.2em' }}
+              className="sv-explore-sort-select"
             >
               {SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -659,8 +650,8 @@ export default function Groups({ isAuth }) {
             </div>
           </div>
         ) : (
-          <section className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
-            {filteredGroups.map((group, index) => {
+          <section className="sv-explore-grid">
+            {filteredGroups.map((group) => {
               const filledSlots = Number(group.filled_slots || 0);
               const totalSlots = Math.max(Number(group.total_slots || 1), 1);
               const remainingSlots = Math.max(Number(group.remaining_slots ?? totalSlots - filledSlots) || 0, 0);
@@ -673,44 +664,39 @@ export default function Groups({ isAuth }) {
                 <article
                   key={group.id}
                   onClick={() => navigate(`/groups/${group.id}`, { state: { group } })}
-                  className={`relative overflow-hidden rounded-[20px] sm:rounded-3xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-col cursor-pointer ${index < 2 ? "sv-animate-rise" : index < 4 ? "sv-animate-rise sv-delay-1" : "sv-animate-rise sv-delay-2"}`}
+                  className="sv-explore-card"
                 >
-                  <div className={`w-full h-16 sm:h-28 relative block shrink-0 ${getCoverGradient(group.subscription_name || group.subscription)}`}>
-                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-white/20 backdrop-blur-md rounded-full px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[8px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
-                      {isHot ? "Hot" : "Pop"}
-                    </div>
-                    
-                    <div className="absolute -bottom-5 left-3 sm:-bottom-7 sm:left-5 h-10 w-10 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-white p-1 shadow-sm border-2 border-white z-10 flex items-center justify-center overflow-hidden">
-                      <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full rounded-[8px] sm:rounded-xl" />
+                  <div className={`sv-explore-card-cover ${getCoverGradient(group.subscription_name || group.subscription)}`}>
+                    <span className="sv-explore-card-badge">
+                      {isHot ? "🔥 Hot" : "Pop"}
+                    </span>
+                    <div className="sv-explore-card-logo">
+                      <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full rounded-lg sm:rounded-xl" />
                     </div>
                   </div>
 
-                  <div className="flex-1 pt-6 px-2.5 pb-2.5 sm:pt-10 sm:px-5 sm:pb-5 flex flex-col justify-between min-w-0">
-                    <div className="flex flex-col gap-0.5">
-                      <div className="flex items-start justify-between gap-1">
-                        <div className="min-w-0 flex items-center gap-1">
-                          <h3 className="text-[13px] sm:text-base font-bold text-slate-900 truncate">{group.subscription_name || group.subscription}</h3>
-                          <CheckCircleIcon className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500 shrink-0" />
-                        </div>
-                        <p className="text-[12px] sm:text-sm font-bold text-slate-900 shrink-0">
-                          ₹{Number(group.join_price).toFixed(0)}
-                        </p>
+                  <div className="sv-explore-card-body">
+                    <div className="sv-explore-card-top">
+                      <div className="min-w-0 flex items-center gap-1">
+                        <h3 className="sv-explore-card-name">{group.subscription_name || group.subscription}</h3>
+                        <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-[10px] sm:text-xs font-medium text-slate-500 truncate">{planMeta.category}</p>
-                      </div>
+                      <p className="sv-explore-card-price">
+                        ₹{Number(group.join_price).toFixed(0)}
+                      </p>
                     </div>
+                    <p className="sv-explore-card-cat">{planMeta.category}</p>
                     
-                    <div className="mt-1.5 sm:mt-4 flex items-center gap-1.5 border-t border-slate-100 pt-1.5 sm:pt-4">
-                      <UserIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-400 shrink-0" />
-                      <p className="text-[10px] sm:text-xs text-slate-600 truncate">{hostDisplayName}</p>
-                      <span className="ml-auto text-[10px] sm:text-xs font-semibold text-amber-500 flex items-center gap-0.5 shrink-0">
+                    <div className="sv-explore-card-host">
+                      <UserIcon className="h-3 w-3 text-slate-400 shrink-0" />
+                      <span className="truncate">{hostDisplayName}</span>
+                      <span className="sv-explore-card-rating">
                         ★ {getMockReputation(group.owner_name).rating}
                       </span>
                     </div>
                     
-                    <div className="mt-1.5 sm:mt-4 pt-1.5 sm:pt-0 border-t border-slate-100 sm:border-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
-                      <span className="rounded-md bg-emerald-50 px-2 py-1 text-[10px] sm:text-[11px] font-bold text-emerald-700 text-center w-full sm:w-auto whitespace-nowrap">
+                    <div className="sv-explore-card-footer">
+                      <span className="sv-explore-card-slots">
                         {remainingSlots} left
                       </span>
                       {group.is_joined ? (
@@ -719,7 +705,7 @@ export default function Groups({ isAuth }) {
                             e.stopPropagation();
                             window.location.href = `/groups/${group.id}/chat`;
                           }}
-                          className="rounded-lg sm:rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-xs font-bold text-white transition-colors w-full sm:w-auto text-center whitespace-nowrap bg-brand hover:bg-brand-dark"
+                          className="sv-explore-card-btn is-joined"
                         >
                           Open Chat
                         </button>
@@ -730,7 +716,7 @@ export default function Groups({ isAuth }) {
                             handleJoinInit(group);
                           }}
                           disabled={isFull || joiningId === group.id}
-                          className={`rounded-lg sm:rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-xs font-bold text-white transition-colors w-full sm:w-auto text-center whitespace-nowrap ${isFull ? "bg-slate-300" : "bg-brand hover:bg-brand-dark"}`}
+                          className={`sv-explore-card-btn ${isFull ? "is-full" : ""}`}
                         >
                           {joiningId === group.id ? "Wait" : isFull ? "Full" : "Join"}
                         </button>
