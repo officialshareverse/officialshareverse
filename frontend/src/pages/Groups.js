@@ -477,7 +477,7 @@ export default function Groups({ isAuth }) {
     : null;
 
   return (
-    <div className="sv-page pb-24 sm:pb-8">
+    <div className="sv-page !pb-32 sm:!pb-12">
       {pendingJoinGroup && typeof document !== "undefined"
         ? createPortal(
             <JoinConfirmModal
@@ -653,7 +653,7 @@ export default function Groups({ isAuth }) {
             </div>
           </div>
         ) : (
-          <section className="sv-explore-grid">
+          <section className="sv-explore-grid mb-8">
             {filteredGroups.map((group) => {
               const filledSlots = Number(group.filled_slots || 0);
               const totalSlots = Math.max(Number(group.total_slots || 1), 1);
