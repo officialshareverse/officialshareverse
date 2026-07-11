@@ -4420,12 +4420,12 @@ body.sv-dark .sv-cg-progress-fill {
 /* Keyboard Accessibility Hacks */
 /* -------------------------------------------------------------------------- */
 
-@media (max-width: 768px) {
-  /* Hide fixed bottom navigation elements when a form field is focused on mobile.
-     This prevents the virtual keyboard from pushing the navbar and CTA buttons
-     into the middle of the screen. */
-  body:has(input:focus, textarea:focus) .sv-mobile-tabbar,
-  body:has(input:focus, textarea:focus) .sv-cg-bottom-nav {
+@media (max-width: 768px) and (max-height: 600px) {
+  /* Hide fixed bottom navigation elements when the viewport height shrinks on mobile.
+     This reliably detects the virtual keyboard opening without relying on input focus state,
+     which can get stuck. */
+  .sv-mobile-tabbar,
+  .sv-cg-bottom-nav {
     display: none !important;
   }
 }
