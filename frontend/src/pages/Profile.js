@@ -69,9 +69,7 @@ function formatCurrency(value) {
   return `Rs ${Number(value || 0).toFixed(2)}`;
 }
 
-function clampPercent(value) {
-  return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
-}
+
 
 function getProfileTagline(profile) {
   if (!profile) {
