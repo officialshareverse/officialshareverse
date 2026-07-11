@@ -15,7 +15,6 @@ import {
   ClockIcon,
   CreditIcon,
   LayersIcon,
-  ProgressRing,
   RatingStars,
   ShieldIcon,
   SparkIcon,
@@ -216,7 +215,6 @@ export default function Profile() {
   const displayName = profile?.full_name || profile?.username || "Your profile";
   const draftDisplayName = `${form.first_name || ""} ${form.last_name || ""}`.trim() || displayName;
   const liveProfilePicture = removeProfilePicture ? "" : previewUrl || profile?.profile_picture_url || "";
-  const trustGaugeValue = clampPercent((Number(profile?.trust_score || 0) / 5) * 100);
   const profileTagline = getProfileTagline(profile);
   const recentReviews = useMemo(
     () => (Array.isArray(profile?.recent_reviews) ? profile.recent_reviews : []),
@@ -247,41 +245,6 @@ export default function Profile() {
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
   }, [fieldValidation.email.tone, fieldValidation.phone.tone, form.email, form.first_name, form.last_name, form.phone, liveProfilePicture, profile?.is_verified]);
 
-  const trustBreakdown = useMemo(() => {
-    const profileQuality = clampPercent((Number(profile?.profile_completion || 0) + profileStrength) / 2);
-    const walletHealth = Number(profile?.wallet_balance || 0) > 0
-      ? clampPercent((Number(profile?.wallet_balance || 0) / 500) * 100)
-      : Number(profile?.total_earned || 0) > 0
-        ? 58
-        : 18;
-    const groupHistory = clampPercent(
-      Math.min(
-        100,
-        Number(profile?.groups_joined || 0) * 10 +
-          Number(profile?.groups_created || 0) * 12 +
-          Number(profile?.review_count || 0) * 8 +
-          averageRating * 12
-      )
-    );
-
-    return [
-      {
-        label: "Profile quality",
-        value: profileQuality,
-        note: "Name, contact details, photo, and completion all contribute here.",
-      },
-      {
-        label: "Wallet health",
-        value: walletHealth,
-        note: "A funded wallet and payout-ready profile help future transactions feel safer.",
-      },
-      {
-        label: "Group history",
-        value: groupHistory,
-        note: "Completed joins, hosting activity, and reviews strengthen your public track record.",
-      },
-    ];
-  }, [averageRating, profile?.groups_created, profile?.groups_joined, profile?.profile_completion, profile?.review_count, profile?.total_earned, profile?.wallet_balance, profileStrength]);
 
   const reviewDistribution = useMemo(() => buildReviewDistribution(recentReviews), [recentReviews]);
   const filteredReviews = useMemo(() => {
