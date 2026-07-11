@@ -171,6 +171,7 @@ function formatCurrency(value) {
   return `Rs ${Number(value || 0).toFixed(2)}`;
 }
 
+// eslint-disable-next-line no-unused-vars
 function getCoverGradient(name) {
   const normalized = String(name || "").toLowerCase();
   if (normalized.includes("netflix") || normalized.includes("youtube") || normalized.includes("hotstar") || normalized.includes("nintendo")) {
@@ -348,6 +349,7 @@ export default function Groups({ isAuth }) {
     };
   }, [pendingJoinGroup]);
 
+  // eslint-disable-next-line no-unused-vars
   const handleJoinInit = (group) => {
     if (!isAuth) {
       navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
