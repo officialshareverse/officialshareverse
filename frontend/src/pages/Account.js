@@ -8,8 +8,39 @@ import {
   SparkIcon,
   UserIcon,
   WalletIcon,
+  StarIcon,
 } from "../components/UiIcons";
 import { getAuthToken } from "../auth/session";
+
+/* ── Inline chevron for menu rows ── */
+function ChevronRight({ className = "h-4 w-4" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
+/* ── Logout icon ── */
+function LogOutIcon({ className = "h-5 w-5" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
+/* ── Edit icon ── */
+function EditIcon({ className = "h-4 w-4" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
 
 export default function Account() {
   const navigate = useNavigate();
@@ -41,111 +72,158 @@ export default function Account() {
 
   const getInitials = (name) => {
     if (!name) return "SV";
-    return name.substring(0, 2).toUpperCase();
+    return name
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() || "")
+      .join("");
   };
 
+  const displayName = profile?.first_name || profile?.username || "User";
+  const email = profile?.email || "";
   const balance = profile?.wallet_balance ? Number(profile.wallet_balance).toFixed(0) : "0";
+  const memberSince = profile?.date_joined
+    ? new Date(profile.date_joined).toLocaleDateString("en-IN", { month: "short", year: "numeric" })
+    : null;
 
   return (
-    <div className="sv-page pb-6 sm:pb-8">
-      <div className="mx-auto max-w-md p-4 space-y-6">
-        
-        {/* Profile Header */}
-        <div className="sv-card p-5 mt-2 sv-reveal">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-xl font-bold text-white shadow-md">
-              {getInitials(profile?.first_name || profile?.username)}
+    <div className="sv-page sv-account-page">
+      <div className="sv-account-shell">
+
+        {/* ── Hero / Profile Header ── */}
+        <div className="sv-account-hero">
+          {/* Decorative gradient orbs */}
+          <div className="sv-account-hero-orb sv-account-hero-orb--1" />
+          <div className="sv-account-hero-orb sv-account-hero-orb--2" />
+
+          <div className="sv-account-hero-inner">
+            <div className="sv-account-avatar">
+              <span className="sv-account-avatar-text">
+                {getInitials(displayName)}
+              </span>
+              <button
+                onClick={() => navigate("/profile")}
+                className="sv-account-avatar-edit"
+                aria-label="Edit profile"
+              >
+                <EditIcon className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-xl font-bold text-slate-900 dark:text-white">
-                {profile?.first_name || profile?.username || "Account"}
-              </h1>
-              <p className="truncate text-sm font-medium text-slate-500">
-                {profile?.email || "Welcome to ShareVerse"}
-              </p>
+
+            <h1 className="sv-account-hero-name">{displayName}</h1>
+            {email && <p className="sv-account-hero-email">{email}</p>}
+
+            {/* Quick stats row */}
+            <div className="sv-account-stats">
+              <div className="sv-account-stat">
+                <span className="sv-account-stat-value">₹{balance}</span>
+                <span className="sv-account-stat-label">Wallet</span>
+              </div>
+              <div className="sv-account-stat-divider" />
+              <div className="sv-account-stat">
+                <span className="sv-account-stat-value">
+                  <StarIcon className="h-3.5 w-3.5 inline -mt-0.5 text-amber-400" /> 4.9
+                </span>
+                <span className="sv-account-stat-label">Rating</span>
+              </div>
+              <div className="sv-account-stat-divider" />
+              <div className="sv-account-stat">
+                <span className="sv-account-stat-value">{memberSince || "New"}</span>
+                <span className="sv-account-stat-label">Member</span>
+              </div>
             </div>
-            <button
+          </div>
+        </div>
+
+        {/* ── Menu Section ── */}
+        <div className="sv-account-section">
+          <p className="sv-account-section-title">Activity</p>
+          <div className="sv-account-menu-card">
+            <AccountMenuItem
+              icon={<LayersIcon className="h-5 w-5" />}
+              label="My Splits"
+              subtitle="View and manage your groups"
+              iconBg="sv-account-icon--indigo"
+              onClick={() => navigate("/my-shared")}
+            />
+            <AccountMenuItem
+              icon={<WalletIcon className="h-5 w-5" />}
+              label="Wallet"
+              subtitle="Balance, transactions & payouts"
+              iconBg="sv-account-icon--emerald"
+              trailing={<span className="sv-account-menu-badge">₹{balance}</span>}
+              onClick={() => navigate("/wallet")}
+            />
+            <AccountMenuItem
+              icon={<BellIcon className="h-5 w-5" />}
+              label="Notifications"
+              subtitle="Alerts & activity updates"
+              iconBg="sv-account-icon--rose"
+              onClick={() => navigate("/notifications")}
+              isLast
+            />
+          </div>
+        </div>
+
+        <div className="sv-account-section">
+          <p className="sv-account-section-title">More</p>
+          <div className="sv-account-menu-card">
+            <AccountMenuItem
+              icon={<SparkIcon className="h-5 w-5" />}
+              label="Refer & Earn"
+              subtitle="Invite friends, earn rewards"
+              iconBg="sv-account-icon--amber"
+              onClick={() => navigate("/referrals")}
+            />
+            <AccountMenuItem
+              icon={<UserIcon className="h-5 w-5" />}
+              label="Edit Profile"
+              subtitle="Name, phone & preferences"
+              iconBg="sv-account-icon--sky"
               onClick={() => navigate("/profile")}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
-            >
-              <UserIcon className="h-5 w-5" />
-            </button>
+            />
+            <AccountMenuItem
+              icon={<ShieldIcon className="h-5 w-5" />}
+              label="Help & Support"
+              subtitle="FAQs, contact & feedback"
+              iconBg="sv-account-icon--violet"
+              onClick={() => navigate("/support")}
+              isLast
+            />
           </div>
         </div>
 
-        {/* Menu Items */}
-        <div className="sv-card overflow-hidden sv-reveal" style={{ animationDelay: "0.05s" }}>
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            
-            <button onClick={() => navigate("/my-shared")} className="flex w-full items-center justify-between p-4 transition hover:bg-slate-50 active:bg-slate-100 dark:hover:bg-slate-800">
-              <div className="flex items-center gap-4">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
-                  <LayersIcon className="h-5 w-5" />
-                </span>
-                <span className="text-base font-semibold text-slate-700 dark:text-slate-200">My Splits</span>
-              </div>
-              <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
-            </button>
+        {/* ── Logout ── */}
+        <button onClick={logout} className="sv-account-logout-btn">
+          <LogOutIcon className="h-5 w-5" />
+          <span>Log Out</span>
+        </button>
 
-            <button onClick={() => navigate("/wallet")} className="flex w-full items-center justify-between p-4 transition hover:bg-slate-50 active:bg-slate-100 dark:hover:bg-slate-800">
-              <div className="flex items-center gap-4">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                  <WalletIcon className="h-5 w-5" />
-                </span>
-                <span className="text-base font-semibold text-slate-700 dark:text-slate-200">Wallet Balance</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-800 dark:bg-slate-800 dark:text-slate-200">Rs {balance}</span>
-                <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
-              </div>
-            </button>
-
-            <button onClick={() => navigate("/notifications")} className="flex w-full items-center justify-between p-4 transition hover:bg-slate-50 active:bg-slate-100 dark:hover:bg-slate-800">
-              <div className="flex items-center gap-4">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
-                  <BellIcon className="h-5 w-5" />
-                </span>
-                <span className="text-base font-semibold text-slate-700 dark:text-slate-200">Notifications</span>
-              </div>
-              <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
-            </button>
-
-            <button onClick={() => navigate("/referrals")} className="flex w-full items-center justify-between p-4 transition hover:bg-slate-50 active:bg-slate-100 dark:hover:bg-slate-800">
-              <div className="flex items-center gap-4">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                  <SparkIcon className="h-5 w-5" />
-                </span>
-                <span className="text-base font-semibold text-slate-700 dark:text-slate-200">Refer and Earn</span>
-              </div>
-              <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
-            </button>
-
-            <button onClick={() => navigate("/support")} className="flex w-full items-center justify-between p-4 transition hover:bg-slate-50 active:bg-slate-100 dark:hover:bg-slate-800">
-              <div className="flex items-center gap-4">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400">
-                  <ShieldIcon className="h-5 w-5" />
-                </span>
-                <span className="text-base font-semibold text-slate-700 dark:text-slate-200">Help & Support</span>
-              </div>
-              <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
-            </button>
-
-          </div>
-        </div>
-
-        {/* Logout Section */}
-        <div className="sv-card overflow-hidden sv-reveal" style={{ animationDelay: "0.1s" }}>
-          <button onClick={logout} className="flex w-full items-center justify-between p-4 transition hover:bg-rose-50 active:bg-rose-100 dark:hover:bg-rose-900/20">
-            <span className="text-base font-bold text-rose-600 dark:text-rose-400">Log Out</span>
-            <svg className="h-5 w-5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
-          </button>
-        </div>
-
-        <div className="text-center pb-6 pt-4">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">ShareVerse v1.0.0</p>
-        </div>
+        {/* ── Footer ── */}
+        <p className="sv-account-footer">ShareVerse v1.0.0</p>
 
       </div>
     </div>
+  );
+}
+
+
+/* ── Menu item sub-component ── */
+function AccountMenuItem({ icon, label, subtitle, iconBg, trailing, onClick, isLast }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`sv-account-menu-item ${isLast ? "" : "sv-account-menu-item--bordered"}`}
+    >
+      <span className={`sv-account-menu-icon ${iconBg}`}>{icon}</span>
+      <div className="sv-account-menu-text">
+        <span className="sv-account-menu-label">{label}</span>
+        {subtitle && <span className="sv-account-menu-subtitle">{subtitle}</span>}
+      </div>
+      <div className="sv-account-menu-trailing">
+        {trailing}
+        <ChevronRight className="h-4 w-4 text-slate-400" />
+      </div>
+    </button>
   );
 }

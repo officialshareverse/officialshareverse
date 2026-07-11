@@ -3881,3 +3881,440 @@ body.sv-dark .sv-cg-progress-fill {
   background: rgba(20, 184, 166, 0.15);
   color: #2dd4bf;
 }
+
+/* ======================================================================
+   ACCOUNT PAGE — Mobile-first premium redesign
+   ====================================================================== */
+
+.sv-account-page {
+  padding-bottom: 6rem !important;
+}
+
+.sv-account-shell {
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ── Hero ── */
+.sv-account-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  margin-top: 0.75rem;
+  padding: 2rem 1.5rem 1.75rem;
+  background: linear-gradient(135deg, #0d9488, #0f766e 40%, #065f46);
+  box-shadow: 0 8px 32px rgba(13, 148, 136, 0.25);
+}
+
+.sv-account-hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.sv-account-hero-orb--1 {
+  width: 120px;
+  height: 120px;
+  top: -30px;
+  right: -20px;
+  background: #34d399;
+  animation: sv-account-orb-float 6s ease-in-out infinite alternate;
+}
+
+.sv-account-hero-orb--2 {
+  width: 80px;
+  height: 80px;
+  bottom: -10px;
+  left: 10px;
+  background: #a7f3d0;
+  animation: sv-account-orb-float 8s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes sv-account-orb-float {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(8px, -12px) scale(1.15); }
+}
+
+.sv-account-hero-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Avatar */
+.sv-account-avatar {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.sv-account-avatar-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.sv-account-avatar-edit {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: #fff;
+  color: #0d9488;
+  border: 2px solid #0f766e;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.sv-account-avatar-edit:active {
+  transform: scale(0.92);
+}
+
+/* Hero text */
+.sv-account-hero-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 0.15rem;
+  line-height: 1.25;
+}
+
+.sv-account-hero-email {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 1.25rem;
+}
+
+/* Stat chips */
+.sv-account-stats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  padding: 0.75rem 0.5rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.sv-account-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.sv-account-stat-value {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.sv-account-stat-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sv-account-stat-divider {
+  width: 1px;
+  height: 1.75rem;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+/* ── Menu sections ── */
+.sv-account-section {
+  margin-top: 1.25rem;
+}
+
+.sv-account-section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+  margin: 0 0 0.5rem 0.25rem;
+}
+
+.sv-account-menu-card {
+  border-radius: 1.15rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.dark .sv-account-menu-card {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(51, 65, 85, 0.5);
+}
+
+/* Menu item */
+.sv-account-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.sv-account-menu-item:active {
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.dark .sv-account-menu-item:active {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sv-account-menu-item--bordered {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.dark .sv-account-menu-item--bordered {
+  border-bottom-color: rgba(51, 65, 85, 0.4);
+}
+
+/* Icon wrapper */
+.sv-account-menu-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+}
+
+.sv-account-icon--indigo {
+  background: #eef2ff;
+  color: #6366f1;
+}
+.dark .sv-account-icon--indigo {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+}
+
+.sv-account-icon--emerald {
+  background: #ecfdf5;
+  color: #10b981;
+}
+.dark .sv-account-icon--emerald {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+}
+
+.sv-account-icon--rose {
+  background: #fff1f2;
+  color: #f43f5e;
+}
+.dark .sv-account-icon--rose {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fda4af;
+}
+
+.sv-account-icon--amber {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+.dark .sv-account-icon--amber {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+}
+
+.sv-account-icon--sky {
+  background: #f0f9ff;
+  color: #0ea5e9;
+}
+.dark .sv-account-icon--sky {
+  background: rgba(14, 165, 233, 0.15);
+  color: #7dd3fc;
+}
+
+.sv-account-icon--violet {
+  background: #f5f3ff;
+  color: #8b5cf6;
+}
+.dark .sv-account-icon--violet {
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+}
+
+/* Menu text */
+.sv-account-menu-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sv-account-menu-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.3;
+}
+
+.dark .sv-account-menu-label {
+  color: #e2e8f0;
+}
+
+.sv-account-menu-subtitle {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #94a3b8;
+  line-height: 1.3;
+  margin-top: 0.05rem;
+}
+
+.dark .sv-account-menu-subtitle {
+  color: #64748b;
+}
+
+/* Trailing */
+.sv-account-menu-trailing {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.sv-account-menu-badge {
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.5rem;
+  background: #ecfdf5;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #059669;
+}
+
+.dark .sv-account-menu-badge {
+  background: rgba(5, 150, 105, 0.15);
+  color: #6ee7b7;
+}
+
+/* ── Logout ── */
+.sv-account-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.85rem;
+  border-radius: 1rem;
+  border: 1.5px solid rgba(244, 63, 94, 0.25);
+  background: rgba(255, 241, 242, 0.6);
+  color: #e11d48;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sv-account-logout-btn:active {
+  transform: scale(0.98);
+  background: rgba(255, 241, 242, 0.9);
+}
+
+.dark .sv-account-logout-btn {
+  border-color: rgba(244, 63, 94, 0.2);
+  background: rgba(244, 63, 94, 0.08);
+  color: #fb7185;
+}
+
+/* ── Footer ── */
+.sv-account-footer {
+  text-align: center;
+  padding: 1.25rem 0 1rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.dark .sv-account-footer {
+  color: #475569;
+}
+
+/* ── Desktop adjustments ── */
+@media (min-width: 640px) {
+  .sv-account-shell {
+    padding: 0;
+  }
+
+  .sv-account-hero {
+    border-radius: 1.75rem;
+    padding: 2.5rem 2rem 2rem;
+  }
+
+  .sv-account-avatar {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .sv-account-avatar-text {
+    font-size: 1.5rem;
+  }
+
+  .sv-account-hero-name {
+    font-size: 1.5rem;
+  }
+
+  .sv-account-menu-card {
+    border-radius: 1.25rem;
+  }
+
+  .sv-account-menu-item:hover {
+    background: rgba(15, 23, 42, 0.02);
+  }
+
+  .dark .sv-account-menu-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .sv-account-logout-btn:hover {
+    background: rgba(255, 241, 242, 0.9);
+    border-color: rgba(244, 63, 94, 0.4);
+  }
+}
+
