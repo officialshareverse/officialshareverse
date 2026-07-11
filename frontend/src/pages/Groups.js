@@ -16,10 +16,11 @@ import {
   SparkIcon,
   PlayIcon,
   AcademicCapIcon,
-  GridIcon,
   MusicIcon,
   ControllerIcon,
-  UserIcon
+  UserIcon,
+  ClockIcon,
+  GridIcon
 } from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
 import { trackGroupJoined, trackPurchase } from "../utils/analytics";
@@ -655,10 +656,6 @@ export default function Groups({ isAuth }) {
               const filledSlots = Number(group.filled_slots || 0);
               const totalSlots = Math.max(Number(group.total_slots || 1), 1);
               const remainingSlots = Math.max(Number(group.remaining_slots ?? totalSlots - filledSlots) || 0, 0);
-              const isFull = filledSlots >= totalSlots;
-              const isHot = !isFull && remainingSlots <= 1;
-              const planMeta = getPlanMeta(group.subscription_name || group.subscription);
-              const hostDisplayName = formatHostDisplayName(group.owner_name);
 
               return (
                 <article
@@ -666,61 +663,33 @@ export default function Groups({ isAuth }) {
                   onClick={() => navigate(`/groups/${group.id}`, { state: { group } })}
                   className="sv-explore-card"
                 >
-                  <div className={`sv-explore-card-cover ${getCoverGradient(group.subscription_name || group.subscription)}`}>
-                    <span className="sv-explore-card-badge">
-                      {isHot ? "🔥 Hot" : "Pop"}
-                    </span>
-                    <div className="sv-explore-card-logo">
-                      <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full rounded-lg sm:rounded-xl" />
-                    </div>
+                  <div className="sv-explore-card-logo-wrap">
+                    <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full rounded-lg" />
                   </div>
 
                   <div className="sv-explore-card-body">
-                    <div className="sv-explore-card-top">
-                      <div className="min-w-0 flex items-center gap-1">
-                        <h3 className="sv-explore-card-name">{group.subscription_name || group.subscription}</h3>
-                        <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                      </div>
-                      <p className="sv-explore-card-price">
-                        ₹{Number(group.join_price).toFixed(0)}
-                      </p>
-                    </div>
-                    <p className="sv-explore-card-cat">{planMeta.category}</p>
+                    <h3 className="sv-explore-card-name">
+                      {group.subscription_name || group.subscription} Premium Plan
+                    </h3>
                     
-                    <div className="sv-explore-card-host">
-                      <UserIcon className="h-3 w-3 text-slate-400 shrink-0" />
-                      <span className="truncate">{hostDisplayName}</span>
-                      <span className="sv-explore-card-rating">
-                        ★ {getMockReputation(group.owner_name).rating}
+                    <div className="sv-explore-card-meta">
+                      <span className="flex items-center gap-1">
+                        <UserIcon className="h-3 w-3" /> {filledSlots} sharing
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <ClockIcon className="h-3 w-3" /> 1 months
                       </span>
                     </div>
                     
                     <div className="sv-explore-card-footer">
-                      <span className="sv-explore-card-slots">
+                      <div className="sv-explore-card-price-wrap">
+                        <span className="sv-explore-card-price">₹{Number(group.join_price).toFixed(0)}</span>
+                        <span className="sv-explore-card-price-unit">/device</span>
+                      </div>
+                      
+                      <span className="sv-explore-card-slots-pill">
                         {remainingSlots} left
                       </span>
-                      {group.is_joined ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.location.href = `/groups/${group.id}/chat`;
-                          }}
-                          className="sv-explore-card-btn is-joined"
-                        >
-                          Open Chat
-                        </button>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleJoinInit(group);
-                          }}
-                          disabled={isFull || joiningId === group.id}
-                          className={`sv-explore-card-btn ${isFull ? "is-full" : ""}`}
-                        >
-                          {joiningId === group.id ? "Wait" : isFull ? "Full" : "Join"}
-                        </button>
-                      )}
                     </div>
                   </div>
                 </article>
