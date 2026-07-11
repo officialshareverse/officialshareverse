@@ -177,7 +177,7 @@ export default function Account() {
             />
             <AccountMenuItem
               icon={<UserIcon className="h-5 w-5" />}
-              label="Edit Profile"
+              label="Profile"
               subtitle="Name, phone & preferences"
               iconBg="sv-account-icon--sky"
               onClick={() => navigate("/profile")}
