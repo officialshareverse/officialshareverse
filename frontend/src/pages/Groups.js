@@ -694,6 +694,10 @@ export default function Groups({ isAuth }) {
                   onClick={() => navigate(`/groups/${group.id}`, { state: { group } })}
                   className="sv-explore-card"
                 >
+                  <div className="absolute top-3 right-3 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase shadow-sm border border-slate-200/50 backdrop-blur text-slate-800 z-10 dark:bg-slate-800/80 dark:border-slate-700/50 dark:text-slate-200">
+                    {group.mode === "group_buy" ? "Buy Together" : "Sharing"}
+                  </div>
+
                   <div className="sv-explore-card-logo-wrap">
                     <SubscriptionLogo name={group.subscription_name || group.subscription} size="100%" className="w-full h-full rounded-lg" />
                   </div>

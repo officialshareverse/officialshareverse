@@ -693,8 +693,12 @@ function RecentSplitCard({ group, onClick }) {
   return (
     <article 
       onClick={onClick}
-      className="sv-premium-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 cursor-pointer group"
+      className="sv-premium-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 cursor-pointer group relative overflow-hidden"
     >
+      <div className="absolute top-3 right-3 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase shadow-sm border border-slate-200/50 backdrop-blur text-slate-800 z-10 dark:bg-slate-800/80 dark:border-slate-700/50 dark:text-slate-200">
+        {group.mode === "group_buy" ? "Buy Together" : "Sharing"}
+      </div>
+
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="inline-flex items-center gap-2">
