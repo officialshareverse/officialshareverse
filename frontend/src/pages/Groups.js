@@ -694,7 +694,7 @@ export default function Groups({ isAuth }) {
                   onClick={() => navigate(`/groups/${group.id}`, { state: { group } })}
                   className="sv-explore-card"
                 >
-                  <div className="absolute top-3 right-3 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase shadow-sm border border-slate-200/50 backdrop-blur text-slate-800 z-10 dark:bg-slate-800/80 dark:border-slate-700/50 dark:text-slate-200">
+                  <div className="absolute top-3 right-3 rounded-full bg-white/80 px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-slate-200/50 backdrop-blur text-slate-700 z-10 dark:bg-slate-800/80 dark:border-slate-700/50 dark:text-slate-300">
                     {group.mode === "group_buy" ? "Buy Together" : "Sharing"}
                   </div>
 
