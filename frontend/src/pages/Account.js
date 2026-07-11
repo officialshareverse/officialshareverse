@@ -140,6 +140,13 @@ export default function Account() {
           <p className="sv-account-section-title">Activity</p>
           <div className="sv-account-menu-card">
             <AccountMenuItem
+              icon={<UserIcon className="h-5 w-5" />}
+              label="Profile"
+              subtitle="Name, phone & preferences"
+              iconBg="sv-account-icon--sky"
+              onClick={() => navigate("/profile")}
+            />
+            <AccountMenuItem
               icon={<LayersIcon className="h-5 w-5" />}
               label="My Splits"
               subtitle="View and manage your groups"
@@ -175,13 +182,7 @@ export default function Account() {
               iconBg="sv-account-icon--amber"
               onClick={() => navigate("/referrals")}
             />
-            <AccountMenuItem
-              icon={<UserIcon className="h-5 w-5" />}
-              label="Profile"
-              subtitle="Name, phone & preferences"
-              iconBg="sv-account-icon--sky"
-              onClick={() => navigate("/profile")}
-            />
+
             <AccountMenuItem
               icon={<ShieldIcon className="h-5 w-5" />}
               label="Help & Support"
