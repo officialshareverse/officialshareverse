@@ -206,6 +206,33 @@ function formatDate(value) {
   return parsed.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
+function getTimeLeft(endDateStr) {
+  if (!endDateStr) return "N/A";
+  const end = new Date(endDateStr);
+  const now = new Date();
+  
+  // Set times to midnight for accurate day calculation
+  end.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+  
+  const diffTime = end - now;
+  if (diffTime < 0) return "Expired";
+  
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return "Expires today";
+  if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} left`;
+  
+  const diffMonths = Math.floor(diffDays / 30);
+  const remainingDays = diffDays % 30;
+  
+  if (remainingDays === 0) {
+    return `${diffMonths} month${diffMonths > 1 ? 's' : ''} left`;
+  }
+  
+  return `${diffMonths} mo, ${remainingDays} d left`;
+}
+
 function getInitials(value) {
   return String(value || "ShareVerse Host")
     .trim()
@@ -681,7 +708,7 @@ export default function Groups({ isAuth }) {
                         <UserIcon className="h-3 w-3" /> <span className="truncate max-w-[80px]">{hostDisplayName}</span> • ★ {hostRating}
                       </span>
                       <span className="flex items-center gap-1">
-                        <ClockIcon className="h-3 w-3" /> 1 months
+                        <ClockIcon className="h-3 w-3" /> {getTimeLeft(group.end_date)}
                       </span>
                     </div>
                     
