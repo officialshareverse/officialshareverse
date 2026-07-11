@@ -471,8 +471,8 @@ export default function Profile() {
       <div className="sv-container max-w-6xl space-y-6">
         <section className="pb-2 sm:pb-4 sv-reveal">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.12fr)_minmax(290px,0.88fr)]">
-            <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-[0.18em] font-bold text-slate-500 text-center md:text-left">Profile</p>
+            <div className="min-w-0 sv-profile-hero">
+              <p className="text-[11px] uppercase tracking-[0.18em] font-bold text-teal-100/70 text-center md:text-left mb-4">Profile</p>
               <div className="mt-4 flex flex-col items-center text-center gap-5 md:flex-row md:items-center md:text-left">
                 <div className="sv-profile-avatar-shell">
                   <ProfileAvatar imageUrl={liveProfilePicture} initials={initials} size="large" />
@@ -494,22 +494,22 @@ export default function Profile() {
 
                 <div className="min-w-0 flex flex-col items-center md:items-start">
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{isEditing ? draftDisplayName : displayName}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{isEditing ? draftDisplayName : displayName}</h1>
                     <span className={`sv-profile-verify-chip ${profile.is_verified ? "is-verified" : "is-pending"}`}>
                       <ShieldIcon className="h-3.5 w-3.5" />
                       {profile.is_verified ? "Verified" : "Pending"}
                     </span>
                   </div>
 
-                  <p className="mt-3 text-sm text-slate-600 md:text-base">@{profile.username}</p>
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base md:leading-8">
+                  <p className="mt-3 text-sm text-teal-100/80 md:text-base">@{profile.username}</p>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-teal-50 md:text-base md:leading-8">
                     {profileTagline}
                   </p>
 
                   <div className="mt-5 flex flex-wrap justify-center md:justify-start gap-2">
-                    <span className="sv-chip">Joined {formatDate(profile.date_joined)}</span>
-                    <span className="sv-chip">{profile.has_profile_picture ? "Photo added" : "Photo missing"}</span>
-                    <span className="sv-chip">{profile.profile_completion}% complete</span>
+                    <span className="sv-chip bg-white/10 text-white border-white/20">Joined {formatDate(profile.date_joined)}</span>
+                    <span className="sv-chip bg-white/10 text-white border-white/20">{profile.has_profile_picture ? "Photo added" : "Photo missing"}</span>
+                    <span className="sv-chip bg-white/10 text-white border-white/20">{profile.profile_completion}% complete</span>
                   </div>
                 </div>
               </div>
