@@ -246,6 +246,13 @@ MIDDLEWARE += [
 
 CORS_ALLOW_ALL_ORIGINS = _get_env_bool('DJANGO_CORS_ALLOW_ALL_ORIGINS', False)
 CORS_ALLOW_CREDENTIALS = True
+
+# Hard guard: a credentialed CORS wildcard is a security hole. Refuse to start in prod with it on.
+if IS_PRODUCTION_ENV and CORS_ALLOW_ALL_ORIGINS:
+    raise ImproperlyConfigured(
+        "CORS_ALLOW_ALL_ORIGINS=True is forbidden in production with CORS_ALLOW_CREDENTIALS=True. "
+        "Set DJANGO_CORS_ALLOWED_ORIGINS explicitly instead."
+    )
 CORS_ALLOWED_ORIGINS = _get_env_list(
     'DJANGO_CORS_ALLOWED_ORIGINS',
     DEFAULT_PRODUCTION_CORS_ALLOWED_ORIGINS if IS_PRODUCTION_ENV else DEFAULT_CORS_ALLOWED_ORIGINS,
@@ -353,7 +360,10 @@ if AWS_STORAGE_BUCKET_NAME:
     AWS_S3_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '').strip()
     AWS_S3_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '').strip()
     AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
-    AWS_DEFAULT_ACL = 'public-read'
+    # Private by default. Serve user-uploaded proof/payout docs via signed URLs only.
+    AWS_DEFAULT_ACL = 'private'
+    AWS_QUERYSTRING_AUTH = True
+    AWS_QUERYSTRING_EXPIRE = 60 * 15  # 15-minute signed URLs
     AWS_S3_FILE_OVERWRITE = False
 
     STORAGES = {
