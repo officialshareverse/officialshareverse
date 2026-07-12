@@ -4,7 +4,6 @@ from django import forms
 from django.contrib import admin, messages
 from django.utils import timezone
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 
 from .models import (
     AccountDeletionRequest,
@@ -477,8 +476,8 @@ class WalletPayoutAdmin(admin.ModelAdmin):
     def status_details_pretty(self, obj):
         if not obj.status_details:
             return "—"
-        pretty_json = json.dumps(obj.status_details, indent=2, sort_keys=True)
-        return mark_safe(f"<pre>{pretty_json}</pre>")
+        # format_html escapes the JSON body; never use mark_safe with unsanitized input.
+        return format_html("<pre>{}</pre>", pretty_json)
 
     status_details_pretty.short_description = "Status details"
 
