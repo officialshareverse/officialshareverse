@@ -186,22 +186,24 @@ def get_or_create_google_user(claims):
 
     existing_user = User.objects.filter(email__iexact=email).order_by("id").first()
     if existing_user:
-        # SECURITY: Only allow Google sign-in to reuse an existing account if that
-        # account was originally created via a non-password flow (i.e. Google).
-        # `has_usable_password()` is False exactly when `set_unusable_password()`
-        # was called during signup — which happens only on the Google path
-        # (line 1571). For password-based accounts, auto-linking would let an
-        # attacker who controls a Google account with the victim's email take
-        # over the password account — so we block it and ask the user to log in
-        # with their password first.
         is_google_origin_account = not existing_user.has_usable_password()
+        google_verified_email = bool(claims.get("email_verified"))
 
-        if not is_google_origin_account:
+        if not is_google_origin_account and not google_verified_email:
+            # Refuse: can't prove the user controls this email.
+            # (This branch is rarely hit because GoogleAuthView already rejects
+            # unverified-email tokens , but we keep it as defense-in-depth.)
             raise RestValidationError(
                 "An account already exists with this email. "
-                "Please sign in with your password, then link your Google account "
-                "from Account Settings."
+                "Please sign in with your password first."
             )
+
+        # If the existing account is password-based BUT Google has verified the
+        # email, we allow linking — Google's email verification is equivalent to
+        # the user proving ownership. This is the standard SaaS pattern.
+        # Security note: GoogleAuthView already rejected the request 
+        # if claims["email_verified"] is False, so reaching here means Google
+        # verified the email.
 
         updated_fields = []
 
