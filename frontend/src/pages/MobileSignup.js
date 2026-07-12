@@ -38,8 +38,19 @@ export default function MobileSignup({
       const referralErr = validateReferralStep(form, referralStatus);
       if (referralErr) return setLocalError(referralErr);
       
-      // Request OTP and move to step 2
-      await handleRequestOtp();
+      // Request OTP and move to step 2 only on success.
+      // handleRequestOtp must return a boolean (or throw) so we don't strand the user
+      // on the OTP screen with no session id.
+      try {
+        const otpRequested = await handleRequestOtp();
+        if (otpRequested === false) {
+          // Error already surfaced via setError/toast inside handleRequestOtp.
+          return;
+        }
+      } catch (err) {
+        setLocalError(parseError(err, "Couldn't send the verification code. Please try again."));
+        return;
+      }
       setMobileStep(2);
     } else if (mobileStep === 2) {
       await submitSignupRef.current();

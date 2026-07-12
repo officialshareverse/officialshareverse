@@ -469,22 +469,22 @@ export default function Signup({
     const identityError = validateIdentityStep(form, usernameStatus);
     if (identityError) {
       setError(identityError);
-      return;
+      return false;
     }
     const contactError = validateContactStep(form);
     if (contactError) {
       setError(contactError);
-      return;
+      return false;
     }
     const securityError = validateSecurityStep(form, acceptedTerms);
     if (securityError) {
       setError(securityError);
-      return;
+      return false;
     }
     const referralError = validateReferralStep(form, referralStatus);
     if (referralError) {
       setError(referralError);
-      return;
+      return false;
     }
 
     try {
@@ -520,6 +520,7 @@ export default function Signup({
       );
       lastAutoSubmittedOtpRef.current = "";
       toast.info("Your signup code is ready. Enter all 6 digits to finish.", { title: "Verification code sent" });
+      return true;
     } catch (err) {
       console.error(err);
       const retryAfter = Number(err.response?.data?.retry_after_seconds || 0);
@@ -527,6 +528,7 @@ export default function Signup({
         setOtpCooldownUntil(Date.now() + retryAfter * 1000);
       }
       setError(getSignupError(err.response?.data));
+      return false;
     } finally {
       setOtpLoading(false);
     }

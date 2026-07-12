@@ -3,6 +3,7 @@ import useIsMobile from "../hooks/useIsMobile";
 
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
+import ActionDialog from "../components/ActionDialog";
 import Drawer from "../components/Drawer";
 import FirstVisitHint from "../components/FirstVisitHint";
 import { useToast } from "../components/ToastProvider";
@@ -297,6 +298,7 @@ export default function Wallet() {
   const [workingAction, setWorkingAction] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("topup");
+  const [pendingWithdraw, setPendingWithdraw] = useState(null);
   const isMobile = useIsMobile();
   const [isMobileActionDrawerOpen, setIsMobileActionDrawerOpen] = useState(false);
 
@@ -789,6 +791,20 @@ export default function Wallet() {
             <p className="text-xs font-semibold text-slate-600">Withdrawals are reviewed and securely processed within 24 hours.</p>
           </div>
         </form>
+
+        <ActionDialog
+          open={Boolean(pendingWithdraw)}
+          title="Confirm withdrawal"
+          description={
+            pendingWithdraw
+              ? `Withdraw Rs. ${pendingWithdraw.amount} via ${pendingWithdraw.payout_mode}? This will deduct the amount from your wallet immediately.`
+              : ""
+          }
+          confirmLabel="Withdraw"
+          variant="destructive"
+          onConfirm={confirmWithdrawMoney}
+          onClose={() => setPendingWithdraw(null)}
+        />
       </div>
     );
 
@@ -895,15 +911,29 @@ export default function Wallet() {
     }
   }
 
-  async function withdrawMoney(event) {
+  // Step 1: validate + ask the user to confirm before any money moves.
+  function withdrawMoney(event) {
     event.preventDefault();
 
+    const amount = Number(withdrawAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error("Enter a valid amount to withdraw.", { title: "Invalid amount" });
+      return;
+    }
+
+    setPendingWithdraw({
+      amount: withdrawAmount,
+      payout_mode: withdrawMode,
+    });
+  }
+
+  // Step 2: only runs after the user confirms in the dialog.
+  async function confirmWithdrawMoney() {
+    if (!pendingWithdraw) return;
+    const payload = pendingWithdraw;
     try {
       setWorkingAction("withdraw");
-      const response = await API.post("withdraw-money/", {
-        amount: withdrawAmount,
-        payout_mode: withdrawMode,
-      });
+      const response = await API.post("withdraw-money/", payload);
       toast.success(
         payoutsLive
           ? response.data.message || "Withdrawal request created."
@@ -912,6 +942,7 @@ export default function Wallet() {
         { title: payoutsLive ? "Withdrawal created" : "Withdrawal requested" }
       );
       setWithdrawAmount("");
+      setPendingWithdraw(null);
       await fetchData();
     } catch (err) {
       toast.error(parseError(err, "Failed to create withdrawal request."), {
