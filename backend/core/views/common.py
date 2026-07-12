@@ -431,8 +431,19 @@ def refund_group_buy_held_funds(group_id, reason="manual"):
             member_amount = get_member_contribution_amount(member)
             refund_amount = get_member_charged_amount(member)
             wallet, _ = Wallet.objects.select_for_update().get_or_create(user=member.user)
-            wallet.balance += refund_amount
-            wallet.save()
+
+            # Refund into the same balance (cash vs bonus) the member paid from.
+            # For legacy rows (cash_used=0 AND bonus_used=0), fall back to crediting
+            # everything as cash to preserve historical behavior.
+            if member.cash_used == 0 and member.bonus_used == 0:
+                cash_portion, bonus_portion = refund_amount, Decimal("0.00")
+            else:
+                # Cap each portion at what was actually paid from that bucket
+                # (guards against any drift from rounding).
+                cash_portion = min(member.cash_used, refund_amount)
+                bonus_portion = min(member.bonus_used, refund_amount - cash_portion)
+            wallet.refund_split(cash_portion, bonus_portion)
+            wallet.save(update_fields=["balance", "bonus_balance"])
 
             member.escrow_status = "refunded"
             member.refund_amount = refund_amount
@@ -1311,6 +1322,8 @@ def perform_group_join(joined_user, group):
             has_paid=True,
             charged_amount=price,
             platform_fee_amount=platform_fee_amount,
+            cash_used=cash_used,
+            bonus_used=bonus_used,
             escrow_status="held",
         )
 

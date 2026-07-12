@@ -205,6 +205,8 @@ class GroupMember(models.Model):
     has_paid = models.BooleanField(default=False)
     charged_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     platform_fee_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cash_used = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    bonus_used = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     escrow_status = models.CharField(max_length=20, choices=ESCROW_STATUS_CHOICES, default="held")
     access_confirmed = models.BooleanField(default=False)
     access_confirmed_at = models.DateTimeField(null=True, blank=True)
@@ -313,6 +315,22 @@ class Wallet(models.Model):
         self.bonus_balance = self.get_bonus_balance() - bonus_used
         self.balance = self.get_withdrawable_balance() - cash_used
         return cash_used, bonus_used
+
+    def refund_split(self, cash_portion, bonus_portion):
+        """Inverse of consume_for_group_join. Credits cash and bonus back to their
+        respective balances. Use this when refunding a member whose join was
+        recorded with cash_used/bonus_used.
+
+        For legacy members (cash_used=0, bonus_used=0 — pre-migration), pass the
+        full refund as cash_portion to preserve the old behavior.
+        """
+        cash_portion = Decimal(cash_portion or 0).quantize(Decimal("0.01"))
+        bonus_portion = Decimal(bonus_portion or 0).quantize(Decimal("0.01"))
+        if cash_portion < 0 or bonus_portion < 0:
+            raise ValueError("Refund portions cannot be negative")
+        self.balance = self.get_withdrawable_balance() + cash_portion
+        self.bonus_balance = self.get_bonus_balance() + bonus_portion
+        return cash_portion, bonus_portion
 
     def __str__(self):
         return f"{self.user.username} Wallet"

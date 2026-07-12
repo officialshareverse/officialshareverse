@@ -109,8 +109,15 @@ class LeaveGroupView(APIView):
                 contribution_amount = get_member_contribution_amount(locked_member)
 
                 wallet, _ = Wallet.objects.select_for_update().get_or_create(user=request.user)
-                wallet.balance += refund_amount
-                wallet.save(update_fields=["balance"])
+
+                # Same split-aware refund as refund_group_buy_held_funds (C3 fix).
+                if locked_member.cash_used == 0 and locked_member.bonus_used == 0:
+                    cash_portion, bonus_portion = refund_amount, Decimal("0.00")
+                else:
+                    cash_portion = min(locked_member.cash_used, refund_amount)
+                    bonus_portion = min(locked_member.bonus_used, refund_amount - cash_portion)
+                wallet.refund_split(cash_portion, bonus_portion)
+                wallet.save(update_fields=["balance", "bonus_balance"])
 
                 Transaction.objects.create(
                     user=request.user,

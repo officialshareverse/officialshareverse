@@ -3856,6 +3856,31 @@ class GroupFlowTests(APITestCase):
             ).exists()
         )
 
+    def test_bonus_balance_retained_on_refund(self):
+        group = self.create_group(mode="group_buy", total_slots=1, status="forming")
+        member_wallet = Wallet.objects.get(user=self.member_one)
+        # Give them 0 cash and enough bonus to cover it
+        member_wallet.balance = Decimal("0.00")
+        member_wallet.bonus_balance = Decimal("300.00")
+        member_wallet.save()
+
+        self.authenticate(self.member_one)
+        join_response = self.client.post("/api/join-group/", {"group_id": group.id}, format="json")
+        self.assertEqual(join_response.status_code, status.HTTP_200_OK)
+        
+        member_wallet.refresh_from_db()
+        self.assertEqual(member_wallet.balance, Decimal("0.00"))
+        # 300 - 200 (price) - 10 (platform fee) = 90
+        self.assertEqual(member_wallet.bonus_balance, Decimal("90.00"))
+
+        self.authenticate(self.owner)
+        refund_response = self.client.post(f"/api/my-groups/{group.id}/refund/", format="json")
+        self.assertEqual(refund_response.status_code, status.HTTP_200_OK)
+
+        member_wallet.refresh_from_db()
+        self.assertEqual(member_wallet.balance, Decimal("0.00"))
+        self.assertEqual(member_wallet.bonus_balance, Decimal("300.00"))
+
     def test_owner_group_detail_shows_member_payment_progress(self):
         group = self.create_group(mode="group_buy", total_slots=3, status="collecting")
         GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
