@@ -93,14 +93,26 @@ def create_manual_wallet_payout(
                 "Refuse the operation instead of debiting the wallet again."
             )
 
-        wallet, _ = Wallet.objects.select_for_update().get_or_create(user=user)
-        if wallet.balance < amount:
-            raise ValidationError("Insufficient wallet balance for this manual payout.")
+        # If this payout was funded by a reservation at request time (C2 fix), do not
+        # debit the wallet again. Only stamp it as processed.
+        funds_already_reserved = bool(
+            wallet_payout
+            and (wallet_payout.status_details or {}).get("funds_reserved_at_request")
+        )
 
-        wallet_balance_before = wallet.balance
-        wallet.balance -= amount
-        wallet.save(update_fields=["balance"])
-        wallet_balance_after = wallet.balance
+        wallet, _ = Wallet.objects.select_for_update().get_or_create(user=user)
+
+        if not funds_already_reserved:
+            if wallet.balance < amount:
+                raise ValidationError("Insufficient wallet balance for this manual payout.")
+            wallet_balance_before = wallet.balance
+            wallet.balance -= amount
+            wallet.save(update_fields=["balance"])
+            wallet_balance_after = wallet.balance
+        else:
+            # Funds were reserved when the user requested the withdrawal.
+            wallet_balance_before = wallet.balance + amount
+            wallet_balance_after = wallet.balance
 
         payout_transaction = Transaction.objects.create(
             user=user,
@@ -243,56 +255,81 @@ def create_manual_wallet_payout_request(
     if not payout_account.is_active:
         raise ValidationError("Selected payout account is inactive.")
 
-    existing_open_request = WalletPayout.objects.filter(
-        user=user,
-        provider="manual",
-        transaction__isnull=True,
-        status__in=["created", "pending", "queued", "processing"],
-    ).exists()
-    if existing_open_request:
-        raise ValidationError("You already have a withdrawal request under review.")
+    # Atomically: lock the wallet, enforce one-open-request, reserve the funds,
+    # and create the payout row. Kills the TOCTOU race between the exists() check
+    # and the WalletPayout.objects.create() below.
+    with transaction.atomic():
+        wallet, _ = Wallet.objects.select_for_update().get_or_create(user=user)
 
-    normalized_mode = normalize_manual_payout_mode(payout_account, mode)
-    normalized_destination = build_manual_payout_destination_label(payout_account)
-    currency = (getattr(settings, "RAZORPAY_CURRENCY", "INR") or "INR").strip().upper()
-    amount_subunits = int((amount * 100).quantize(Decimal("1")))
+        # Re-check inside the lock using the same row we just locked.
+        if wallet.balance < amount:
+            raise ValidationError("Insufficient wallet balance")
 
-    wallet, _ = Wallet.objects.get_or_create(user=user)
-    if wallet.balance < amount:
-        raise ValidationError("Insufficient wallet balance")
+        # Enforce one open manual request atomically.
+        existing_open_request = WalletPayout.objects.filter(
+            user=user,
+            provider="manual",
+            transaction__isnull=True,
+            status__in=["created", "pending", "queued", "processing"],
+        ).exists()
+        if existing_open_request:
+            raise ValidationError("You already have a withdrawal request under review.")
 
-    payout = WalletPayout.objects.create(
-        user=user,
-        payout_account=payout_account,
-        amount=amount,
-        amount_subunits=amount_subunits,
-        currency=currency,
-        provider="manual",
-        provider_payout_id=None,
-        provider_contact_id=payout_account.provider_contact_id,
-        provider_fund_account_id=payout_account.provider_fund_account_id,
-        provider_reference_id=f"manual_req_{secrets.token_hex(10)}"[:40],
-        idempotency_key=secrets.token_hex(24),
-        source_account_number="manual",
-        mode=normalized_mode,
-        purpose="payout",
-        narration=sanitize_manual_payout_narration(f"Manual request {user.username}"),
-        destination_label=normalized_destination,
-        status="pending",
-        status_details={
-            "manual": True,
-            "review_required": True,
-            "requested_by_user_id": user.id,
-            "requested_by_username": user.username,
-            "requested_at": timezone.now().isoformat(),
-        },
-        provider_status_source="user_manual_request",
-    )
+        # RESERVE the funds immediately so the user can't double-spend via another
+        # flow (group join, another withdrawal, etc.) while admin reviews.
+        # We track the reserved amount on the payout row itself so the admin-payout
+        # step later knows the funds are already deducted (Patch 1 guards against
+        # re-debiting).
+        wallet.balance -= amount
+        wallet.save(update_fields=["balance"])
+
+        payout = WalletPayout.objects.create(
+            user=user,
+            payout_account=payout_account,
+            amount=amount,
+            amount_subunits=amount_subunits,
+            currency=currency,
+            provider="manual",
+            provider_payout_id=None,
+            provider_contact_id=payout_account.provider_contact_id,
+            provider_fund_account_id=payout_account.provider_fund_account_id,
+            provider_reference_id=f"manual_req_{secrets.token_hex(10)}"[:40],
+            idempotency_key=secrets.token_hex(24),
+            source_account_number="manual",
+            mode=normalized_mode,
+            purpose="payout",
+            narration=sanitize_manual_payout_narration(f"Manual request {user.username}"),
+            destination_label=normalized_destination,
+            status="pending",
+            status_details={
+                "manual": True,
+                "review_required": True,
+                "requested_by_user_id": user.id,
+                "requested_by_username": user.username,
+                "requested_at": timezone.now().isoformat(),
+                "funds_reserved_at_request": True,
+                "wallet_balance_before_reservation": str(wallet.balance + amount),
+                "wallet_balance_after_reservation": str(wallet.balance),
+            },
+            provider_status_source="user_manual_request",
+        )
+
+        # Record a pending debit transaction so the user's transaction history
+        # reflects the reservation immediately.
+        Transaction.objects.create(
+            user=user,
+            group=None,
+            amount=amount,
+            type="debit",
+            status="pending",
+            payment_method="wallet_payout",
+        )
 
     create_notification(
         user=user,
         message=(
-            f"Your withdrawal request for Rs. {amount} to {normalized_destination} was submitted. Payouts are usually processed within 24 hours."
+            f"Your withdrawal request for Rs. {amount} to {normalized_destination} was submitted. "
+            f"Rs. {amount} has been reserved from your wallet and will be transferred within 24 hours."
         ),
     )
 
