@@ -1,7 +1,9 @@
 import json
 
 from django import forms
+from django.conf import settings
 from django.contrib import admin, messages
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.utils import timezone
 from django.utils.html import format_html
 
@@ -567,7 +569,15 @@ class PayoutAccountAdmin(admin.ModelAdmin):
     full_destination_details.short_description = "Full destination details"
 
 
-admin.site.register(User)
+@admin.register(User)
+class UserAdmin(DjangoUserAdmin):
+    # Use Django's hardened UserAdmin: hashed password rendering, separate permissions form,
+    # proper handling of is_superuser / is_staff.
+    list_display = ("username", "email", "phone", "is_active", "is_staff", "is_superuser", "is_verified", "date_joined")
+    list_filter = ("is_active", "is_staff", "is_superuser", "is_verified")
+    search_fields = ("username", "email", "phone")
+    readonly_fields = ("date_joined", "last_login")
+
 admin.site.register(Subscription)
 admin.site.register(GroupMember)
 admin.site.register(Wallet)
@@ -576,8 +586,14 @@ admin.site.register(Review)
 admin.site.register(Notification)
 admin.site.register(JoinRequest)
 admin.site.register(EscrowLedger)
-admin.site.register(CredentialRevealToken)
-admin.site.register(PasswordResetOTP)
+
+@admin.register(CredentialRevealToken)
+class CredentialRevealTokenAdmin(admin.ModelAdmin):
+    readonly_fields = ("token_hash", "user", "expires_at", "used_at")
+
+@admin.register(PasswordResetOTP)
+class PasswordResetOTPAdmin(admin.ModelAdmin):
+    readonly_fields = ("otp_hash", "user", "expires_at", "attempts_remaining", "is_used")
 admin.site.register(GroupInviteLink)
 admin.site.register(ReferralCode)
 admin.site.register(Referral)
