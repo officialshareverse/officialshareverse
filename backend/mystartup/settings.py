@@ -490,6 +490,9 @@ RAZORPAY_WEBHOOK_ALLOWED_IPS = _get_env_list(
     'RAZORPAY_WEBHOOK_ALLOWED_IPS',
     DEFAULT_RAZORPAY_WEBHOOK_ALLOWED_IPS,
 )
+# IPs of your reverse proxy / load balancer. Leave empty in dev (REMOTE_ADDR is used directly).
+AUTH_TRUSTED_PROXY_IPS = _get_env_list('DJANGO_AUTH_TRUSTED_PROXY_IPS', [])
+
 RAZORPAY_WEBHOOK_TRUSTED_PROXY_IPS = _get_env_list(
     'RAZORPAY_WEBHOOK_TRUSTED_PROXY_IPS',
     ['127.0.0.1', '::1'],

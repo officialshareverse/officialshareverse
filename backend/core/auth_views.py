@@ -66,10 +66,25 @@ GOOGLE_TOKEN_ISSUERS = {"accounts.google.com", "https://accounts.google.com"}
 
 
 def get_client_ip(request):
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        return x_forwarded_for.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR", "")
+    """Return the client IP, trusting X-Forwarded-For only behind a configured trusted proxy.
+
+    Mirrors the Razorpay webhook middleware pattern (see core/middleware.py) so auth
+    rate limits cannot be bypassed by spoofing the X-Forwarded-For header directly.
+    """
+    remote_addr = (request.META.get("REMOTE_ADDR") or "").strip()
+    trusted_proxies = set(getattr(settings, "AUTH_TRUSTED_PROXY_IPS", []))
+
+    if remote_addr in trusted_proxies:
+        forwarded_for = (request.META.get("HTTP_X_FORWARDED_FOR") or "").strip()
+        if forwarded_for:
+            # Leftmost entry is the original client when chained through trusted proxies.
+            return forwarded_for.split(",", 1)[0].strip()
+
+        real_ip = (request.META.get("HTTP_X_REAL_IP") or "").strip()
+        if real_ip:
+            return real_ip
+
+    return remote_addr
 
 
 def build_rate_limit_identity(request, username=None):
