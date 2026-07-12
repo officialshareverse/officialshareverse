@@ -82,6 +82,17 @@ def create_manual_wallet_payout(
     now = timezone.now()
 
     with transaction.atomic():
+        # Guard against re-processing an already-completed payout (double-debit).
+        if (
+            wallet_payout is not None
+            and wallet_payout.id is not None
+            and wallet_payout.status in {"processed", "queued"}
+        ):
+            raise ValidationError(
+                f"This payout is already in status '{wallet_payout.status}'. "
+                "Refuse the operation instead of debiting the wallet again."
+            )
+
         wallet, _ = Wallet.objects.select_for_update().get_or_create(user=user)
         if wallet.balance < amount:
             raise ValidationError("Insufficient wallet balance for this manual payout.")

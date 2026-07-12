@@ -421,6 +421,15 @@ class WalletPayoutAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if change:
+            # Idempotency guard: if the payout is already processed, do nothing.
+            if obj.status in ("processed", "queued"):
+                self.message_user(
+                    request,
+                    f"This payout is already '{obj.status}'. No changes were made.",
+                    level=messages.WARNING,
+                )
+                return
+
             if self.is_pending_manual_request(obj) and form.cleaned_data.get("process_now"):
                 create_manual_wallet_payout(
                     user=obj.user,
