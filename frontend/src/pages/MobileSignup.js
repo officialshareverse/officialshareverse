@@ -48,7 +48,7 @@ export default function MobileSignup({
           return;
         }
       } catch (err) {
-        setLocalError(parseError(err, "Couldn't send the verification code. Please try again."));
+        setLocalError(err?.response?.data?.error || "Couldn't send the verification code. Please try again.");
         return;
       }
       setMobileStep(2);
