@@ -186,23 +186,37 @@ def get_or_create_google_user(claims):
 
     existing_user = User.objects.filter(email__iexact=email).order_by("id").first()
     if existing_user:
-        # SECURITY: Only allow Google sign-in to reuse an existing account if that account
-        # was originally created via Google (or has no usable password). Otherwise an attacker
-        # who controls a Google account with the victim's email could take over a
-        # password-based account by "signing in with Google".
-        is_google_account = existing_user.has_usable_password() is False and existing_user.google_sub
-        if not is_google_account:
+        # SECURITY: Only allow Google sign-in to reuse an existing account if that
+        # account was originally created via a non-password flow (i.e. Google).
+        # `has_usable_password()` is False exactly when `set_unusable_password()`
+        # was called during signup — which happens only on the Google path
+        # (line 1571). For password-based accounts, auto-linking would let an
+        # attacker who controls a Google account with the victim's email take
+        # over the password account — so we block it and ask the user to log in
+        # with their password first.
+        is_google_origin_account = not existing_user.has_usable_password()
+
+        if not is_google_origin_account:
             raise RestValidationError(
                 "An account already exists with this email. "
-                "Please sign in with your password instead."
+                "Please sign in with your password, then link your Google account "
+                "from Account Settings."
             )
 
         updated_fields = []
-        # Always keep google_sub in sync so future logins stay gated.
+
+        # Opportunistically capture/stable the Google subject ID if the field
+        # exists on the model AND the claim is present. This is a future-
+        # hardening signal; login must NOT depend on it (existing users have it
+        # NULL until they next sign in). Using getattr keeps this safe even if
+        # the google_sub field/migration was never added.
         google_sub = (claims.get("sub") or "").strip()
-        if google_sub and existing_user.google_sub != google_sub:
-            existing_user.google_sub = google_sub
-            updated_fields.append("google_sub")
+        if google_sub and hasattr(existing_user, "google_sub"):
+            current = getattr(existing_user, "google_sub", None)
+            if current != google_sub:
+                setattr(existing_user, "google_sub", google_sub)
+                updated_fields.append("google_sub")
+
         if given_name and not (existing_user.first_name or "").strip():
             existing_user.first_name = given_name
             updated_fields.append("first_name")
@@ -996,7 +1010,11 @@ class MobileGoogleAuthView(APIView):
                 status=400,
             )
 
-        user, created = get_or_create_google_user(claims)
+        try:
+            user, created = get_or_create_google_user(claims)
+        except RestValidationError as exc:
+            detail = exc.detail[0] if isinstance(exc.detail, list) else str(exc.detail)
+            return Response({"error": detail}, status=409)
         return build_mobile_auth_response(user, created=created)
 
 
@@ -1101,7 +1119,13 @@ class GoogleAuthView(APIView):
                 status=400,
             )
 
-        user, created = get_or_create_google_user(claims)
+        try:
+            user, created = get_or_create_google_user(claims)
+        except RestValidationError as exc:
+            # Account-linking refused (e.g. email matches a password account).
+            # Return a clear 409 Conflict so the frontend can guide the user.
+            detail = exc.detail[0] if isinstance(exc.detail, list) else str(exc.detail)
+            return Response({"error": detail}, status=409)
         return build_auth_response(user, created=created)
 
 
