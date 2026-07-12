@@ -539,6 +539,17 @@ class WalletPayout(models.Model):
 
     class Meta:
         ordering = ["-requested_at", "-id"]
+        indexes = [
+            models.Index(
+                fields=["user"],
+                name="one_open_manual_req_idx",
+                condition=models.Q(
+                    provider="manual",
+                    transaction__isnull=True,
+                    status__in=["created", "pending", "queued", "processing"],
+                ),
+            ),
+        ]
 
     def __str__(self):
         return f"{self.user.username} payout {self.amount} {self.currency}"
