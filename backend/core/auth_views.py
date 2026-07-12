@@ -186,8 +186,23 @@ def get_or_create_google_user(claims):
 
     existing_user = User.objects.filter(email__iexact=email).order_by("id").first()
     if existing_user:
-        updated_fields = []
+        # SECURITY: Only allow Google sign-in to reuse an existing account if that account
+        # was originally created via Google (or has no usable password). Otherwise an attacker
+        # who controls a Google account with the victim's email could take over a
+        # password-based account by "signing in with Google".
+        is_google_account = existing_user.has_usable_password() is False and existing_user.google_sub
+        if not is_google_account:
+            raise RestValidationError(
+                "An account already exists with this email. "
+                "Please sign in with your password instead."
+            )
 
+        updated_fields = []
+        # Always keep google_sub in sync so future logins stay gated.
+        google_sub = (claims.get("sub") or "").strip()
+        if google_sub and existing_user.google_sub != google_sub:
+            existing_user.google_sub = google_sub
+            updated_fields.append("google_sub")
         if given_name and not (existing_user.first_name or "").strip():
             existing_user.first_name = given_name
             updated_fields.append("first_name")
@@ -210,6 +225,7 @@ def get_or_create_google_user(claims):
         first_name=given_name,
         last_name=family_name,
         is_verified=True,
+        google_sub=(claims.get("sub") or "").strip() or None,
     )
     user.set_unusable_password()
     user.save()

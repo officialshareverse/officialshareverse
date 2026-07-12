@@ -17,6 +17,7 @@ class User(AbstractUser):
     trust_score = models.FloatField(default=0)
     is_verified = models.BooleanField(default=False)
     profile_picture = models.ImageField(upload_to="profile-pictures/", blank=True, null=True)
+    google_sub = models.CharField(max_length=255, unique=True, blank=True, null=True)
 
     def __str__(self):
         return self.username
