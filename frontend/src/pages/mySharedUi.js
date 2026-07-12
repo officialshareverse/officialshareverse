@@ -323,7 +323,7 @@ export const cardMobile = {
   borderRadius: "20px",
   border: "1px solid var(--sv-border)",
   boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
-  background: "#fff",
+  background: "var(--sv-paper-solid)",
 };
 
 export const cardHeader = {
@@ -648,7 +648,7 @@ export const joinedCardMobile = {
   borderRadius: "20px",
   border: "1px solid var(--sv-border)",
   boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
-  background: "#fff",
+  background: "var(--sv-paper-solid)",
 };
 
 export const ownerCredentialCard = {
