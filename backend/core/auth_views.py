@@ -1,6 +1,9 @@
+import logging
 import math
 import re
 import secrets
+
+logger = logging.getLogger(__name__)
 from datetime import timedelta
 
 import requests
@@ -266,8 +269,12 @@ def deliver_otp_code(channel, destination, otp_code, purpose):
     msg91_flow_id = get_msg91_flow_id_for_purpose(purpose)
     otp_variable_name = getattr(settings, "MSG91_OTP_VARIABLE_NAME", "OTP").strip() or "OTP"
     if not (msg91_auth_key and msg91_flow_id):
-        print(
-            f"[ShareVerse SMS OTP] To: {sms_destination} | Purpose: {purpose} | OTP: {otp_code}"
+        # NEVER log the OTP code itself. In dev, surface the OTP only via the dedicated
+        # DJANGO_EXPOSE_DEV_OTP endpoint (which is hard-gated to non-production in settings).
+        logger.warning(
+            "SMS OTP delivery skipped: MSG91 not configured. (purpose=%s, destination=%s)",
+            purpose,
+            sms_destination,
         )
         return False
 

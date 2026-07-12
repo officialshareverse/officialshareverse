@@ -1041,8 +1041,8 @@ class GroupFlowTests(APITestCase):
         MSG91_SIGNUP_FLOW_ID="",
         MSG91_PASSWORD_RESET_FLOW_ID="",
     )
-    @patch("builtins.print")
-    def test_deliver_otp_code_prints_sms_otp_when_msg91_is_not_configured(self, mocked_print):
+    @patch("core.auth_views.logger.warning")
+    def test_deliver_otp_code_logs_warning_when_msg91_is_not_configured(self, mocked_logger):
         delivered = auth_views.deliver_otp_code(
             "phone",
             "9000000001",
@@ -1051,10 +1051,9 @@ class GroupFlowTests(APITestCase):
         )
 
         self.assertFalse(delivered)
-        mocked_print.assert_called_once()
-        printed_message = mocked_print.call_args.args[0]
-        self.assertIn("+919000000001", printed_message)
-        self.assertIn("123456", printed_message)
+        mocked_logger.assert_called_once()
+        log_message = mocked_logger.call_args.args[0]
+        self.assertIn("SMS OTP delivery skipped", log_message)
 
     @override_settings(
         MSG91_AUTH_KEY="msg91-test-key",
