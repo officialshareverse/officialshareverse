@@ -3,6 +3,7 @@ import logging
 import math
 import time
 
+from django.conf import settings
 from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
@@ -21,15 +22,22 @@ def _build_cache_keys(scope, identity):
     return f"{base}:count", f"{base}:reset"
 
 
-def _allow_request_on_cache_failure(scope, action):
+# Fail-closed by default for security-sensitive scopes. Override per-scope if needed.
+RATE_LIMIT_FAIL_OPEN_SCOPES = set(getattr(settings, "RATE_LIMIT_FAIL_OPEN_SCOPES", []))
+
+
+def _cache_failure_response(scope, action):
+    fail_open = scope in RATE_LIMIT_FAIL_OPEN_SCOPES
     logger.warning(
-        "Rate-limit cache unavailable during %s for scope %s. Allowing request without cache enforcement.",
+        "Rate-limit cache unavailable during %s for scope %s. Failing %s.",
         action,
         scope,
+        "open (allowed)" if fail_open else "closed (denied)",
     )
     return {
-        "allowed": True,
-        "retry_after_seconds": 0,
+        "allowed": fail_open,
+        # When failing closed, tell the client to retry shortly so legitimate users aren't hard-blocked.
+        "retry_after_seconds": 0 if fail_open else 30,
         "count": 0,
     }
 
@@ -54,7 +62,7 @@ def get_rate_limit_status(scope, identity):
             "count": int(count),
         }
     except Exception:
-        return _allow_request_on_cache_failure(scope, "status lookup")
+        return _cache_failure_response(scope, "status lookup")
 
 
 def reset_rate_limit(scope, identity):
@@ -110,4 +118,4 @@ def check_and_increment_rate_limit(scope, identity, limit, window_seconds):
             "count": count,
         }
     except Exception:
-        return _allow_request_on_cache_failure(scope, "increment")
+        return _cache_failure_response(scope, "increment")
