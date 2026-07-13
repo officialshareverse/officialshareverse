@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import useIsMobile from "../hooks/useIsMobile";
 
 import API from "../api/axios";
@@ -21,6 +22,8 @@ import {
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
 import { trackMoneyAdded } from "../utils/analytics";
 
+const RAZORPAY_CHECKOUT_SRI = "sha384-se1GRe2lqyJgYUqYjDUfobF6Lg6mtYs6QeQYyE59yvHoedThq8Fy6ljHACVP4BMW";
+
 const RAZORPAY_CHECKOUT_URL = "https://checkout.razorpay.com/v1/checkout.js";
 const QUICK_AMOUNTS = ["100", "300", "500", "1000"];
 const ACTION_TABS = [
@@ -42,9 +45,23 @@ function loadRazorpayCheckout() {
 
   if (!razorpayLoaderPromise) {
     razorpayLoaderPromise = new Promise((resolve, reject) => {
+      const verifyRazorpayGlobal = () => {
+        if (typeof window.Razorpay !== "function") {
+          throw new Error(
+            "Razorpay checkout script loaded but window.Razorpay was " +
+            "not a function. The CDN may have been tampered with — " +
+            "refusing to launch checkout."
+          );
+        }
+        return window.Razorpay;
+      };
+
       const existingScript = document.querySelector(`script[src="${RAZORPAY_CHECKOUT_URL}"]`);
       if (existingScript) {
-        existingScript.addEventListener("load", () => resolve(window.Razorpay));
+        existingScript.addEventListener("load", () => {
+          try { resolve(verifyRazorpayGlobal()); }
+          catch (err) { reject(err); }
+        });
         existingScript.addEventListener("error", () => reject(new Error("Unable to load checkout.")));
         return;
       }
@@ -52,7 +69,14 @@ function loadRazorpayCheckout() {
       const script = document.createElement("script");
       script.src = RAZORPAY_CHECKOUT_URL;
       script.async = true;
-      script.onload = () => resolve(window.Razorpay);
+      script.crossOrigin = "anonymous";
+      if (RAZORPAY_CHECKOUT_SRI) {
+        script.integrity = RAZORPAY_CHECKOUT_SRI;
+      }
+      script.onload = () => {
+        try { resolve(verifyRazorpayGlobal()); }
+        catch (err) { reject(err); }
+      };
       script.onerror = () => reject(new Error("Unable to load checkout."));
       document.body.appendChild(script);
     });
@@ -280,6 +304,109 @@ function getEstimatedPayoutLabel(payout, payoutsLive) {
     return "Needs attention before funds can move";
   }
   return payoutsLive ? "Usually updates shortly after provider processing" : "Usually reviewed within 24 hours";
+}
+
+
+const TransactionRow = React.memo(function TransactionRow({ transaction, isMobile, formatCurrency, statusTone }) {
+  return (
+    <>
+      {transaction.bucketLabel && (
+        <div className="sv-wallet-group-header" style={{ marginTop: '12px', marginBottom: '12px' }}>{transaction.bucketLabel}</div>
+      )}
+      <article  className={`sv-wallet-transaction-card ${isMobile ? "is-compact" : ""}`}>
+                          <div className="flex items-start gap-3">
+                            <span
+                              className={`sv-wallet-transaction-icon ${transaction.type === "credit" ? "is-credit" : "is-debit"}`}
+                            >
+                              {transaction.type === "credit" ? <CreditIcon className="h-4.5 w-4.5" /> : <DebitIcon className="h-4.5 w-4.5" />}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className={`min-w-0 flex-1 text-base font-semibold ${transaction.type === "credit" ? "text-emerald-800" : "text-slate-950"}`}>
+                                  {transaction.title}
+                                </p>
+                                <span
+                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${transaction.type === "credit" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}
+                                >
+                                  {transaction.type}
+                                </span>
+                                <span
+                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(transaction.status)} ${["pending", "queued", "processing"].includes(transaction.status) ? "sv-status-pulse" : ""}`}
+                                >
+                                  {transaction.status}
+                                </span>
+                              </div>
+                              <div className={`mt-2 text-sm text-slate-600 ${isMobile ? "leading-6 sv-wallet-message-compact" : "leading-7"}`}>
+                                {transaction.title.toLowerCase().includes("join") ? (
+                                  <span className="flex items-center gap-2 flex-wrap">
+                                    <span>{formatCurrency(Math.abs(transaction.amount))} charged</span>
+                                    <span className="text-slate-300">→</span>
+                                    <span className="font-semibold text-amber-700">Held</span>
+                                    <span className="text-slate-300">→</span>
+                                    <span>Waiting for confirmation</span>
+                                  </span>
+                                ) : (
+                                  <p>{transaction.description}</p>
+                                )}
+                              </div>
+                              <p className="mt-1 text-xs text-slate-500">
+                                {isMobile
+                                  ? transaction.group_name || transaction.mode_label
+                                  : `${transaction.mode_label}${transaction.group_name ? ` | ${transaction.group_name}` : ""}`}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="text-left sm:text-right">
+                            <p className={`text-lg font-semibold ${transaction.type === "credit" ? "text-emerald-700" : "text-rose-700"}`}>
+                              {transaction.type === "credit" ? "+" : "-"} {formatCurrency(transaction.amount)}
+                            </p>
+                            <p className="mt-2 text-xs text-slate-500">{isMobile ? formatRelativeWalletTime(transaction.created_at) : formatDateTime(transaction.created_at)}</p>
+                          </div>
+                        </article>
+    </>
+  );
+}, (prev, next) => prev.transaction.id === next.transaction.id && prev.isMobile === next.isMobile);
+
+function TransactionList({ groupedTransactions, isMobile, formatCurrency, statusTone }) {
+  const parentRef = useRef(null);
+  
+  const flattenedTransactions = useMemo(() => {
+    const flattened = [];
+    groupedTransactions.forEach(group => {
+      group.items.forEach((item, index) => {
+        flattened.push({
+          ...item,
+          bucketLabel: index === 0 ? group.label : null
+        });
+      });
+    });
+    return flattened;
+  }, [groupedTransactions]);
+
+  const virtualizer = useVirtualizer({
+    count: flattenedTransactions.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 120, // rough estimate; measureElement refines
+    overscan: 10,
+  });
+
+  return (
+    <div ref={parentRef} style={{ overflowY: "auto", height: "600px", paddingRight: "8px" }}>
+      <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+        {virtualizer.getVirtualItems().map((vi) => (
+          <div
+            key={flattenedTransactions[vi.index].id}
+            ref={virtualizer.measureElement}
+            data-index={vi.index}
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", transform: `translateY(${vi.start}px)` }}
+          >
+            <TransactionRow transaction={flattenedTransactions[vi.index]} isMobile={isMobile} formatCurrency={formatCurrency} statusTone={statusTone} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function Wallet() {
@@ -1388,66 +1515,7 @@ export default function Wallet() {
                   </p>
                 </div>
               ) : (
-                groupedTransactions.map((group) => (
-                  <div key={group.label}>
-                    <div className="sv-wallet-group-header">{group.label}</div>
-                    <div className="mt-3 space-y-3">
-                      {group.items.map((transaction) => (
-                        <article key={transaction.id} className={`sv-wallet-transaction-card ${isMobile ? "is-compact" : ""}`}>
-                          <div className="flex items-start gap-3">
-                            <span
-                              className={`sv-wallet-transaction-icon ${transaction.type === "credit" ? "is-credit" : "is-debit"}`}
-                            >
-                              {transaction.type === "credit" ? <CreditIcon className="h-4.5 w-4.5" /> : <DebitIcon className="h-4.5 w-4.5" />}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <p className={`min-w-0 flex-1 text-base font-semibold ${transaction.type === "credit" ? "text-emerald-800" : "text-slate-950"}`}>
-                                  {transaction.title}
-                                </p>
-                                <span
-                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${transaction.type === "credit" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}
-                                >
-                                  {transaction.type}
-                                </span>
-                                <span
-                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(transaction.status)} ${["pending", "queued", "processing"].includes(transaction.status) ? "sv-status-pulse" : ""}`}
-                                >
-                                  {transaction.status}
-                                </span>
-                              </div>
-                              <div className={`mt-2 text-sm text-slate-600 ${isMobile ? "leading-6 sv-wallet-message-compact" : "leading-7"}`}>
-                                {transaction.title.toLowerCase().includes("join") ? (
-                                  <span className="flex items-center gap-2 flex-wrap">
-                                    <span>{formatCurrency(Math.abs(transaction.amount))} charged</span>
-                                    <span className="text-slate-300">→</span>
-                                    <span className="font-semibold text-amber-700">Held</span>
-                                    <span className="text-slate-300">→</span>
-                                    <span>Waiting for confirmation</span>
-                                  </span>
-                                ) : (
-                                  <p>{transaction.description}</p>
-                                )}
-                              </div>
-                              <p className="mt-1 text-xs text-slate-500">
-                                {isMobile
-                                  ? transaction.group_name || transaction.mode_label
-                                  : `${transaction.mode_label}${transaction.group_name ? ` | ${transaction.group_name}` : ""}`}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="text-left sm:text-right">
-                            <p className={`text-lg font-semibold ${transaction.type === "credit" ? "text-emerald-700" : "text-rose-700"}`}>
-                              {transaction.type === "credit" ? "+" : "-"} {formatCurrency(transaction.amount)}
-                            </p>
-                            <p className="mt-2 text-xs text-slate-500">{isMobile ? formatRelativeWalletTime(transaction.created_at) : formatDateTime(transaction.created_at)}</p>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </div>
-                ))
+                <TransactionList groupedTransactions={groupedTransactions} isMobile={isMobile} formatCurrency={formatCurrency} statusTone={statusTone} />
               )}
             </div>
           </section>

@@ -37,8 +37,8 @@
   .sv-tab.is-active,
   .sv-inbox-tab.is-active {
     border-color: transparent;
-    background: linear-gradient(135deg, #0f172a 0%, #134e4a 52%, #7c3aed 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, #0f172a 0%, #134e4a 52%, var(--sv-accent-secondary) 100%);
+    color: var(--sv-paper-solid);
     box-shadow: 0 16px 32px rgba(15, 23, 42, 0.18);
   }
 
@@ -134,7 +134,7 @@
 
   .sv-notification-icon.system {
     background: rgba(15, 118, 110, 0.14);
-    color: #0f766e;
+    color: var(--sv-accent);
   }
 
   .sv-notification-icon.review {
@@ -260,7 +260,7 @@
     width: 3rem;
     height: 3rem;
     border-radius: 20px;
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 13px;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -293,7 +293,7 @@
   .sv-chat-avatar-chip-dot.is-online,
   .sv-chat-avatar-chip-dot.is-typing,
   .sv-chat-inline-dot.is-online {
-    background: #10b981;
+    background: var(--sv-success);
   }
 
   .sv-avatar-chip-dot.is-recent,
@@ -307,11 +307,11 @@
   }
 
   .sv-chat-group-avatar.is-sharing {
-    background: linear-gradient(135deg, #0f766e 0%, #2dd4bf 100%);
+    background: linear-gradient(135deg, var(--sv-accent) 0%, #2dd4bf 100%);
   }
 
   .sv-chat-group-avatar.is-buy {
-    background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+    background: linear-gradient(135deg, var(--sv-accent-secondary) 0%, #a78bfa 100%);
   }
 
   .sv-chat-status-pill {
@@ -341,7 +341,7 @@
 
   .sv-chat-mode-pill {
     background: rgba(15, 118, 110, 0.12);
-    color: #0f766e;
+    color: var(--sv-accent);
   }
 
   .sv-chat-pinned-pill {
@@ -369,7 +369,7 @@
 
   .sv-chat-typing-pill {
     background: rgba(15, 118, 110, 0.12);
-    color: #0f766e;
+    color: var(--sv-accent);
   }
 
   .sv-chat-inline-dot {
@@ -613,8 +613,8 @@
 
   .sv-group-chat-message.is-own {
     border: 1px solid rgba(16, 185, 129, 0.15);
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, var(--sv-success) 0%, #059669 100%);
+    color: var(--sv-paper-solid);
     box-shadow: 0 6px 16px rgba(16, 185, 129, 0.18);
   }
 
@@ -874,7 +874,7 @@
     width: 8px;
     height: 8px;
     border-radius: 999px;
-    background: #10b981;
+    background: var(--sv-success);
     box-shadow: 0 0 0 3px var(--sv-paper-solid);
   }
 
@@ -952,8 +952,8 @@
 
   .sv-mobile-menu-item.is-active {
     border-color: transparent;
-    background: linear-gradient(135deg, #0f172a 0%, #134e4a 56%, #7c3aed 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, #0f172a 0%, #134e4a 56%, var(--sv-accent-secondary) 100%);
+    color: var(--sv-paper-solid);
     box-shadow: 0 18px 34px rgba(15, 23, 42, 0.22);
   }
 
@@ -1074,7 +1074,7 @@
     z-index: 0;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.12);
-    background: linear-gradient(135deg, #0f172a 0%, #134e4a 46%, #7c3aed 100%);
+    background: linear-gradient(135deg, #0f172a 0%, #134e4a 46%, var(--sv-accent-secondary) 100%);
     box-shadow:
       0 10px 22px rgba(124, 58, 237, 0.16),
       inset 0 1px 0 rgba(255, 255, 255, 0.22);
@@ -1103,7 +1103,7 @@
   }
 
   .sv-desktop-nav-link.is-active {
-    color: #ffffff;
+    color: var(--sv-paper-solid);
   }
 
   .sv-desktop-nav-link.is-create:not(.is-active) {
@@ -1484,8 +1484,8 @@
     height: 3rem;
     border-radius: 20px;
     background:
-      linear-gradient(135deg, color-mix(in srgb, var(--sv-accent) 78%, #ffffff 22%), color-mix(in srgb, var(--sv-accent-secondary) 78%, #ffffff 22%));
-    color: #ffffff;
+      linear-gradient(135deg, color-mix(in srgb, var(--sv-accent) 78%, var(--sv-paper-solid) 22%), color-mix(in srgb, var(--sv-accent-secondary) 78%, var(--sv-paper-solid) 22%));
+    color: var(--sv-paper-solid);
     box-shadow: 0 18px 30px color-mix(in srgb, var(--sv-accent) 20%, transparent);
     flex-shrink: 0;
   }

@@ -1,0 +1,29 @@
+body.sv-dark,
+@media (prefers-color-scheme: dark) {
+  body:not(.sv-light) {
+    --sv-bg: var(--sv-bg-dark);
+    --sv-bg-soft: #11161f;
+    --sv-paper: var(--sv-paper-dark);
+    --sv-paper-solid: #161b26;
+    --sv-ink: var(--sv-ink-dark);
+    --sv-muted: var(--sv-muted-dark);
+    --sv-accent: var(--sv-accent-dark);
+    --sv-accent-secondary: #a78bfa;
+    --sv-accent-soft: rgba(45, 212, 191, 0.14);
+    --sv-border: var(--sv-border-dark);
+    --sv-success: #34d399;
+    --sv-danger: #fb7185;
+    --sv-warning: #fbbf24;
+    --sv-shadow: 0 28px 80px rgba(2, 6, 23, 0.4);
+    --sv-body-radial-a: rgba(45, 212, 191, 0.12);
+    --sv-body-radial-b: rgba(124, 58, 237, 0.16);
+    --sv-page-radial-a: rgba(45, 212, 191, 0.08);
+    --sv-page-radial-b: rgba(124, 58, 237, 0.1);
+    --sv-brand-shell-bg: rgba(15, 23, 42, 0.74);
+    --sv-soft-surface: rgba(19, 27, 39, 0.78);
+    --sv-elevated-surface: rgba(15, 23, 42, 0.9);
+    --sv-input-surface: rgba(15, 23, 42, 0.92);
+    --sv-hero-grid-line: rgba(148, 163, 184, 0.08);
+    color-scheme: dark;
+  }
+}

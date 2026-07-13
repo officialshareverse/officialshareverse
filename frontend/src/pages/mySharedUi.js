@@ -1,13 +1,9 @@
 export function SummaryCard({ label, value, highlight = false, compact = false }) {
   return (
-    <div style={{ ...summaryCard, ...(compact ? summaryCardMobile : {}) }}>
-      <p style={{ ...summaryLabel, ...(compact ? summaryLabelMobile : {}) }}>{label}</p>
+    <div className={`sv-ms-summary-card ${compact ? "is-mobile" : ""}`}>
+      <p className={`sv-ms-summary-label ${compact ? "is-mobile" : ""}`}>{label}</p>
       <p
-        style={{
-          ...summaryValue,
-          ...(compact ? summaryValueMobile : {}),
-          color: compact ? "#fff" : (highlight ? "color-mix(in srgb, var(--sv-accent) 80%, #10b981 20%)" : svInk),
-        }}
+        className={`sv-ms-summary-value ${compact ? "is-mobile" : ""}`}
       >
         {value}
       </p>
@@ -63,7 +59,7 @@ export function FilterButton({ active, onClick, children, compact = false }) {
 export function MetricBlock({ label, value, compact }) {
   return (
     <div style={{ ...metricBlock, ...(compact ? metricBlockMobile : {}) }}>
-      <p style={{ ...summaryLabel, ...(compact ? summaryLabelMobile : {}) }}>{label}</p>
+      <p className={`sv-ms-summary-label ${compact ? "is-mobile" : ""}`}>{label}</p>
       <p style={{ ...metricValue, ...(compact ? metricValueMobile : {}) }}>{value}</p>
     </div>
   );

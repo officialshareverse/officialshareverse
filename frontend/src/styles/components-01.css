@@ -52,7 +52,7 @@
     width: 34%;
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #2dd4bf 0%, #7c3aed 52%, #f59e0b 100%);
+    background: linear-gradient(90deg, #2dd4bf 0%, var(--sv-accent-secondary) 52%, #f59e0b 100%);
     box-shadow: 0 0 18px rgba(124, 58, 237, 0.24);
     transform-origin: left center;
     animation: sv-loading-bar 1.15s ease-in-out infinite;
@@ -316,7 +316,7 @@
   }
 
   .sv-tooltip-guided-inner strong {
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 12px;
   }
 
@@ -331,7 +331,7 @@
     justify-self: start;
     min-height: 32px;
     border-radius: 9999px;
-    background: #ffffff;
+    background: var(--sv-paper-solid);
     padding: 0.35rem 0.7rem;
     color: #0f172a;
     font-size: 11px;
@@ -678,7 +678,7 @@
   }
 
   .sv-action-dialog-button.is-primary {
-    background: linear-gradient(135deg, #0f766e 0%, #0f172a 100%);
+    background: linear-gradient(135deg, var(--sv-accent) 0%, #0f172a 100%);
     box-shadow: 0 18px 34px rgba(15, 23, 42, 0.14);
     color: #fff;
   }
@@ -981,7 +981,7 @@
     width: 100%;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #2dd4bf 0%, #7c3aed 55%, #f59e0b 100%);
+    background: linear-gradient(90deg, #2dd4bf 0%, var(--sv-accent-secondary) 55%, #f59e0b 100%);
     transform-origin: left center;
     transition: transform 0.18s ease;
   }
@@ -1219,7 +1219,7 @@
 
   .sv-intro-hub-node.is-main {
     grid-column: span 2;
-    background: #0f766e;
+    background: var(--sv-accent);
     color: white;
   }
 
@@ -1280,7 +1280,7 @@
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #0f766e 0%, #2dd4bf 36%, #7c3aed 100%);
+    background: linear-gradient(90deg, var(--sv-accent) 0%, #2dd4bf 36%, var(--sv-accent-secondary) 100%);
     transition: width 0.3s ease;
   }
 
@@ -1323,7 +1323,7 @@
   .sv-signup-step-card.is-active {
     border-color: transparent;
     background: linear-gradient(135deg, rgba(8, 60, 58, 0.96) 0%, rgba(15, 23, 42, 0.96) 52%, rgba(124, 58, 237, 0.9) 100%);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     box-shadow: 0 22px 44px rgba(15, 23, 42, 0.18);
   }
 
@@ -1837,7 +1837,7 @@
     border-radius: 12px;
     border: none;
     background: var(--sv-accent);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.03em;
@@ -1912,7 +1912,7 @@
 
   .sv-floating-help-trigger.is-open {
     background: var(--sv-accent);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     border-color: transparent;
   }
 
@@ -1992,7 +1992,7 @@
   /* ─── Dark mode: intro visuals ─── */
 
   body.sv-dark .sv-intro-price-card {
-    background: linear-gradient(135deg, #0f766e 0%, #083c3a 100%);
+    background: linear-gradient(135deg, var(--sv-accent) 0%, #083c3a 100%);
   }
 
   body.sv-dark .sv-intro-split-row span,
@@ -2005,12 +2005,12 @@
   }
 
   body.sv-dark .sv-intro-hub-node.is-main {
-    background: linear-gradient(135deg, #0f766e, #2dd4bf);
+    background: linear-gradient(135deg, var(--sv-accent), #2dd4bf);
     color: #0c0f14;
   }
 
   body.sv-dark .sv-walkthrough-visual span {
-    background: linear-gradient(135deg, #0f766e, #2dd4bf);
+    background: linear-gradient(135deg, var(--sv-accent), #2dd4bf);
     color: #0c0f14;
   }
 
@@ -2048,7 +2048,7 @@
   }
 
   body.sv-dark .sv-floating-help-trigger.is-open {
-    background: linear-gradient(135deg, #0f766e, #2dd4bf);
+    background: linear-gradient(135deg, var(--sv-accent), #2dd4bf);
     color: #0c0f14;
   }
 

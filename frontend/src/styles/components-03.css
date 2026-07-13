@@ -66,8 +66,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #0f766e 0%, #7c3aed 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, var(--sv-accent) 0%, var(--sv-accent-secondary) 100%);
+    color: var(--sv-paper-solid);
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -320,7 +320,7 @@
     background:
       radial-gradient(circle at top right, rgba(190, 151, 74, 0.18), transparent 28%),
       radial-gradient(circle at bottom left, rgba(124, 58, 237, 0.18), transparent 32%),
-      linear-gradient(135deg, #0f172a 0%, #132031 36%, #0f766e 70%, #7c3aed 100%);
+      linear-gradient(135deg, #0f172a 0%, #132031 36%, var(--sv-accent) 70%, var(--sv-accent-secondary) 100%);
     background-size: 160% 160%;
     background-position: center calc(50% + var(--sv-parallax-offset, 0px));
     box-shadow: 0 34px 90px rgba(15, 23, 42, 0.20);
@@ -382,7 +382,7 @@
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.18);
     background: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.02em;
@@ -491,10 +491,10 @@
   .sv-plan-logo.is-prime { color: #2563eb; }
   .sv-plan-logo.is-youtube { color: #dc2626; }
   .sv-plan-logo.is-jio { color: #3730a3; }
-  .sv-plan-logo.is-sony { color: #7c3aed; }
+  .sv-plan-logo.is-sony { color: var(--sv-accent-secondary); }
   .sv-plan-logo.is-canva { color: #0891b2; }
   .sv-plan-logo.is-coursera { color: #1d4ed8; }
-  .sv-plan-logo.is-google { color: #0f766e; }
+  .sv-plan-logo.is-google { color: var(--sv-accent); }
 
   .sv-hero-media-shell {
     position: relative;
@@ -641,7 +641,7 @@
 
   .sv-mode-toggle-button.is-active {
     background: var(--sv-secondary-gradient);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     box-shadow: 0 16px 30px rgba(124, 58, 237, 0.22);
   }
 
@@ -724,7 +724,7 @@
     height: 2.25rem;
     border-radius: 999px;
     background: var(--sv-primary-gradient);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -743,7 +743,7 @@
     height: 2.5rem;
     border-radius: 999px;
     background: var(--sv-secondary-gradient);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -783,7 +783,7 @@
     height: 2rem;
     border-radius: 999px;
     background: var(--sv-primary-gradient);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -1003,7 +1003,7 @@
   .sv-groups-filter-button.is-active {
     border-color: transparent;
     background: var(--sv-secondary-gradient);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     box-shadow: 0 18px 34px rgba(124, 58, 237, 0.22);
   }
 
@@ -1076,7 +1076,7 @@
     height: 0.55rem;
     flex-shrink: 0;
     border-radius: 999px;
-    background: linear-gradient(135deg, #2dd4bf 0%, #7c3aed 100%);
+    background: linear-gradient(135deg, #2dd4bf 0%, var(--sv-accent-secondary) 100%);
     box-shadow: 0 0 0 0.4rem rgba(124, 58, 237, 0.08);
   }
 
@@ -1146,7 +1146,7 @@
     width: 4.5rem;
     height: 4.5rem;
     border-radius: var(--sv-radius-lg);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 0.95rem;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -1161,11 +1161,11 @@
   }
 
   .sv-group-icon.is-streaming {
-    background: linear-gradient(135deg, #0f172a 0%, #0f766e 60%, #2dd4bf 100%);
+    background: linear-gradient(135deg, #0f172a 0%, var(--sv-accent) 60%, #2dd4bf 100%);
   }
 
   .sv-group-icon.is-learning {
-    background: linear-gradient(135deg, #1e293b 0%, #7c3aed 56%, #a78bfa 100%);
+    background: linear-gradient(135deg, #1e293b 0%, var(--sv-accent-secondary) 56%, #a78bfa 100%);
   }
 
   .sv-group-icon.is-software {
@@ -1177,7 +1177,7 @@
   }
 
   .sv-group-icon.is-default {
-    background: linear-gradient(135deg, #0f172a 0%, #334155 45%, #7c3aed 100%);
+    background: linear-gradient(135deg, #0f172a 0%, #334155 45%, var(--sv-accent-secondary) 100%);
   }
 
   .sv-group-badge-row {
@@ -1207,7 +1207,7 @@
 
   .sv-group-mode-pill.is-sharing {
     background: rgba(15, 118, 110, 0.12);
-    color: #0f766e;
+    color: var(--sv-accent);
   }
 
   .sv-group-mode-pill.is-buy {
@@ -1273,8 +1273,8 @@
     width: 2.75rem;
     height: 2.75rem;
     border-radius: 999px;
-    background: linear-gradient(135deg, #0f766e 0%, #7c3aed 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, var(--sv-accent) 0%, var(--sv-accent-secondary) 100%);
+    color: var(--sv-paper-solid);
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -1330,11 +1330,11 @@
   }
 
   .sv-group-progress-fill.is-sharing {
-    background: linear-gradient(90deg, #0f766e 0%, #2dd4bf 55%, #0f172a 100%);
+    background: linear-gradient(90deg, var(--sv-accent) 0%, #2dd4bf 55%, #0f172a 100%);
   }
 
   .sv-group-progress-fill.is-buy {
-    background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 48%, #7c3aed 100%);
+    background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 48%, var(--sv-accent-secondary) 100%);
   }
 
   .sv-group-progress-fill.is-hot {
@@ -1400,7 +1400,7 @@
     width: 100%;
     padding: var(--sv-space-sm) 1rem;
     border-radius: 999px;
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 13px;
     font-weight: 800;
     transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
@@ -1412,11 +1412,11 @@
   }
 
   .sv-group-join-button.is-sharing {
-    background: linear-gradient(135deg, #083c3a 0%, #0f766e 56%, #2dd4bf 100%);
+    background: linear-gradient(135deg, #083c3a 0%, var(--sv-accent) 56%, #2dd4bf 100%);
   }
 
   .sv-group-join-button.is-buy {
-    background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 48%, #f59e0b 100%);
+    background: linear-gradient(135deg, var(--sv-accent-secondary) 0%, #8b5cf6 48%, #f59e0b 100%);
   }
 
   .sv-group-join-button.is-disabled {
@@ -1640,7 +1640,7 @@
     align-items: end;
     justify-content: space-between;
     gap: 0.75rem;
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     text-align: left;
   }
 

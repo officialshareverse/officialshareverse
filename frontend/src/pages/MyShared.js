@@ -1102,10 +1102,10 @@ export default function MyShared() {
       </div>
 
       <div style={{ display: primaryTab === "host" ? "block" : "none" }}>
-        <div style={{ ...sectionHeader, ...(isMobile ? sectionHeaderMobile : {}) }}>
+        <div className={`sv-ms-section-header ${isMobile ? "is-mobile" : ""}`}>
           <div>
             <p style={sectionEyebrow}>Created splits</p>
-            <h3 style={{ ...sectionTitle, ...(isMobile ? sectionTitleMobile : {}) }}>Manage your splits</h3>
+            <h3 className={`sv-ms-section-title ${isMobile ? "is-mobile" : ""}`}>Manage your splits</h3>
           </div>
         </div>
 
@@ -1149,7 +1149,7 @@ export default function MyShared() {
           const showAdvancedOwnerActions = !isMobile || Boolean(detail) || isEditing;
 
           return (
-            <div key={group.id} style={{ ...card, ...(isMobile ? cardMobile : {}) }}>
+            <div key={group.id} className={`sv-ms-card ${isMobile ? "is-mobile" : ""}`}>
               <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: "12px", marginBottom: "12px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
                   <SubscriptionLogo name={group.subscription_name} size={isMobile ? 36 : 40} />
@@ -1745,10 +1745,10 @@ export default function MyShared() {
             </div>
 
       <div style={{ display: primaryTab === "joined" ? "block" : "none" }}>
-        <div style={{ ...joinedSectionHeader, ...(isMobile ? sectionHeaderMobile : {}) }}>
+        <div className={`sv-ms-section-header ${isMobile ? "is-mobile" : ""}`}>
         <div>
           <p style={sectionEyebrow}>Joined groups</p>
-          <h3 style={{ ...sectionTitle, ...(isMobile ? sectionTitleMobile : {}) }}>Subscriptions you are part of</h3>
+          <h3 className={`sv-ms-section-title ${isMobile ? "is-mobile" : ""}`}>Subscriptions you are part of</h3>
         </div>
       </div>
 
@@ -1774,7 +1774,7 @@ export default function MyShared() {
               reviewForms[reviewKey] || getInitialReviewForm(reviewTarget?.my_review);
 
             return (
-              <div key={group.id} style={{ ...joinedCard, ...(isMobile ? joinedCardMobile : {}) }}>
+              <div key={group.id} className={`sv-ms-card ${isMobile ? "is-mobile" : ""}`}>
                 <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: "12px", marginBottom: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
                     <SubscriptionLogo name={group.subscription_name} size={isMobile ? 36 : 40} />

@@ -1,38 +1,47 @@
 import { useCallback, useEffect, useState } from "react";
+
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { refreshAccessToken } from "./api/axios";
 import { getAuthToken } from "./auth/session";
+import useIsMobile from "./hooks/useIsMobile";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/Navbar";
 import SpotlightSearch from "./components/SpotlightSearch";
 import { ToastProvider } from "./components/ToastProvider";
 import { DownloadIcon } from "./components/UiIcons";
-import AboutPage from "./pages/AboutPage";
-import Account from "./pages/Account";
-import AccountDeletionPage from "./pages/AccountDeletionPage";
-import ChatsInbox from "./pages/ChatsInbox";
-import CreateGroup from "./pages/CreateGroup";
-import FaqPage from "./pages/FaqPage";
-import GroupChat from "./pages/GroupChat";
-import Groups from "./pages/Groups";
-import GroupDetails from "./pages/GroupDetails";
-import Home from "./pages/Home";
-import InviteLanding from "./pages/InviteLanding";
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import MyShared from "./pages/MyShared";
-import NotificationsInbox from "./pages/NotificationsInbox";
-import PrivacyPage from "./pages/PrivacyPage";
-import Profile from "./pages/Profile";
-import ReferralPage from "./pages/ReferralPage";
-import RefundPolicyPage from "./pages/RefundPolicyPage";
-import ShippingPolicyPage from "./pages/ShippingPolicyPage";
-import Signup from "./pages/Signup";
-import SupportPage from "./pages/SupportPage";
-import TermsPage from "./pages/TermsPage";
-import Wallet from "./pages/Wallet";
-import useIsMobile from "./hooks/useIsMobile";
+import { Suspense, lazy } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./api/queryClient";
+import PageSkeleton from "./components/PageSkeleton";
+import LazyRouteErrorBoundary from "./components/LazyRouteErrorBoundary";
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const Account = lazy(() => import("./pages/Account"));
+const AccountDeletionPage = lazy(() => import("./pages/AccountDeletionPage"));
+const ChatsInbox = lazy(() => import("./pages/ChatsInbox"));
+const CreateGroup = lazy(() => import("./pages/CreateGroup"));
+const FaqPage = lazy(() => import("./pages/FaqPage"));
+const GroupChat = lazy(() => import("./pages/GroupChat"));
+const Groups = lazy(() => import("./pages/Groups"));
+const GroupDetails = lazy(() => import("./pages/GroupDetails"));
+const Home = lazy(() => import("./pages/Home"));
+const InviteLanding = lazy(() => import("./pages/InviteLanding"));
+const Landing = lazy(() => import("./pages/Landing"));
+const Login = lazy(() => import("./pages/Login"));
+const MyShared = lazy(() => import("./pages/MyShared"));
+const NotificationsInbox = lazy(() => import("./pages/NotificationsInbox"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const Profile = lazy(() => import("./pages/Profile"));
+const ReferralPage = lazy(() => import("./pages/ReferralPage"));
+const RefundPolicyPage = lazy(() => import("./pages/RefundPolicyPage"));
+const ShippingPolicyPage = lazy(() => import("./pages/ShippingPolicyPage"));
+const Signup = lazy(() => import("./pages/Signup"));
+const SupportPage = lazy(() => import("./pages/SupportPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const Wallet = lazy(() => import("./pages/Wallet"));
+
+
+
 
 const THEME_STORAGE_KEY = "sv-theme-preference";
 
@@ -162,9 +171,12 @@ function App() {
   };
 
   return (
+    <QueryClientProvider client={queryClient}>
     <ErrorBoundary>
       <BrowserRouter>
         <ToastProvider>
+          <LazyRouteErrorBoundary>
+            <Suspense fallback={<PageSkeleton />}>
           {isBootstrapping ? (
             <AuthBootstrapScreen />
           ) : (
@@ -176,9 +188,12 @@ function App() {
             />
           )}
           <PwaInstallPrompt />
+            </Suspense>
+          </LazyRouteErrorBoundary>
         </ToastProvider>
       </BrowserRouter>
     </ErrorBoundary>
+    </QueryClientProvider>
   );
 }
 

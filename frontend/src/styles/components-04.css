@@ -54,7 +54,7 @@
   .sv-join-breakdown-card.is-featured {
     background:
       linear-gradient(135deg, rgba(8, 60, 58, 0.96) 0%, rgba(15, 118, 110, 0.92) 56%, rgba(45, 212, 191, 0.88) 100%);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     box-shadow: 0 24px 54px rgba(15, 118, 110, 0.24);
   }
 
@@ -80,7 +80,7 @@
   }
 
   .sv-join-breakdown-card.is-featured .sv-join-breakdown-value {
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: clamp(1.7rem, 4vw, 2.3rem);
   }
 
@@ -390,8 +390,8 @@
     position: relative;
     overflow: hidden;
     border-color: rgba(255, 255, 255, 0.08);
-    background: linear-gradient(135deg, #0f172a 0%, #0f3d41 44%, #0f766e 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, #0f172a 0%, #0f3d41 44%, var(--sv-accent) 100%);
+    color: var(--sv-paper-solid);
     background-size: 160% 160%;
     animation: sv-gradient-shift 16s ease infinite;
   }
@@ -443,7 +443,7 @@
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.16);
     background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 13px;
     font-weight: 800;
     backdrop-filter: blur(14px);
@@ -464,7 +464,7 @@
     height: 3rem;
     border-radius: 20px;
     background: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     box-shadow: 0 18px 42px rgba(2, 6, 23, 0.22);
   }
 
@@ -476,7 +476,7 @@
     padding: 0.55rem 0.9rem;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -525,7 +525,7 @@
     margin-top: 0.45rem;
     font-size: 1rem;
     font-weight: 900;
-    color: #ffffff;
+    color: var(--sv-paper-solid);
   }
 
   .sv-wallet-balance-details,
@@ -577,7 +577,7 @@
 
   .sv-wallet-legend-dot.is-credit,
   .sv-wallet-trend-bar.is-credit {
-    background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+    background: linear-gradient(180deg, #34d399 0%, var(--sv-success) 100%);
   }
 
   .sv-wallet-legend-dot.is-debit,
@@ -769,7 +769,7 @@
   .sv-wallet-amount-chip.is-active {
     border-color: transparent;
     background: var(--secondary-gradient, var(--sv-secondary-gradient));
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     box-shadow: 0 18px 34px rgba(124, 58, 237, 0.2);
   }
 
@@ -867,7 +867,7 @@
 
   .sv-wallet-tab.is-active {
     background: var(--sv-secondary-gradient);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     box-shadow: 0 16px 30px rgba(124, 58, 237, 0.2);
   }
 
@@ -903,7 +903,7 @@
   }
 
   .sv-wallet-step.is-complete .sv-wallet-step-dot {
-    background: #10b981;
+    background: var(--sv-success);
   }
 
   .sv-wallet-mobile-drawer .sv-drawer-body {
@@ -1015,7 +1015,7 @@
 
   .sv-wallet-payout-step.done .sv-wallet-payout-node,
   .sv-wallet-payout-step.active .sv-wallet-payout-node {
-    background: #10b981;
+    background: var(--sv-success);
   }
 
   .sv-wallet-payout-step.active .sv-wallet-payout-label,
@@ -1072,7 +1072,7 @@
 
   .sv-wallet-filter-pill.is-active {
     background: var(--sv-primary-gradient);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     border-color: transparent;
   }
 
@@ -1151,7 +1151,7 @@
   .sv-create-step.is-active {
     border-color: rgba(255, 255, 255, 0.22);
     background: rgba(255, 255, 255, 0.14);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
   }
 
   .sv-create-step.is-complete {
@@ -1217,13 +1217,13 @@
   }
 
   .sv-create-mode-card.is-active {
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     box-shadow: 0 28px 54px rgba(15, 23, 42, 0.16);
   }
 
   .sv-create-mode-card.is-active.is-teal {
     border-color: transparent;
-    background: linear-gradient(135deg, #0f172a 0%, #0f766e 56%, #2dd4bf 100%);
+    background: linear-gradient(135deg, #0f172a 0%, var(--sv-accent) 56%, #2dd4bf 100%);
   }
 
   .sv-create-mode-card.is-active.is-amber {
@@ -1238,11 +1238,11 @@
     width: 3.25rem;
     height: 3.25rem;
     border-radius: 22px;
-    color: #ffffff;
+    color: var(--sv-paper-solid);
   }
 
   .sv-create-mode-graphic.is-teal {
-    background: linear-gradient(135deg, #0f172a 0%, #0f766e 56%, #2dd4bf 100%);
+    background: linear-gradient(135deg, #0f172a 0%, var(--sv-accent) 56%, #2dd4bf 100%);
   }
 
   .sv-create-mode-graphic.is-amber {
@@ -1345,7 +1345,7 @@
     height: 2.25rem;
     border-radius: 999px;
     background: var(--sv-primary-gradient);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -1366,7 +1366,7 @@
 
   .sv-create-tone-pill.is-teal {
     background: rgba(15, 118, 110, 0.12);
-    color: #0f766e;
+    color: var(--sv-accent);
   }
 
   .sv-create-tone-pill.is-amber {
@@ -1411,7 +1411,7 @@
   .sv-create-quickpick-chip.is-active {
     border-color: transparent;
     background: var(--sv-secondary-gradient);
-    color: #ffffff;
+    color: var(--sv-paper-solid);
   }
 
   .sv-create-quickpick-badge {
@@ -1421,18 +1421,18 @@
     min-width: 2rem;
     min-height: 2rem;
     border-radius: 999px;
-    color: #ffffff;
+    color: var(--sv-paper-solid);
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 0.08em;
   }
 
   .sv-create-quickpick-badge.is-streaming {
-    background: linear-gradient(135deg, #0f172a 0%, #0f766e 56%, #2dd4bf 100%);
+    background: linear-gradient(135deg, #0f172a 0%, var(--sv-accent) 56%, #2dd4bf 100%);
   }
 
   .sv-create-quickpick-badge.is-learning {
-    background: linear-gradient(135deg, #1e293b 0%, #7c3aed 56%, #a78bfa 100%);
+    background: linear-gradient(135deg, #1e293b 0%, var(--sv-accent-secondary) 56%, #a78bfa 100%);
   }
 
   .sv-create-quickpick-badge.is-software {
@@ -1483,7 +1483,7 @@
     height: 2.8rem;
     border-radius: var(--sv-radius-md);
     background: rgba(15, 118, 110, 0.12);
-    color: #0f766e;
+    color: var(--sv-accent);
   }
 
   .sv-create-checklist {
