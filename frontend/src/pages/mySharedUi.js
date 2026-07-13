@@ -183,7 +183,7 @@ export const statsGridMobile = {
   marginBottom: "20px",
 };
 
-const summaryCard = {
+export const summaryCard = {
   background: svPaperGlass,
   borderRadius: "24px",
   padding: "18px 18px 16px",
@@ -192,7 +192,7 @@ const summaryCard = {
   backdropFilter: "blur(12px)",
 };
 
-const summaryCardMobile = {
+export const summaryCardMobile = {
   borderRadius: "20px",
   padding: "16px",
   background: "rgba(255, 255, 255, 0.08)",
@@ -201,13 +201,13 @@ const summaryCardMobile = {
   boxShadow: "none",
 };
 
-const summaryLabel = {
+export const summaryLabel = {
   margin: 0,
   color: svMuted,
   fontSize: "13px",
 };
 
-const summaryLabelMobile = {
+export const summaryLabelMobile = {
   fontSize: "11px",
   lineHeight: 1.4,
   color: svMuted,
@@ -216,13 +216,13 @@ const summaryLabelMobile = {
   letterSpacing: "0.05em",
 };
 
-const summaryValue = {
+export const summaryValue = {
   margin: "8px 0 0",
   fontSize: "30px",
   fontWeight: 700,
 };
 
-const summaryValueMobile = {
+export const summaryValueMobile = {
   marginTop: "8px",
   fontSize: "20px",
 };
