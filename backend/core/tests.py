@@ -1020,7 +1020,7 @@ class GroupFlowTests(APITestCase):
             "/api/forgot-password/request-otp/",
             {
                 "username": self.owner.username,
-                "phone": "+91 9000000001",
+                "phone": self.owner.phone,
             },
             format="json",
         )

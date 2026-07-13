@@ -1,4 +1,4 @@
-﻿from .common import *
+from .common import *
 
 class SignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -147,6 +147,7 @@ class ForgotPasswordRequestSerializer(serializers.Serializer):
     def validate(self, attrs):
         username = normalize_login_identifier(attrs.get("username"))
         email = (attrs.get("email") or "").strip().lower()
+        phone = (attrs.get("phone") or "").strip()
 
         if not username:
             raise serializers.ValidationError({"username": "Username or email is required."})
@@ -158,6 +159,12 @@ class ForgotPasswordRequestSerializer(serializers.Serializer):
         if email and (user.email or "").strip().lower() != email:
             raise serializers.ValidationError({"email": "Account verification failed."})
 
+        if phone:
+            normalized_db_phone = (user.phone or "").replace(" ", "").strip()
+            normalized_input_phone = phone.replace(" ", "").strip()
+            if normalized_db_phone != normalized_input_phone:
+                raise serializers.ValidationError({"phone": "Account verification failed."})
+
         destination_email = (user.email or "").strip().lower()
         if not destination_email:
             raise serializers.ValidationError(
@@ -165,8 +172,8 @@ class ForgotPasswordRequestSerializer(serializers.Serializer):
             )
 
         attrs["user"] = user
-        attrs["email"] = destination_email
         attrs["channel"] = "email"
+        attrs["email"] = destination_email
         return attrs
 
 
