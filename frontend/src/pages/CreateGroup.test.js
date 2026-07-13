@@ -18,6 +18,8 @@ const mockToast = {
   clear: jest.fn(),
 };
 
+const originalMatchMedia = window.matchMedia;
+
 jest.mock("../api/axios", () => ({
   __esModule: true,
   default: {
@@ -42,6 +44,13 @@ beforeEach(() => {
   });
 });
 
+afterEach(() => {
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: originalMatchMedia,
+  });
+});
+
 test("prefills create flow defaults from the home activation template", async () => {
   render(<CreateGroup />);
 
@@ -57,4 +66,22 @@ test("prefills create flow defaults from the home activation template", async ()
   ).toBeInTheDocument();
   expect(screen.getByDisplayValue("6")).toBeInTheDocument();
   expect(screen.getByDisplayValue("249")).toBeInTheDocument();
+});
+
+test("shows the mobile step map and names the next destination", () => {
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: jest.fn().mockImplementation(() => ({
+      matches: true,
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+    })),
+  });
+
+  render(<CreateGroup />);
+
+  expect(screen.getByRole("list", { name: "Create split progress" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Continue: Details" })).toBeInTheDocument();
 });
