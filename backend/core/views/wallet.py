@@ -1,4 +1,4 @@
-﻿from .common import *
+from .common import *
 
 def record_wallet_topup_webhook_event(event_id, event_type, payment_id, provider_order_id, status, notes):
     webhook_event, created = record_razorpay_webhook_event_once(
@@ -590,7 +590,8 @@ class WithdrawMoneyView(APIView):
         if client_request_id:
             idempotency_key = f"wd:{request.user.id}:{client_request_id}"[:80]
         else:
-            body_hash = hashlib.sha256(request.body or b"").hexdigest()[:16]
+            import json
+            body_hash = hashlib.sha256(json.dumps(request.data, sort_keys=True).encode()).hexdigest()[:16]
             fingerprint = (
                 f"{request.user.id}:{wallet.balance}:{amount}:"
                 f"{payout_account.id}:{payout_mode}:{body_hash}"

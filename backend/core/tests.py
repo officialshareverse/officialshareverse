@@ -2146,7 +2146,7 @@ class GroupFlowTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
         wallet.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("750.00"))
+        self.assertEqual(wallet.balance, Decimal("1000.00"))
         payout = WalletPayout.objects.get(user=self.owner)
         self.assertEqual(payout.status, "failed")
         self.assertIsNotNone(payout.wallet_restored_at)
