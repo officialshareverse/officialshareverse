@@ -179,6 +179,8 @@ test("submits a manual withdrawal request from the wallet", async () => {
   await userEvent.click(withdrawButtons[withdrawButtons.length - 1]);
   await userEvent.type(screen.getByLabelText(/^Amount$/i), "300");
   fireEvent.click(screen.getByRole("button", { name: /request manual withdrawal/i }));
+  const confirmButtons = await screen.findAllByRole("button", { name: /^Withdraw$/i });
+  fireEvent.click(confirmButtons[confirmButtons.length - 1]);
 
   await waitFor(() => {
     expect(mockApi.post).toHaveBeenCalledWith("withdraw-money/", {

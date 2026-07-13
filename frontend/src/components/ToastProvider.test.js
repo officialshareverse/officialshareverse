@@ -47,7 +47,7 @@ test("dismisses a toast with a horizontal swipe gesture", async () => {
     changedTouches: [{ clientX: 130 }],
   });
 
-  expect(screen.queryByText("Swipe this toast away.")).not.toBeInTheDocument();
+  await waitFor(() => expect(screen.queryByText("Swipe this toast away.")).not.toBeInTheDocument());
 
   Object.defineProperty(window, "PointerEvent", {
     configurable: true,

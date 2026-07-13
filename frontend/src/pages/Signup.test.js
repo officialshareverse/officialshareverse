@@ -139,7 +139,7 @@ test("checks username availability, requests OTP, and creates the account after 
   });
 
   expect(mockToast.success).toHaveBeenCalledWith(
-    "Account created and verified successfully.",
+    "Account created successfully. Please sign in.",
     { title: "Welcome to ShareVerse" }
   );
   expect(window.dataLayer).toContainEqual({
