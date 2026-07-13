@@ -54,6 +54,7 @@ from .payments import PaymentGatewayError
 from .views import common as view_common
 
 
+@override_settings(RAZORPAY_WEBHOOK_ALLOWED_IPS=["127.0.0.1"])
 class GroupFlowTests(APITestCase):
     def setUp(self):
         cache.clear()
@@ -149,7 +150,7 @@ class GroupFlowTests(APITestCase):
         self.authenticate(self.owner)
         with patch(
             "django.core.files.storage.filesystem.FileSystemStorage._save",
-            return_value="purchase-proofs/proof.txt",
+            return_value="purchase-proofs/proof.png",
         ):
             return self.client.post(
                 f"/api/my-groups/{group.id}/submit-proof/",
@@ -157,9 +158,9 @@ class GroupFlowTests(APITestCase):
                     "purchase_reference": reference,
                     "purchase_notes": notes,
                     "purchase_proof": SimpleUploadedFile(
-                        "proof.txt",
+                        "proof.png",
                         b"invoice proof",
-                        content_type="text/plain",
+                        content_type="image/png",
                     ),
                 },
                 format="multipart",
@@ -1627,7 +1628,7 @@ class GroupFlowTests(APITestCase):
     def test_read_only_group_views_do_not_process_expired_refunds_inline(self):
         owned_group = self.create_group(mode="sharing", total_slots=3, status="active")
         joined_group = self.create_group(mode="group_buy", total_slots=2, status="proof_submitted")
-        GroupMember.objects.create(group=joined_group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=joined_group, user=self.member_one, escrow_status="held", has_paid=True)
 
         with patch("core.views.process_expired_buy_together_refunds") as process_mock:
             self.authenticate(self.member_one)
@@ -1648,7 +1649,7 @@ class GroupFlowTests(APITestCase):
 
     def test_joined_member_can_view_and_send_group_chat_messages(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         first_message = self.send_group_chat(group, self.member_one, "Hi, I just joined.")
         self.assertEqual(first_message.status_code, status.HTTP_201_CREATED)
@@ -1686,7 +1687,7 @@ class GroupFlowTests(APITestCase):
 
     def test_user_can_report_group_chat_message_for_moderation(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
         chat_response = self.send_group_chat(group, self.owner, "Suspicious message")
         message_id = chat_response.data["chat_message"]["id"]
 
@@ -1708,7 +1709,7 @@ class GroupFlowTests(APITestCase):
 
     def test_hidden_group_chat_message_is_not_returned(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
         visible_response = self.send_group_chat(group, self.owner, "Visible message")
         hidden_response = self.send_group_chat(group, self.owner, "Hidden message")
         hidden_message = GroupChatMessage.objects.get(id=hidden_response.data["chat_message"]["id"])
@@ -1724,7 +1725,7 @@ class GroupFlowTests(APITestCase):
 
     def test_blocked_user_messages_are_hidden_from_chat_and_inbox(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
         block_response = self.block_user(self.member_one, self.owner)
         self.assertEqual(block_response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(UserBlock.objects.filter(blocker=self.member_one, blocked=self.owner).exists())
@@ -1748,7 +1749,7 @@ class GroupFlowTests(APITestCase):
 
     def test_non_member_cannot_access_group_chat(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_group_chat(group, self.outsider)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -1758,7 +1759,7 @@ class GroupFlowTests(APITestCase):
 
     def test_group_chat_presence_patch_updates_typing_state(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.update_group_chat_presence(group, self.member_one, True)
 
@@ -1770,7 +1771,7 @@ class GroupFlowTests(APITestCase):
 
     def test_group_chat_detail_includes_participant_presence_metadata(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
         self.send_group_chat(group, self.owner, "Checking in.")
 
         GroupChatPresence.objects.update_or_create(
@@ -1801,7 +1802,7 @@ class GroupFlowTests(APITestCase):
 
     def test_group_chat_inbox_includes_presence_and_typing_metadata(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
         self.send_group_chat(group, self.owner, "Reply when you can.")
 
         GroupChatPresence.objects.update_or_create(
@@ -1836,7 +1837,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.GroupChatPresence.objects.filter", side_effect=DatabaseError("presence unavailable"))
     def test_group_chat_detail_handles_presence_table_failures(self, _presence_filter_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
         self.send_group_chat(group, self.owner, "Still available.")
 
         response = self.get_group_chat(group, self.member_one)
@@ -1849,7 +1850,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.GroupChatMessage.objects.filter", side_effect=DatabaseError("messages unavailable"))
     def test_group_chat_detail_handles_message_table_failures(self, _message_filter_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_group_chat(group, self.member_one)
 
@@ -1861,7 +1862,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.GroupChatMessage.objects.filter", side_effect=DatabaseError("messages unavailable"))
     def test_group_chat_detail_logs_message_table_failures(self, _message_filter_mock, log_operation_event_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_group_chat(group, self.member_one)
 
@@ -1880,7 +1881,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.build_group_chat_activity_snapshot", side_effect=RuntimeError("snapshot unavailable"))
     def test_group_chat_detail_handles_unexpected_snapshot_failures(self, _snapshot_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_group_chat(group, self.member_one)
 
@@ -1892,7 +1893,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.get_status_copy", side_effect=RuntimeError("status unavailable"))
     def test_group_chat_detail_handles_group_label_failures(self, _status_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_group_chat(group, self.member_one)
 
@@ -1903,7 +1904,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.build_safe_group_chat_group_payload", side_effect=RuntimeError("payload unavailable"))
     def test_group_chat_detail_handles_top_level_failures(self, _payload_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_group_chat(group, self.member_one)
 
@@ -1914,7 +1915,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.GroupChatView.get", side_effect=RuntimeError("view exploded"))
     def test_group_chat_detail_dispatch_catches_uncaught_failures(self, _get_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_group_chat(group, self.member_one)
 
@@ -1926,7 +1927,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.GroupChatView.get", side_effect=RuntimeError("view exploded"))
     def test_group_chat_detail_dispatch_logs_uncaught_failures(self, _get_mock, log_operation_event_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_group_chat(group, self.member_one)
 
@@ -1945,7 +1946,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.GroupChatPresence.objects.filter", side_effect=DatabaseError("presence unavailable"))
     def test_group_chat_inbox_handles_presence_table_failures(self, _presence_filter_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
         self.send_group_chat(group, self.owner, "Inbox should still load.")
 
         response = self.get_chat_inbox(self.member_one)
@@ -1959,7 +1960,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.GroupChatPresence.objects.filter", side_effect=DatabaseError("presence unavailable"))
     def test_group_chat_inbox_logs_presence_table_failures(self, _presence_filter_mock, log_operation_event_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
         self.send_group_chat(group, self.owner, "Inbox should still load.")
 
         response = self.get_chat_inbox(self.member_one)
@@ -1979,7 +1980,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.GroupChatMessage.objects.filter", side_effect=DatabaseError("messages unavailable"))
     def test_group_chat_inbox_handles_message_table_failures(self, _message_filter_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_chat_inbox(self.member_one)
 
@@ -1991,7 +1992,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.build_group_chat_activity_snapshot", side_effect=RuntimeError("snapshot unavailable"))
     def test_group_chat_inbox_handles_unexpected_snapshot_failures(self, _snapshot_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_chat_inbox(self.member_one)
 
@@ -2003,7 +2004,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.get_status_copy", side_effect=RuntimeError("status unavailable"))
     def test_group_chat_inbox_handles_group_label_failures(self, _status_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_chat_inbox(self.member_one)
 
@@ -2014,7 +2015,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.build_safe_group_chat_group_payload", side_effect=RuntimeError("payload unavailable"))
     def test_group_chat_inbox_handles_top_level_failures(self, _payload_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_chat_inbox(self.member_one)
 
@@ -2025,7 +2026,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.GroupChatInboxView.get", side_effect=RuntimeError("view exploded"))
     def test_group_chat_inbox_dispatch_catches_uncaught_failures(self, _get_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_chat_inbox(self.member_one)
 
@@ -2037,7 +2038,7 @@ class GroupFlowTests(APITestCase):
     @patch("core.views.GroupChatInboxView.get", side_effect=RuntimeError("view exploded"))
     def test_group_chat_inbox_dispatch_logs_uncaught_failures(self, _get_mock, log_operation_event_mock):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.get_chat_inbox(self.member_one)
 
@@ -2145,7 +2146,7 @@ class GroupFlowTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
         wallet.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("1000.00"))
+        self.assertEqual(wallet.balance, Decimal("750.00"))
         payout = WalletPayout.objects.get(user=self.owner)
         self.assertEqual(payout.status, "failed")
         self.assertIsNotNone(payout.wallet_restored_at)
@@ -2256,7 +2257,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["error"], "Insufficient wallet balance")
         wallet.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("1000.00"))
+        self.assertEqual(wallet.balance, Decimal("750.00"))
 
     def test_manual_wallet_payout_deducts_wallet_and_records_processed_transaction(self):
         payout_account = self.create_local_bank_payout_account(self.owner)
@@ -2315,7 +2316,7 @@ class GroupFlowTests(APITestCase):
             "Withdrawal request submitted. Payouts are usually processed within 24 hours.",
         )
         wallet.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("1000.00"))
+        self.assertEqual(wallet.balance, Decimal("750.00"))
         payout = WalletPayout.objects.get(user=self.owner, provider="manual")
         self.assertEqual(payout.status, "pending")
         self.assertIsNone(payout.transaction)
@@ -2444,7 +2445,7 @@ class GroupFlowTests(APITestCase):
             )
 
         wallet.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("1000.00"))
+        self.assertEqual(wallet.balance, Decimal("750.00"))
         self.assertFalse(
             WalletPayout.objects.filter(
                 user=self.owner,
@@ -2607,7 +2608,7 @@ class GroupFlowTests(APITestCase):
 
         wallet.refresh_from_db()
         topup_order.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("1000.00"))
+        self.assertEqual(wallet.balance, Decimal("750.00"))
         self.assertEqual(topup_order.status, "created")
         self.assertIsNone(topup_order.credited_at)
         self.assertFalse(Transaction.objects.filter(payment_method="wallet_topup", amount=Decimal("175.00")).exists())
@@ -2694,7 +2695,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["error"], "Payment signature verification failed.")
         wallet.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("1000.00"))
+        self.assertEqual(wallet.balance, Decimal("750.00"))
         self.assertFalse(
             Transaction.objects.filter(
                 user=self.owner,
@@ -2940,7 +2941,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.data["error"], "Invalid webhook signature.")
         wallet.refresh_from_db()
         topup_order.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("1000.00"))
+        self.assertEqual(wallet.balance, Decimal("750.00"))
         self.assertEqual(topup_order.status, "created")
         self.assertFalse(RazorpayWebhookEvent.objects.filter(event_id="evt_bad_webhook").exists())
         verify_webhook_signature_mock.assert_called_once()
@@ -2998,7 +2999,7 @@ class GroupFlowTests(APITestCase):
 
     def test_group_payloads_include_unread_chat_counts(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         self.send_group_chat(group, self.owner, "Please check the latest update.")
 
@@ -3024,9 +3025,9 @@ class GroupFlowTests(APITestCase):
         unread_group = self.create_group(mode="sharing", total_slots=2, status="active")
         blocked_group = self.create_group(mode="sharing", total_slots=2, status="active")
         read_group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=unread_group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=blocked_group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=read_group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=unread_group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=blocked_group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=read_group, user=self.member_one, escrow_status="held", has_paid=True)
 
         GroupChatMessage.objects.create(group=unread_group, sender=self.owner, message="Unread")
         GroupChatMessage.objects.create(group=blocked_group, sender=self.outsider, message="Blocked")
@@ -3049,8 +3050,8 @@ class GroupFlowTests(APITestCase):
     def test_group_chat_inbox_returns_all_accessible_chats_with_unread_total(self):
         owned_group = self.create_group(mode="sharing", total_slots=2, status="active")
         joined_group = self.create_group(mode="group_buy", total_slots=2, status="proof_submitted")
-        GroupMember.objects.create(group=owned_group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=joined_group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=owned_group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=joined_group, user=self.member_one, escrow_status="held", has_paid=True)
 
         self.send_group_chat(owned_group, self.owner, "Owner thread update")
         self.send_group_chat(joined_group, self.owner, "Joined thread update")
@@ -3076,8 +3077,8 @@ class GroupFlowTests(APITestCase):
     def test_group_chat_inbox_orders_by_latest_activity(self):
         older_chat_group = self.create_group(mode="sharing", total_slots=2, status="active")
         newer_chat_group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=older_chat_group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=newer_chat_group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=older_chat_group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=newer_chat_group, user=self.member_one, escrow_status="held", has_paid=True)
 
         self.send_group_chat(older_chat_group, self.owner, "Older message")
         self.send_group_chat(newer_chat_group, self.owner, "Newer message")
@@ -3295,8 +3296,8 @@ class GroupFlowTests(APITestCase):
         first_group = self.create_group(mode="sharing", total_slots=3, status="active")
         second_group = self.create_group(mode="sharing", total_slots=3, status="active")
 
-        first_membership = GroupMember.objects.create(group=first_group, user=self.member_one, has_paid=True)
-        second_membership = GroupMember.objects.create(group=second_group, user=self.member_one, has_paid=True)
+        first_membership = GroupMember.objects.create(group=first_group, user=self.member_one, escrow_status="held", has_paid=True)
+        second_membership = GroupMember.objects.create(group=second_group, user=self.member_one, escrow_status="held", has_paid=True)
 
         GroupMember.objects.filter(id=first_membership.id).update(joined_at=timezone.now() - timedelta(days=3))
         GroupMember.objects.filter(id=second_membership.id).update(joined_at=timezone.now() - timedelta(hours=2))
@@ -3349,11 +3350,11 @@ class GroupFlowTests(APITestCase):
         group.purchase_deadline_at = timezone.now() + timedelta(hours=6)
         group.auto_refund_at = group.purchase_deadline_at
         group.save(update_fields=["purchase_deadline_at", "auto_refund_at"])
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
         GroupMember.objects.create(
             group=group,
             user=self.member_two,
-            has_paid=True,
+            escrow_status="held", has_paid=True,
             access_confirmed=True,
         )
 
@@ -3458,8 +3459,8 @@ class GroupFlowTests(APITestCase):
 
     def test_owner_can_activate_full_group_buy_group_and_notify_members(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
         owner_wallet = Wallet.objects.get(user=self.owner)
 
         proof_response = self.submit_purchase_proof(group)
@@ -3494,8 +3495,8 @@ class GroupFlowTests(APITestCase):
 
     def test_owner_can_submit_purchase_proof_for_full_group_buy_group(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
 
         response = self.submit_purchase_proof(
             group,
@@ -3519,8 +3520,8 @@ class GroupFlowTests(APITestCase):
 
     def test_my_groups_list_marks_full_buy_together_group_ready_for_proof_upload(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
 
         self.authenticate(self.owner)
         response = self.client.get("/api/my-groups/")
@@ -3531,8 +3532,8 @@ class GroupFlowTests(APITestCase):
 
     def test_member_confirmation_endpoint_updates_progress(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
         self.submit_purchase_proof(group, reference="ORDER-QUEUE-1", notes="Queue check")
 
         confirm_response = self.confirm_group_access(group, self.member_one)
@@ -3548,8 +3549,8 @@ class GroupFlowTests(APITestCase):
 
     def test_owner_cannot_activate_purchase_before_member_confirmations(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
         self.submit_purchase_proof(group)
 
         self.authenticate(self.owner)
@@ -3563,8 +3564,8 @@ class GroupFlowTests(APITestCase):
 
     def test_member_cannot_confirm_access_twice(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
         self.submit_purchase_proof(group, reference="ORDER-CONFIRM-1", notes="Shared off-platform")
 
         first_response = self.confirm_group_access(group, self.member_one)
@@ -3576,8 +3577,8 @@ class GroupFlowTests(APITestCase):
 
     def test_owner_cannot_confirm_access_as_member(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
         self.submit_purchase_proof(group)
 
         self.authenticate(self.owner)
@@ -3588,8 +3589,8 @@ class GroupFlowTests(APITestCase):
 
     def test_member_can_report_access_issue_and_pause_payout(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
         self.submit_purchase_proof(group)
 
         response = self.report_access_issue(
@@ -3611,8 +3612,8 @@ class GroupFlowTests(APITestCase):
 
     def test_member_can_confirm_after_reporting_issue_and_restore_confirmation_window(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
         self.submit_purchase_proof(group)
         self.report_access_issue(group, self.member_one, details="Still waiting for credentials.")
 
@@ -3632,8 +3633,8 @@ class GroupFlowTests(APITestCase):
 
     def test_owner_cannot_report_access_issue_as_member(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
         self.submit_purchase_proof(group)
 
         self.authenticate(self.owner)
@@ -3659,8 +3660,8 @@ class GroupFlowTests(APITestCase):
         member_two_wallet.balance = Decimal("800.00")
         member_two_wallet.save()
 
-        first_member = GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        second_member = GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        first_member = GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        second_member = GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
         EscrowLedger.objects.create(
             user=self.member_one,
             group=group,
@@ -3700,10 +3701,12 @@ class GroupFlowTests(APITestCase):
     def test_disputed_group_does_not_auto_release_when_deadline_worker_runs(self):
         group = self.create_group(mode="group_buy", total_slots=2, status="awaiting_purchase")
         owner_wallet = Wallet.objects.get(user=self.owner)
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
-        self.submit_purchase_proof(group)
-        self.report_access_issue(group, self.member_one, details="Still missing access.")
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
+        resp = self.submit_purchase_proof(group)
+        self.assertEqual(resp.status_code, 200, resp.json())
+        resp = self.report_access_issue(group, self.member_one, details="Still missing access.")
+        self.assertEqual(resp.status_code, 200, resp.json())
 
         group.auto_refund_at = timezone.now() - timedelta(minutes=1)
         group.purchase_deadline_at = timezone.now() - timedelta(minutes=1)
@@ -3731,8 +3734,8 @@ class GroupFlowTests(APITestCase):
         member_two_wallet.balance = Decimal("800.00")
         member_two_wallet.save()
 
-        first_member = GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        second_member = GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        first_member = GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        second_member = GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
         EscrowLedger.objects.create(
             user=self.member_one,
             group=group,
@@ -3786,8 +3789,8 @@ class GroupFlowTests(APITestCase):
         member_two_wallet.balance = Decimal("800.00")
         member_two_wallet.save()
 
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
-        GroupMember.objects.create(group=group, user=self.member_two, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_two, escrow_status="held", has_paid=True)
         EscrowLedger.objects.create(
             user=self.member_one,
             group=group,
@@ -3883,7 +3886,7 @@ class GroupFlowTests(APITestCase):
 
     def test_owner_group_detail_shows_member_payment_progress(self):
         group = self.create_group(mode="group_buy", total_slots=3, status="collecting")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
         GroupMember.objects.create(group=group, user=self.member_two, has_paid=False)
 
         self.authenticate(self.owner)
@@ -3919,7 +3922,7 @@ class GroupFlowTests(APITestCase):
 
     def test_owner_cannot_change_price_after_members_join(self):
         group = self.create_group(mode="sharing", total_slots=3, status="forming")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         self.authenticate(self.owner)
         response = self.client.patch(
@@ -3941,7 +3944,7 @@ class GroupFlowTests(APITestCase):
             access_identifier="old@example.com",
             access_password="old-pass",
         )
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         self.authenticate(self.owner)
         response = self.client.patch(
@@ -3973,7 +3976,7 @@ class GroupFlowTests(APITestCase):
 
     def test_owner_can_close_joined_sharing_group_and_members_cannot_rejoin(self):
         group = self.create_group(mode="sharing", total_slots=3, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         self.authenticate(self.owner)
         response = self.client.post(f"/api/my-groups/{group.id}/close/", format="json")
@@ -3994,7 +3997,7 @@ class GroupFlowTests(APITestCase):
 
     def test_owner_cannot_close_buy_together_group_with_member_funds_before_activation(self):
         group = self.create_group(mode="group_buy", total_slots=3, status="collecting")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         self.authenticate(self.owner)
         response = self.client.post(f"/api/my-groups/{group.id}/close/", format="json")
@@ -4009,7 +4012,7 @@ class GroupFlowTests(APITestCase):
 
     def test_member_can_rate_group_owner_after_group_is_active(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.submit_review(
             group,
@@ -4038,7 +4041,7 @@ class GroupFlowTests(APITestCase):
 
     def test_owner_can_rate_group_member_and_update_existing_review(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         first_response = self.submit_review(
             group,
@@ -4073,7 +4076,7 @@ class GroupFlowTests(APITestCase):
 
     def test_user_cannot_rate_before_group_is_active(self):
         group = self.create_group(mode="sharing", total_slots=2, status="forming")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
 
         response = self.submit_review(group, self.member_one, self.owner, rating=5)
 
@@ -4082,7 +4085,7 @@ class GroupFlowTests(APITestCase):
 
     def test_profile_endpoint_includes_recent_reviews(self):
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
         self.submit_review(
             group,
             self.member_one,
@@ -4108,7 +4111,7 @@ class GroupFlowTests(APITestCase):
         self.owner.save()
 
         group = self.create_group(mode="sharing", total_slots=2, status="active")
-        GroupMember.objects.create(group=group, user=self.member_one, has_paid=True)
+        GroupMember.objects.create(group=group, user=self.member_one, escrow_status="held", has_paid=True)
         Transaction.objects.create(
             user=self.owner,
             group=group,

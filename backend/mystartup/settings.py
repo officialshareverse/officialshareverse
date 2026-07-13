@@ -412,6 +412,19 @@ elif _HAS_WHITENOISE:
         },
     }
 
+if os.environ.get('DJANGO_ENVIRONMENT', 'development') in ["development", "test"]:
+    if "STORAGES" in locals() and "staticfiles" in STORAGES:
+        STORAGES["staticfiles"]["BACKEND"] = "django.contrib.staticfiles.storage.StaticFilesStorage"
+    else:
+        STORAGES = {
+            "default": {
+                "BACKEND": "django.core.files.storage.FileSystemStorage",
+            },
+            "staticfiles": {
+                "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+            },
+        }
+
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
