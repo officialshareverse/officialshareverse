@@ -2359,6 +2359,10 @@ class GroupFlowTests(APITestCase):
             mode="IMPS",
         )
 
+        pending_request.status = "approved"
+        pending_request.approved_by = staff_user
+        pending_request.save(update_fields=["status", "approved_by"])
+
         processed_payout = create_manual_wallet_payout(
             user=self.owner,
             amount=pending_request.amount,
