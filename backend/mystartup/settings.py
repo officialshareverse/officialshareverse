@@ -124,6 +124,23 @@ if not SECRET_KEY:
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = _get_env_bool('DJANGO_DEBUG', IS_DEV_ENV)
+
+# A3 fix: credentials use an explicit, rotatable key ring. Production must
+# supply a persistent active key; development/test defaults never use SECRET_KEY.
+CREDENTIAL_ENCRYPTION_KEY = os.environ.get("CREDENTIAL_ENCRYPTION_KEY", "").strip()
+if not CREDENTIAL_ENCRYPTION_KEY:
+    if IS_PRODUCTION_ENV:
+        raise ImproperlyConfigured("CREDENTIAL_ENCRYPTION_KEY is required in production.")
+    CREDENTIAL_ENCRYPTION_KEY = "shareverse-development-credential-key"
+
+CREDENTIAL_ENCRYPTION_KEYS = {"v1": CREDENTIAL_ENCRYPTION_KEY}
+for pair in os.environ.get("CREDENTIAL_ENCRYPTION_KEYS", "").split(","):
+    key_id, separator, key_value = pair.partition(":")
+    if separator and key_id.strip() and key_value.strip():
+        CREDENTIAL_ENCRYPTION_KEYS[key_id.strip()] = key_value.strip()
+CREDENTIAL_ENCRYPTION_ACTIVE_KEY_ID = os.environ.get(
+    "CREDENTIAL_ENCRYPTION_ACTIVE_KEY_ID", "v1"
+).strip() or "v1"
 EXPOSE_DEV_OTP = _get_env_bool('DJANGO_EXPOSE_DEV_OTP', IS_DEV_ENV or IS_TEST_ENV)
 if IS_PRODUCTION_ENV and EXPOSE_DEV_OTP:
     raise ImproperlyConfigured("DJANGO_EXPOSE_DEV_OTP cannot be enabled outside development and tests.")
@@ -333,6 +350,17 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# C8 fix: OTPs use Django's adaptive password hashers via make_password.
+PASSWORD_HASHERS = (
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+)
+if importlib.util.find_spec("argon2"):
+    PASSWORD_HASHERS = (
+        "django.contrib.auth.hashers.Argon2PasswordHasher",
+        *PASSWORD_HASHERS,
+    )
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -492,9 +520,10 @@ RAZORPAYX_KEY_ID = os.environ.get('RAZORPAYX_KEY_ID', '').strip()
 RAZORPAYX_KEY_SECRET = os.environ.get('RAZORPAYX_KEY_SECRET', '').strip()
 RAZORPAYX_WEBHOOK_SECRET = os.environ.get('RAZORPAYX_WEBHOOK_SECRET', '').strip()
 RAZORPAYX_SOURCE_ACCOUNT_NUMBER = os.environ.get('RAZORPAYX_SOURCE_ACCOUNT_NUMBER', '').strip()
+# C7 fix: allowlisting is on by default; retain the legacy env var as fallback.
 RAZORPAY_WEBHOOK_IP_ALLOWLIST_ENABLED = _get_env_bool(
-    'RAZORPAY_WEBHOOK_IP_ALLOWLIST_ENABLED',
-    IS_PRODUCTION_ENV,
+    'DJANGO_RAZORPAY_WEBHOOK_IP_ALLOWLIST_ENABLED',
+    _get_env_bool('RAZORPAY_WEBHOOK_IP_ALLOWLIST_ENABLED', True),
 )
 RAZORPAY_WEBHOOK_ALLOWED_IPS = _get_env_list(
     'RAZORPAY_WEBHOOK_ALLOWED_IPS',

@@ -61,6 +61,18 @@ def create_manual_wallet_payout(
     amount = Decimal(amount).quantize(Decimal("0.01"))
     if amount <= 0:
         raise ValidationError("Amount must be greater than zero.")
+    # C6 fix: a user-requested payout requires a separate staff approval.
+    # Direct staff-recorded payouts do not have a prior request row and are
+    # therefore intentionally excluded from this two-person workflow.
+    if wallet_payout is not None and wallet_payout.pk:
+        if not wallet_payout.approved_by_id:
+            raise ValidationError(
+                "Payout must be approved by a staff member before processing."
+            )
+        if wallet_payout.approved_by_id == wallet_payout.user_id:
+            raise ValidationError(
+                "Approver must be a different staff member than the requester."
+            )
 
     if payout_account:
         if payout_account.user_id != user.id:
@@ -254,6 +266,14 @@ def create_manual_wallet_payout_request(
 
     if not payout_account.is_active:
         raise ValidationError("Selected payout account is inactive.")
+    # P1 fix: define the values used by the request row before entering the
+    # transaction. This variant has no destination_label argument.
+    normalized_mode = normalize_manual_payout_mode(payout_account, mode)
+    normalized_destination = build_manual_payout_destination_label(payout_account)
+    if not normalized_destination:
+        raise ValidationError("Add a destination label or choose a saved payout account.")
+    currency = (getattr(settings, "RAZORPAY_CURRENCY", "INR") or "INR").strip().upper()
+    amount_subunits = int((amount * 100).quantize(Decimal("1")))
 
     # Atomically: lock the wallet, enforce one-open-request, reserve the funds,
     # and create the payout row. Kills the TOCTOU race between the exists() check

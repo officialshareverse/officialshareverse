@@ -20,6 +20,24 @@ def record_wallet_topup_webhook_event(event_id, event_type, payment_id, provider
     return webhook_event, created
 
 
+import hashlib
+from django.db import IntegrityError, transaction
+
+def record_razorpayx_payout_webhook_event_once(
+    *, event_id, event_type, payout_id="", status="processed", notes=""
+):
+    """Create a RazorpayX webhook event exactly once under concurrent retries."""
+    with transaction.atomic():
+        return RazorpayXPayoutWebhookEvent.objects.get_or_create(
+            event_id=event_id,
+            defaults={
+                "event_type": event_type,
+                "payout_id": payout_id,
+                "status": status,
+                "notes": notes,
+            },
+        )
+
 class AddMoneyView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -563,45 +581,79 @@ class WithdrawMoneyView(APIView):
         destination_label = build_payout_destination_label(payout_account)
         source_account_number = (getattr(settings, "RAZORPAYX_SOURCE_ACCOUNT_NUMBER", "") or "").strip()
         reference_id = f"wd_{secrets.token_hex(12)}"[:40]
-        idempotency_key = secrets.token_hex(24)
         narration = sanitize_payout_narration(f"ShareVerse {request.user.username}")
 
-        with transaction.atomic():
-            wallet, _ = Wallet.objects.select_for_update().get_or_create(user=request.user)
-            if wallet.balance < amount:
-                return Response({"error": "Insufficient wallet balance"}, status=400)
+        # P2 fix: a retry supplies its own stable key, or receives a stable
+        # fingerprint based on the request intent. Read balance before debit.
+        wallet, _ = Wallet.objects.get_or_create(user=request.user)
+        client_request_id = request.headers.get("Idempotency-Key", "").strip()
+        if client_request_id:
+            idempotency_key = f"wd:{request.user.id}:{client_request_id}"[:80]
+        else:
+            body_hash = hashlib.sha256(request.body or b"").hexdigest()[:16]
+            fingerprint = (
+                f"{request.user.id}:{wallet.balance}:{amount}:"
+                f"{payout_account.id}:{payout_mode}:{body_hash}"
+            )
+            idempotency_key = "wd:" + hashlib.sha256(fingerprint.encode()).hexdigest()[:64]
 
-            wallet.balance -= amount
-            wallet.save()
-
-            payout_transaction = Transaction.objects.create(
-                user=request.user,
-                group=None,
-                amount=amount,
-                type="debit",
-                status="pending",
-                payment_method="wallet_payout",
+        existing = WalletPayout.objects.filter(idempotency_key=idempotency_key).first()
+        if existing:
+            return Response(
+                {
+                    "detail": "Withdrawal request already created.",
+                    "payout_id": existing.id,
+                },
+                status=status.HTTP_200_OK,
             )
 
-            wallet_payout = WalletPayout.objects.create(
-                user=request.user,
-                payout_account=payout_account,
-                transaction=payout_transaction,
-                amount=amount,
-                amount_subunits=amount_subunits,
-                currency=settings.RAZORPAY_CURRENCY,
-                provider="razorpayx",
-                provider_contact_id=payout_account.provider_contact_id,
-                provider_fund_account_id=payout_account.provider_fund_account_id,
-                provider_reference_id=reference_id,
-                idempotency_key=idempotency_key,
-                source_account_number=source_account_number,
-                mode=payout_mode,
-                purpose="payout",
-                narration=narration,
-                destination_label=destination_label,
-                status="created",
-                provider_status_source="api",
+        try:
+            with transaction.atomic():
+                wallet = Wallet.objects.select_for_update().get(pk=wallet.pk)
+                if wallet.balance < amount:
+                    return Response({"error": "Insufficient wallet balance"}, status=400)
+
+                wallet.balance -= amount
+                wallet.save(update_fields=["balance"])
+
+                payout_transaction = Transaction.objects.create(
+                    user=request.user,
+                    group=None,
+                    amount=amount,
+                    type="debit",
+                    status="pending",
+                    payment_method="wallet_payout",
+                )
+
+                wallet_payout = WalletPayout.objects.create(
+                    user=request.user,
+                    payout_account=payout_account,
+                    transaction=payout_transaction,
+                    amount=amount,
+                    amount_subunits=amount_subunits,
+                    currency=settings.RAZORPAY_CURRENCY,
+                    provider="razorpayx",
+                    provider_contact_id=payout_account.provider_contact_id,
+                    provider_fund_account_id=payout_account.provider_fund_account_id,
+                    provider_reference_id=reference_id,
+                    idempotency_key=idempotency_key,
+                    source_account_number=source_account_number,
+                    mode=payout_mode,
+                    purpose="payout",
+                    narration=narration,
+                    destination_label=destination_label,
+                    status="created",
+                    provider_status_source="api",
+                )
+        except IntegrityError:
+            # A concurrent retry won; its transaction is the sole wallet debit.
+            existing = WalletPayout.objects.get(idempotency_key=idempotency_key)
+            return Response(
+                {
+                    "detail": "Withdrawal request already created.",
+                    "payout_id": existing.id,
+                },
+                status=status.HTTP_200_OK,
             )
 
         try:
@@ -743,51 +795,58 @@ class RazorpayXPayoutWebhookView(APIView):
             provided_id=header_event_id,
         )
 
-        if RazorpayXPayoutWebhookEvent.objects.filter(event_id=event_id).exists():
-            return Response({"message": "Webhook already processed."}, status=200)
-
         if not event_type.startswith("payout."):
-            RazorpayXPayoutWebhookEvent.objects.create(
+            _, created = record_razorpayx_payout_webhook_event_once(
                 event_id=event_id,
                 event_type=event_type or "unknown",
                 payout_id=payout_id,
                 status="ignored",
                 notes="Webhook event is not handled by payout processing.",
             )
-            return Response({"message": "Webhook ignored."}, status=200)
+            if not created:
+                return Response({"detail": "Webhook already processed."}, status=status.HTTP_200_OK)
+            return Response({"message": "Webhook ignored."}, status=status.HTTP_200_OK)
 
         if not payout_id:
-            RazorpayXPayoutWebhookEvent.objects.create(
+            _, created = record_razorpayx_payout_webhook_event_once(
                 event_id=event_id,
                 event_type=event_type or "unknown",
-                payout_id="",
                 status="failed",
                 notes="Webhook payload did not include a payout id.",
             )
-            return Response({"message": "Webhook acknowledged."}, status=200)
+            if not created:
+                return Response({"detail": "Webhook already processed."}, status=status.HTTP_200_OK)
+            return Response({"message": "Webhook acknowledged."}, status=status.HTTP_200_OK)
 
         wallet_payout = WalletPayout.objects.filter(provider_payout_id=payout_id).first()
         if not wallet_payout and reference_id:
             wallet_payout = WalletPayout.objects.filter(provider_reference_id=reference_id).first()
 
         if not wallet_payout:
-            RazorpayXPayoutWebhookEvent.objects.create(
+            _, created = record_razorpayx_payout_webhook_event_once(
                 event_id=event_id,
                 event_type=event_type,
                 payout_id=payout_id,
                 status="ignored",
                 notes="No matching wallet payout was found.",
             )
-            return Response({"message": "Webhook acknowledged."}, status=200)
+            if not created:
+                return Response({"detail": "Webhook already processed."}, status=status.HTTP_200_OK)
+            return Response({"message": "Webhook acknowledged."}, status=status.HTTP_200_OK)
 
-        wallet_payout = apply_wallet_payout_state(wallet_payout.id, payout_entity, status_source="webhook")
-        RazorpayXPayoutWebhookEvent.objects.create(
+        _, created = record_razorpayx_payout_webhook_event_once(
             event_id=event_id,
             event_type=event_type,
             payout_id=payout_id,
             status="processed",
-            notes=f"Wallet payout updated to {wallet_payout.status}.",
+            notes="Wallet payout webhook accepted for processing.",
         )
-        return Response({"message": "Webhook processed successfully."}, status=200)
+        if not created:
+            return Response({"detail": "Webhook already processed."}, status=status.HTTP_200_OK)
+
+        wallet_payout = apply_wallet_payout_state(
+            wallet_payout.id, payout_entity, status_source="webhook"
+        )
+        return Response({"message": "Webhook processed successfully."}, status=status.HTTP_200_OK)
 
 

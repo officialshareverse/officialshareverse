@@ -2,11 +2,12 @@ databases:
   - name: shareverse-db
     databaseName: shareverse
     user: shareverse
+    plan: standard
+    postgresVersion: "16"
 
 services:
   - type: keyvalue
     name: shareverse-redis
-    ipAllowList: []
 
   - type: web
     name: shareverse-api

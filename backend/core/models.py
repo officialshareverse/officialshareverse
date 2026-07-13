@@ -1,10 +1,11 @@
 import hashlib
-import hmac
 import uuid
 from decimal import Decimal
 
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import AbstractUser
 from django.db import IntegrityError, models
+from django.db.models.functions import Lower
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -13,6 +14,14 @@ from .security import decrypt_secret, encrypt_secret, is_encrypted_secret
 
 
 class User(AbstractUser):
+    # A2 fix: store absent emails as NULL and enforce case-insensitive uniqueness.
+    email = models.EmailField(
+        unique=True,
+        blank=True,
+        null=True,
+        max_length=254,
+        verbose_name="email address",
+    )
     phone = models.CharField(max_length=15, unique=True, blank=True, null=True)
     trust_score = models.FloatField(default=0)
     is_verified = models.BooleanField(default=False)
@@ -21,6 +30,12 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    class Meta(AbstractUser.Meta):
+        constraints = [
+            models.UniqueConstraint(Lower("email"), name="unique_email_ci"),
+            models.UniqueConstraint(Lower("username"), name="unique_username_ci"),
+        ]
 
 
 def generate_unique_referral_code():
@@ -528,6 +543,21 @@ class WalletPayout(models.Model):
         blank=True,
         related_name="processed_wallet_payouts",
     )
+    # C6 fix: the staff approver of a user-requested manual payout. The
+    # approver must differ from the requesting user before processing.
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approved_payouts",
+        help_text="Staff user who approved this payout before processing.",
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp at which approved_by signed off on this payout.",
+    )
     wallet_balance_before = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     wallet_balance_after = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     fees = models.PositiveIntegerField(default=0)
@@ -960,7 +990,7 @@ class PasswordResetOTP(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     channel = models.CharField(max_length=10, choices=CHANNEL_CHOICES)
-    otp_hash = models.CharField(max_length=64)
+    otp_hash = models.CharField(max_length=255)  # C8 fix: PBKDF2/Argon2 hash.
     expires_at = models.DateTimeField()
     attempts_remaining = models.PositiveIntegerField(default=5)
     is_used = models.BooleanField(default=False)
@@ -973,10 +1003,15 @@ class PasswordResetOTP(models.Model):
 
     @staticmethod
     def build_otp_hash(raw_otp):
-        return hashlib.sha256((raw_otp or "").encode("utf-8")).hexdigest()
+        return make_password(raw_otp or "")
 
     def verify_otp(self, raw_otp):
-        return hmac.compare_digest(self.otp_hash, self.build_otp_hash(raw_otp))
+        if not self.otp_hash:
+            return False
+        try:
+            return check_password(raw_otp or "", self.otp_hash)
+        except (TypeError, ValueError):
+            return False
 
     def is_active(self):
         return not self.is_used and self.expires_at > timezone.now() and self.attempts_remaining > 0
@@ -993,7 +1028,7 @@ class SignupOTP(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=15, blank=True, default="")
     channel = models.CharField(max_length=10, choices=CHANNEL_CHOICES, default="email")
-    otp_hash = models.CharField(max_length=64)
+    otp_hash = models.CharField(max_length=255)  # C8 fix: PBKDF2/Argon2 hash.
     expires_at = models.DateTimeField()
     attempts_remaining = models.PositiveIntegerField(default=5)
     is_used = models.BooleanField(default=False)
@@ -1004,10 +1039,15 @@ class SignupOTP(models.Model):
 
     @staticmethod
     def build_otp_hash(raw_otp):
-        return hashlib.sha256((raw_otp or "").encode("utf-8")).hexdigest()
+        return make_password(raw_otp or "")
 
     def verify_otp(self, raw_otp):
-        return hmac.compare_digest(self.otp_hash, self.build_otp_hash(raw_otp))
+        if not self.otp_hash:
+            return False
+        try:
+            return check_password(raw_otp or "", self.otp_hash)
+        except (TypeError, ValueError):
+            return False
 
     def is_active(self):
         return not self.is_used and self.expires_at > timezone.now() and self.attempts_remaining > 0

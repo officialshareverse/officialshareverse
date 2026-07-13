@@ -75,7 +75,7 @@ class RazorpayWebhookIPAllowlistMiddleware:
         )
 
     def _should_check_request(self, request):
-        if not getattr(settings, "RAZORPAY_WEBHOOK_IP_ALLOWLIST_ENABLED", False):
+        if not getattr(settings, "RAZORPAY_WEBHOOK_IP_ALLOWLIST_ENABLED", True):
             return False
         if request.method.upper() != "POST":
             return False

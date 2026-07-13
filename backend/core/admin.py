@@ -1,9 +1,11 @@
 import json
+from datetime import timedelta
 
 from django import forms
 from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.db.models import Sum
 from django.utils import timezone
 from django.utils.html import format_html
 
@@ -260,6 +262,8 @@ class WalletPayoutAdmin(admin.ModelAdmin):
         "destination_label",
         "provider_status_source",
         "processed_by",
+        "approved_by",
+        "approved_at",
         "processed_at",
         "requested_at",
     )
@@ -274,6 +278,54 @@ class WalletPayoutAdmin(admin.ModelAdmin):
         "provider_payout_id",
         "utr",
     )
+
+    actions = ["approve_payouts"]
+
+    @admin.action(description="Approve selected payouts (two-person control)")
+    def approve_payouts(self, request, queryset):
+        # C6 fix: two-person approval with a per-requester daily cap.
+        daily_cap_rupees = 50000
+        now = timezone.now()
+        twenty_four_hours_ago = now - timedelta(hours=24)
+
+        approved_count = 0
+        skipped = []
+        for payout in queryset:
+            if not self.is_pending_manual_request(payout):
+                skipped.append(f"payout #{payout.id}: not a pending manual request")
+                continue
+            # WalletPayout.user is the requester in this codebase.
+            if payout.user_id == request.user.id:
+                skipped.append(
+                    f"payout #{payout.id}: you cannot approve your own request"
+                )
+                continue
+            if payout.approved_by_id:
+                skipped.append(f"payout #{payout.id}: already approved")
+                continue
+            recent_total = (
+                WalletPayout.objects.filter(
+                    user=payout.user,
+                    status="processed",
+                    requested_at__gte=twenty_four_hours_ago,
+                ).aggregate(total=Sum("amount"))["total"]
+                or 0
+            )
+            if recent_total + payout.amount > daily_cap_rupees:
+                skipped.append(
+                    f"payout #{payout.id}: would exceed ?{daily_cap_rupees} "
+                    f"24h cap for requester (current: ?{recent_total})"
+                )
+                continue
+            payout.approved_by = request.user
+            payout.approved_at = now
+            payout.save(update_fields=["approved_by", "approved_at"])
+            approved_count += 1
+
+        if approved_count:
+            messages.success(request, f"Approved {approved_count} payout(s).")
+        if skipped:
+            messages.warning(request, "Skipped: " + "; ".join(skipped))
 
     def is_pending_manual_request(self, obj):
         return bool(
@@ -295,6 +347,8 @@ class WalletPayoutAdmin(admin.ModelAdmin):
                 "destination_label",
                 "status",
                 "requested_at",
+                "approved_by",
+                "approved_at",
                 "external_reference",
                 "admin_notes",
                 "process_now",
@@ -317,6 +371,8 @@ class WalletPayoutAdmin(admin.ModelAdmin):
                 "provider_payout_id",
                 "utr",
                 "processed_by",
+                "approved_by",
+                "approved_at",
                 "wallet_balance_before",
                 "wallet_balance_after",
                 "provider_status_source",
@@ -352,6 +408,8 @@ class WalletPayoutAdmin(admin.ModelAdmin):
                 "destination_label",
                 "status",
                 "requested_at",
+                "approved_by",
+                "approved_at",
                 "status_details_pretty",
                 "failure_reason",
             )
@@ -371,6 +429,8 @@ class WalletPayoutAdmin(admin.ModelAdmin):
                 "provider_payout_id",
                 "utr",
                 "processed_by",
+                "approved_by",
+                "approved_at",
                 "wallet_balance_before",
                 "wallet_balance_after",
                 "provider_status_source",
@@ -479,6 +539,7 @@ class WalletPayoutAdmin(admin.ModelAdmin):
         if not obj.status_details:
             return "—"
         # format_html escapes the JSON body; never use mark_safe with unsanitized input.
+        pretty_json = json.dumps(obj.status_details, indent=2, default=str)
         return format_html("<pre>{}</pre>", pretty_json)
 
     status_details_pretty.short_description = "Status details"

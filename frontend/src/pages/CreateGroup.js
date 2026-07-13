@@ -393,11 +393,45 @@ function WizardHeader({
   );
 }
 
+function MobileStepMap({ currentStep }) {
+  return (
+    <ol className="sv-cg-mobile-step-map" aria-label="Create split progress">
+      {WIZARD_STEPS.map((step, index) => {
+        const isComplete = index < currentStep;
+        const isCurrent = index === currentStep;
+
+        return (
+          <li
+            key={step.id}
+            className={`sv-cg-mobile-step-map-item ${
+              isComplete ? "is-complete" : isCurrent ? "is-current" : ""
+            }`}
+            aria-current={isCurrent ? "step" : undefined}
+          >
+            <span className="sv-cg-mobile-step-map-marker" aria-hidden="true">
+              {isComplete ? <CheckIcon className="h-3 w-3" /> : index + 1}
+            </span>
+            <span className="sv-cg-mobile-step-map-label">{step.label}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+
 /* ------------------------------------------------------------------ */
 /* Sticky bottom CTA bar                                              */
 /* ------------------------------------------------------------------ */
-function BottomNav({ isMobile, currentStep, totalSteps, loading, isLastStep, isSharing, onBack }) {
-  const submitLabel = loading ? "Creating..." : isLastStep ? "Publish split" : "Continue";
+function BottomNav({ isMobile, currentStep, totalSteps, loading, isLastStep, onBack }) {
+  const nextStepLabel = WIZARD_STEPS[currentStep + 1]?.label;
+  const submitLabel = loading
+    ? "Creating..."
+    : isLastStep
+      ? "Publish split"
+      : isMobile
+        ? `Continue: ${nextStepLabel}`
+        : "Continue";
   const SubmitIcon = loading ? LoadingSpinner : isLastStep ? SparkIcon : null;
 
   if (isMobile) {
@@ -621,8 +655,6 @@ export default function CreateGroup() {
 
   const handleSubmit = handleWizardSubmit;
 
-  const progressPct = ((currentStep + 1) / WIZARD_STEPS.length) * 100;
-
   /* ---------------- render ---------------- */
   return (
     <div className="sv-page sv-cg-page">
@@ -641,16 +673,6 @@ export default function CreateGroup() {
         )}
 
         <form onSubmit={handleSubmit} className={`sv-cg-form ${isMobile ? "is-mobile" : "sv-card-solid"}`}>
-          {/* Progress rail (mobile) */}
-          {isMobile && (
-            <div className="sv-cg-progress-rail" aria-hidden="true">
-              <div className="sv-cg-progress-track" />
-              <div
-                className="sv-cg-progress-fill"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-          )}
 
           <WizardHeader
             isMobile={isMobile}
@@ -662,6 +684,7 @@ export default function CreateGroup() {
             onReset={resetWizard}
             canReset={currentStep > 0 || Object.keys(errors).length > 0}
           />
+          {isMobile && <MobileStepMap currentStep={currentStep} />}
 
           {activationPrefill?.template && (
             <div className="sv-cg-prefill-banner">
@@ -983,7 +1006,6 @@ export default function CreateGroup() {
             totalSteps={WIZARD_STEPS.length}
             loading={loading}
             isLastStep={currentStep === finalStepIndex}
-            isSharing={isSharing}
             onBack={moveToPreviousStep}
           />
         </form>
