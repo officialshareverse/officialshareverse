@@ -5,6 +5,7 @@ import {
   __setMockParams,
 } from "react-router-dom";
 
+import { ToastProvider } from "../components/ToastProvider";
 import GroupChat from "./GroupChat";
 
 const mockApi = {
@@ -97,7 +98,11 @@ test("loads chat participants and sends a new group message", async () => {
     return Promise.reject(new Error(`Unexpected POST ${url}`));
   });
 
-  render(<GroupChat />);
+  render(
+    <ToastProvider>
+      <GroupChat />
+    </ToastProvider>
+  );
 
   await screen.findByText("Participants");
   expect(screen.getByText("Welcome to the split")).toBeInTheDocument();

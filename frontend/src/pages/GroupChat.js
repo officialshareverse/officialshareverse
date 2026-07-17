@@ -127,7 +127,7 @@ function updateChatPresenceState(currentChat, username, nextPresence) {
 
 function ParticipantsSection({ participants }) {
   return (
-    <section className="sv-card">
+    <section className="sv-card sv-group-chat-details-card">
       <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Members</p>
       <h2 className="mt-2 text-xl font-bold text-slate-900">Participants</h2>
       <div className="mt-4 space-y-3">
@@ -136,7 +136,7 @@ function ParticipantsSection({ participants }) {
 
           return (
             <div key={`${participant.role}-${participant.username}`} className="sv-group-chat-participant">
-              <div className="flex flex-1 items-center gap-3 min-w-0">
+              <div className="sv-group-chat-participant-copy flex flex-1 items-center gap-3 min-w-0">
                 <span className={`sv-group-chat-participant-avatar ${presenceMeta.className} shrink-0`}>
                   {participant.initials || getAvatarToken(participant.username)}
                   <span className={`sv-chat-avatar-chip-dot ${presenceMeta.className}`} />
@@ -155,7 +155,7 @@ function ParticipantsSection({ participants }) {
                 </div>
               </div>
 
-              <div className="flex flex-col items-end gap-2 shrink-0 pl-2">
+              <div className="sv-group-chat-participant-badges flex flex-col items-end gap-2 shrink-0 pl-2">
                 <span className="rounded-full bg-slate-900 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                   {participant.role}
                 </span>
@@ -175,22 +175,22 @@ function ParticipantsSection({ participants }) {
 
 function QuickReadSection() {
   return (
-    <section className="sv-card">
+    <section className="sv-card sv-group-chat-details-card">
       <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Quick read</p>
       <div className="mt-3 space-y-3">
-        <div className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
-          <span className="mt-0.5 text-emerald-600">
+        <div className="sv-group-chat-quick-read-item flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+          <span className="mt-0.5 shrink-0 text-emerald-600">
             <CheckCircleIcon className="h-4.5 w-4.5" />
           </span>
-          <p className="text-sm leading-6 text-slate-600">
+          <p className="min-w-0 text-sm leading-6 text-slate-600">
             Use the live strip to spot when the host or members are active before sending a follow-up.
           </p>
         </div>
-        <div className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
-          <span className="mt-0.5 text-slate-500">
+        <div className="sv-group-chat-quick-read-item flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+          <span className="mt-0.5 shrink-0 text-slate-500">
             <ClockIcon className="h-4.5 w-4.5" />
           </span>
-          <p className="text-sm leading-6 text-slate-600">
+          <p className="min-w-0 text-sm leading-6 text-slate-600">
             Typing indicators expire quickly, so they stay helpful without getting stuck on old activity.
           </p>
         </div>
@@ -599,6 +599,7 @@ function MessageList({ messages }) {
           eyebrow="Chat details"
           title="People in this split"
           description="Open the participant list when you need context, then jump back to the conversation."
+          className="sv-group-chat-details-drawer"
         >
           <div className="sv-group-chat-drawer-stack">
             <ParticipantsSection participants={participants} />

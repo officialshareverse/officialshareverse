@@ -551,6 +551,36 @@
     min-width: 0;
   }
 
+@media (max-width: 767px) {
+  .sv-group-chat-details-drawer .sv-group-chat-drawer-stack,
+  .sv-group-chat-details-drawer .sv-group-chat-drawer-stack > .sv-card,
+  .sv-group-chat-details-drawer .sv-group-chat-participant,
+  .sv-group-chat-details-drawer .sv-group-chat-participant-copy,
+  .sv-group-chat-details-drawer .sv-group-chat-quick-read-item,
+  .sv-group-chat-details-drawer .sv-group-chat-quick-read-item > p {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .sv-group-chat-details-drawer .sv-group-chat-participant {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 0.5rem;
+  }
+
+  .sv-group-chat-details-drawer .sv-group-chat-participant-badges {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.45rem;
+    min-width: 0;
+    padding-left: 3.1rem;
+  }
+}
+
 .sv-group-chat-composer {
   flex-shrink: 0;
   margin-top: 1.5rem;
