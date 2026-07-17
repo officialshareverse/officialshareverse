@@ -686,7 +686,7 @@ export default function Groups({ isAuth }) {
               const totalSlots = Math.max(Number(group.total_slots || 1), 1);
               const remainingSlots = Math.max(Number(group.remaining_slots ?? totalSlots - filledSlots) || 0, 0);
               const hostDisplayName = formatHostDisplayName(group.owner_name);
-              const hostRating = getMockReputation(group.owner_name).rating;
+              const hostRating = group.owner_rating ?? getMockReputation(group.owner_name).rating;
 
               return (
                 <article
@@ -756,7 +756,7 @@ function MobileJoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm
   const planName = group.subscription_name || group.subscription;
   const planMeta = getPlanMeta(planName);
   const ownerName = formatHostDisplayName(group.owner_name);
-  const hostReputation = getMockReputation(group.owner_name);
+  const hostReputation = { ...getMockReputation(group.owner_name), rating: group.owner_rating ?? getMockReputation(group.owner_name).rating };
 
   // Derive mode pill
   const isSharing = group.mode === "sharing";
@@ -909,7 +909,7 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
   const planMeta = getPlanMeta(group.subscription_name || group.subscription);
   const planName = group.subscription_name || group.subscription;
   const ownerName = formatHostDisplayName(group.owner_name);
-  const hostReputation = getMockReputation(group.owner_name);
+  const hostReputation = { ...getMockReputation(group.owner_name), rating: group.owner_rating ?? getMockReputation(group.owner_name).rating };
   const totalSlots = Number(group.total_slots || 0);
   const filledSlots = Number(group.filled_slots || 0);
   const remainingSlots = Math.max(Number(group.remaining_slots ?? (totalSlots - filledSlots)) || 0, 0);

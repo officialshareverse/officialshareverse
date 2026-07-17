@@ -260,7 +260,7 @@ export default function GroupDetails({ isAuth }) {
   const planName = group.subscription_name || group.subscription || "ShareVerse split";
   const planMeta = getPlanMeta(planName);
   const ownerName = formatHostDisplayName(group.owner_name);
-  const hostReputation = getMockReputation(group.owner_name);
+  const hostReputation = { ...getMockReputation(group.owner_name), rating: group.owner_rating ?? getMockReputation(group.owner_name).rating };
   const ownerInitials = getInitials(ownerName);
 
   const totalSlots = toAmount(group.total_slots);
