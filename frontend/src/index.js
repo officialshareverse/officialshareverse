@@ -8,6 +8,7 @@ import './styles/components-03.css';
 import './styles/components-04.css';
 import './styles/dark-tokens.css';
 import './styles/create-group.css';
+import './styles/CreateGroup_redesign.css';
 import './styles/home.css';
 import './styles/account.css';
 import './styles/explore.css';
