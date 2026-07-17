@@ -1,4 +1,4 @@
-const CACHE_VERSION = "shareverse-pwa-1783920320391";
+const CACHE_VERSION = "shareverse-pwa-1783924467550";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-app-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
