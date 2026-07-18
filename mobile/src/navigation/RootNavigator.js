@@ -38,6 +38,56 @@ export const navigationRef = createNavigationContainerRef();
 import * as Notifications from "expo-notifications";
 import { AppState } from "react-native";
 
+let pendingDeepLink = null;
+export function getPendingDeepLink() {
+  return pendingDeepLink;
+}
+export function clearPendingDeepLink() {
+  pendingDeepLink = null;
+}
+
+function navigateFromPushData(data) {
+  if (!navigationRef.isReady()) {
+    return;
+  }
+
+  const kind = data?.kind;
+  const groupId = data?.group_id != null ? String(data.group_id) : null;
+
+  if (kind === "chat" && groupId) {
+    try {
+      navigationRef.navigate("GroupChat", { groupId });
+      return;
+    } catch {
+      // Fall through
+    }
+  }
+
+  if (kind === "group_update" && groupId) {
+    try {
+      navigationRef.navigate("JoinedGroupDetail", { groupId });
+      return;
+    } catch {
+      // Fall through
+    }
+  }
+
+  if (kind === "wallet") {
+    try {
+      navigationRef.navigate("Tabs", { screen: "WalletTab" });
+      return;
+    } catch {
+      // Fall through
+    }
+  }
+
+  try {
+    navigationRef.navigate("Notifications");
+  } catch {
+    pendingDeepLink = { kind, groupId, notificationId: data?.notification_id };
+  }
+}
+
 function PushNotificationBridge() {
   useEffect(() => {
     const support = getPushRuntimeSupport();
@@ -50,15 +100,15 @@ function PushNotificationBridge() {
     const subscription = addPushNotificationResponseListener((response) => {
       const data = response?.notification?.request?.content?.data || {};
       if (!navigationRef.isReady()) {
+        pendingDeepLink = {
+          kind: data?.kind,
+          groupId: data?.group_id != null ? String(data.group_id) : null,
+          notificationId: data?.notification_id,
+        };
         return;
       }
 
-      if (data?.category === "groups" || data?.kind === "chat") {
-        navigationRef.navigate("Notifications");
-        return;
-      }
-
-      navigationRef.navigate("Notifications");
+      navigateFromPushData(data);
     });
 
     const appStateSubscription = AppState.addEventListener("change", (nextAppState) => {
@@ -171,6 +221,39 @@ function SplashScreen() {
   );
 }
 
+const linking = {
+  prefixes: ["shareverse://", "https://shareverse.in", "https://www.shareverse.in"],
+  config: {
+    screens: {
+      // Auth stack
+      Login: "login",
+      Signup: {
+        path: "signup",
+        parse: {
+          invite: (token) => token || null,
+          ref: (code) => code || null,
+        },
+      },
+      ForgotPassword: "forgot-password",
+
+      // App stack — group targets
+      GroupDetail: "group/:groupId",
+      JoinedGroupDetail: "joined/:groupId",
+      GroupChat: "chat/:groupId",
+
+      // Tab routes
+      HomeTab: "home",
+      MarketplaceTab: "groups",
+      WalletTab: "wallet",
+      ProfileTab: "profile",
+
+      // Fallbacks
+      Notifications: "notifications",
+      Chats: "chats",
+    },
+  },
+};
+
 export default function RootNavigator() {
   const { isAuthenticated, isBootstrapping } = useAuth();
 
@@ -179,7 +262,7 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={navigationRef} linking={linking}>
       {isAuthenticated ? <PushNotificationBridge /> : null}
       {isAuthenticated ? <AppStack /> : <AuthStack />}
     </NavigationContainer>

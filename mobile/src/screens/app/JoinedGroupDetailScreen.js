@@ -56,8 +56,8 @@ function getStatusMessage(group) {
 
 export default function JoinedGroupDetailScreen({ route, navigation }) {
   const { api } = useAuth();
-  const groupId = route.params?.groupId;
   const initialGroup = route.params?.group || null;
+  const groupId = route.params?.groupId || initialGroup?.id;
   const [group, setGroup] = useState(initialGroup);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(!initialGroup);

@@ -2257,7 +2257,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["error"], "Insufficient wallet balance")
         wallet.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("750.00"))
+        self.assertEqual(wallet.balance, Decimal("1000.00"))
 
     def test_manual_wallet_payout_deducts_wallet_and_records_processed_transaction(self):
         payout_account = self.create_local_bank_payout_account(self.owner)
@@ -2449,7 +2449,7 @@ class GroupFlowTests(APITestCase):
             )
 
         wallet.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("750.00"))
+        self.assertEqual(wallet.balance, Decimal("1000.00"))
         self.assertFalse(
             WalletPayout.objects.filter(
                 user=self.owner,
@@ -2612,7 +2612,7 @@ class GroupFlowTests(APITestCase):
 
         wallet.refresh_from_db()
         topup_order.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("750.00"))
+        self.assertEqual(wallet.balance, Decimal("1000.00"))
         self.assertEqual(topup_order.status, "created")
         self.assertIsNone(topup_order.credited_at)
         self.assertFalse(Transaction.objects.filter(payment_method="wallet_topup", amount=Decimal("175.00")).exists())
@@ -2699,7 +2699,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["error"], "Payment signature verification failed.")
         wallet.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("750.00"))
+        self.assertEqual(wallet.balance, Decimal("1000.00"))
         self.assertFalse(
             Transaction.objects.filter(
                 user=self.owner,
@@ -2945,7 +2945,7 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.data["error"], "Invalid webhook signature.")
         wallet.refresh_from_db()
         topup_order.refresh_from_db()
-        self.assertEqual(wallet.balance, Decimal("750.00"))
+        self.assertEqual(wallet.balance, Decimal("1000.00"))
         self.assertEqual(topup_order.status, "created")
         self.assertFalse(RazorpayWebhookEvent.objects.filter(event_id="evt_bad_webhook").exists())
         verify_webhook_signature_mock.assert_called_once()

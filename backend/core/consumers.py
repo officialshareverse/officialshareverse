@@ -208,7 +208,7 @@ def push_badge_update_to_user(user_id, reason="refresh"):
     )
 
 
-def create_notification(*, user=None, user_id=None, message):
+def create_notification(*, user=None, user_id=None, message, group_id=None):
     from .views import build_notification_payload
 
     create_kwargs = {"message": message}
@@ -218,6 +218,9 @@ def create_notification(*, user=None, user_id=None, message):
         create_kwargs["user_id"] = user_id
     else:
         raise ValueError("create_notification requires either user or user_id.")
+
+    if group_id is not None:
+        create_kwargs["group_id"] = group_id
 
     notification = Notification.objects.create(**create_kwargs)
 
@@ -390,6 +393,7 @@ class GroupChatConsumer(AsyncJsonWebsocketConsumer):
                 create_notification(
                     user_id=participant_id,
                     message=f"New group chat message in {self.group.subscription.name} from {self.user.username}.",
+                    group_id=self.group.id,
                 )
                 continue
 

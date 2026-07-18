@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../auth/AuthProvider";
+import { getPendingDeepLink, clearPendingDeepLink, navigationRef } from "../../navigation/RootNavigator";
 import AppButton from "../../components/AppButton";
 import AppTextField from "../../components/AppTextField";
 import GoogleAuthButton from "../../components/GoogleAuthButton";
@@ -128,6 +129,19 @@ export default function SignupScreen() {
         signup_session_id: signupSessionId,
         otp: form.otp.trim(),
       });
+      
+      const pending = getPendingDeepLink();
+      if (pending) {
+        clearPendingDeepLink();
+        setTimeout(() => {
+          if (!navigationRef.isReady()) return;
+          if (pending.kind === "chat" && pending.groupId) {
+            navigationRef.navigate("GroupChat", { groupId: pending.groupId });
+          } else if (pending.kind === "group_update" && pending.groupId) {
+            navigationRef.navigate("JoinedGroupDetail", { groupId: pending.groupId });
+          }
+        }, 100);
+      }
     } catch (requestError) {
       setError(extractError(requestError));
     } finally {
@@ -145,6 +159,19 @@ export default function SignupScreen() {
       setFinishing(true);
       setError("");
       await signInWithGoogle(credential);
+      
+      const pending = getPendingDeepLink();
+      if (pending) {
+        clearPendingDeepLink();
+        setTimeout(() => {
+          if (!navigationRef.isReady()) return;
+          if (pending.kind === "chat" && pending.groupId) {
+            navigationRef.navigate("GroupChat", { groupId: pending.groupId });
+          } else if (pending.kind === "group_update" && pending.groupId) {
+            navigationRef.navigate("JoinedGroupDetail", { groupId: pending.groupId });
+          }
+        }, 100);
+      }
     } catch (requestError) {
       setError(extractError(requestError));
     } finally {

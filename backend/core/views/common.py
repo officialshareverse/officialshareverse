@@ -298,7 +298,7 @@ def release_group_buy_held_funds(group_id, allow_timeout_release=False):
             if not allow_timeout_release
             else f"The confirmation window for {group.subscription.name} ended without disputes. Held funds were released automatically.{fee_note}"
         )
-        create_notification(user=group.owner, message=owner_message)
+        create_notification(user=group.owner, message=owner_message, group_id=group.id)
         for member in GroupMember.objects.filter(group=group).select_related("user"):
             create_notification(
                 user=member.user,
@@ -306,7 +306,7 @@ def release_group_buy_held_funds(group_id, allow_timeout_release=False):
                     f"{group.subscription.name} is now active and the buy-together payout has been released."
                     if not allow_timeout_release
                     else f"{group.subscription.name} is now active. The confirmation window ended without disputes, so payout was released automatically."
-                ),
+                ), group_id=group.id,
             )
 
     if release_amount > Decimal("0.00"):
@@ -377,14 +377,14 @@ def release_sharing_member_funds(member_id):
             message=(
                 f"{member.user.username} confirmed receiving access for {member.group.subscription.name}. "
                 f"Your payout was released to your wallet after a 5% platform fee of Rs {creator_platform_fee_amount}."
-            ),
+            ), group_id=member.group.id,
         )
         create_notification(
             user=member.user,
             message=(
                 f"You confirmed access for {member.group.subscription.name}. "
                 "The host payout has now been released."
-            ),
+            ), group_id=member.group.id,
         )
 
     if released_amount > Decimal("0.00"):
@@ -477,7 +477,7 @@ def refund_group_buy_held_funds(group_id, reason="manual"):
 
             create_notification(
                 user=member.user,
-                message=message,
+                message=message, group_id=group.id,
             )
             refunded_amount += refund_amount
 
@@ -496,7 +496,7 @@ def refund_group_buy_held_funds(group_id, reason="manual"):
         )
         create_notification(
             user=group.owner,
-            message=owner_message,
+            message=owner_message, group_id=group.id,
         )
 
     if refunded_amount > Decimal("0.00"):
@@ -1331,14 +1331,14 @@ def award_referral_reward_for_group_join(joined_user, group, join_subtotal, invi
             f"You earned Rs {REFERRAL_REWARD_INVITER} in bonus credit because {joined_user.username} joined "
             f"their first eligible ShareVerse group on {group.subscription.name}. Bonus credit can be used "
             "to join groups and cannot be withdrawn."
-        ),
+        ), group_id=group.id,
     )
     create_notification(
         user=joined_user,
         message=(
             f"You earned Rs {REFERRAL_REWARD_INVITEE} in bonus credit for joining your first eligible "
             "ShareVerse group with a referral. Bonus credit can be used to join groups and cannot be withdrawn."
-        ),
+        ), group_id=group.id,
     )
 
     return {
@@ -1424,14 +1424,14 @@ def perform_group_join(joined_user, group):
                     f"{joined_user.username} joined your {locked_group.subscription.name} sharing group "
                     f"and paid Rs {price} (including Rs {platform_fee_amount} platform fee). "
                     "Payout will be released after the member confirms access."
-                ),
+                ), group_id=locked_group.id,
             )
             create_notification(
                 user=joined_user,
                 message=(
                     f"You joined {locked_group.subscription.name}. Confirm access after the host gives you access "
                     "so the host payout can be released."
-                ),
+                ), group_id=locked_group.id,
             )
         elif locked_group.mode == "group_buy":
             if locked_group.status == "forming":
@@ -1442,14 +1442,14 @@ def perform_group_join(joined_user, group):
                     message=(
                         f"{joined_user.username} joined your {locked_group.subscription.name} buy-together group. "
                         "The group is now collecting member contributions."
-                    ),
+                    ), group_id=locked_group.id,
                 )
             else:
                 create_notification(
                     user=locked_group.owner,
                     message=(
                         f"{joined_user.username} joined your {locked_group.subscription.name} buy-together group."
-                    ),
+                    ), group_id=locked_group.id,
                 )
 
             paid_members = GroupMember.objects.filter(group=locked_group, has_paid=True).count()
@@ -1465,7 +1465,7 @@ def perform_group_join(joined_user, group):
                     message=(
                         f"Your {locked_group.subscription.name} buy-together group is full. "
                         "Buy the subscription and upload proof before the deadline."
-                    ),
+                    ), group_id=locked_group.id,
                 )
                 for joined_member in GroupMember.objects.filter(group=locked_group).select_related("user"):
                     create_notification(
@@ -1473,7 +1473,7 @@ def perform_group_join(joined_user, group):
                         message=(
                             f"{locked_group.subscription.name} is now full. "
                             "The creator will buy the subscription and upload proof next."
-                        ),
+                        ), group_id=locked_group.id,
                     )
 
         referral_reward = award_referral_reward_for_group_join(

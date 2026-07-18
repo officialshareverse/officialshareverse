@@ -32,6 +32,7 @@ def send_push_notification_to_user(user_id, notification_payload):
         "category": notification_payload.get("category"),
         "kind": notification_payload.get("kind"),
         "context_title": notification_payload.get("context_title"),
+        "group_id": notification_payload.get("group_id"),
     }
     badge_count = 0
     try:

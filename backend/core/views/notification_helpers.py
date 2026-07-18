@@ -97,6 +97,7 @@ def build_notification_payload(notification):
         "icon": metadata["icon"],
         "tone": metadata["tone"],
         "context_title": metadata["context_title"],
+        "group_id": getattr(notification, "group_id", None),
     }
 
 

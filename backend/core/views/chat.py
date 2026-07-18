@@ -189,6 +189,7 @@ class GroupChatView(APIView):
                 message=(
                     f"New group chat message in {group.subscription.name} from {request.user.username}."
                 ),
+                group_id=group.id,
             )
 
         serialized_message = GroupChatMessageSerializer(

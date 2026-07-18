@@ -149,6 +149,7 @@ class LeaveGroupView(APIView):
         create_notification(
             user=group.owner,
             message=f"{request.user.username} left your {group.subscription.name} group.",
+            group_id=group.id,
         )
 
         if refunded_amount > Decimal("0.00"):
@@ -158,6 +159,7 @@ class LeaveGroupView(APIView):
                     f"You left {group.subscription.name} and your held contribution "
                     f"of Rs {refunded_amount} was refunded to your wallet."
                 ),
+                group_id=group.id,
             )
             log_operation_event(
                 "group_leave_refund",

@@ -221,7 +221,7 @@ class CloseGroupView(APIView):
             for member in members:
                 create_notification(
                     user=member.user,
-                    message=f"{group.subscription.name} has been closed by the group owner.",
+                    message=f"{group.subscription.name} has been closed by the group owner.", group_id=group.id,
                 )
 
         return Response({
@@ -296,7 +296,7 @@ class SubmitPurchaseProofView(APIView):
                     message=(
                         f"{locked_group.subscription.name} purchase proof was uploaded. "
                         "Confirm that you received access so escrow can be released."
-                    ),
+                    ), group_id=locked_group.id,
                 )
 
         return Response({
@@ -386,7 +386,7 @@ class ConfirmGroupAccessView(APIView):
                         "The reported issue is cleared and payout can continue."
                         if dispute_cleared
                         else f"{request.user.username} confirmed receiving access for {locked_group.subscription.name}."
-                    ),
+                    ), group_id=locked_group.id,
                 )
 
             log_operation_event(
@@ -515,14 +515,14 @@ class ReportGroupAccessIssueView(APIView):
                 message=(
                     f"{request.user.username} reported an access issue for {locked_group.subscription.name}. "
                     "Payout is paused until this is resolved or refunded."
-                ),
+                ), group_id=locked_group.id,
             )
             create_notification(
                 user=request.user,
                 message=(
                     f"Your access issue for {locked_group.subscription.name} was recorded. "
                     "Payout is paused while the owner resolves it."
-                ),
+                ), group_id=locked_group.id,
             )
 
         return Response({
@@ -636,7 +636,7 @@ class GroupReviewView(APIView):
                 message=(
                     f"{request.user.username} left a {review.rating}-star rating for your "
                     f"{group.subscription.name} group experience."
-                ),
+                ), group_id=group.id,
             )
 
         return Response(

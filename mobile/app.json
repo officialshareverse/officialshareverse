@@ -26,14 +26,26 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.shareverse.mobile",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "associatedDomains": ["applinks:shareverse.in"]
     },
     "android": {
       "package": "com.shareverse.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0f766e"
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "shareverse.in", "pathPrefix": "/invite" },
+            { "scheme": "https", "host": "shareverse.in", "pathPrefix": "/r" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

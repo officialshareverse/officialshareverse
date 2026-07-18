@@ -650,6 +650,13 @@ class Notification(models.Model):
     message = models.TextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    group = models.ForeignKey(
+        "Group",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="notifications",
+    )
 
     class Meta:
         ordering = ["-created_at", "-id"]

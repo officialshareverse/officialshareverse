@@ -1,4 +1,5 @@
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../../auth/AuthProvider";
 import AppButton from "../../components/AppButton";
@@ -9,7 +10,66 @@ import { formatCurrency } from "../../utils/formatters";
 
 export default function GroupDetailScreen({ route, navigation }) {
   const { api } = useAuth();
-  const { group } = route.params;
+  const routeGroup = route.params?.group;
+  const groupId = route.params?.groupId || routeGroup?.id;
+
+  const [group, setGroup] = useState(routeGroup || null);
+  const [loading, setLoading] = useState(!routeGroup && Boolean(groupId));
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (routeGroup || !groupId) {
+      return;
+    }
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("groups/", { params: { page_size: 100 } });
+        if (cancelled) return;
+        const items = res.data?.results || res.data || [];
+        const found = items.find((item) => String(item.id) === String(groupId));
+        if (found) {
+          setGroup(found);
+        } else {
+          setError("We could not find this group anymore.");
+        }
+      } catch (e) {
+        if (!cancelled) setError("We could not load this group right now.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [api, groupId, routeGroup]);
+
+  if (loading) {
+    return (
+      <Screen>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator color={colors.primary} size="large" />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (error || !group) {
+    return (
+      <Screen>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <Text style={{ fontSize: 16, fontWeight: "600", color: colors.text, textAlign: "center" }}>
+            {error || "We could not find this group."}
+          </Text>
+          <AppButton title="Back to groups" onPress={() => navigation.navigate("MarketplaceTab")} variant="secondary" />
+        </View>
+      </Screen>
+    );
+  }
+
   const progressPercent = Math.max(0, Math.min(100, Number(group.progress_percent || 0)));
 
   const handleJoin = async () => {
