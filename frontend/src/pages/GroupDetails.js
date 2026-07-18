@@ -19,7 +19,7 @@ import {
   formatDate,
   getInitials,
   formatHostDisplayName,
-  getMockReputation,
+  buildHostReputation,
 } from "../utils/groupHelpers";
 import { trackGroupJoined, trackPurchase } from "../utils/analytics";
 
@@ -260,7 +260,7 @@ export default function GroupDetails({ isAuth }) {
   const planName = group.subscription_name || group.subscription || "ShareVerse split";
   const planMeta = getPlanMeta(planName);
   const ownerName = formatHostDisplayName(group.owner_name);
-  const hostReputation = { ...getMockReputation(group.owner_name), rating: group.owner_rating ?? getMockReputation(group.owner_name).rating };
+  const hostReputation = buildHostReputation(group.owner_rating, group.owner_review_count);
   const ownerInitials = getInitials(ownerName);
 
   const totalSlots = toAmount(group.total_slots);
@@ -397,12 +397,18 @@ export default function GroupDetails({ isAuth }) {
                   <p className="truncate text-[16px] font-black text-slate-950">{ownerName}</p>
                 </div>
                 <div className="mt-0.5 flex items-center gap-2 text-[12px] font-bold text-slate-500">
-                  <span className="inline-flex items-center gap-0.5 text-amber-600">
-                    <StarIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
-                    {hostReputation.rating}
-                  </span>
-                  <span className="text-slate-300">•</span>
-                  <span>{hostReputation.hostedCount} hosted</span>
+                  {hostReputation ? (
+                    <>
+                      <span className="inline-flex items-center gap-0.5 text-amber-600">
+                        <StarIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
+                        {hostReputation.rating}
+                      </span>
+                      <span className="text-slate-300">•</span>
+                      <span>{hostReputation.reviewCount} review{hostReputation.reviewCount === 1 ? "" : "s"}</span>
+                    </>
+                  ) : (
+                    <span className="text-slate-400">New host — no reviews yet</span>
+                  )}
                   <span className="text-slate-300">•</span>
                   <span className="inline-flex items-center gap-1 text-emerald-600">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Verified

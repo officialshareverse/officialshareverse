@@ -24,6 +24,7 @@ import {
 } from "../components/UiIcons";
 import useRevealOnScroll from "../hooks/useRevealOnScroll";
 import { trackGroupJoined, trackPurchase } from "../utils/analytics";
+import { buildHostReputation } from "../utils/groupHelpers";
 
 const SORT_OPTIONS = [
   { value: "popular", label: "Most popular" },
@@ -263,16 +264,6 @@ function formatHostDisplayName(value) {
   }
 
   return firstName;
-}
-
-function getMockReputation(ownerName = "") {
-  let hash = 0;
-  for (let i = 0; i < ownerName.length; i++) {
-    hash = ownerName.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const rating = 4.7 + (Math.abs(hash) % 4) / 10;
-  const hostedCount = 2 + (Math.abs(hash) % 24);
-  return { rating: rating.toFixed(1), hostedCount };
 }
 
 function compareGroups(sortBy, left, right) {
@@ -686,7 +677,7 @@ export default function Groups({ isAuth }) {
               const totalSlots = Math.max(Number(group.total_slots || 1), 1);
               const remainingSlots = Math.max(Number(group.remaining_slots ?? totalSlots - filledSlots) || 0, 0);
               const hostDisplayName = formatHostDisplayName(group.owner_name);
-              const hostRating = group.owner_rating ?? getMockReputation(group.owner_name).rating;
+              const hostRep = buildHostReputation(group.owner_rating, group.owner_review_count);
 
               return (
                 <article
@@ -709,7 +700,13 @@ export default function Groups({ isAuth }) {
                     
                     <div className="sv-explore-card-meta">
                       <span className="flex items-center gap-1">
-                        <UserIcon className="h-3 w-3" /> <span className="truncate max-w-[80px]">{hostDisplayName}</span> • ★ {hostRating}
+                        <UserIcon className="h-3 w-3" />
+                        <span className="truncate max-w-[80px]">{hostDisplayName}</span>
+                        {hostRep ? (
+                          <> • ★ {hostRep.rating}</>
+                        ) : (
+                          <> • <span className="text-slate-400">New host</span></>
+                        )}
                       </span>
                       <span className="flex items-center gap-1">
                         <ClockIcon className="h-3 w-3" /> {getTimeLeft(group.end_date)}
@@ -756,7 +753,7 @@ function MobileJoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm
   const planName = group.subscription_name || group.subscription;
   const planMeta = getPlanMeta(planName);
   const ownerName = formatHostDisplayName(group.owner_name);
-  const hostReputation = { ...getMockReputation(group.owner_name), rating: group.owner_rating ?? getMockReputation(group.owner_name).rating };
+  const hostReputation = buildHostReputation(group.owner_rating, group.owner_review_count);
 
   // Derive mode pill
   const isSharing = group.mode === "sharing";
@@ -839,7 +836,11 @@ function MobileJoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm
                 <div className="flex flex-col justify-center">
                   <p className="text-[13px] font-bold text-slate-800">Hosted by {ownerName}</p>
                   <p className="text-[11px] font-semibold text-amber-500 mt-0.5">
-                    ★ {hostReputation.rating} • {hostReputation.hostedCount} groups hosted
+                    {hostReputation ? (
+                      <>★ {hostReputation.rating} • {hostReputation.reviewCount} review{hostReputation.reviewCount === 1 ? "" : "s"}</>
+                    ) : (
+                      <span className="text-slate-400">New host — no reviews yet</span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -909,7 +910,7 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
   const planMeta = getPlanMeta(group.subscription_name || group.subscription);
   const planName = group.subscription_name || group.subscription;
   const ownerName = formatHostDisplayName(group.owner_name);
-  const hostReputation = { ...getMockReputation(group.owner_name), rating: group.owner_rating ?? getMockReputation(group.owner_name).rating };
+  const hostReputation = buildHostReputation(group.owner_rating, group.owner_review_count);
   const totalSlots = Number(group.total_slots || 0);
   const filledSlots = Number(group.filled_slots || 0);
   const remainingSlots = Math.max(Number(group.remaining_slots ?? (totalSlots - filledSlots)) || 0, 0);
@@ -1004,7 +1005,11 @@ function JoinConfirmModal({ group, summary, joiningId, onCancel, onConfirm }) {
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">Hosted by</p>
               <p className="mt-1 text-sm font-semibold text-slate-950 sm:text-[15px]">{ownerName}</p>
               <p className="mt-0.5 text-[12px] font-semibold text-amber-600 sm:text-[13px]">
-                ★ {hostReputation.rating} • {hostReputation.hostedCount} groups hosted
+                {hostReputation ? (
+                  <>★ {hostReputation.rating} • {hostReputation.reviewCount} review{hostReputation.reviewCount === 1 ? "" : "s"}</>
+                ) : (
+                  <span className="text-slate-400">New host — no reviews yet</span>
+                )}
               </p>
               <p className="mt-1.5 text-[12px] leading-6 text-slate-600 sm:text-[13px]">
                 {group.next_action}

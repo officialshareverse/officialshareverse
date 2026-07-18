@@ -201,12 +201,26 @@ export function formatHostDisplayName(value) {
   return firstName;
 }
 
-export function getMockReputation(ownerName = "") {
-  let hash = 0;
-  for (let i = 0; i < ownerName.length; i++) {
-    hash = ownerName.charCodeAt(i) + ((hash << 5) - hash);
+/**
+ * Build a host-reputation display object from backend data.
+ * Never fabricates ratings. Returns null when there are no reviews,
+ * so the UI can render "New host" instead of a fake number.
+ *
+ * @param {number|null|undefined} ownerRating  - from group.owner_rating (null when no reviews)
+ * @param {number} [ownerReviewCount=0]        - from group.owner_review_count
+ * @returns {{ rating: string, reviewCount: number } | null}
+ */
+export function buildHostReputation(ownerRating, ownerReviewCount = 0) {
+  const ratingNum = Number(ownerRating);
+  const countNum = Number(ownerReviewCount) || 0;
+
+  // No reviews yet — explicitly signal "new host" to the UI.
+  if (!Number.isFinite(ratingNum) || countNum === 0 || ratingNum <= 0) {
+    return null;
   }
-  const rating = 4.7 + (Math.abs(hash) % 4) / 10;
-  const hostedCount = 2 + (Math.abs(hash) % 24);
-  return { rating: rating.toFixed(1), hostedCount };
+
+  return {
+    rating: ratingNum.toFixed(1),
+    reviewCount: countNum,
+  };
 }

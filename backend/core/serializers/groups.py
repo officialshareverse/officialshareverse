@@ -143,6 +143,7 @@ class GroupSerializer(serializers.ModelSerializer):
     progress_percent = serializers.SerializerMethodField()
     owner_revenue = serializers.SerializerMethodField()
     owner_rating = serializers.SerializerMethodField()
+    owner_review_count = serializers.SerializerMethodField()
     next_action = serializers.SerializerMethodField()
 
     class Meta:
@@ -180,11 +181,18 @@ class GroupSerializer(serializers.ModelSerializer):
 
     def get_owner_rating(self, obj):
         from core.models import Review
-        from django.db.models import Avg
-        avg = Review.objects.filter(reviewed_user=obj.owner).aggregate(Avg('rating'))['rating__avg']
-        if avg is not None:
-            return round(avg, 1)
-        return 5.0
+        from django.db.models import Avg, Count
+        aggregate = Review.objects.filter(reviewed_user=obj.owner).aggregate(
+            avg=Avg("rating"),
+            count=Count("id"),
+        )
+        if aggregate["avg"] is not None and aggregate["count"] > 0:
+            return round(aggregate["avg"], 1)
+        return None
+
+    def get_owner_review_count(self, obj):
+        from core.models import Review
+        return Review.objects.filter(reviewed_user=obj.owner).count()
 
     def get_owner_revenue(self, obj):
         if obj.mode != "sharing":
@@ -236,6 +244,7 @@ class GroupListSerializer(serializers.ModelSerializer):
     subscription_name = serializers.CharField(source="subscription.name", read_only=True)
     owner_name = serializers.SerializerMethodField()
     owner_rating = serializers.SerializerMethodField()
+    owner_review_count = serializers.SerializerMethodField()
     filled_slots = serializers.SerializerMethodField()
     remaining_slots = serializers.SerializerMethodField()
     is_joined = serializers.SerializerMethodField()
@@ -274,6 +283,7 @@ class GroupListSerializer(serializers.ModelSerializer):
             "subscription_name",
             "owner_name",
             "owner_rating",
+            "owner_review_count",
             "total_slots",
             "price_per_slot",
             "join_price",
@@ -324,11 +334,18 @@ class GroupListSerializer(serializers.ModelSerializer):
 
     def get_owner_rating(self, obj):
         from core.models import Review
-        from django.db.models import Avg
-        avg = Review.objects.filter(reviewed_user=obj.owner).aggregate(Avg('rating'))['rating__avg']
-        if avg is not None:
-            return round(avg, 1)
-        return 5.0
+        from django.db.models import Avg, Count
+        aggregate = Review.objects.filter(reviewed_user=obj.owner).aggregate(
+            avg=Avg("rating"),
+            count=Count("id"),
+        )
+        if aggregate["avg"] is not None and aggregate["count"] > 0:
+            return round(aggregate["avg"], 1)
+        return None
+
+    def get_owner_review_count(self, obj):
+        from core.models import Review
+        return Review.objects.filter(reviewed_user=obj.owner).count()
 
     def get_remaining_slots(self, obj):
         filled = GroupMember.objects.filter(group=obj).count()

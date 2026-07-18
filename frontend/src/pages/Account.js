@@ -86,6 +86,11 @@ export default function Account() {
     ? new Date(profile.date_joined).toLocaleDateString("en-IN", { month: "short", year: "numeric" })
     : null;
 
+  const ratingNum = Number(profile?.average_rating);
+  const hasRating = Number.isFinite(ratingNum) && ratingNum > 0 && Number(profile?.review_count) > 0;
+  const ratingDisplay = hasRating ? ratingNum.toFixed(1) : "New";
+  const ratingLabel = hasRating ? "Rating" : "No reviews yet";
+
   return (
     <div className="sv-page sv-account-page">
       <div className="sv-account-shell">
@@ -122,9 +127,12 @@ export default function Account() {
               <div className="sv-account-stat-divider" />
               <div className="sv-account-stat">
                 <span className="sv-account-stat-value">
-                  <StarIcon className="h-3.5 w-3.5 inline -mt-0.5 text-amber-400" /> 4.9
+                  {hasRating && (
+                    <StarIcon className="h-3.5 w-3.5 inline -mt-0.5 text-amber-400" />
+                  )}{" "}
+                  {ratingDisplay}
                 </span>
-                <span className="sv-account-stat-label">Rating</span>
+                <span className="sv-account-stat-label">{ratingLabel}</span>
               </div>
               <div className="sv-account-stat-divider" />
               <div className="sv-account-stat">
