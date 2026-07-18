@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import API from "../api/axios";
 import { getPaginatedItems } from "../api/pagination";
+import { useProfile } from "../hooks/useProfile";
 import SubscriptionLogo from "../components/SubscriptionLogo";
 import BrandMark from "../components/BrandMark";
 import {
@@ -90,7 +91,7 @@ export default function Home({ themeMode, toggleTheme }) {
   const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
   const [dashboard, setDashboard] = useState(null);
-  const [profileSnapshot, setProfileSnapshot] = useState(null);
+  const { data: profileSnapshot } = useProfile();
   const [loading, setLoading] = useState(true);
   // eslint-disable-next-line no-unused-vars
   const [error, setError] = useState("");
@@ -103,18 +104,15 @@ export default function Home({ themeMode, toggleTheme }) {
     let isMounted = true;
     const fetchHomeData = async () => {
       try {
-        const profilePromise = API.get("profile/").catch(() => null);
-        const [groupsRes, dashboardRes, profileRes] = await Promise.all([
+        const [groupsRes, dashboardRes] = await Promise.all([
           API.get("groups/", { params: { page_size: 8 } }),
           API.get("dashboard/"),
-          profilePromise,
         ]);
         if (!isMounted) {
           return;
         }
         setGroups(getPaginatedItems(groupsRes.data));
         setDashboard(dashboardRes.data || null);
-        setProfileSnapshot(profileRes?.data || null);
       } catch (err) {
         console.error("Home load error:", err);
         if (isMounted) {

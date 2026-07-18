@@ -4,6 +4,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { getPaginatedCount, getPaginatedItems } from "../api/pagination";
 import { clearAuthSession } from "../auth/session";
+import { useProfile } from "../hooks/useProfile";
 import useWebSocket from "../hooks/useWebSocket";
 import BrandMark from "./BrandMark";
 import ThemeToggle from "./ThemeToggle";
@@ -89,7 +90,7 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
-  const [profile, setProfile] = useState(null);
+  const { data: profile } = useProfile();
   const [indicatorStyles, setIndicatorStyles] = useState({});
   const profileMenuRef = useRef(null);
   const groupRefs = useRef({});
@@ -168,24 +169,6 @@ export default function Navbar({ setIsAuth, themeMode, toggleTheme }) {
       }
     }
   }, [unreadChatCount, unreadNotificationCount]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    API.get("profile/")
-      .then((response) => {
-        if (isMounted) {
-          setProfile(response.data || null);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to load navbar profile:", error);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [location.pathname]);
 
   useEffect(() => {
     if (!isProfileMenuOpen) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import {
@@ -11,6 +11,7 @@ import {
   StarIcon,
 } from "../components/UiIcons";
 import { getAuthToken } from "../auth/session";
+import { useProfile } from "../hooks/useProfile";
 
 /* ── Inline chevron for menu rows ── */
 function ChevronRight({ className = "h-4 w-4" }) {
@@ -44,21 +45,9 @@ function EditIcon({ className = "h-4 w-4" }) {
 
 export default function Account() {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    if (getAuthToken()) {
-      API.get("profile/")
-        .then((response) => {
-          if (isMounted) setProfile(response.data);
-        })
-        .catch(() => {});
-    }
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { data: profile } = useProfile({
+    enabled: Boolean(getAuthToken()),
+  });
 
   const logout = async () => {
     try {

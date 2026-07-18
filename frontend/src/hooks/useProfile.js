@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import API from "../api/axios";
 
-export function useProfile() {
+export function useProfile(options) {
   return useQuery({
     queryKey: ["profile"],
     queryFn: () => API.get("profile/").then((r) => r.data),
     staleTime: 5 * 60 * 1000,
     retry: 1,
+    ...options,
   });
 }
 

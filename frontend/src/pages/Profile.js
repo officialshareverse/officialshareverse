@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import useIsMobile from "../hooks/useIsMobile";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 import API from "../api/axios";
+import { useProfile } from "../hooks/useProfile";
 import {
   SkeletonBlock,
   SkeletonCard,
@@ -140,7 +142,8 @@ function buildReviewDistribution(reviews) {
 export default function Profile() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  const [profile, setProfile] = useState(null);
+  const queryClient = useQueryClient();
+  const { data: profile, isLoading: profileLoading, error: profileError } = useProfile();
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
   const [saveError, setSaveError] = useState("");
@@ -158,29 +161,18 @@ export default function Profile() {
   useRevealOnScroll();
 
   useEffect(() => {
-    let isMounted = true;
+    if (profile) {
+      setForm(buildForm(profile));
+      setError("");
+    }
+  }, [profile]);
 
-    API.get("profile/")
-      .then((res) => {
-        if (!isMounted) {
-          return;
-        }
-
-        setProfile(res.data);
-        setForm(buildForm(res.data));
-        setError("");
-      })
-      .catch((err) => {
-        console.error(err);
-        if (isMounted) {
-          setError("We could not load your profile right now.");
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  useEffect(() => {
+    if (profileError) {
+      console.error(profileError);
+      setError("We could not load your profile right now.");
+    }
+  }, [profileError]);
 
   useEffect(() => {
     if (!selectedProfilePicture) {
@@ -363,8 +355,7 @@ export default function Profile() {
       }
 
       const res = await API.patch("profile/", payload);
-      setProfile(res.data);
-      setForm(buildForm(res.data));
+      queryClient.setQueryData(["profile"], res.data);
       setSelectedProfilePicture(null);
       setRemoveProfilePicture(false);
       setIsEditing(false);
@@ -387,7 +378,7 @@ export default function Profile() {
     );
   }
 
-  if (!profile) {
+  if (profileLoading || !profile) {
     return (
       <div className="sv-page">
         <div className="sv-container max-w-6xl space-y-6">
