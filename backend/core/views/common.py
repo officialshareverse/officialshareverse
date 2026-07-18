@@ -872,8 +872,10 @@ def restore_wallet_for_failed_payout(locked_payout):
         return False
 
     wallet, _ = Wallet.objects.select_for_update().get_or_create(user=locked_payout.user)
-    wallet.balance += locked_payout.amount
-    wallet.save()
+    Wallet.objects.filter(pk=wallet.pk).update(
+        balance=F("balance") + locked_payout.amount
+    )
+    wallet.refresh_from_db(fields=["balance"])
 
     refund_transaction = Transaction.objects.create(
         user=locked_payout.user,
@@ -941,7 +943,23 @@ def apply_wallet_payout_state(wallet_payout_id, payout_details, *, status_source
         if provider_status in {"reversed", "cancelled", "rejected", "failed"}:
             restore_wallet_for_failed_payout(locked_payout)
 
-        locked_payout.save()
+        locked_payout.save(
+            update_fields=[
+                "provider_payout_id",
+                "provider_contact_id",
+                "provider_fund_account_id",
+                "status",
+                "status_details",
+                "failure_reason",
+                "provider_status_source",
+                "utr",
+                "fees",
+                "tax",
+                "processed_at",
+                "wallet_restored_at",
+                "refund_transaction",
+            ]
+        )
 
     final_payout = WalletPayout.objects.select_related("payout_account").get(id=wallet_payout_id)
     log_operation_event(
