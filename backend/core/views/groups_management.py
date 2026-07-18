@@ -160,7 +160,6 @@ class MyGroupDetailView(APIView):
         })
 
     def patch(self, request, group_id):
-        process_expired_buy_together_refunds([group_id])
         try:
             group = Group.objects.select_related("subscription", "owner").get(
                 id=group_id,
@@ -185,7 +184,6 @@ class MyGroupDetailView(APIView):
         return Response(serializer.errors, status=400)
 
     def delete(self, request, group_id):
-        process_expired_buy_together_refunds([group_id])
         try:
             group = Group.objects.get(id=group_id, owner=request.user)
         except Group.DoesNotExist:
@@ -202,7 +200,6 @@ class CloseGroupView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, group_id):
-        process_expired_buy_together_refunds([group_id])
         try:
             group = Group.objects.select_related("subscription").get(
                 id=group_id,
@@ -237,7 +234,6 @@ class SubmitPurchaseProofView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, group_id):
-        process_expired_buy_together_refunds([group_id])
 
         serializer = SubmitPurchaseProofSerializer(data=request.data)
         if not serializer.is_valid():
@@ -314,7 +310,6 @@ class ConfirmGroupAccessView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, group_id):
-        process_expired_buy_together_refunds([group_id])
 
         try:
             group = (
@@ -453,7 +448,6 @@ class ReportGroupAccessIssueView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, group_id):
-        process_expired_buy_together_refunds([group_id])
 
         details = (request.data.get("details") or "").strip()
         if not details:
@@ -542,7 +536,6 @@ class ActivateGroupPurchaseView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, group_id):
-        process_expired_buy_together_refunds([group_id])
         try:
             group = Group.objects.get(id=group_id, owner=request.user)
         except Group.DoesNotExist:
@@ -583,7 +576,6 @@ class RefundGroupFundsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, group_id):
-        process_expired_buy_together_refunds([group_id])
         try:
             group = Group.objects.get(id=group_id, owner=request.user)
         except Group.DoesNotExist:
@@ -609,7 +601,6 @@ class GroupReviewView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, group_id):
-        process_expired_buy_together_refunds([group_id])
 
         serializer = SubmitReviewSerializer(data=request.data)
         if not serializer.is_valid():

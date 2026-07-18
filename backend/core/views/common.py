@@ -514,29 +514,69 @@ def refund_group_buy_held_funds(group_id, reason="manual"):
 
 
 def process_expired_buy_together_refunds(group_ids=None):
-    expired_refund_groups = Group.objects.filter(
-        mode="group_buy",
-        status="awaiting_purchase",
-        auto_refund_at__isnull=False,
-        auto_refund_at__lte=timezone.now(),
-    )
-    expired_release_groups = Group.objects.filter(
-        mode="group_buy",
-        status="proof_submitted",
-        auto_refund_at__isnull=False,
-        auto_refund_at__lte=timezone.now(),
-    )
+    """
+    Settle expired buy-together groups: refund members of groups whose
+    purchase deadline passed, and release escrow to owners of groups whose
+    member-confirmation window passed cleanly.
 
-    if group_ids is not None:
-        expired_refund_groups = expired_refund_groups.filter(id__in=group_ids)
-        expired_release_groups = expired_release_groups.filter(id__in=group_ids)
+    A11 fix: the entire selection+processing is wrapped in a single
+    transaction.atomic() block with select_for_update() on the candidate
+    groups. This prevents two overlapping cron runs (or a cron run racing
+    a member's ConfirmGroupAccessView) from both picking the same expired
+    group. The inner refund/release functions also lock, but locking at
+    selection time avoids wasted work and the near-deadline race.
 
-    refund_ids = list(expired_refund_groups.values_list("id", flat=True))
-    release_ids = list(expired_release_groups.values_list("id", flat=True))
+    NOTE: this function must NOT be called from view handlers before the
+    authorization check — see the audit report (C1). It is intended for
+    the process_expired_group_buy_refunds management command (cron) and
+    for post-authorization use only.
+    """
     refunded_total = Decimal("0.00")
     released_total = Decimal("0.00")
     released_groups = 0
+    refund_ids = []
+    release_ids = []
 
+    with transaction.atomic():
+        # select_for_update locks the candidate group rows for the duration
+        # of this transaction. Any concurrent run (or concurrent member
+        # action that also locks the group) will block until we commit.
+        expired_refund_groups = (
+            Group.objects.select_for_update()
+            .filter(
+                mode="group_buy",
+                status="awaiting_purchase",
+                auto_refund_at__isnull=False,
+                auto_refund_at__lte=timezone.now(),
+            )
+        )
+        expired_release_groups = (
+            Group.objects.select_for_update()
+            .filter(
+                mode="group_buy",
+                status="proof_submitted",
+                auto_refund_at__isnull=False,
+                auto_refund_at__lte=timezone.now(),
+            )
+        )
+
+        if group_ids is not None:
+            expired_refund_groups = expired_refund_groups.filter(id__in=group_ids)
+            expired_release_groups = expired_release_groups.filter(id__in=group_ids)
+
+        # Snapshot the IDs inside the lock so the subsequent per-group
+        # refund/release calls (which open their own transactions) operate
+        # on a stable set. Re-checking inside each call's own atomic block
+        # is still the source of truth for row-level correctness.
+        refund_ids = list(expired_refund_groups.values_list("id", flat=True))
+        release_ids = list(expired_release_groups.values_list("id", flat=True))
+
+    # The actual refund/release calls happen OUTSIDE the selection
+    # transaction to avoid nested-transaction deadlocks with the inner
+    # functions' own atomic blocks. Each inner function re-locks its group
+    # with select_for_update, so a concurrent cron run that also picked
+    # this group will block on the inner lock — and then see the updated
+    # status (no longer "awaiting_purchase" / "proof_submitted") and no-op.
     for group_id in refund_ids:
         refunded_total += refund_group_buy_held_funds(group_id, reason="deadline_expired")
 

@@ -4482,3 +4482,163 @@ class GroupFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["payments"], "live")
         self.assertEqual(response.data["payouts"], "manual_review")
+
+
+class UnauthorizedRefundTriggerTest(APITestCase):
+    """
+    A11 regression test: an authenticated user who is NOT the owner of an
+    expired buy-together group must not be able to trigger refunds or
+    releases on it via the group-management endpoints.
+
+    Before the fix, 9 view handlers called
+    process_expired_buy_together_refunds([group_id]) BEFORE the owner
+    check, so any authenticated user could trigger real-money side effects
+    on arbitrary expired groups.
+    """
+
+    def setUp(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        from core.models import User, Subscription, Group, GroupMember, Wallet
+
+        self.owner = User.objects.create_user(
+            username="owner3@example.com",
+            password="testpass123",
+            email="owner3@example.com",
+        )
+        Wallet.objects.get_or_create(user=self.owner)
+
+        self.attacker = User.objects.create_user(
+            username="attacker3@example.com",
+            password="testpass123",
+            email="attacker3@example.com",
+        )
+        Wallet.objects.get_or_create(user=self.attacker)
+
+        self.member = User.objects.create_user(
+            username="member3@example.com",
+            password="testpass123",
+            email="member3@example.com",
+        )
+        member_wallet, _ = Wallet.objects.get_or_create(user=self.member)
+        member_wallet.balance = Decimal("1000.00")
+        member_wallet.save(update_fields=["balance"])
+
+        self.subscription = Subscription.objects.create(
+            name="TestFlix3",
+            price=Decimal("100.00"),
+        )
+
+        # An EXPIRED buy-together group (auto_refund_at in the past) owned
+        # by self.owner, with one held member contribution.
+        self.group = Group.objects.create(
+            subscription=self.subscription,
+            owner=self.owner,
+            mode="group_buy",
+            status="awaiting_purchase",
+            price_per_slot=Decimal("100.00"),
+            total_slots=2,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(days=30),
+            purchase_deadline_at=timezone.now() - timedelta(hours=1),
+            auto_refund_at=timezone.now() - timedelta(minutes=5),
+        )
+
+        self.member_obj = GroupMember.objects.create(
+            group=self.group,
+            user=self.member,
+            has_paid=True,
+            escrow_status="held",
+            charged_amount=Decimal("105.00"),
+            platform_fee_amount=Decimal("5.00"),
+        )
+        # Deduct the member's contribution from their wallet to mirror real state.
+        member_wallet.balance -= Decimal("105.00")
+        member_wallet.save(update_fields=["balance"])
+
+    def _authenticate_as(self, user):
+        from rest_framework.test import APIClient
+        from rest_framework_simplejwt.tokens import RefreshToken
+
+        client = APIClient()
+        refresh = RefreshToken.for_user(user)
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+        return client
+
+    def test_attacker_cannot_trigger_refund_via_refund_endpoint(self):
+        client = self._authenticate_as(self.attacker)
+
+        resp = client.post(f"/api/my-groups/{self.group.id}/refund/", {}, format="json")
+
+        # The owner check must reject the attacker.
+        self.assertEqual(resp.status_code, 404, "Non-owner should get 404, not trigger a refund")
+
+        # The held member must STILL be held (no refund happened).
+        self.member_obj.refresh_from_db()
+        self.assertEqual(self.member_obj.escrow_status, "held")
+        self.assertEqual(self.member_obj.refund_amount, Decimal("0.00"))
+
+        # The group must still be awaiting_purchase (not refunded).
+        self.group.refresh_from_db()
+        self.assertEqual(self.group.status, "awaiting_purchase")
+
+    def test_attacker_cannot_trigger_release_via_activate_endpoint(self):
+        # Put the group into the state where release would fire if the
+        # pre-auth sweep ran (proof_submitted + auto_refund_at in past).
+        from django.utils import timezone
+        from datetime import timedelta
+        self.group.status = "proof_submitted"
+        self.group.proof_submitted_at = timezone.now() - timedelta(hours=1)
+        self.group.auto_refund_at = timezone.now() - timedelta(minutes=5)
+        self.group.save(update_fields=["status", "proof_submitted_at", "auto_refund_at"])
+
+        client = self._authenticate_as(self.attacker)
+
+        resp = client.post(f"/api/my-groups/{self.group.id}/activate/", {}, format="json")
+
+        self.assertEqual(resp.status_code, 404, "Non-owner should get 404, not trigger a release")
+
+        # No release transaction should exist for the owner.
+        from core.models import Transaction
+        release_txs = Transaction.objects.filter(
+            user=self.owner,
+            group=self.group,
+            payment_method="group_buy_escrow_release",
+            status="success",
+        )
+        self.assertEqual(release_txs.count(), 0)
+
+    def test_attacker_cannot_trigger_sweep_via_close_endpoint(self):
+        client = self._authenticate_as(self.attacker)
+
+        resp = client.post(f"/api/my-groups/{self.group.id}/close/", {}, format="json")
+
+        self.assertEqual(resp.status_code, 404)
+
+        self.member_obj.refresh_from_db()
+        self.assertEqual(self.member_obj.escrow_status, "held")
+
+    def test_attacker_cannot_trigger_sweep_via_proof_endpoint(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        client = self._authenticate_as(self.attacker)
+
+        proof = SimpleUploadedFile("proof.png", b"fake-image-bytes", content_type="image/png")
+        resp = client.post(
+            f"/api/my-groups/{self.group.id}/proof/",
+            {"purchase_proof": proof, "purchase_reference": "REF123"},
+            format="multipart",
+        )
+
+        self.assertEqual(resp.status_code, 404)
+
+        self.member_obj.refresh_from_db()
+        self.assertEqual(self.member_obj.escrow_status, "held")
+
+    def test_owner_can_still_refund(self):
+        client = self._authenticate_as(self.owner)
+
+        resp = client.post(f"/api/my-groups/{self.group.id}/refund/", {}, format="json")
+
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.member_obj.refresh_from_db()
+        self.assertEqual(self.member_obj.escrow_status, "refunded")
