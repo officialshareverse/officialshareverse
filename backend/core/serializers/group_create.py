@@ -1,4 +1,4 @@
-﻿from .common import *
+from .common import *
 
 class CreateGroupSerializer(serializers.Serializer):
     subscription_name = serializers.CharField(max_length=100)
@@ -12,6 +12,17 @@ class CreateGroupSerializer(serializers.Serializer):
     access_notes = serializers.CharField(required=False, allow_blank=True)
     category = serializers.CharField(required=False, allow_blank=True, default="general")
     subscription_price = serializers.IntegerField(required=False, min_value=0, default=100)
+
+    # Stage 1.1: optional fill deadline for buy-together groups.
+    # ISO datetime string. If provided and the group hasn't filled by
+    # this time, the cron auto-refunds held members and marks the group
+    # as failed.
+    fill_deadline_at = serializers.DateTimeField(required=False, allow_null=True)
+
+    # Stage 1.3: minimum slots before the creator can proceed early.
+    # Must be >= 1 and <= total_slots. If not provided, defaults to
+    # total_slots (must fill completely — the current behavior).
+    min_fill_slots = serializers.IntegerField(required=False, allow_null=True, min_value=1)
 
     def validate_subscription_name(self, value):
         normalized = (value or "").strip()
@@ -57,6 +68,39 @@ class CreateGroupSerializer(serializers.Serializer):
             if access_identifier or access_password or access_notes:
                 raise serializers.ValidationError({
                     "access_identifier": "Buy-together groups cannot store access credentials."
+                })
+
+        # Stage 1.1 & 1.3: validate the new fields against mode + slots.
+        total_slots = attrs["total_slots"]
+        fill_deadline_at = attrs.get("fill_deadline_at")
+        min_fill_slots = attrs.get("min_fill_slots")
+
+        if mode == "group_buy":
+            # Fill deadline is optional but must be in the future if provided.
+            if fill_deadline_at is not None:
+                from django.utils import timezone
+                if hasattr(fill_deadline_at, "isoformat"):
+                    if fill_deadline_at <= timezone.now():
+                        raise serializers.ValidationError({
+                            "fill_deadline_at": "Fill deadline must be in the future."
+                        })
+
+            # min_fill_slots must be <= total_slots.
+            if min_fill_slots is not None:
+                if min_fill_slots > total_slots:
+                    raise serializers.ValidationError({
+                        "min_fill_slots": "Minimum fill slots cannot exceed total slots."
+                    })
+        else:
+            # Sharing groups don't use these fields; reject if provided to
+            # avoid confusion.
+            if fill_deadline_at is not None:
+                raise serializers.ValidationError({
+                    "fill_deadline_at": "Fill deadline is only for buy-together groups."
+                })
+            if min_fill_slots is not None:
+                raise serializers.ValidationError({
+                    "min_fill_slots": "Minimum fill slots is only for buy-together groups."
                 })
 
         attrs["access_password"] = access_password

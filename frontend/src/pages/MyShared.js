@@ -133,6 +133,7 @@ export default function MyShared() {
   const [savingId, setSavingId] = useState(null);
   const [refundingId, setRefundingId] = useState(null);
   const [submittingProofId, setSubmittingProofId] = useState(null);
+  const [proceedingId, setProceedingId] = useState(null);
   const [confirmingId, setConfirmingId] = useState(null);
   const [reportingIssueId, setReportingIssueId] = useState(null);
   const [editForm, setEditForm] = useState(null);
@@ -543,6 +544,32 @@ export default function MyShared() {
     });
   };
 
+  const requestProceedEarly = (group) => {
+    openActionDialog({
+      eyebrow: "Proceed early",
+      title: "Proceed with partial group?",
+      description: `Proceed with ${group.filled_slots} of ${group.total_slots} slots? You'll cover the shortfall. The purchase deadline will start immediately.`,
+      confirmLabel: "Proceed early",
+      confirmPendingLabel: "Proceeding...",
+      tone: "default",
+      onConfirm: async () => {
+        setProceedingId(group.id);
+        try {
+          await API.post(`my-groups/${group.id}/proceed-early/`);
+          toast.success("Proceeding early. Purchase deadline started.");
+          await fetchGroups();
+          return true;
+        } catch (err) {
+          console.error(err);
+          toast.error(getActionError(err.response?.data, "Failed to proceed early"));
+          return false;
+        } finally {
+          setProceedingId(null);
+        }
+      },
+    });
+  };
+
   const startEditing = async (group) => {
     let detail = details[group.id];
 
@@ -882,6 +909,20 @@ export default function MyShared() {
               onClick={() => {
                 closeMobileOwnerActions();
                 requestDeleteGroup(activeMobileOwnerGroup);
+              }}
+            />
+          ) : null}
+
+          {activeMobileOwnerGroup.can_proceed_early ? (
+            <MobileDrawerAction
+              icon={ClockIcon}
+              label="Proceed early"
+              description={`Proceed with ${activeMobileOwnerGroup.filled_slots} of ${activeMobileOwnerGroup.total_slots} slots`}
+              meta={proceedingId === activeMobileOwnerGroup.id ? "Proceeding" : "Available"}
+              disabled={proceedingId === activeMobileOwnerGroup.id}
+              onClick={() => {
+                closeMobileOwnerActions();
+                requestProceedEarly(activeMobileOwnerGroup);
               }}
             />
           ) : null}
@@ -1263,6 +1304,16 @@ export default function MyShared() {
                           : group.has_purchase_proof
                             ? isMobile ? "Proof" : "Manage proof"
                             : isMobile ? "Upload proof" : "Upload purchase proof"}
+                      </button>
+                    ) : null}
+
+                    {showAdvancedOwnerActions && !isEditing && group.can_proceed_early ? (
+                      <button
+                        style={{ ...primaryButton, ...(isMobile ? actionButtonMobile : {}) }}
+                        onClick={() => requestProceedEarly(group)}
+                        disabled={proceedingId === group.id}
+                      >
+                        {proceedingId === group.id ? "Proceeding..." : `Proceed with ${group.filled_slots} of ${group.total_slots} slots`}
                       </button>
                     ) : null}
 

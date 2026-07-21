@@ -184,6 +184,8 @@ export default function GroupDetails({ isAuth }) {
   const [group, setGroup] = useState(location.state?.group || null);
   const [loading, setLoading] = useState(!group);
   const [joining, setJoining] = useState(false);
+  const [waitlisting, setWaitlisting] = useState(false);
+  const [joinError, setJoinError] = useState(null);
 
   useEffect(() => {
     if (group) return;
@@ -242,8 +244,31 @@ export default function GroupDetails({ isAuth }) {
     } catch (err) {
       const msg = err.response?.data?.error || "Failed to join group.";
       toast.error(msg, { title: "Couldn't join group" });
+      if (err.response?.status === 409) {
+        setJoinError(msg);
+      }
     } finally {
       setJoining(false);
+    }
+  };
+
+  const handleJoinWaitlist = async () => {
+    try {
+      setWaitlisting(true);
+      await API.post(`groups/${group.id}/waitlist/join/`);
+      toast.success("Added to the waitlist. You'll be auto-joined if a spot opens up.");
+      // Refresh the group to update waitlist_count.
+      const res = await API.get("groups/", { params: { page_size: 100 } });
+      const found = getPaginatedItems(res.data).find((item) => String(item.id) === String(groupId));
+      if (found) {
+        setGroup(found);
+      }
+      setJoinError(null);
+    } catch (err) {
+      const msg = err.response?.data?.error || "Failed to join waitlist.";
+      toast.error(msg);
+    } finally {
+      setWaitlisting(false);
     }
   };
 
@@ -481,6 +506,11 @@ export default function GroupDetails({ isAuth }) {
               <AvatarStack count={filledSlots} ownerInitials={ownerInitials} />
               <p className="text-[13px] font-black text-slate-950">
                 {filledSlots}<span className="text-slate-400">/{totalSlots}</span>
+                {group.waitlist_count > 0 && (
+                  <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-800">
+                    +{group.waitlist_count} waiting
+                  </span>
+                )}
               </p>
             </div>
 
@@ -536,28 +566,46 @@ export default function GroupDetails({ isAuth }) {
               >
                 Cancel
               </button>
-              <button
-                type="button"
-                onClick={handleJoin}
-                disabled={joinDisabled}
-                className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-teal-700 px-4 text-[16px] font-black text-white shadow-lg shadow-teal-700/25 transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
-              >
-                {joining ? (
-                  <>
-                    <LoadingSpinner className="h-4 w-4" />
-                    Processing…
-                  </>
-                ) : fullOrClosed ? (
-                  "No seats available"
-                ) : (
-                  <>
-                    {joinLabel}
-                    <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[13px]">
-                      {formatCurrency(joinPrice)}
-                    </span>
-                  </>
-                )}
-              </button>
+              {joinError?.includes("waitlist") ? (
+                <button
+                  type="button"
+                  onClick={handleJoinWaitlist}
+                  disabled={waitlisting}
+                  className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-amber-600 px-4 text-[16px] font-black text-white shadow-lg shadow-amber-600/25 transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                >
+                  {waitlisting ? (
+                    <>
+                      <LoadingSpinner className="h-4 w-4" />
+                      Adding...
+                    </>
+                  ) : (
+                    "Join waitlist"
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleJoin}
+                  disabled={joinDisabled}
+                  className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-teal-700 px-4 text-[16px] font-black text-white shadow-lg shadow-teal-700/25 transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                >
+                  {joining ? (
+                    <>
+                      <LoadingSpinner className="h-4 w-4" />
+                      Processing…
+                    </>
+                  ) : fullOrClosed ? (
+                    "No seats available"
+                  ) : (
+                    <>
+                      {joinLabel}
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[13px]">
+                        {formatCurrency(joinPrice)}
+                      </span>
+                    </>
+                  )}
+                </button>
+              )}
             </>
           )}
         </div>

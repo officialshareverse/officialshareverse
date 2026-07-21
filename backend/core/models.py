@@ -153,10 +153,58 @@ class Group(models.Model):
         related_name="reviewed_purchase_proofs",
     )
     funds_released_at = models.DateTimeField(null=True, blank=True)
+
+    # Stage 1.1: fill deadline for buy-together groups. If the group
+    # hasn't filled by this datetime, the cron auto-refunds held members
+    # and marks the group as "failed". Nullable so existing groups and
+    # sharing groups are unaffected. Set by the creator at group creation.
+    fill_deadline_at = models.DateTimeField(null=True, blank=True)
+
+    # Stage 1.3: minimum slots required before the creator can proceed.
+    # For a 4-slot group, min_fill_slots=3 means the creator can proceed
+    # once 3 members have joined (covering the 4th slot themselves or
+    # accepting a smaller plan). Defaults to total_slots (must fill
+    # completely) for backward compatibility.
+    min_fill_slots = models.IntegerField(null=True, blank=True)
+
+    # Stage 1.3: once min_fill_slots is met and the creator opts to
+    # proceed early, this flag is set so the join flow stops accepting
+    # new members and moves to awaiting_purchase. The creator must still
+    # upload proof within the purchase deadline.
+    proceed_early_at = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.subscription.name} - {self.owner.username} ({self.mode})"
+
+    def get_filled_slots(self):
+        """Current count of members (including unpaid — use sparingly)."""
+        return self.groupmember_set.count()
+
+    def get_remaining_slots(self):
+        return max(self.total_slots - self.get_filled_slots(), 0)
+
+    def is_full(self):
+        return self.get_filled_slots() >= self.total_slots
+
+    def can_proceed_early(self):
+        """
+        Stage 1.3: True if the group has met its min_fill_slots
+        threshold and the creator hasn't yet proceeded. Only meaningful
+        for buy-together groups in "collecting" status.
+        """
+        if self.mode != "group_buy":
+            return False
+        if self.status != "collecting":
+            return False
+        if self.proceed_early_at is not None:
+            return False
+        threshold = self.min_fill_slots or self.total_slots
+        return self.get_filled_slots() >= threshold and self.get_filled_slots() < self.total_slots
+
+    def get_waitlist_count(self):
+        return self.waitlist_entries.count()
 
     def set_access_credentials(self, identifier, password, notes=""):
         normalized_identifier = (identifier or "").strip()
@@ -236,6 +284,33 @@ class GroupMember(models.Model):
 
     def __str__(self):
         return f"{self.user.username} in {self.group.id}"
+
+
+class GroupWaitlistEntry(models.Model):
+    """
+    Stage 1.4: waitlist for full buy-together groups. When a group is
+    full (filled_slots >= total_slots), users can join the waitlist. If a
+    member leaves during the "collecting" phase (before the purchase
+    deadline starts), the next waitlisted user is auto-promoted: they're
+    charged and added as a GroupMember.
+
+    Ordering is first-come-first-served (by created_at). Entries are
+    deleted on promotion (they become a GroupMember) or on explicit
+    cancellation by the user.
+    """
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="waitlist_entries")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="waitlist_entries")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("group", "user")
+        ordering = ["created_at", "id"]
+        indexes = [
+            models.Index(fields=["group", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} waitlisted for {self.group_id}"
 
 
 class GroupInviteLink(models.Model):

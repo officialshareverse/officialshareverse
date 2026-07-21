@@ -137,6 +137,8 @@ function buildInitialForm(prefill = null) {
     price_per_slot: prefill?.price_per_slot || "",
     start_date: startDate,
     end_date: addDays(startDate, 29),
+    fill_deadline_at: null,
+    min_fill_slots: null,
   };
 }
 
@@ -619,6 +621,8 @@ export default function CreateGroup() {
       price_per_slot: form.price_per_slot,
       start_date: form.start_date,
       end_date: form.end_date,
+      fill_deadline_at: form.fill_deadline_at || null,
+      min_fill_slots: form.min_fill_slots || null,
     };
 
     try {
@@ -829,6 +833,45 @@ export default function CreateGroup() {
                       <FieldError message={errors.price_per_slot} />
                     </label>
                   </div>
+
+                  {form.mode === "group_buy" && (
+                    <div className="sv-cg-formation-options">
+                      {/* Fill deadline */}
+                      <label className="sv-cg-field">
+                        <span className="sv-cg-field-label">Fill deadline (optional)</span>
+                        <input
+                          type="datetime-local"
+                          name="fill_deadline_at"
+                          value={form.fill_deadline_at || ""}
+                          onChange={(e) => handleChange({ target: { name: "fill_deadline_at", value: e.target.value || null } })}
+                          className="sv-cg-input"
+                        />
+                        <span className="sv-cg-field-hint">
+                          If the group hasn't filled by this time, all held contributions are auto-refunded.
+                          Leave blank for no deadline.
+                        </span>
+                      </label>
+
+                      {/* Min fill slots */}
+                      <label className="sv-cg-field">
+                        <span className="sv-cg-field-label">Minimum slots to proceed (optional)</span>
+                        <input
+                          type="number"
+                          name="min_fill_slots"
+                          min={1}
+                          max={Number(form.total_slots) || 1}
+                          value={form.min_fill_slots || ""}
+                          onChange={(e) => handleChange({ target: { name: "min_fill_slots", value: e.target.value ? Number(e.target.value) : null } })}
+                          className="sv-cg-input"
+                        />
+                        <span className="sv-cg-field-hint">
+                          Set below {form.total_slots} to let yourself proceed early if the group is
+                          taking a while to fill. You'll cover any shortfall. Leave blank to require
+                          a full group.
+                        </span>
+                      </label>
+                    </div>
+                  )}
 
                   {/* Live mini-summary */}
                   <div className="sv-cg-mini-summary">

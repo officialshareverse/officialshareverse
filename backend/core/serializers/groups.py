@@ -146,12 +146,30 @@ class GroupSerializer(serializers.ModelSerializer):
     owner_review_count = serializers.SerializerMethodField()
     next_action = serializers.SerializerMethodField()
 
+    # Stage 1.1 & 1.3: expose formation fields.
+    fill_deadline_at = serializers.DateTimeField(read_only=True)
+    min_fill_slots = serializers.IntegerField(read_only=True)
+    can_proceed_early = serializers.SerializerMethodField()
+    is_almost_full = serializers.SerializerMethodField()
+    waitlist_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Group
         exclude = ["access_identifier", "access_password", "access_notes"]
 
     def get_filled_slots(self, obj):
         return obj.groupmember_set.count()
+
+    def get_can_proceed_early(self, obj):
+        return obj.can_proceed_early()
+
+    def get_is_almost_full(self, obj):
+        filled = obj.groupmember_set.count()
+        ratio = int((filled / obj.total_slots) * 100) if obj.total_slots else 0
+        return ratio >= 75
+
+    def get_waitlist_count(self, obj):
+        return obj.waitlist_entries.count()
 
     def get_is_joined(self, obj):
         request = self.context.get("request")
@@ -276,6 +294,14 @@ class GroupListSerializer(serializers.ModelSerializer):
     pricing_note = serializers.SerializerMethodField()
     can_submit_proof = serializers.SerializerMethodField()
 
+    # Stage 1.1 & 1.3: expose formation fields.
+    fill_deadline_at = serializers.DateTimeField(read_only=True)
+    min_fill_slots = serializers.IntegerField(read_only=True)
+    can_proceed_early = serializers.SerializerMethodField()
+    fill_ratio = serializers.SerializerMethodField()  # from the queryset annotation
+    is_almost_full = serializers.SerializerMethodField()
+    waitlist_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Group
         fields = [
@@ -324,6 +350,12 @@ class GroupListSerializer(serializers.ModelSerializer):
             "next_action",
             "is_joined",
             "join_cta",
+            "fill_deadline_at",
+            "min_fill_slots",
+            "can_proceed_early",
+            "fill_ratio",
+            "is_almost_full",
+            "waitlist_count",
         ]
 
     def get_filled_slots(self, obj):
@@ -347,9 +379,29 @@ class GroupListSerializer(serializers.ModelSerializer):
         from core.models import Review
         return Review.objects.filter(reviewed_user=obj.owner).count()
 
+    def get_fill_ratio(self, obj):
+        return getattr(obj, "fill_ratio", None)
+
     def get_remaining_slots(self, obj):
-        filled = GroupMember.objects.filter(group=obj).count()
-        return obj.total_slots - filled
+        filled = getattr(obj, "filled_slots", None)
+        if filled is None:
+            filled = obj.groupmember_set.count()
+        return max(obj.total_slots - filled, 0)
+
+    def get_can_proceed_early(self, obj):
+        return obj.can_proceed_early()
+
+    def get_is_almost_full(self, obj):
+        ratio = getattr(obj, "fill_ratio", None)
+        if ratio is None:
+            filled = getattr(obj, "filled_slots", None)
+            if filled is None:
+                filled = obj.groupmember_set.count()
+            ratio = int((filled / obj.total_slots) * 100) if obj.total_slots else 0
+        return ratio >= 75
+
+    def get_waitlist_count(self, obj):
+        return obj.waitlist_entries.count()
 
     def get_is_joined(self, obj):
         request = self.context.get("request")

@@ -515,32 +515,34 @@ def refund_group_buy_held_funds(group_id, reason="manual"):
 
 def process_expired_buy_together_refunds(group_ids=None):
     """
-    Settle expired buy-together groups: refund members of groups whose
-    purchase deadline passed, and release escrow to owners of groups whose
-    member-confirmation window passed cleanly.
+    Settle expired buy-together groups. Three categories:
+      1. Fill deadline expired (group didn't fill in time) → refund held members, mark "failed".
+      2. Purchase deadline expired (group filled, creator didn't buy in time) → refund held members.
+      3. Confirmation window expired (clean timeout) → release escrow to creator.
 
-    A11 fix: the entire selection+processing is wrapped in a single
-    transaction.atomic() block with select_for_update() on the candidate
-    groups. This prevents two overlapping cron runs (or a cron run racing
-    a member's ConfirmGroupAccessView) from both picking the same expired
-    group. The inner refund/release functions also lock, but locking at
-    selection time avoids wasted work and the near-deadline race.
-
-    NOTE: this function must NOT be called from view handlers before the
-    authorization check — see the audit report (C1). It is intended for
-    the process_expired_group_buy_refunds management command (cron) and
-    for post-authorization use only.
+    Stage 1.1: added category 1 (fill deadline).
     """
     refunded_total = Decimal("0.00")
     released_total = Decimal("0.00")
     released_groups = 0
     refund_ids = []
     release_ids = []
+    fill_deadline_refund_ids = []  # Stage 1.1
 
     with transaction.atomic():
-        # select_for_update locks the candidate group rows for the duration
-        # of this transaction. Any concurrent run (or concurrent member
-        # action that also locks the group) will block until we commit.
+        # Category 1: fill deadline expired (group still in "forming"/"collecting",
+        # hasn't filled, fill_deadline_at has passed).
+        fill_deadline_expired = (
+            Group.objects.select_for_update()
+            .filter(
+                mode="group_buy",
+                status__in=["forming", "collecting"],
+                fill_deadline_at__isnull=False,
+                fill_deadline_at__lte=timezone.now(),
+            )
+        )
+
+        # Category 2: purchase deadline expired (group filled, creator didn't buy).
         expired_refund_groups = (
             Group.objects.select_for_update()
             .filter(
@@ -550,6 +552,8 @@ def process_expired_buy_together_refunds(group_ids=None):
                 auto_refund_at__lte=timezone.now(),
             )
         )
+
+        # Category 3: confirmation window expired (clean timeout, release).
         expired_release_groups = (
             Group.objects.select_for_update()
             .filter(
@@ -561,25 +565,49 @@ def process_expired_buy_together_refunds(group_ids=None):
         )
 
         if group_ids is not None:
+            fill_deadline_expired = fill_deadline_expired.filter(id__in=group_ids)
             expired_refund_groups = expired_refund_groups.filter(id__in=group_ids)
             expired_release_groups = expired_release_groups.filter(id__in=group_ids)
 
-        # Snapshot the IDs inside the lock so the subsequent per-group
-        # refund/release calls (which open their own transactions) operate
-        # on a stable set. Re-checking inside each call's own atomic block
-        # is still the source of truth for row-level correctness.
+        fill_deadline_refund_ids = list(fill_deadline_expired.values_list("id", flat=True))
         refund_ids = list(expired_refund_groups.values_list("id", flat=True))
         release_ids = list(expired_release_groups.values_list("id", flat=True))
 
-    # The actual refund/release calls happen OUTSIDE the selection
-    # transaction to avoid nested-transaction deadlocks with the inner
-    # functions' own atomic blocks. Each inner function re-locks its group
-    # with select_for_update, so a concurrent cron run that also picked
-    # this group will block on the inner lock — and then see the updated
-    # status (no longer "awaiting_purchase" / "proof_submitted") and no-op.
+    # Category 1: fill deadline expired → refund + mark failed.
+    for group_id in fill_deadline_refund_ids:
+        refunded_total += refund_group_buy_held_funds(group_id, reason="fill_deadline_expired")
+        # Mark the group as failed so it leaves the marketplace.
+        Group.objects.filter(id=group_id).update(status="failed")
+        # Notify the owner and all held members.
+        try:
+            group = Group.objects.select_related("subscription", "owner").get(id=group_id)
+            create_notification(
+                user=group.owner,
+                message=(
+                    f"Your {group.subscription.name} buy-together group did not fill by the "
+                    f"deadline. All held member contributions have been refunded and the group "
+                    f"is now closed."
+                ),
+                group_id=group.id,
+            )
+            for member in GroupMember.objects.filter(group=group).select_related("user"):
+                create_notification(
+                    user=member.user,
+                    message=(
+                        f"The {group.subscription.name} buy-together group did not fill by the "
+                        f"deadline. Your held contribution of Rs {member.charged_amount} has been "
+                        f"refunded to your wallet."
+                    ),
+                    group_id=group.id,
+                )
+        except Group.DoesNotExist:
+            pass
+
+    # Category 2: purchase deadline expired → refund (existing behavior).
     for group_id in refund_ids:
         refunded_total += refund_group_buy_held_funds(group_id, reason="deadline_expired")
 
+    # Category 3: confirmation window expired → release (existing behavior).
     for group_id in release_ids:
         release_amount, released = release_group_buy_held_funds(
             group_id,
@@ -590,10 +618,12 @@ def process_expired_buy_together_refunds(group_ids=None):
             released_total += release_amount
 
     return {
-        "processed_groups": len(refund_ids) + released_groups,
+        "processed_groups": len(fill_deadline_refund_ids) + len(refund_ids) + released_groups,
         "refunded_amount": refunded_total,
         "released_amount": released_total,
         "released_groups": released_groups,
+        # Stage 1.1: include fill-deadline stats for observability.
+        "fill_deadline_refunds": len(fill_deadline_refund_ids),
     }
 
 
@@ -1253,6 +1283,10 @@ def validate_group_join_request(group, user):
     if group.status in {"refunding", "refunded", "failed"}:
         return {"error": "This group is not available for new joins right now"}, 400, None
 
+    # Stage 1.3: reject join if the creator proceeded early.
+    if group.proceed_early_at is not None:
+        return {"error": "This group is no longer accepting new members."}, 400, None
+
     if group.owner_id == user.id:
         return {"error": "You cannot join your own group"}, 400, None
 
@@ -1260,6 +1294,10 @@ def validate_group_join_request(group, user):
         return {"error": "Already joined"}, 400, None
 
     if GroupMember.objects.filter(group=group).count() >= group.total_slots:
+        # Stage 1.4: if the group supports a waitlist (buy-together
+        # in forming/collecting phase), tell the user they can join the waitlist.
+        if group.mode == "group_buy" and group.status in {"forming", "collecting"}:
+            return {"error": "This group is full. You can join the waitlist in case a spot opens up."}, 409, None
         return {"error": "Group is full"}, 400, None
 
     pricing = get_group_join_pricing(group)

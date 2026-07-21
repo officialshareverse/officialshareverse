@@ -1,4 +1,63 @@
+from django.db.models import Count, F, ExpressionWrapper, IntegerField, Case, When
 from .common import *
+from ..models import GroupWaitlistEntry
+
+def _promote_next_waitlist_entry(group):
+    """
+    Stage 1.4: promote the next waitlisted user to a full member.
+    Charges their wallet for the join price and creates a GroupMember
+    with held escrow. If the user's wallet is insufficient or the
+    promotion fails for any reason, the entry is removed and the next
+    entry is tried.
+
+    This function must be called inside a transaction.atomic() block
+    with the group already locked via select_for_update().
+    """
+    from .common import perform_group_join
+
+    while True:
+        next_entry = (
+            GroupWaitlistEntry.objects.select_for_update()
+            .filter(group=group)
+            .order_by("created_at", "id")
+            .first()
+        )
+        if not next_entry:
+            return  # No one on the waitlist.
+
+        user = next_entry.user
+        # Remove the entry first so it's not retried if promotion fails.
+        next_entry.delete()
+
+        # Attempt to join the user. perform_group_join handles wallet
+        # deduction, escrow, notifications, and the "group full" check.
+        # Since we just freed a slot, the join should succeed unless the
+        # user's wallet is insufficient.
+        response_payload, error_payload, error_status = perform_group_join(user, group)
+
+        if error_payload:
+            # Promotion failed (likely insufficient balance). Notify the
+            # user and try the next waitlist entry.
+            create_notification(
+                user=user,
+                message=(
+                    f"A spot opened in {group.subscription.name}, but we couldn't "
+                    f"auto-join you because: {error_payload.get('error', 'Unknown error')}. "
+                    f"Top up your wallet and try joining again."
+                ),
+            )
+            continue
+
+        # Promotion succeeded. Notify the user.
+        create_notification(
+            user=user,
+            message=(
+                f"Great news! A spot opened in {group.subscription.name} and you've been "
+                f"auto-joined from the waitlist. Rs {response_payload.get('charged_amount', '0')} "
+                f"was charged from your wallet."
+            ),
+        )
+        return
 
 class CreateGroupView(APIView):
     permission_classes = [IsAuthenticated]
@@ -32,6 +91,10 @@ class CreateGroupView(APIView):
             start_date=validated_data["start_date"],
             end_date=validated_data["end_date"],
             mode=mode,
+            # Stage 1.1 & 1.3: save the new formation fields (only relevant
+            # for group_buy; the serializer rejects them for sharing).
+            fill_deadline_at=serializer.validated_data.get("fill_deadline_at"),
+            min_fill_slots=serializer.validated_data.get("min_fill_slots"),
         )
 
         if mode == "sharing" and (access_identifier or access_password or access_notes):
@@ -145,6 +208,15 @@ class LeaveGroupView(APIView):
                 refunded_amount = refund_amount
 
             locked_member.delete()
+
+            # Stage 1.4: promote the next waitlisted user if the group
+            # is in the collecting phase and now has an open slot.
+            if (
+                locked_group.mode == "group_buy"
+                and locked_group.status == "collecting"
+                and locked_group.get_remaining_slots() > 0
+            ):
+                _promote_next_waitlist_entry(locked_group)
 
         create_notification(
             user=group.owner,
@@ -408,6 +480,15 @@ class GroupListView(ListAPIView):
         qs = (
             Group.objects.select_related("subscription", "owner")
             .annotate(filled_slots=Count("groupmember"))
+            .annotate(
+                # Stage 1.2: compute fill ratio for "almost full" boosting.
+                # Integer percentage (0-100). Used for sorting and for the
+                # serializer's urgency badge.
+                fill_ratio=ExpressionWrapper(
+                    F("filled_slots") * 100 / F("total_slots"),
+                    output_field=IntegerField(),
+                )
+            )
             .filter(
                 end_date__gte=timezone.localdate(),
                 filled_slots__lt=F("total_slots"),
@@ -416,9 +497,145 @@ class GroupListView(ListAPIView):
         )
         if self.request.user.is_authenticated:
             qs = qs.exclude(owner=self.request.user)
+
+        # Stage 1.2: boost 75%+ fill groups to the top, sorted by
+        # fill_ratio descending (most-full first), then by created_at
+        # (newest first) as a tiebreaker. Groups below 75% keep the
+        # original created_at ordering.
+        qs = qs.order_by(
+            # Case: fill_ratio >= 75 → 0 (top), else 1 (bottom).
+            Case(
+                When(fill_ratio__gte=75, then=0),
+                default=1,
+                output_field=IntegerField(),
+            ),
+            "-fill_ratio",
+            "-created_at",
+            "-id",
+        )
         return qs
 
     def get_serializer_context(self):
         return {"request": self.request}
+
+
+class JoinWaitlistView(APIView):
+    """Stage 1.4: join the waitlist for a full buy-together group."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, group_id):
+        try:
+            group = Group.objects.get(id=group_id)
+        except Group.DoesNotExist:
+            return Response({"error": "Group not found"}, status=404)
+
+        if group.mode != "group_buy":
+            return Response({"error": "Waitlist is only for buy-together groups."}, status=400)
+
+        if group.status not in {"forming", "collecting"}:
+            return Response({"error": "This group is no longer accepting waitlist entries."}, status=400)
+
+        if not group.is_full():
+            return Response(
+                {"error": "This group still has open spots. Join directly instead of waitlisting."},
+                status=400,
+            )
+
+        if group.owner_id == request.user.id:
+            return Response({"error": "You cannot waitlist for your own group."}, status=400)
+
+        if GroupMember.objects.filter(group=group, user=request.user).exists():
+            return Response({"error": "You are already a member of this group."}, status=400)
+
+        entry, created = GroupWaitlistEntry.objects.get_or_create(group=group, user=request.user)
+        if not created:
+            return Response({"error": "You are already on the waitlist for this group."}, status=400)
+
+        position = GroupWaitlistEntry.objects.filter(
+            group=group, created_at__lte=entry.created_at
+        ).count()
+
+        return Response({
+            "message": "Added to the waitlist. You'll be auto-joined if a spot opens up.",
+            "waitlist_position": position,
+        }, status=201)
+
+
+class LeaveWaitlistView(APIView):
+    """Stage 1.4: leave the waitlist for a group."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, group_id):
+        deleted, _ = GroupWaitlistEntry.objects.filter(group_id=group_id, user=request.user).delete()
+        if not deleted:
+            return Response({"error": "You are not on the waitlist for this group."}, status=404)
+        return Response({"message": "Removed from the waitlist."})
+
+
+class ProceedEarlyView(APIView):
+    """
+    Stage 1.3: creator opts to proceed with the current fill count
+    (must be >= min_fill_slots). Moves the group to awaiting_purchase
+    and starts the purchase deadline clock, same as a full fill.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, group_id):
+        try:
+            group = Group.objects.get(id=group_id, owner=request.user)
+        except Group.DoesNotExist:
+            return Response({"error": "Group not found"}, status=404)
+
+        if group.mode != "group_buy":
+            return Response({"error": "Only buy-together groups can proceed early."}, status=400)
+
+        if group.status != "collecting":
+            return Response({"error": "This group is not in the collecting phase."}, status=400)
+
+        if not group.can_proceed_early():
+            return Response({
+                "error": "Cannot proceed early. Either the threshold hasn't been met, "
+                         "or the group is already full (proceed normally)."
+            }, status=400)
+
+        with transaction.atomic():
+            locked_group = Group.objects.select_for_update().get(id=group.id)
+            # Re-check under lock.
+            if not locked_group.can_proceed_early():
+                return Response({"error": "Cannot proceed early at this time."}, status=400)
+
+            deadline = timezone.now() + timedelta(hours=BUY_TOGETHER_PURCHASE_DEADLINE_HOURS)
+            locked_group.status = "awaiting_purchase"
+            locked_group.purchase_deadline_at = deadline
+            locked_group.auto_refund_at = deadline
+            locked_group.proceed_early_at = timezone.now()
+            locked_group.save(update_fields=[
+                "status", "purchase_deadline_at", "auto_refund_at", "proceed_early_at"
+            ])
+
+        # Notify the owner + all members.
+        create_notification(
+            user=locked_group.owner,
+            message=(
+                f"You chose to proceed with {locked_group.get_filled_slots()} of "
+                f"{locked_group.total_slots} slots for {locked_group.subscription.name}. "
+                f"Buy the subscription and upload proof before the deadline."
+            ),
+        )
+        for member in GroupMember.objects.filter(group=locked_group).select_related("user"):
+            create_notification(
+                user=member.user,
+                message=(
+                    f"The creator is proceeding with {locked_group.subscription.name} at "
+                    f"{locked_group.get_filled_slots()} of {locked_group.total_slots} slots. "
+                    f"The purchase is starting soon."
+                ),
+            )
+
+        return Response({
+            "message": "Proceeding early. Purchase deadline started.",
+            "status": locked_group.status,
+            "purchase_deadline_at": locked_group.purchase_deadline_at,
+        })
 
 
