@@ -4763,3 +4763,181 @@ class RestoreWalletForFailedPayoutTest(APITestCase):
         )
         self.assertEqual(reversal_txs.count(), 1)
         self.assertEqual(reversal_txs.first().amount, self.payout.amount)
+
+
+class BuyTogetherStage1Test(APITestCase):
+    """Stage 1: fill deadline, almost-full boosting, partial-fill, waitlist."""
+
+    def setUp(self):
+        cache.clear()
+        from decimal import Decimal
+        self.subscription = Subscription.objects.create(
+            name="Netflix",
+            max_slots=4,
+            category="streaming",
+            price=499,
+        )
+        self.owner = self.create_user("owner", "9000000001")
+        self.member = self.create_user("member1", "9000000002")
+        self.outsider = self.create_user("outsider", "9000000003")
+        self.member_counter = 4
+
+    def create_user(self, username, phone):
+        from decimal import Decimal
+        user = User.objects.create_user(
+            username=username,
+            password="password123",
+            email=f"{username}@example.com",
+            phone=phone,
+        )
+        wallet = Wallet.objects.get(user=user)
+        wallet.balance = Decimal("1000.00")
+        wallet.save()
+        return user
+
+    def authenticate(self, user):
+        self.client.force_authenticate(user=user)
+
+    def create_group(self, mode="group_buy", total_slots=4, status="collecting", min_fill_slots=None, fill_deadline_at=None):
+        from datetime import date, timedelta
+        from decimal import Decimal
+        return Group.objects.create(
+            owner=self.owner,
+            subscription=self.subscription,
+            total_slots=total_slots,
+            price_per_slot=Decimal("125.00"),
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=29),
+            mode=mode,
+            status=status,
+            min_fill_slots=min_fill_slots or total_slots,
+            fill_deadline_at=fill_deadline_at,
+        )
+
+    def create_member(self, group, user=None, has_paid=False, escrow_status="none"):
+        if user is None:
+            user = self.create_user(f"anon{self.member_counter}", f"90000000{self.member_counter:02d}")
+            self.member_counter += 1
+        return GroupMember.objects.create(
+            group=group,
+            user=user,
+            has_paid=has_paid,
+            escrow_status=escrow_status,
+            cash_used=group.price_per_slot if has_paid else 0,
+        )
+
+    def test_fill_deadline_expired_auto_refunds(self):
+        """Stage 1.1: a group with a past fill_deadline_at is auto-refunded by the cron."""
+        from django.utils import timezone
+        from datetime import timedelta
+        from core.views.common import process_expired_buy_together_refunds
+        from decimal import Decimal
+
+        group = self.create_group(
+            mode="group_buy",
+            total_slots=4,
+            status="collecting",
+            fill_deadline_at=timezone.now() - timedelta(minutes=5),
+        )
+        member = self.create_member(group=group, user=self.member, has_paid=True, escrow_status="held")
+
+        result = process_expired_buy_together_refunds()
+        self.assertEqual(result["fill_deadline_refunds"], 1)
+
+        group.refresh_from_db()
+        self.assertEqual(group.status, "failed")
+
+        member.refresh_from_db()
+        self.assertEqual(member.escrow_status, "refunded")
+
+    def test_almost_full_boosting(self):
+        """Stage 1.2: 75%+ fill groups appear first in the marketplace."""
+        from django.utils import timezone
+        from datetime import timedelta
+
+        # Create a 4-slot group with 3 members (75% fill).
+        full_group = self.create_group(mode="group_buy", total_slots=4, status="collecting")
+        for i in range(3):
+            self.create_member(group=full_group, has_paid=True, escrow_status="held")
+
+        # Create a 4-slot group with 1 member (25% fill), created EARLIER.
+        earlier = timezone.now() - timedelta(hours=1)
+        sparse_group = self.create_group(mode="group_buy", total_slots=4, status="collecting")
+        Group.objects.filter(id=sparse_group.id).update(created_at=earlier)
+        self.create_member(group=sparse_group, has_paid=True, escrow_status="held")
+
+        # Create a dummy user without force auth or just don't authenticate since it's a public endpoint
+        # The spec says authenticate_as(outsider).
+        self.authenticate(self.outsider)
+        resp = self.client.get("/api/groups/")
+        groups = resp.data.get("results", resp.data)
+        self.assertEqual(groups[0]["id"], full_group.id)  # 75% group first
+        self.assertTrue(groups[0]["is_almost_full"])
+        self.assertEqual(groups[0]["remaining_slots"], 1)
+
+    def test_proceed_early(self):
+        """Stage 1.3: creator can proceed when min_fill_slots is met."""
+        group = self.create_group(
+            mode="group_buy",
+            total_slots=4,
+            status="collecting",
+            min_fill_slots=3,
+        )
+        for i in range(3):
+            self.create_member(group=group, has_paid=True, escrow_status="held")
+
+        self.authenticate(self.owner)
+        resp = self.client.post(f"/api/my-groups/{group.id}/proceed-early/", format="json")
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+        group.refresh_from_db()
+        self.assertEqual(group.status, "awaiting_purchase")
+        self.assertIsNotNone(group.proceed_early_at)
+        self.assertIsNotNone(group.purchase_deadline_at)
+
+    def test_proceed_early_rejected_below_threshold(self):
+        """Stage 1.3: cannot proceed early if below min_fill_slots."""
+        group = self.create_group(
+            mode="group_buy",
+            total_slots=4,
+            status="collecting",
+            min_fill_slots=3,
+        )
+        for i in range(2):
+            self.create_member(group=group, has_paid=True, escrow_status="held")
+
+        self.authenticate(self.owner)
+        resp = self.client.post(f"/api/my-groups/{group.id}/proceed-early/", format="json")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_waitlist_join_and_auto_promote(self):
+        """Stage 1.4: waitlisted user is auto-promoted when a member leaves."""
+        # Using total_slots=1 so it fills up instantly when 1 member joins.
+        group = self.create_group(mode="group_buy", total_slots=1, status="collecting")
+        self.create_member(group=group, user=self.member, has_paid=True, escrow_status="held")
+
+
+        # Outsider joins the waitlist.
+        self.authenticate(self.outsider)
+        resp = self.client.post(f"/api/groups/{group.id}/waitlist/join/", format="json")
+        self.assertEqual(resp.status_code, 201, resp.content)
+
+        # Member leaves → outsider should be auto-promoted.
+        self.authenticate(self.member)
+        leave_resp = self.client.post("/api/leave-group/", {"group_id": group.id}, format="json")
+        self.assertEqual(leave_resp.status_code, 200, leave_resp.content)
+
+        from core.models import GroupMember
+        self.assertTrue(
+            GroupMember.objects.filter(group=group, user=self.outsider).exists(),
+            "Waitlisted user was not auto-promoted after a member left."
+        )
+
+    def test_waitlist_join_rejected_when_not_full(self):
+        """Stage 1.4: cannot join waitlist if the group still has open slots."""
+        group = self.create_group(mode="group_buy", total_slots=4, status="collecting")
+        self.create_member(group=group, user=self.member, has_paid=True, escrow_status="held")
+
+        self.authenticate(self.outsider)
+        resp = self.client.post(f"/api/groups/{group.id}/waitlist/join/", format="json")
+        self.assertEqual(resp.status_code, 400)
